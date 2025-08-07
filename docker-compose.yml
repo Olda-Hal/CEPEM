@@ -1,0 +1,62 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: cepem_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: cepem_healthcare
+      MYSQL_USER: cepem_user
+      MYSQL_PASSWORD: cepem_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - cepem_network
+
+  # Healthcare API
+  healthcare-api:
+    build:
+      context: ./backend/HealthcareAPI
+      dockerfile: Dockerfile
+    container_name: cepem_healthcare_api
+    restart: unless-stopped
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=cepem_healthcare;Uid=cepem_user;Pwd=cepem_password;
+      - JWT__SecretKey=CEPEMHealthcareSecretKey2024ForJWTTokens!
+      - JWT__Issuer=CEPEM-Healthcare
+      - JWT__Audience=CEPEM-Doctors
+    depends_on:
+      - mysql
+    networks:
+      - cepem_network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cepem_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    depends_on:
+      - healthcare-api
+    networks:
+      - cepem_network
+
+volumes:
+  mysql_data:
+
+networks:
+  cepem_network:
+    driver: bridge
