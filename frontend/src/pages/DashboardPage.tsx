@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { DashboardStats } from '../types';
 import { apiClient } from '../utils/api';
@@ -8,7 +8,7 @@ import './DashboardPage.css';
 
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
-  const { t, language } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,12 +30,12 @@ export const DashboardPage: React.FC = () => {
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return t('dashboard.never');
-    const locale = language === 'cs' ? 'cs-CZ' : 'en-US';
+    const locale = i18n.language === 'cs' ? 'cs-CZ' : 'en-US';
     return new Date(dateString).toLocaleString(locale);
   };
 
   const getCurrentTime = () => {
-    const locale = language === 'cs' ? 'cs-CZ' : 'en-US';
+    const locale = i18n.language === 'cs' ? 'cs-CZ' : 'en-US';
     return new Date().toLocaleString(locale);
   };
 
