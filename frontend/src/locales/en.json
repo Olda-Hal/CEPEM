@@ -44,8 +44,8 @@
     "settings": "Settings",
     "settingsDesc": "System and profile configuration",
     "comingSoon": "Coming Soon",
-    "totalDoctors_one": "__STRING_NOT_TRANSLATED__",
-    "totalDoctors_other": "__STRING_NOT_TRANSLATED__"
+    "totalDoctors_one": "{{count}} Doctor",
+    "totalDoctors_other": "{{count}} Doctors"
   },
   "auth": {
     "mustBeUsedInsideProvider": "useAuth must be used within AuthProvider"

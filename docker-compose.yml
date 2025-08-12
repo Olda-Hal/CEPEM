@@ -13,7 +13,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/init:/docker-entrypoint-initdb.d
     networks:
       - cepem_network
 
@@ -35,6 +34,40 @@ services:
       - JWT__Audience=CEPEM-Doctors
     depends_on:
       - mysql
+    networks:
+      - cepem_network
+
+  # Database API
+  database-api:
+    build:
+      context: ./backend/DatabaseAPI
+      dockerfile: Dockerfile
+    container_name: cepem_database_api
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=cepem_healthcare;User=root;Password=rootpassword;
+    depends_on:
+      - mysql
+    networks:
+      - cepem_network
+
+  # AI Service (Python FastAPI)
+  ai-service:
+    build:
+      context: ./backend/AIService
+      dockerfile: Dockerfile
+    container_name: cepem_ai_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+      - healthcare-api
+      - database-api
     networks:
       - cepem_network
 
