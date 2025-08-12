@@ -1,6 +1,6 @@
-# CEPEM E-commerce Platform
+# Centrum Preventivni medicíny System
 
-Microservice-based e-commerce platform built with .NET, React, and Python AI service.
+Microservice-based medical platform built with .NET, React, and Python AI service.
 
 ## Architecture
 
