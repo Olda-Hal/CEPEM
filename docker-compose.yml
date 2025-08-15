@@ -32,10 +32,12 @@ services:
       - JWT__SecretKey=CEPEMHealthcareSecretKey2024ForJWTTokens!
       - JWT__Issuer=CEPEM-Healthcare
       - JWT__Audience=CEPEM-Doctors
+      - DatabaseApiUrl=http://database-api:5001
     volumes:
       - ./test-results:/app/test-results:ro
     depends_on:
       - mysql
+      - database-api
     networks:
       - cepem_network
 
@@ -138,8 +140,31 @@ services:
   #   profiles:
   #     - testing
 
+# ... existing services ...
+
+  # Grafana for monitoring
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cepem_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - mysql
+    networks:
+      - cepem_network
+
+# ... existing volumes ...
 volumes:
   mysql_data:
+  grafana_data:
 
 networks:
   cepem_network:

@@ -1,10 +1,11 @@
+using HealthcareAPI.Data;
+using HealthcareAPI.Middleware;
+using HealthcareAPI.Repositories;
+using HealthcareAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using HealthcareAPI.Data;
-using HealthcareAPI.Repositories;
-using HealthcareAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,8 @@ builder.Services.AddDbContext<HealthcareDbContext>(options =>
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
@@ -64,6 +67,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ActivityLoggingMiddleware>();
 
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
