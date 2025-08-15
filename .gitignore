@@ -101,3 +101,96 @@ temp/
 
 # MySQL
 mysql-data/
+
+# Test Results
+test-results/
+*/test-results/
+TestResults/
+*/TestResults/
+coverage/
+*/coverage/
+htmlcov/
+*/htmlcov/
+.coverage
+.pytest_cache/
+*/pytest_cache/
+.nyc_output/
+*/nyc_output/
+*.trx
+*.xml
+*.lcov
+*.cobertura
+junit.xml
+coverage.xml
+coverage-final.json
+clover.xml
+
+# Visual Studio Code
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+.vscode/.ropeproject
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Docker volumes and data
+docker-data/
+postgres-data/
+mysql-data/
+redis-data/
+
+# Application logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime and cache
+.cache/
+.parcel-cache/
+.next/
+out/
+.nuxt/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+
+# Editor backup files
+*~
+.#*
+\#*#
+*.bak
+*.backup
+*.orig
+*.rej
+*.swp
+*.swo
+*.vi
+
+# Package manager locks (optional - depends on team preference)
+# package-lock.json
+# yarn.lock
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Monitoring and profiling
+*.prof
+*.heap
+*.cpuprofile
+
+# Generated documentation
+docs/build/
+site/

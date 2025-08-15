@@ -32,6 +32,8 @@ services:
       - JWT__SecretKey=CEPEMHealthcareSecretKey2024ForJWTTokens!
       - JWT__Issuer=CEPEM-Healthcare
       - JWT__Audience=CEPEM-Doctors
+    volumes:
+      - ./test-results:/app/test-results:ro
     depends_on:
       - mysql
     networks:
@@ -86,6 +88,55 @@ services:
       - healthcare-api
     networks:
       - cepem_network
+
+  # Test Services (optional - uncomment to run tests)
+  # healthcare-api-tests:
+  #   build:
+  #     context: ./backend/HealthcareAPI.Tests
+  #     dockerfile: Dockerfile.test
+  #   volumes:
+  #     - ./test-results:/results/healthcare-api
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Testing
+  #   networks:
+  #     - cepem_network
+  #   profiles:
+  #     - testing
+
+  # database-api-tests:
+  #   build:
+  #     context: ./backend/DatabaseAPI.Tests
+  #     dockerfile: Dockerfile.test
+  #   volumes:
+  #     - ./test-results:/results/database-api
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Testing
+  #   networks:
+  #     - cepem_network
+  #   profiles:
+  #     - testing
+
+  # ai-service-tests:
+  #   build:
+  #     context: ./backend/AIService
+  #     dockerfile: Dockerfile.test
+  #   volumes:
+  #     - ./test-results:/results/ai-service
+  #   networks:
+  #     - cepem_network
+  #   profiles:
+  #     - testing
+
+  # frontend-tests:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.test
+  #   volumes:
+  #     - ./test-results:/results/frontend
+  #   networks:
+  #     - cepem_network
+  #   profiles:
+  #     - testing
 
 volumes:
   mysql_data:

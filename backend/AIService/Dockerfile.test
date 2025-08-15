@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install test dependencies
+COPY requirements.txt requirements-test.txt ./
+RUN pip install -r requirements.txt -r requirements-test.txt
+
+# Copy source code
+COPY . .
+
+# Set PYTHONPATH so tests can find main module
+ENV PYTHONPATH=/app
+
+# Run tests with coverage - continue on failure
+RUN pytest --cov=. --cov-report=html --cov-report=xml --cov-report=term --junitxml=test-results.xml || true
+
+# Copy test results for output
+FROM alpine:latest
+WORKDIR /results
+COPY --from=0 /app/htmlcov ./htmlcov
+COPY --from=0 /app/coverage.xml ./
+COPY --from=0 /app/test-results.xml ./
+CMD ["sh", "-c", "cp -r . /results/ai-service/ 2>/dev/null || true; cat test-results.xml 2>/dev/null || true; cat coverage.xml 2>/dev/null || true"]

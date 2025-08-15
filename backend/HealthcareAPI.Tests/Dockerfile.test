@@ -1,0 +1,26 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+
+# Copy project files from both directories
+COPY HealthcareAPI.Tests/*.csproj ./HealthcareAPI.Tests/
+COPY HealthcareAPI/*.csproj ./HealthcareAPI/
+RUN dotnet restore ./HealthcareAPI.Tests/
+
+# Copy source code
+COPY HealthcareAPI.Tests/ ./HealthcareAPI.Tests/
+COPY HealthcareAPI/ ./HealthcareAPI/
+
+# Run tests with coverage - continue on failure
+WORKDIR /app/HealthcareAPI.Tests
+RUN dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx || true
+
+# Generate coverage report - continue on failure
+RUN dotnet tool install -g dotnet-reportgenerator-globaltool || true
+ENV PATH="$PATH:/root/.dotnet/tools"
+RUN reportgenerator -reports:"./TestResults/*/coverage.cobertura.xml" -targetdir:"./TestResults/CoverageReport" -reporttypes:Html || true
+
+# Copy test results for output
+FROM alpine:latest
+WORKDIR /results
+COPY --from=build /app/HealthcareAPI.Tests/TestResults ./
+CMD ["sh", "-c", "cp -r . /results/healthcare-api/ 2>/dev/null || true; find . -name '*.trx' -exec cat {} \\; 2>/dev/null || true; find . -name 'coverage.cobertura.xml' -exec cat {} \\; 2>/dev/null || true"]

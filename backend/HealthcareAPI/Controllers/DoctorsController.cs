@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using HealthcareAPI.Data;
 using HealthcareAPI.Models;
+using HealthcareAPI.Services;
 
 namespace HealthcareAPI.Controllers
 {
@@ -12,11 +11,11 @@ namespace HealthcareAPI.Controllers
     [Authorize]
     public class DoctorsController : ControllerBase
     {
-        private readonly HealthcareDbContext _context;
+        private readonly IDoctorService _doctorService;
 
-        public DoctorsController(HealthcareDbContext context)
+        public DoctorsController(IDoctorService doctorService)
         {
-            _context = context;
+            _doctorService = doctorService;
         }
 
         [HttpGet("me")]
@@ -24,21 +23,7 @@ namespace HealthcareAPI.Controllers
         {
             var doctorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             
-            var doctor = await _context.Doctors
-                .Where(d => d.Id == doctorId && d.IsActive)
-                .Select(d => new Doctor
-                {
-                    Id = d.Id,
-                    FirstName = d.FirstName,
-                    LastName = d.LastName,
-                    Email = d.Email,
-                    Specialization = d.Specialization,
-                    LicenseNumber = d.LicenseNumber,
-                    IsActive = d.IsActive,
-                    CreatedAt = d.CreatedAt,
-                    LastLoginAt = d.LastLoginAt
-                })
-                .FirstOrDefaultAsync();
+            var doctor = await _doctorService.GetCurrentDoctorAsync(doctorId);
 
             if (doctor == null)
             {
@@ -53,22 +38,12 @@ namespace HealthcareAPI.Controllers
         {
             var doctorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             
-            var doctor = await _context.Doctors
-                .FirstOrDefaultAsync(d => d.Id == doctorId && d.IsActive);
+            var stats = await _doctorService.GetDashboardStatsAsync(doctorId);
 
-            if (doctor == null)
+            if (stats == null)
             {
                 return NotFound("Doktor nenalezen");
             }
-
-            // Pro demo účely - v budoucnu lze rozšířit o skutečné statistiky
-            var stats = new
-            {
-                TotalDoctors = await _context.Doctors.CountAsync(d => d.IsActive),
-                MySpecialization = doctor.Specialization,
-                LastLogin = doctor.LastLoginAt,
-                SystemStatus = "Online"
-            };
 
             return Ok(stats);
         }

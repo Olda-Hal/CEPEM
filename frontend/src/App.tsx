@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import TestDashboard from './pages/TestDashboard';
 import './App.css';
 
 function App() {
@@ -18,6 +19,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/tests" 
+              element={
+                <ProtectedRoute>
+                  <TestDashboard />
                 </ProtectedRoute>
               } 
             />

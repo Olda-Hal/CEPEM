@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using HealthcareAPI.Data;
+using HealthcareAPI.Repositories;
+using HealthcareAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +20,14 @@ builder.Services.AddDbContext<HealthcareDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 28))
     ));
 
+// Register repositories and services
+builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
-var secretKey = jwtSettings["SecretKey"];
+var secretKey = jwtSettings["SecretKey"] ?? Environment.GetEnvironmentVariable("JWT_SECRET") ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -31,8 +38,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
+            ValidIssuer = jwtSettings["Issuer"] ?? "test-issuer",
+            ValidAudience = jwtSettings["Audience"] ?? "test-audience",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
@@ -73,3 +80,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Make the implicit Program class public so it can be referenced by tests
+public partial class Program { }

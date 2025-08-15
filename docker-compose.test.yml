@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # Test Services
+  healthcare-api-tests:
+    build:
+      context: ./backend
+      dockerfile: HealthcareAPI.Tests/Dockerfile.test
+    volumes:
+      - ./test-results:/results/healthcare-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Testing
+    restart: "no"
+    networks:
+      - cepem-test-network
+
+  database-api-tests:
+    build:
+      context: ./backend
+      dockerfile: DatabaseAPI.Tests/Dockerfile.test
+    volumes:
+      - ./test-results:/results/database-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Testing
+    restart: "no"
+    networks:
+      - cepem-test-network
+
+  ai-service-tests:
+    build:
+      context: ./backend/AIService
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./test-results:/results/ai-service
+    restart: "no"
+    networks:
+      - cepem-test-network
+
+  frontend-tests:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./test-results:/results/frontend
+    restart: "no"
+    networks:
+      - cepem-test-network
+
+  # Test Results Aggregator
+  test-reporter:
+    image: alpine:latest
+    depends_on:
+      - healthcare-api-tests
+      - database-api-tests
+      - ai-service-tests
+      - frontend-tests
+    volumes:
+      - ./test-results:/results
+      - ./scripts:/scripts
+    command: ["/scripts/generate-test-report.sh"]
+    networks:
+      - cepem-test-network
+
+networks:
+  cepem-test-network:
+    driver: bridge
+
+volumes:
+  test-results:

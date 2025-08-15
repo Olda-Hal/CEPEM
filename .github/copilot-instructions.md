@@ -1,94 +1,80 @@
-<!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
+# CEPEM Medical Platform - AI Agent Instructions
 
-# CEPEM E-commerce Platform - Copilot Instructions
+This is a microservice-based medical platform with .NET APIs, React frontend, and Python AI service. The project uses clean infrastructure setup ready for entity implementation.
 
-Tento projekt je komplexní e-commerce platforma postavená na mikroservice architektuře. Při práci s tímto projektem mějte na paměti následující:
+## Architecture Overview
 
-## Architektura Projektu
+**Three-tier microservice design:**
+- **HealthcareAPI** (port 5000): Main business logic, JWT auth, doctor management
+- **DatabaseAPI** (port 5001): Centralized data access layer (currently empty - clean slate)
+- **AIService** (port 8000): Python FastAPI for medical AI features
+- **Frontend** (port 3000): React 18 + TypeScript with i18n support
+- **MySQL** (port 3306): Shared database for all services
 
-### Frontend (React + TypeScript)
-- Používáme React s TypeScript pro type safety
-- Styling pomocí CSS3 s moderními funkcemi (Grid, Flexbox, CSS variables)
-- Komunikace s backendem přes REST API
-- Responzivní design s mobile-first přístupem
+**Key architectural decision:** DatabaseAPI serves as single point of database access. All data operations should go through this service, not directly to MySQL from other APIs.
 
-### Backend (.NET Mikroservices)
-- Každá mikroservice je nezávislý .NET 8 Web API projekt
-- Entity Framework Core pro práci s databází
-- RESTful API design principy
-- CORS konfigurace pro frontend komunikaci
-- Swagger dokumentace pro každou službu
+## Development Workflow
 
-### Databáze (MySQL)
-- Sdílená MySQL databáze pro všechny mikroservices
-- Entity Framework Code First approach
-- Automatické seeding dat při inicializaci
+**Start everything:** Use `docker compose up --build`
 
-### Docker & DevOps
-- Každá služba má vlastní Dockerfile
-- Docker Compose pro orchestraci všech služeb
-- Multi-stage builds pro optimalizaci
-- Možnost horizontálního škálování
+**Database changes:**
+1. Add entities to `DatabaseAPI/Models/`
+2. Update `DatabaseContext.cs` with DbSet properties
+3. Run migrations via DatabaseAPI endpoints: `/api/migration/apply`
+4. No manual SQL scripts - use Entity Framework Code First
 
-## Coding Standards
+**New API endpoints:**
+- HealthcareAPI: Business logic, authentication
+- DatabaseAPI: Pure CRUD operations, follow pattern in existing controllers
+- Both use `/api/[controller]` routing
 
-### C# (.NET Backend)
-- Používej async/await pro všechny databázové operace
-- Implement proper error handling a logging
-- Dodržuj RESTful konvence (GET, POST, PUT, DELETE)
-- Používej dependency injection
-- Entity Framework konvence pro naming
+## Critical Patterns
 
-### TypeScript/React Frontend
-- Používej TypeScript interfaces pro type definitions
-- Functional components s hooks
-- Proper error handling s try-catch
-- Environment variables pro konfiguraci
-- Semantic HTML a accessibility
+**Frontend API calls:** Use `apiClient` from `utils/api.ts` - handles auth headers automatically
+```typescript
+const response = await apiClient.get<Doctor[]>('/api/doctors');
+```
 
-### Docker
-- Multi-stage builds pro production optimalizaci
-- Proper layer caching pro rychlejší builds
-- Health checks pro služby
-- Environment variable konfigurace
+**Authentication flow:** JWT tokens stored in localStorage, automatically included in requests
 
-## Konvence
+**CORS setup:** All APIs configured for `http://localhost:3000` and `http://frontend:3000`
 
-### API Endpointy
-- `/api/[controller]` pro všechny controllers
-- RESTful resource naming (plural nouns)
-- Consistent response formats
-- Proper HTTP status codes
+**Docker networking:** Services communicate via container names (e.g., `mysql`, `healthcare-api`)
 
-### Databáze
-- PascalCase pro tabulky a sloupce (C# konvence)
-- Proper foreign key relationships
-- Index optimalizace pro často používané queries
+## Entity Framework Conventions
 
-### Naming Conventions
-- PascalCase pro C# classes, methods, properties
-- camelCase pro TypeScript/JavaScript variables, functions
-- kebab-case pro CSS classes
-- SCREAMING_SNAKE_CASE pro environment variables
+**DatabaseAPI is intentionally empty** - clean infrastructure waiting for your entities:
+- Add models to `Models/` folder
+- Configure in `DatabaseContext.OnModelCreating()`
+- Use PascalCase for C# entities (follows EF conventions)
+- All database access should go through DatabaseAPI, not direct EF calls from other services
 
-## Při přidávání nových funkcí:
+## Frontend Structure
 
-1. **Nová mikroservice**: Vytvořte novou složku v `backend/`, přidejte Dockerfile, aktualizujte docker-compose.yml
-2. **Nové API endpointy**: Dodržujte RESTful konvence a přidejte je do API Gateway
-3. **Databázové změny**: Používejte Entity Framework migrační systém
-4. **Frontend komponenty**: Vytvářejte reusable, typed components
-5. **Styling**: Používejte existing CSS variables a design patterns
+**TypeScript interfaces:** Define in `types/index.ts`, follow existing `Doctor` pattern
+**i18n system:** Active with Czech/English support, use `t()` function for all text
+**State management:** React Context for auth (`AuthContext.tsx`), hooks for other state
 
-## Security Considerations
-- Validace všech vstupů
-- Proper CORS konfigurace
-- Environment variables pro citlivé informace
-- SQL injection protection přes Entity Framework
+## Service Communication
 
-## Performance
-- Lazy loading pro Entity Framework
-- React component optimization (memo, useMemo, useCallback)
-- Docker image optimization
-- Database indexing
+**HealthcareAPI → DatabaseAPI:** HTTP calls for data operations
+**Frontend → HealthcareAPI:** Authentication, business logic
+**Frontend → DatabaseAPI:** Direct data access (if needed)
+**AIService:** Independent, called via HTTP from frontend/other services
 
-Vždy myslěte na škálovatelnost, udržovatelnost a bezpečnost při implementaci nových funkcí.
+## Environment Configuration
+
+Critical environment variables in `docker-compose.yml`:
+- JWT settings in HealthcareAPI
+- Database connection strings (note: different passwords for different services)
+- CORS origins for all APIs
+
+## Critical Rules
+- Always write everything in English.
+- Do not add useless comments. most of the code is self-explanatory.
+- NEVER add any methods or functions that were not explicitly requested.
+- Follow the established code style and conventions.
+- Never add useless readme files or documentation. Use existing files. Always write only the essential information.
+- Never use emojis in code comments or documentation.
+- In APIs with ASP.NET always use the Controller, Service, Repository pattern.
+- Use the existing API endpoints for database operations, do not create new ones unless necessary.

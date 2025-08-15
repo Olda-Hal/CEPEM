@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { DashboardStats } from '../types';
 import { apiClient } from '../utils/api';
@@ -154,6 +155,16 @@ export const DashboardPage: React.FC = () => {
                 <button className="action-button" disabled>
                   {t('dashboard.comingSoon')}
                 </button>
+              </div>
+              
+              <div className="action-card">
+                <h4>{t('testDashboard.title')}</h4>
+                <p>{t('testDashboard.description')}</p>
+                <Link to="/tests">
+                  <button className="action-button">
+                    View Tests
+                  </button>
+                </Link>
               </div>
               
               <div className="action-card">

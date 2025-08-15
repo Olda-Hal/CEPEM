@@ -61,5 +61,24 @@
     "czech": "Čeština",
     "english": "English",
     "defaultName": "John"
+  },
+  "testDashboard": {
+    "title": "Test Dashboard",
+    "liveStatus": "Live Status",
+    "lastUpdated": "Last Updated",
+    "testResultsPath": "Test Results Path",
+    "testSummary": "Test Summary",
+    "status": "Status",
+    "files": "Files",
+    "duration": "Duration",
+    "tests": "Tests",
+    "coverage": "Coverage",
+    "details": "Details",
+    "testFiles": "Test Files",
+    "viewCoverage": "View Coverage",
+    "coverageReport": "Coverage Report",
+    "autoRefresh": "Auto Refresh",
+    "refresh": "Refresh",
+    "description": "View test results and coverage reports"
   }
 }

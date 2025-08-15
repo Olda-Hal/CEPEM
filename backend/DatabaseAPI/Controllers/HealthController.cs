@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using DatabaseAPI.Models;
 
 namespace DatabaseAPI.Controllers;
 
@@ -7,9 +8,9 @@ namespace DatabaseAPI.Controllers;
 public class HealthController : ControllerBase
 {
     [HttpGet]
-    public IActionResult GetHealth()
+    public ActionResult<HealthResponse> GetHealth()
     {
-        return Ok(new
+        return Ok(new HealthResponse
         {
             Status = "Healthy",
             Service = "Database API",
