@@ -18,7 +18,16 @@ namespace HealthcareAPI.Middleware
         public async Task InvokeAsync(HttpContext context, IActivityLogService activityLogService)
         {
             var action = context.Request.Path.ToString();
-            var service = "HealthcareAPI"; // Or get it from configuration
+            var service = "HealthcareAPI";
+
+            // Skip logging for activity logs endpoints to prevent infinite loops and spam
+            if (action.Contains("/api/activitylogs", StringComparison.OrdinalIgnoreCase) ||
+                action.Contains("/health", StringComparison.OrdinalIgnoreCase) ||
+                action.Contains("/swagger", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
 
             var log = new ActivityLog
             {

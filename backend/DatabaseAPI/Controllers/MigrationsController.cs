@@ -99,4 +99,25 @@ public class MigrationsController : ControllerBase
             return StatusCode(500, new { Error = "Failed to check database connection", Details = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Create database from current Entity Framework models
+    /// </summary>
+    [HttpPost("ensure-created")]
+    public async Task<IActionResult> EnsureDatabaseCreated()
+    {
+        try
+        {
+            await _migrationService.EnsureDatabaseCreatedAsync();
+            return Ok(new { 
+                Message = "Database structure created from Entity Framework models",
+                Timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to ensure database creation");
+            return StatusCode(500, new { Error = "Failed to ensure database creation", Details = ex.Message });
+        }
+    }
 }

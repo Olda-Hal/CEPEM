@@ -20,7 +20,7 @@ export const DashboardPage: React.FC = () => {
 
   const loadDashboardStats = async () => {
     try {
-      const dashboardStats = await apiClient.get<DashboardStats>('/api/doctors/dashboard-stats');
+      const dashboardStats = await apiClient.get<DashboardStats>('/api/employees/dashboard-stats');
       setStats(dashboardStats);
     } catch (error) {
       console.error(t('errors.loadingStats'), error);
@@ -77,7 +77,7 @@ export const DashboardPage: React.FC = () => {
                 <h3>{t('dashboard.myProfile')}</h3>
                 <p className="stat-value">{user?.firstName} {user?.lastName}</p>
                 <p className="stat-label">
-                  {t('dashboard.specialization', { specialization: user?.specialization || '' })}
+                  {t('dashboard.uid', { uid: user?.uid || '' })}
                 </p>
                 <p className="stat-label">
                   {t('dashboard.email', { email: user?.email || '' })}
@@ -94,7 +94,7 @@ export const DashboardPage: React.FC = () => {
                 ) : (
                   <>
                     <p className="stat-value">
-                      {t('dashboard.totalDoctors', { count: stats?.totalDoctors || 0 })}
+                      {t('dashboard.totalEmployees', { count: stats?.totalEmployees || 0 })}
                     </p>
                     <p className="stat-label">{t('dashboard.totalInSystem')}</p>
                     <p className="stat-label">
@@ -124,7 +124,7 @@ export const DashboardPage: React.FC = () => {
                 <p className="stat-value">{t('dashboard.systemVersion')}</p>
                 <p className="stat-label">{t('dashboard.version')}</p>
                 <p className="stat-label">
-                  {t('dashboard.license', { licenseNumber: user?.licenseNumber || '' })}
+                  {t('dashboard.employeeId', { uid: user?.uid || '' })}
                 </p>
               </div>
             </div>

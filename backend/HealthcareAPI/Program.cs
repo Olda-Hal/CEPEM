@@ -1,9 +1,6 @@
-using HealthcareAPI.Data;
 using HealthcareAPI.Middleware;
-using HealthcareAPI.Repositories;
 using HealthcareAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -14,19 +11,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add Entity Framework
-builder.Services.AddDbContext<HealthcareDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 28))
-    ));
-
 // Register repositories and services
-builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
-builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+
+// Add HttpClient for DatabaseAPI communication
+builder.Services.AddHttpClient("DatabaseAPI", client =>
+{
+    var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] ?? "http://localhost:5001";
+    client.BaseAddress = new Uri(databaseApiUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
@@ -75,14 +72,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Ensure database is created and seeded
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<HealthcareDbContext>();
-    context.Database.EnsureCreated();
-    await context.SeedDataAsync();
-}
 
 app.Run();
 

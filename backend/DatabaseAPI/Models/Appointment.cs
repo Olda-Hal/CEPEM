@@ -7,27 +7,21 @@ public class Appointment
     public int Id { get; set; }
     
     [Required]
-    public string Title { get; set; } = string.Empty;
-    
-    public string? Description { get; set; }
-    
-    [Required]
-    public DateTime ScheduledDateTime { get; set; }
-    
-    public int? DurationMinutes { get; set; } = 30;
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
     
     [Required]
-    public string Status { get; set; } = "Scheduled"; // Scheduled, Completed, Cancelled, NoShow
+    public int EmployeeId { get; set; }
+    public HospitalEmployee HospitalEmployee { get; set; } = null!;
+    
+    public int? EquipmentId { get; set; }
+    public Equipment? Equipment { get; set; }
+    
+    public DateTime StartTime { get; set; }
+    
+    public DateTime EndTime { get; set; }
     
     [Required]
-    public int DoctorId { get; set; }
-    public Doctor? Doctor { get; set; }
-    
-    [Required]
-    public int PatientId { get; set; }
-    public Patient? Patient { get; set; }
-    
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
-    public DateTime? UpdatedAt { get; set; }
+    public int HospitalId { get; set; }
+    public Hospital Hospital { get; set; } = null!;
 }

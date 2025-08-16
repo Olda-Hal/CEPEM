@@ -18,8 +18,9 @@ namespace HealthcareAPI.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
+            Console.WriteLine("Login attempt received.");
             var loginResponse = await _authService.LoginAsync(request);
-
+            Console.WriteLine("Login response generated.");
             if (loginResponse == null)
             {
                 return Unauthorized("Neplatné přihlašovací údaje");

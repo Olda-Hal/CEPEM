@@ -19,6 +19,9 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
 // Register migration service
 builder.Services.AddScoped<IMigrationService, MigrationService>();
 
+// Register authentication service
+builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
+
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
@@ -66,9 +69,9 @@ using (var scope = app.Services.CreateScope())
         }
         else
         {
-            // Apply migrations (currently empty - ready for future entities)
+            // Apply migrations
             await migrationService.ApplyMigrationsAsync();
-            logger.LogInformation("Database ready - no entities configured yet.");
+            logger.LogInformation("Database ready - migrations applied.");
         }
     }
     catch (Exception ex)

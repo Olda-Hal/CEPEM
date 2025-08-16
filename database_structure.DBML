@@ -1,0 +1,342 @@
+Table Vaccine [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	EventId integer [ not null ]
+	VaccineTypeId integer [ not null ]
+}
+
+Table VaccineType [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table InjuryType [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table Injury [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	EventId integer [ not null ]
+	InjuryTypeId integer [ not null ]
+}
+
+Table Events [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	PatientId integer [ not null ]
+	EventTypeId integer [ not null ]
+	HappenedAt datetime [ not null ]
+	HappenedTo datetime
+	CommentId integer
+}
+
+Table PhoneNumberHistory [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	PhoneNumber varchar [ not null ]
+	PersonId integer [ not null ]
+	used_from datetime [ not null ]
+	used_to datetime [ not null ]
+}
+
+Table EmailHistory [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Email varchar [ not null ]
+	PersonId integer [ not null ]
+	used_from datetime [ not null ]
+	used_to datetime [ not null ]
+}
+
+Table Role [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table UserRoles [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Userid integer [ not null ]
+	Roleid integer [ not null ]
+}
+
+Table Patient [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Personid integer [ not null ]
+	BirthDate date [ not null ]
+	InsuranceNumber integer [ not null ]
+	Commentid integer
+	Alive boolean [ not null ]
+}
+
+Table Drugs [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table DrugCategory [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar
+}
+
+Table DrugtoDrugCategory [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Categoryid integer
+	Drugid integer [ not null ]
+}
+
+Table DrugUse [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Drugid integer [ not null ]
+	Eventid integer [ not null ]
+}
+
+Table Examination [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	ExaminationTypeid integer [ not null ]
+	Eventid integer [ not null ]
+}
+
+Table ExaminationTypes [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table Comments [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Text text [ not null ]
+}
+
+Table Symptoms [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table PatientSymptoms [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Symptomid integer [ not null ]
+	Eventid integer [ not null ]
+}
+
+Table Person [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	FirstName varchar [ not null ]
+	LastName varchar [ not null ]
+	TitleBefore varchar
+	TitleAfter varchar
+	UID varchar [ not null ]
+	Active boolean [ not null ]
+	Email varchar [ not null ]
+	PhoneNumber varchar [ not null ]
+	CreatedAt datetime [ not null ]
+	Gender varchar [ not null ]
+	CommentId integer
+}
+
+Table FirstNameHistory [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	FirstName varchar [ not null ]
+	PersonId integer [ not null ]
+	used_from datetime [ not null ]
+	used_to datetime [ not null ]
+}
+
+Table LastNameHistory [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	LastName varchar [ not null ]
+	PersonId integer [ not null ]
+	used_from datetime [ not null ]
+	used_to datetime [ not null ]
+}
+
+Table EventType [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name integer
+}
+
+Table Pregnancy [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	EventId integer [ not null ]
+	Result boolean [ not null ]
+}
+
+Table Hospitals [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Adress varchar
+	Active boolean
+}
+
+Table HospitalEquipment [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	HospitalId integer [ not null ]
+	EquipmentId integer [ not null ]
+}
+
+Table Equipment [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Name varchar [ not null ]
+}
+
+Table Employee [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	PersonId integer [ not null ]
+	PasswordHash longtext [ not null ]
+	Salt longtext [ not null ]
+	LastLoginAt datetime
+}
+
+Table HospitalEmployees [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	HospitalId integer [ not null ]
+	EmployeeId integer [ not null ]
+}
+
+Table Appointments [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	PersonId integer [ not null ]
+	EmployeeId integer [ not null ]
+	EquipmentId integer
+	StartTime datetime [ not null ]
+	EndTIme datetime [ not null ]
+	HospitalId integer [ not null ]
+}
+
+Table ActivityLogs [headercolor: #175e7a] {
+	id integer [ pk, increment, not null, unique ]
+	Timestamp datetime [ not null ]
+	Service varchar [ not null ]
+	Action varchar [ not null ]
+	Details text
+}
+
+Ref fk_UserRoles_roleid_Role {
+	UserRoles.Roleid > Role.id [ delete: no action, update: no action ]
+}
+
+Ref fk_DrugtoDrugCategory_Drugid_Drugs {
+	DrugtoDrugCategory.Drugid > Drugs.id [ delete: no action, update: no action ]
+}
+
+Ref fk_DrugtoDrugCategory_Categoryid_DrugCategory {
+	DrugtoDrugCategory.Categoryid > DrugCategory.id [ delete: no action, update: no action ]
+}
+
+Ref fk_DrugUse_Drugid_Drugs {
+	DrugUse.Drugid > Drugs.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Examination_ExaminationTypeid_ExaminationTypes {
+	Examination.ExaminationTypeid > ExaminationTypes.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Patient_Commentid_Comments {
+	Patient.Commentid - Comments.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Symptoms_id_UserSymptoms {
+	Symptoms.id < PatientSymptoms.Symptomid [ delete: no action, update: no action ]
+}
+
+Ref fk_Person_id_UserRoles {
+	Person.id < UserRoles.Userid [ delete: no action, update: no action ]
+}
+
+Ref fk_Patient_Personid_Person {
+	Patient.Personid - Person.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Person_CommentId_Comments {
+	Person.CommentId - Comments.id [ delete: no action, update: no action ]
+}
+
+Ref fk_FirstNameHistory_PersonId_Person {
+	FirstNameHistory.PersonId > Person.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Person_id_LastNameHistory {
+	Person.id < LastNameHistory.PersonId [ delete: no action, update: no action ]
+}
+
+Ref fk_Person_id_EmailHistory {
+	Person.id < EmailHistory.PersonId [ delete: no action, update: no action ]
+}
+
+Ref fk_Person_id_PhoneNumberHistory {
+	Person.id - PhoneNumberHistory.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Patient_Personid_Events {
+	Patient.Personid < Events.PatientId [ delete: no action, update: no action ]
+}
+
+Ref fk_Events_CommentId_Comments {
+	Events.CommentId - Comments.id [ delete: no action, update: no action ]
+}
+
+Ref fk_EventType_id_Events {
+	EventType.id - Events.EventTypeId [ delete: no action, update: no action ]
+}
+
+Ref fk_DrugUse_Eventid_Events {
+	DrugUse.Eventid - Events.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Examination_Eventid_Events {
+	Examination.Eventid - Events.id [ delete: no action, update: no action ]
+}
+
+Ref fk_PatientSymptoms_Eventid_Events {
+	PatientSymptoms.Eventid - Events.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Pregnancy_EventId_Events {
+	Pregnancy.EventId - Events.id [ delete: no action, update: no action ]
+}
+
+Ref fk_InjuryType_id_Injury {
+	InjuryType.id - Injury.InjuryTypeId [ delete: no action, update: no action ]
+}
+
+Ref fk_Injury_EventId_Events {
+	Injury.EventId - Events.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Vaccine_VaccineTypeId_VaccineType {
+	Vaccine.VaccineTypeId - VaccineType.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Vaccine_EventId_Events {
+	Vaccine.EventId - Events.id [ delete: no action, update: no action ]
+}
+
+Ref fk_HospitalEquipment_HospitalId_Hospitals {
+	HospitalEquipment.HospitalId > Hospitals.id [ delete: no action, update: no action ]
+}
+
+Ref fk_HospitalEquipment_EquipmentId_Equipment {
+	HospitalEquipment.EquipmentId > Equipment.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Employee_PersonId_Person {
+	Employee.PersonId - Person.id [ delete: no action, update: no action ]
+}
+
+Ref fk_HospitalEmployees_HospitalId_Hospitals {
+	HospitalEmployees.HospitalId > Hospitals.id [ delete: no action, update: no action ]
+}
+
+Ref fk_HospitalEmployees_EmployeeId_Employee {
+	HospitalEmployees.EmployeeId > Employee.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Appointments_PersonId_Person {
+	Appointments.PersonId > Person.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Appointments_EmployeeId_HospitalEmployees {
+	Appointments.EmployeeId > HospitalEmployees.id [ delete: no action, update: no action ]
+}
+
+Ref fk_Equipment_id_Appointments {
+	Equipment.id < Appointments.EquipmentId [ delete: no action, update: no action ]
+}
+
+Ref fk_Appointments_HospitalId_Hospitals {
+	Appointments.HospitalId > Hospitals.id [ delete: no action, update: no action ]
+}

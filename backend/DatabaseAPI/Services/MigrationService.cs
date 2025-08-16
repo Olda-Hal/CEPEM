@@ -9,6 +9,7 @@ public interface IMigrationService
     Task<bool> CanConnectAsync();
     Task<IEnumerable<string>> GetPendingMigrationsAsync();
     Task<IEnumerable<string>> GetAppliedMigrationsAsync();
+    Task EnsureDatabaseCreatedAsync();
 }
 
 public class MigrationService : IMigrationService
@@ -85,6 +86,30 @@ public class MigrationService : IMigrationService
         {
             _logger.LogError(ex, "Failed to get applied migrations.");
             return Enumerable.Empty<string>();
+        }
+    }
+
+    public async Task EnsureDatabaseCreatedAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Ensuring database is created from current models...");
+            
+            var created = await _context.Database.EnsureCreatedAsync();
+            
+            if (created)
+            {
+                _logger.LogInformation("Database created successfully from Entity Framework models.");
+            }
+            else
+            {
+                _logger.LogInformation("Database already exists.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to ensure database creation.");
+            throw;
         }
     }
 }

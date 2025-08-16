@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Doctor, AuthContextType, LoginResponse } from '../types';
+import { Employee, AuthContextType, LoginResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { useTranslation } from 'react-i18next';
 
@@ -19,7 +19,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<Doctor | null>(null);
+  const [user, setUser] = useState<Employee | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
@@ -37,8 +37,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadCurrentUser = async () => {
     try {
-      const doctor = await apiClient.get<Doctor>('/api/doctors/me');
-      setUser(doctor);
+      const employee = await apiClient.get<Employee>('/api/employees/me');
+      setUser(employee);
     } catch (error) {
       console.error(t('errors.loadingUser'), error);
       logout();

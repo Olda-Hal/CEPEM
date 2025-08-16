@@ -10,6 +10,19 @@ export interface Doctor {
   lastLoginAt?: string;
 }
 
+export interface Employee {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  uid: string;
+  active: boolean;
+  lastLoginAt?: string;
+  fullName: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -23,14 +36,13 @@ export interface LoginResponse {
 }
 
 export interface DashboardStats {
-  totalDoctors: number;
-  mySpecialization: string;
+  totalEmployees: number;
   lastLogin?: string;
   systemStatus: string;
 }
 
 export interface AuthContextType {
-  user: Doctor | null;
+  user: Employee | null;
   token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;

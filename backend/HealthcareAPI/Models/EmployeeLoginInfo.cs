@@ -1,6 +1,6 @@
 namespace HealthcareAPI.Models
 {
-    public class Doctor
+    public class EmployeeLoginInfo
     {
         public int Id { get; set; }
         public string FirstName { get; set; } = string.Empty;
@@ -8,12 +8,12 @@ namespace HealthcareAPI.Models
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public string Salt { get; set; } = string.Empty;
-        public string Specialization { get; set; } = string.Empty;
-        public string LicenseNumber { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool Active { get; set; }
         public DateTime? LastLoginAt { get; set; }
+        public string UID { get; set; } = string.Empty;
+        public string? TitleBefore { get; set; }
+        public string? TitleAfter { get; set; }
         
-        public string FullName => $"{FirstName} {LastName}";
+        public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();
     }
 }

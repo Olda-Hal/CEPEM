@@ -17,13 +17,14 @@ const mockUser = {
   firstName: 'John',
   lastName: 'Doe',
   email: 'john.doe@example.com',
-  specialization: 'Cardiology',
-  licenseNumber: 'MD12345'
+  uid: 'EMP001',
+  active: true,
+  fullName: 'John Doe'
 };
 
 // Mock dashboard stats
 const mockStats = {
-  totalDoctors: 5,
+  totalEmployees: 5,
   systemStatus: 'Active',
   lastLogin: '2024-01-15T10:30:00Z'
 };
