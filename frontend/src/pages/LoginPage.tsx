@@ -23,10 +23,10 @@ export const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
 
-    const success = await login(email, password);
+    const result = await login(email, password);
     
-    if (!success) {
-      setError(t('login.invalidCredentials'));
+    if (!result.success) {
+      setError(result.error || t('login.invalidCredentials'));
     }
     
     setLoading(false);

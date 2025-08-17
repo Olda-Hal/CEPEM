@@ -16,11 +16,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // Add HttpClient for DatabaseAPI communication
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
-    var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] ?? "http://localhost:5001";
+    var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] ?? "http://database-api:5001";
     client.BaseAddress = new Uri(databaseApiUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });

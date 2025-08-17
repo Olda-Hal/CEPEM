@@ -5,6 +5,7 @@ namespace HealthcareAPI.Models
         public string Token { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
-        public string Specialization { get; set; } = string.Empty;
+        public DateTime? PasswordExpiration { get; set; }
+        public bool RequiresPasswordChange { get; set; }
     }
 }

@@ -1,0 +1,43 @@
+namespace DatabaseAPI.APIModels
+{
+    public class LoginRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public enum AuthenticationResult
+    {
+        Success,
+        InvalidCredentials,
+        AccountDeactivated,
+        UserNotFound
+    }
+
+    public class AuthenticationResponse
+    {
+        public AuthenticationResult Result { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public EmployeeAuthInfo? EmployeeInfo { get; set; }
+    }
+
+    public class EmployeeAuthInfo
+    {
+        public int EmployeeId { get; set; }
+        public int PersonId { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
+        public string Salt { get; set; } = string.Empty;
+        public bool Active { get; set; }
+        public string UID { get; set; } = string.Empty;
+        public string? TitleBefore { get; set; }
+        public string? TitleAfter { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        public DateTime? PasswordExpiration { get; set; }
+        public List<string> Roles { get; set; } = new List<string>();
+        
+        public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();
+    }
+}

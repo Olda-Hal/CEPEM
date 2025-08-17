@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using DatabaseAPI.Models;
+using DatabaseAPI.APIModels;
 
 namespace DatabaseAPI.Controllers;
 

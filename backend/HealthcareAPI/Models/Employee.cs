@@ -11,6 +11,7 @@ namespace HealthcareAPI.Models
         public string UID { get; set; } = string.Empty;
         public bool Active { get; set; } = true;
         public DateTime? LastLoginAt { get; set; }
+        public List<string> Roles { get; set; } = new List<string>();
         
         public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();
     }

@@ -26,7 +26,7 @@ namespace HealthcareAPI.Services
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    var employeeAuthInfo = JsonSerializer.Deserialize<EmployeeAuthInfo>(responseContent, options);
+                    var employeeAuthInfo = JsonSerializer.Deserialize<EmployeeApiResponse>(responseContent, options);
                     
                     if (employeeAuthInfo != null)
                     {
@@ -40,7 +40,8 @@ namespace HealthcareAPI.Services
                             TitleAfter = employeeAuthInfo.TitleAfter,
                             UID = employeeAuthInfo.UID,
                             Active = employeeAuthInfo.Active,
-                            LastLoginAt = employeeAuthInfo.LastLoginAt
+                            LastLoginAt = employeeAuthInfo.LastLoginAt,
+                            Roles = employeeAuthInfo.Roles ?? new List<string>()
                         };
                     }
                 }

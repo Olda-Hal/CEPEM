@@ -202,6 +202,9 @@ namespace DatabaseAPI.Migrations
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime>("PasswordExpiration")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("longtext");

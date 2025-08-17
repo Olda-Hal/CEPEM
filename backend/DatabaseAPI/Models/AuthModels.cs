@@ -20,6 +20,7 @@ namespace DatabaseAPI.Models
         public string? TitleBefore { get; set; }
         public string? TitleAfter { get; set; }
         public DateTime? LastLoginAt { get; set; }
+        public DateTime? PasswordExpiration { get; set; }
         
         public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();
     }

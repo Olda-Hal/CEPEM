@@ -21,6 +21,72 @@ export interface Employee {
   active: boolean;
   lastLoginAt?: string;
   fullName: string;
+  passwordExpiration?: string;
+  roles?: string[];
+}
+
+export interface EmployeeListItem {
+  employeeId: number;
+  personId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  uid: string;
+  gender: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  active: boolean;
+  lastLoginAt?: string;
+  passwordExpiration: string;
+  roles: string[];
+  fullName: string;
+}
+
+export interface UpdateEmployeeRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  uid: string;
+  gender: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  active: boolean;
+  roleIds: number[];
+}
+
+export interface UpdateEmployeeResponse {
+  success: boolean;
+  message: string;
+  employee?: EmployeeListItem;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+}
+
+export interface CreateEmployeeRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  uid: string;
+  gender: string;
+  password: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  active: boolean;
+}
+
+export interface CreateEmployeeResponse {
+  employeeId: number;
+  personId: number;
+  email: string;
+  fullName: string;
+  uid: string;
+  active: boolean;
 }
 
 export interface LoginRequest {
@@ -28,11 +94,18 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface LoginResponse {
   token: string;
   email: string;
   fullName: string;
-  specialization: string;
+  passwordExpiration?: string;
+  requiresPasswordChange: boolean;
 }
 
 export interface DashboardStats {
@@ -44,8 +117,11 @@ export interface DashboardStats {
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<{ success: boolean; error?: string }>;
+  createEmployee: (employeeData: CreateEmployeeRequest) => Promise<CreateEmployeeResponse | null>;
   isAuthenticated: boolean;
   loading: boolean;
+  requiresPasswordChange: boolean;
 }

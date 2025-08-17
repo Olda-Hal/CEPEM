@@ -3,8 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { PasswordChangeModal } from '../components/PasswordChangeModal';
+import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
 import { DashboardStats } from '../types';
 import { apiClient } from '../utils/api';
+import { isAdmin } from '../utils/roles';
 import './DashboardPage.css';
 
 export const DashboardPage: React.FC = () => {
@@ -12,6 +15,8 @@ export const DashboardPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showCreateEmployeeModal, setShowCreateEmployeeModal] = useState(false);
 
   useEffect(() => {
     loadDashboardStats();
@@ -38,6 +43,10 @@ export const DashboardPage: React.FC = () => {
   const getCurrentTime = () => {
     const locale = i18n.language === 'cs' ? 'cs-CZ' : 'en-US';
     return new Date().toLocaleString(locale);
+  };
+
+  const handleEmployeeCreated = () => {
+    loadDashboardStats();
   };
 
   return (
@@ -85,25 +94,27 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-content">
-                <h3>{t('dashboard.systemStats')}</h3>
-                {loading ? (
-                  <p className="stat-value">{t('dashboard.loading')}</p>
-                ) : (
-                  <>
-                    <p className="stat-value">
-                      {t('dashboard.totalEmployees', { count: stats?.totalEmployees || 0 })}
-                    </p>
-                    <p className="stat-label">{t('dashboard.totalInSystem')}</p>
-                    <p className="stat-label">
-                      {t('dashboard.status', { status: stats?.systemStatus || '' })}
-                    </p>
-                  </>
-                )}
+            {isAdmin(user) && (
+              <div className="stat-card admin-stat">
+                <div className="stat-icon">📊</div>
+                <div className="stat-content">
+                  <h3>{t('dashboard.systemStats')}</h3>
+                  {loading ? (
+                    <p className="stat-value">{t('dashboard.loading')}</p>
+                  ) : (
+                    <>
+                      <p className="stat-value">
+                        {t('dashboard.totalEmployees', { count: stats?.totalEmployees || 0 })}
+                      </p>
+                      <p className="stat-label">{t('dashboard.totalInSystem')}</p>
+                      <p className="stat-label">
+                        {t('dashboard.status', { status: stats?.systemStatus || '' })}
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="stat-card">
               <div className="stat-icon">🕐</div>
@@ -157,27 +168,69 @@ export const DashboardPage: React.FC = () => {
                 </button>
               </div>
               
-              <div className="action-card">
-                <h4>{t('testDashboard.title')}</h4>
-                <p>{t('testDashboard.description')}</p>
-                <Link to="/tests">
-                  <button className="action-button">
-                    View Tests
-                  </button>
-                </Link>
-              </div>
+              {isAdmin(user) && (
+                <div className="action-card admin-action">
+                  <h4>{t('testDashboard.title')}</h4>
+                  <p>{t('testDashboard.description')}</p>
+                  <Link to="/tests">
+                    <button className="action-button admin-button">
+                      View Tests
+                    </button>
+                  </Link>
+                </div>
+              )}
               
               <div className="action-card">
                 <h4>{t('dashboard.settings')}</h4>
                 <p>{t('dashboard.settingsDesc')}</p>
-                <button className="action-button" disabled>
-                  {t('dashboard.comingSoon')}
+                <button 
+                  className="action-button"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  {t('passwordChange.title')}
                 </button>
               </div>
+
+              {isAdmin(user) && (
+                <div className="action-card admin-action">
+                  <h4>{t('createEmployee.title')}</h4>
+                  <p>{t('createEmployee.description')}</p>
+                  <button 
+                    className="action-button admin-button"
+                    onClick={() => setShowCreateEmployeeModal(true)}
+                  >
+                    {t('createEmployee.buttonText')}
+                  </button>
+                </div>
+              )}
+
+              {isAdmin(user) && (
+                <div className="action-card admin-action">
+                  <h4>{t('admin.employeeManagement')}</h4>
+                  <p>{t('admin.employeeManagementDescription')}</p>
+                  <Link to="/admin/employees">
+                    <button className="action-button admin-button">
+                      {t('admin.employeeManagement')}
+                    </button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
+
+      <PasswordChangeModal 
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        isForced={false}
+      />
+
+      <CreateEmployeeModal
+        isOpen={showCreateEmployeeModal}
+        onClose={() => setShowCreateEmployeeModal(false)}
+        onEmployeeCreated={handleEmployeeCreated}
+      />
     </div>
   );
 };

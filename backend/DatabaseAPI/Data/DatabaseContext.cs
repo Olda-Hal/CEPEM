@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using DatabaseAPI.Models;
+using DatabaseAPI.DatabaseModels;
 
 namespace DatabaseAPI.Data;
 

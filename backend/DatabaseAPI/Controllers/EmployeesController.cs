@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using DatabaseAPI.Models;
+using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.APIModels;
 using DatabaseAPI.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,22 +22,9 @@ namespace DatabaseAPI.Controllers
         {
             var employee = await _context.Employees
                 .Include(e => e.Person)
+                .ThenInclude(p => p.UserRoles)
+                .ThenInclude(ur => ur.Role)
                 .Where(e => e.Id == id && e.Person.Active)
-                .Select(e => new EmployeeAuthInfo
-                {
-                    EmployeeId = e.Id,
-                    PersonId = e.PersonId,
-                    FirstName = e.Person.FirstName,
-                    LastName = e.Person.LastName,
-                    Email = e.Person.Email,
-                    PasswordHash = "", // Don't return password hash
-                    Salt = "", // Don't return salt
-                    Active = e.Person.Active,
-                    UID = e.Person.UID,
-                    TitleBefore = e.Person.TitleBefore,
-                    TitleAfter = e.Person.TitleAfter,
-                    LastLoginAt = e.LastLoginAt
-                })
                 .FirstOrDefaultAsync();
 
             if (employee == null)
@@ -44,7 +32,24 @@ namespace DatabaseAPI.Controllers
                 return NotFound("Employee not found");
             }
 
-            return Ok(employee);
+            var employeeAuthInfo = new EmployeeAuthInfo
+            {
+                EmployeeId = employee.Id,
+                PersonId = employee.PersonId,
+                FirstName = employee.Person.FirstName,
+                LastName = employee.Person.LastName,
+                Email = employee.Person.Email,
+                PasswordHash = "", // Don't return password hash
+                Salt = "", // Don't return salt
+                Active = employee.Person.Active,
+                UID = employee.Person.UID,
+                TitleBefore = employee.Person.TitleBefore,
+                TitleAfter = employee.Person.TitleAfter,
+                LastLoginAt = employee.LastLoginAt,
+                Roles = employee.Person.UserRoles.Select(ur => ur.Role.Name).ToList()
+            };
+
+            return Ok(employeeAuthInfo);
         }
 
         [HttpGet("dashboard-stats/{employeeId}")]
