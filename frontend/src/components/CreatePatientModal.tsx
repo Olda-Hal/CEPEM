@@ -30,6 +30,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatingUid, setGeneratingUid] = useState(false);
   
   const [patientData, setPatientData] = useState<CreatePatientData>({
     firstName: '',
@@ -45,6 +46,57 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Partial<CreatePatientData>>({});
+
+  // Generate unique UID when modal opens
+  React.useEffect(() => {
+    if (isOpen && !patientData.uid) {
+      generateUniqueUid();
+    }
+  }, [isOpen]);
+
+  const generateRandomUid = (): string => {
+    // Generate 10-digit UID in format YYYYMMXXXX where YYYY is year, MM is month, XXXX is random
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return year + month + randomPart;
+  };
+
+  const checkUidExists = async (uid: string): Promise<boolean> => {
+    try {
+      // Search for patients with this UID
+      const response = await apiClient.get(`/api/patients/search?search=${uid}&limit=1`);
+      return (response as any)?.patients && (response as any).patients.length > 0;
+    } catch (error) {
+      console.error('Error checking UID:', error);
+      return false; // If we can't check, assume it doesn't exist
+    }
+  };
+
+  const generateUniqueUid = async () => {
+    setGeneratingUid(true);
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      const newUid = generateRandomUid();
+      const exists = await checkUidExists(newUid);
+      
+      if (!exists) {
+        setPatientData(prev => ({ ...prev, uid: newUid }));
+        setGeneratingUid(false);
+        return;
+      }
+      
+      attempts++;
+    }
+
+    // If we can't find a unique UID after max attempts, generate a longer one
+    const fallbackUid = Date.now().toString().slice(-10);
+    setPatientData(prev => ({ ...prev, uid: fallbackUid }));
+    setGeneratingUid(false);
+  };
 
   const handleInputChange = (field: keyof CreatePatientData, value: string) => {
     setPatientData(prev => ({ ...prev, [field]: value }));
@@ -126,6 +178,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
         uid: ''
       });
       
+      // Generate new UID for next patient
+      setTimeout(() => generateUniqueUid(), 100);
+      
       onPatientCreated();
       onClose();
     } catch (error: any) {
@@ -161,7 +216,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="create-patient-form">
-          <div className="form-grid">
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="titleBefore">{t('patients.titleBefore')}</label>
               <input
@@ -213,20 +268,33 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
                 disabled={loading}
               />
             </div>
+          </div>
 
-            <div className="form-group required">
+          <div className="form-row">
+            <div className="form-group required uid-field">
               <label htmlFor="uid">{t('patients.uid')} *</label>
-              <input
-                id="uid"
-                type="text"
-                value={patientData.uid}
-                onChange={(e) => handleInputChange('uid', e.target.value)}
-                className={errors.uid ? 'error' : ''}
-                placeholder="1234567890"
-                maxLength={10}
-                disabled={loading}
-                required
-              />
+              <div className="uid-input-group">
+                <input
+                  id="uid"
+                  type="text"
+                  value={patientData.uid}
+                  onChange={(e) => handleInputChange('uid', e.target.value)}
+                  className={errors.uid ? 'error' : ''}
+                  placeholder="1234567890"
+                  maxLength={10}
+                  disabled={loading || generatingUid}
+                  required
+                />
+                <button
+                  type="button"
+                  className="regenerate-uid-button"
+                  onClick={generateUniqueUid}
+                  disabled={loading || generatingUid}
+                  title={t('patients.regenerateUid')}
+                >
+                  {generatingUid ? '⏳' : '🔄'}
+                </button>
+              </div>
               {errors.uid && <span className="error-text">{errors.uid}</span>}
             </div>
 
@@ -272,7 +340,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
               />
               {errors.insuranceNumber && <span className="error-text">{errors.insuranceNumber}</span>}
             </div>
+          </div>
 
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="phoneNumber">{t('patients.phone')}</label>
               <input

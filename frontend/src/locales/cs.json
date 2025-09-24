@@ -184,7 +184,8 @@
       "emailInvalid": "Neplatný formát emailové adresy",
       "phoneInvalid": "Neplatný formát telefonního čísla",
       "createFailed": "Nepodařilo se vytvořit pacienta"
-    }
+    },
+    "regenerateUid": "Vygenerovat nové UID"
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

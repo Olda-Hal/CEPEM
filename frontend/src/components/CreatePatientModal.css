@@ -1,17 +1,24 @@
 .create-patient-modal {
-  max-width: 800px;
-  max-height: 90vh;
+  max-width: 1100px;
+  width: 95vw;
+  max-height: 95vh;
   overflow-y: auto;
+  margin: 10px;
+  min-height: 750px;
 }
 
 .create-patient-form {
-  padding: 0;
+  padding: 0 1.5rem;
 }
 
-.form-grid {
+.form-row {
   display: grid;
-  grid-template-columns: 1fr 2fr 2fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.form-row:last-child {
   margin-bottom: 1.5rem;
 }
 
@@ -34,7 +41,7 @@
 
 .form-group input,
 .form-group select {
-  padding: 0.75rem;
+  padding: 0.6rem;
   border: 2px solid #e1e8ed;
   border-radius: 8px;
   font-size: 1rem;
@@ -66,6 +73,93 @@
   margin-top: 0.25rem;
 }
 
+.uid-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.uid-input-group input {
+  flex: 1;
+  min-width: 180px; /* Enough width for 10-digit UID */
+  font-family: monospace; /* Better for numeric display */
+  letter-spacing: 1px;
+}
+
+.regenerate-uid-button {
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regenerate-uid-button:hover:not(:disabled) {
+  background-color: #e9ecef;
+  border-color: #3498db;
+}
+
+.regenerate-uid-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Modal header styling */
+.modal-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 1.5rem;
+  border-bottom: 1px solid #e1e8ed;
+  margin: -1.5rem -1.5rem 1.2rem -1.5rem;
+  position: relative;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #7f8c8d;
+  padding: 0.25rem;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.close-button:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  color: #2c3e50;
+}
+
+.close-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .error-message {
   background-color: #fdf2f2;
   border: 1px solid #e74c3c;
@@ -80,8 +174,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding-top: 1.5rem;
+  padding: 1.5rem 1.5rem 1.5rem;
   border-top: 1px solid #e1e8ed;
+  margin: 0 -1.5rem -1.5rem;
 }
 
 .button {
@@ -125,7 +220,7 @@
     margin: 1rem;
   }
   
-  .form-grid {
+  .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
@@ -136,11 +231,5 @@
   
   .button {
     width: 100%;
-  }
-}
-
-@media (max-width: 1024px) and (min-width: 769px) {
-  .form-grid {
-    grid-template-columns: 1fr 1fr;
   }
 }

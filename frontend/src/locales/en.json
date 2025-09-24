@@ -177,7 +177,8 @@
       "emailInvalid": "Invalid email format",
       "phoneInvalid": "Invalid phone number format",
       "createFailed": "Failed to create patient"
-    }
+    },
+    "regenerateUid": "Generate new UID"
   },
   "admin": {
     "employeeManagement": "Employee Management",
