@@ -17,6 +17,8 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCreateEmployeeModal, setShowCreateEmployeeModal] = useState(false);
+  const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
+  const [isActionsExpanded, setIsActionsExpanded] = useState(true);
 
   useEffect(() => {
     loadDashboardStats();
@@ -74,148 +76,165 @@ export const DashboardPage: React.FC = () => {
 
       <main className="dashboard-main">
         <div className="dashboard-content">
-          <div className="welcome-section">
-            <h2>{t('dashboard.systemOverview')}</h2>
-            <p>{t('dashboard.welcomeMessage')}</p>
+          <div className="collapsible-section">
+            <div className="section-header" onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}>
+              <h2>{t('dashboard.systemOverview')}</h2>
+              <button className="collapse-button">
+                {isOverviewExpanded ? '▼' : '▶'}
+              </button>
+            </div>
+            {isOverviewExpanded && (
+              <div className="section-content">
+                <p>{t('dashboard.welcomeMessage')}</p>
+                <div className="stats-grid">
+                  <div className="stat-card">
+                    <div className="stat-icon">👨‍⚕️</div>
+                    <div className="stat-content">
+                      <h3>{t('dashboard.myProfile')}</h3>
+                      <p className="stat-value">{user?.firstName} {user?.lastName}</p>
+                      <p className="stat-label">
+                        {t('dashboard.uid', { uid: user?.uid || '' })}
+                      </p>
+                      <p className="stat-label">
+                        {t('dashboard.email', { email: user?.email || '' })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isAdmin(user) && (
+                    <div className="stat-card admin-stat">
+                      <div className="stat-icon">📊</div>
+                      <div className="stat-content">
+                        <h3>{t('dashboard.systemStats')}</h3>
+                        {loading ? (
+                          <p className="stat-value">{t('dashboard.loading')}</p>
+                        ) : (
+                          <>
+                            <p className="stat-value">
+                              {t('dashboard.totalEmployees', { count: stats?.totalEmployees || 0 })}
+                            </p>
+                            <p className="stat-label">{t('dashboard.totalInSystem')}</p>
+                            <p className="stat-label">
+                              {t('dashboard.status', { status: stats?.systemStatus || '' })}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="stat-card">
+                    <div className="stat-icon">🕐</div>
+                    <div className="stat-content">
+                      <h3>{t('dashboard.timeAndLogin')}</h3>
+                      <p className="stat-value">{getCurrentTime()}</p>
+                      <p className="stat-label">{t('dashboard.currentTime')}</p>
+                      <p className="stat-label">
+                        {t('dashboard.lastLogin', { time: formatDate(stats?.lastLogin) })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-icon">🏥</div>
+                    <div className="stat-content">
+                      <h3>{t('dashboard.systemInfo')}</h3>
+                      <p className="stat-value">{t('dashboard.systemVersion')}</p>
+                      <p className="stat-label">{t('dashboard.version')}</p>
+                      <p className="stat-label">
+                        {t('dashboard.employeeId', { uid: user?.uid || '' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">👨‍⚕️</div>
-              <div className="stat-content">
-                <h3>{t('dashboard.myProfile')}</h3>
-                <p className="stat-value">{user?.firstName} {user?.lastName}</p>
-                <p className="stat-label">
-                  {t('dashboard.uid', { uid: user?.uid || '' })}
-                </p>
-                <p className="stat-label">
-                  {t('dashboard.email', { email: user?.email || '' })}
-                </p>
-              </div>
+          <div className="collapsible-section">
+            <div className="section-header" onClick={() => setIsActionsExpanded(!isActionsExpanded)}>
+              <h3>{t('dashboard.quickActions')}</h3>
+              <button className="collapse-button">
+                {isActionsExpanded ? '▼' : '▶'}
+              </button>
             </div>
+            {isActionsExpanded && (
+              <div className="section-content">
+                <div className="actions-grid">
+                  <div className="action-card">
+                    <h4>{t('dashboard.patients')}</h4>
+                    <p>{t('dashboard.patientsDesc')}</p>
+                    <button className="action-button" disabled>
+                      {t('dashboard.comingSoon')}
+                    </button>
+                  </div>
+                  
+                  <div className="action-card">
+                    <h4>{t('dashboard.appointments')}</h4>
+                    <p>{t('dashboard.appointmentsDesc')}</p>
+                    <button className="action-button" disabled>
+                      {t('dashboard.comingSoon')}
+                    </button>
+                  </div>
+                  
+                  <div className="action-card">
+                    <h4>{t('dashboard.reports')}</h4>
+                    <p>{t('dashboard.reportsDesc')}</p>
+                    <button className="action-button" disabled>
+                      {t('dashboard.comingSoon')}
+                    </button>
+                  </div>
+                  
+                  {isAdmin(user) && (
+                    <div className="action-card admin-action">
+                      <h4>{t('testDashboard.title')}</h4>
+                      <p>{t('testDashboard.description')}</p>
+                      <Link to="/tests">
+                        <button className="action-button admin-button">
+                          View Tests
+                        </button>
+                      </Link>
+                    </div>
+                  )}
+                  
+                  <div className="action-card">
+                    <h4>{t('dashboard.settings')}</h4>
+                    <p>{t('dashboard.settingsDesc')}</p>
+                    <button 
+                      className="action-button"
+                      onClick={() => setShowPasswordModal(true)}
+                    >
+                      {t('passwordChange.title')}
+                    </button>
+                  </div>
 
-            {isAdmin(user) && (
-              <div className="stat-card admin-stat">
-                <div className="stat-icon">📊</div>
-                <div className="stat-content">
-                  <h3>{t('dashboard.systemStats')}</h3>
-                  {loading ? (
-                    <p className="stat-value">{t('dashboard.loading')}</p>
-                  ) : (
-                    <>
-                      <p className="stat-value">
-                        {t('dashboard.totalEmployees', { count: stats?.totalEmployees || 0 })}
-                      </p>
-                      <p className="stat-label">{t('dashboard.totalInSystem')}</p>
-                      <p className="stat-label">
-                        {t('dashboard.status', { status: stats?.systemStatus || '' })}
-                      </p>
-                    </>
+                  {isAdmin(user) && (
+                    <div className="action-card admin-action">
+                      <h4>{t('createEmployee.title')}</h4>
+                      <p>{t('createEmployee.description')}</p>
+                      <button 
+                        className="action-button admin-button"
+                        onClick={() => setShowCreateEmployeeModal(true)}
+                      >
+                        {t('createEmployee.buttonText')}
+                      </button>
+                    </div>
+                  )}
+
+                  {isAdmin(user) && (
+                    <div className="action-card admin-action">
+                      <h4>{t('admin.employeeManagement')}</h4>
+                      <p>{t('admin.employeeManagementDescription')}</p>
+                      <Link to="/admin/employees">
+                        <button className="action-button admin-button">
+                          {t('admin.employeeManagement')}
+                        </button>
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>
             )}
-
-            <div className="stat-card">
-              <div className="stat-icon">🕐</div>
-              <div className="stat-content">
-                <h3>{t('dashboard.timeAndLogin')}</h3>
-                <p className="stat-value">{getCurrentTime()}</p>
-                <p className="stat-label">{t('dashboard.currentTime')}</p>
-                <p className="stat-label">
-                  {t('dashboard.lastLogin', { time: formatDate(stats?.lastLogin) })}
-                </p>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">🏥</div>
-              <div className="stat-content">
-                <h3>{t('dashboard.systemInfo')}</h3>
-                <p className="stat-value">{t('dashboard.systemVersion')}</p>
-                <p className="stat-label">{t('dashboard.version')}</p>
-                <p className="stat-label">
-                  {t('dashboard.employeeId', { uid: user?.uid || '' })}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="actions-section">
-            <h3>{t('dashboard.quickActions')}</h3>
-            <div className="actions-grid">
-              <div className="action-card">
-                <h4>{t('dashboard.patients')}</h4>
-                <p>{t('dashboard.patientsDesc')}</p>
-                <button className="action-button" disabled>
-                  {t('dashboard.comingSoon')}
-                </button>
-              </div>
-              
-              <div className="action-card">
-                <h4>{t('dashboard.appointments')}</h4>
-                <p>{t('dashboard.appointmentsDesc')}</p>
-                <button className="action-button" disabled>
-                  {t('dashboard.comingSoon')}
-                </button>
-              </div>
-              
-              <div className="action-card">
-                <h4>{t('dashboard.reports')}</h4>
-                <p>{t('dashboard.reportsDesc')}</p>
-                <button className="action-button" disabled>
-                  {t('dashboard.comingSoon')}
-                </button>
-              </div>
-              
-              {isAdmin(user) && (
-                <div className="action-card admin-action">
-                  <h4>{t('testDashboard.title')}</h4>
-                  <p>{t('testDashboard.description')}</p>
-                  <Link to="/tests">
-                    <button className="action-button admin-button">
-                      View Tests
-                    </button>
-                  </Link>
-                </div>
-              )}
-              
-              <div className="action-card">
-                <h4>{t('dashboard.settings')}</h4>
-                <p>{t('dashboard.settingsDesc')}</p>
-                <button 
-                  className="action-button"
-                  onClick={() => setShowPasswordModal(true)}
-                >
-                  {t('passwordChange.title')}
-                </button>
-              </div>
-
-              {isAdmin(user) && (
-                <div className="action-card admin-action">
-                  <h4>{t('createEmployee.title')}</h4>
-                  <p>{t('createEmployee.description')}</p>
-                  <button 
-                    className="action-button admin-button"
-                    onClick={() => setShowCreateEmployeeModal(true)}
-                  >
-                    {t('createEmployee.buttonText')}
-                  </button>
-                </div>
-              )}
-
-              {isAdmin(user) && (
-                <div className="action-card admin-action">
-                  <h4>{t('admin.employeeManagement')}</h4>
-                  <p>{t('admin.employeeManagementDescription')}</p>
-                  <Link to="/admin/employees">
-                    <button className="action-button admin-button">
-                      {t('admin.employeeManagement')}
-                    </button>
-                  </Link>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </main>
