@@ -34,3 +34,17 @@ public class PatientSearchResponse
     public int TotalCount { get; set; }
     public bool HasMore { get; set; }
 }
+
+public class CreatePatientRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public DateTime BirthDate { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? Email { get; set; }
+    public int InsuranceNumber { get; set; }
+    public string Gender { get; set; } = string.Empty;
+    public string Uid { get; set; } = string.Empty;
+    public string? TitleBefore { get; set; }
+    public string? TitleAfter { get; set; }
+}

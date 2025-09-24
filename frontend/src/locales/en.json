@@ -67,7 +67,9 @@
     "welcome": "Welcome to the system",
     "czech": "Čeština",
     "english": "English",
-    "defaultName": "John"
+    "defaultName": "John",
+    "cancel": "Cancel",
+    "creating": "Creating..."
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -155,7 +157,27 @@
     "female": "Female",
     "viewDetails": "View Details",
     "editPatient": "Edit Patient",
-    "address": "Address"
+    "address": "Address",
+    "addPatient": "Add Patient",
+    "createPatient": "Create Patient",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "titleBefore": "Title Before Name",
+    "titleAfter": "Title After Name",
+    "titleBeforePlaceholder": "e.g. Dr.",
+    "titleAfterPlaceholder": "e.g. PhD.",
+    "errors": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "birthDateRequired": "Birth date is required",
+      "uidRequired": "Patient ID is required",
+      "uidInvalid": "Patient ID must contain 10 digits",
+      "insuranceNumberRequired": "Insurance number is required",
+      "insuranceNumberInvalid": "Insurance number must contain only digits",
+      "emailInvalid": "Invalid email format",
+      "phoneInvalid": "Invalid phone number format",
+      "createFailed": "Failed to create patient"
+    }
   },
   "admin": {
     "employeeManagement": "Employee Management",

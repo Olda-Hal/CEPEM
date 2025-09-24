@@ -61,6 +61,44 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+[HttpPost]
+        public async Task<IActionResult> CreatePatient([FromBody] object createPatientRequest)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                
+                var json = System.Text.Json.JsonSerializer.Serialize(createPatientRequest);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await client.PostAsync("/api/patients", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var jsonDocument = JsonDocument.Parse(responseContent);
+                    return Ok(jsonDocument.RootElement);
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return BadRequest(errorContent);
+                }
+
+                return StatusCode((int)response.StatusCode, "Error creating patient");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating patient");
+                return StatusCode(500, "An error occurred while creating patient");
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPatient(int id)
         {

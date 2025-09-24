@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Patient, PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
+import { CreatePatientModal } from '../components/CreatePatientModal';
 import './PatientsPage.css';
 
 const ITEMS_PER_PAGE = 20;
@@ -15,6 +16,7 @@ export const PatientsPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   const observer = useRef<IntersectionObserver | null>(null);
   const lastPatientElementRef = useRef<HTMLDivElement | null>(null);
@@ -85,12 +87,24 @@ export const PatientsPage: React.FC = () => {
     return new Date(dateString).toLocaleDateString(locale);
   };
 
-
+  const handlePatientCreated = () => {
+    // Refresh the patients list
+    setPage(0);
+    loadPatients(0, searchQuery, true);
+  };
 
   return (
     <div className="patients-container">
       <div className="patients-header">
-        <h1>{t('patients.title')}</h1>
+        <div className="header-top">
+          <h1>{t('patients.title')}</h1>
+          <button 
+            className="add-patient-button"
+            onClick={() => setShowCreateModal(true)}
+          >
+            + {t('patients.addPatient')}
+          </button>
+        </div>
         <div className="search-section">
           <div className="search-bar">
             <input
@@ -212,6 +226,12 @@ export const PatientsPage: React.FC = () => {
           </>
         )}
       </div>
+
+      <CreatePatientModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onPatientCreated={handlePatientCreated}
+      />
     </div>
   );
 };

@@ -72,7 +72,9 @@
     "welcome": "Vítejte v systému",
     "czech": "Čeština",
     "english": "English",
-    "defaultName": "Jan"
+    "defaultName": "Jan",
+    "cancel": "Zrušit",
+    "creating": "Vytváří se..."
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -162,7 +164,27 @@
     "female": "Žena",
     "viewDetails": "Zobrazit detail",
     "editPatient": "Upravit pacienta",
-    "address": "Adresa"
+    "address": "Adresa",
+    "addPatient": "Přidat pacienta",
+    "createPatient": "Vytvořit pacienta",
+    "firstName": "Jméno",
+    "lastName": "Příjmení",
+    "titleBefore": "Titul před jménem",
+    "titleAfter": "Titul za jménem",
+    "titleBeforePlaceholder": "např. MUDr.",
+    "titleAfterPlaceholder": "např. PhD.",
+    "errors": {
+      "firstNameRequired": "Jméno je povinné",
+      "lastNameRequired": "Příjmení je povinné",
+      "birthDateRequired": "Datum narození je povinné",
+      "uidRequired": "ID pacienta je povinné",
+      "uidInvalid": "ID pacienta musí obsahovat 10 číslic",
+      "insuranceNumberRequired": "Číslo pojišťovny je povinné",
+      "insuranceNumberInvalid": "Číslo pojišťovny musí obsahovat pouze číslice",
+      "emailInvalid": "Neplatný formát emailové adresy",
+      "phoneInvalid": "Neplatný formát telefonního čísla",
+      "createFailed": "Nepodařilo se vytvořit pacienta"
+    }
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

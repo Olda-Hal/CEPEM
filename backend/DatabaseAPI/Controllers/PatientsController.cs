@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using DatabaseAPI.Data;
 using DatabaseAPI.APIModels;
+using DatabaseAPI.DatabaseModels;
 
 namespace DatabaseAPI.Controllers
 {
@@ -106,6 +107,74 @@ namespace DatabaseAPI.Controllers
             {
                 _logger.LogError(ex, "Error occurred while searching patients");
                 return StatusCode(500, "An error occurred while searching patients");
+            }
+        }
+
+[HttpPost]
+        public async Task<ActionResult<PatientDto>> CreatePatient([FromBody] CreatePatientRequest request)
+        {
+            try
+            {
+                // First create the Person
+                var person = new Person
+                {
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    Email = request.Email ?? string.Empty,
+                    PhoneNumber = request.PhoneNumber ?? string.Empty,
+                    Gender = request.Gender,
+                    UID = request.Uid,
+                    TitleBefore = request.TitleBefore,
+                    TitleAfter = request.TitleAfter,
+                    CreatedAt = DateTime.UtcNow,
+                    Active = true
+                };
+
+                _context.Persons.Add(person);
+                await _context.SaveChangesAsync();
+
+                // Then create the Patient
+                var patient = new Patient
+                {
+                    PersonId = person.Id,
+                    BirthDate = request.BirthDate,
+                    InsuranceNumber = request.InsuranceNumber,
+                    Alive = true
+                };
+
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+
+                // Load the complete patient with person data
+                var createdPatient = await _context.Patients
+                    .Include(p => p.Person)
+                    .FirstAsync(p => p.Id == patient.Id);
+
+                var patientDto = new PatientDto
+                {
+                    Id = createdPatient.Id,
+                    PersonId = createdPatient.PersonId,
+                    FirstName = createdPatient.Person.FirstName,
+                    LastName = createdPatient.Person.LastName,
+                    BirthDate = createdPatient.BirthDate,
+                    PhoneNumber = createdPatient.Person.PhoneNumber,
+                    Email = createdPatient.Person.Email,
+                    InsuranceNumber = createdPatient.InsuranceNumber,
+                    Gender = createdPatient.Person.Gender,
+                    CreatedAt = createdPatient.Person.CreatedAt,
+                    UID = createdPatient.Person.UID,
+                    TitleBefore = createdPatient.Person.TitleBefore,
+                    TitleAfter = createdPatient.Person.TitleAfter,
+                    Alive = createdPatient.Alive,
+                    FullName = $"{createdPatient.Person.LastName}, {createdPatient.Person.FirstName}"
+                };
+
+                return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patientDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating patient");
+                return StatusCode(500, "An error occurred while creating patient");
             }
         }
 
