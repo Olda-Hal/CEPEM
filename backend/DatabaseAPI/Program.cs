@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 
@@ -30,40 +27,13 @@ builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
 // Register employee management service
 builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
 
-// JWT Authentication Configuration
-var jwtSettings = builder.Configuration.GetSection("JWT");
-var secretKey = jwtSettings["SecretKey"] ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
-var key = Encoding.ASCII.GetBytes(secretKey);
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = true,
-        ValidIssuer = jwtSettings["Issuer"] ?? "healthcare-api",
-        ValidateAudience = true,
-        ValidAudience = jwtSettings["Audience"] ?? "healthcare-app",
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-});
-
-// CORS Configuration
+// CORS Configuration - Only allow HealthcareAPI to call DatabaseAPI
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
+    options.AddPolicy("AllowHealthcareAPI",
         policy =>
         {
-            policy.WithOrigins("http://localhost:3000", "http://frontend:3000")
+            policy.WithOrigins("http://healthcare-api:5000", "http://localhost:5000")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -83,9 +53,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseCors("AllowHealthcareAPI");
 app.MapControllers();
 
 // Apply database migrations

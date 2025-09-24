@@ -11,6 +11,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+
 // Register repositories and services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
@@ -18,13 +21,17 @@ builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 
+// Register the authentication handler
+builder.Services.AddTransient<HealthcareAPI.Handlers.AuthenticationHandler>();
+
 // Add HttpClient for DatabaseAPI communication
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
     var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] ?? "http://database-api:5001";
     client.BaseAddress = new Uri(databaseApiUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
+})
+.AddHttpMessageHandler<HealthcareAPI.Handlers.AuthenticationHandler>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");

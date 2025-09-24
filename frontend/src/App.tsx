@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import TestDashboard from './pages/TestDashboard';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
+import { PatientsPage } from './pages/PatientsPage';
 import './App.css';
 
 function App() {
@@ -36,6 +37,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminEmployeesPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/patients" 
+              element={
+                <ProtectedRoute>
+                  <PatientsPage />
                 </ProtectedRoute>
               } 
             />

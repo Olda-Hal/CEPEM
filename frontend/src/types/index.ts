@@ -114,6 +114,30 @@ export interface DashboardStats {
   systemStatus: string;
 }
 
+export interface Patient {
+  id: number;
+  personId: number;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  phoneNumber?: string;
+  email?: string;
+  insuranceNumber: number;
+  gender: string;
+  createdAt: string;
+  uid: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  alive: boolean;
+  fullName: string;
+}
+
+export interface PatientSearchResponse {
+  patients: Patient[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;

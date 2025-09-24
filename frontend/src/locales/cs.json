@@ -64,7 +64,8 @@
     "loginError": "Chyba při přihlašování:",
     "loadingStats": "Chyba při načítání statistik",
     "changePasswordError": "Chyba při změně hesla:",
-    "createEmployeeError": "Chyba při vytváření zaměstnance:"
+    "createEmployeeError": "Chyba při vytváření zaměstnance:",
+    "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu."
   },
   "common": {
     "loading": "Načítání...",
@@ -137,6 +138,31 @@
     "creating": "Vytvářím...",
     "success": "Zaměstnanec byl úspěšně vytvořen",
     "error": "Nepodařilo se vytvořit zaměstnance. Zkuste to znovu."
+  },
+  "patients": {
+    "title": "Pacienti",
+    "searchPlaceholder": "Vyhledejte pacienta podle jména, příjmení, UID nebo emailu...",
+    "loading": "Načítání pacientů...",
+    "loadingMore": "Načítání dalších pacientů...",
+    "totalFound": "Nalezeno pacientů: {{count}}",
+    "totalFound_one": "Nalezen {{count}} pacient",
+    "totalFound_few": "Nalezeni {{count}} pacienti",
+    "totalFound_many": "Nalezeno {{count}} pacientů",
+    "totalFound_other": "Nalezeno {{count}} pacientů",
+    "allLoaded": "Všichni pacienti byli načteni",
+    "noResults": "Žádní pacienti nenalezeni",
+    "noResultsDescription": "Zkuste změnit vyhledávací kritéria nebo přidejte nového pacienta do systému.",
+    "birthDate": "Datum narození",
+    "uid": "ID pacienta",
+    "insuranceNumber": "Pojišťovna",
+    "phone": "Telefon",
+    "email": "Email",
+    "gender": "Pohlaví",
+    "male": "Muž",
+    "female": "Žena",
+    "viewDetails": "Zobrazit detail",
+    "editPatient": "Upravit pacienta",
+    "address": "Adresa"
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

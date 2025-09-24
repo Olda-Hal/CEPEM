@@ -59,7 +59,8 @@
     "loginError": "Login error:",
     "loadingStats": "Error loading statistics",
     "changePasswordError": "Error changing password:",
-    "createEmployeeError": "Error creating employee:"
+    "createEmployeeError": "Error creating employee:",
+    "loadingPatients": "Error loading patients. Please try again."
   },
   "common": {
     "loading": "Loading...",
@@ -132,6 +133,29 @@
     "creating": "Creating...",
     "success": "Employee was successfully created",
     "error": "Failed to create employee. Please try again."
+  },
+  "patients": {
+    "title": "Patients",
+    "searchPlaceholder": "Search patients by name, surname, UID or email...",
+    "loading": "Loading patients...",
+    "loadingMore": "Loading more patients...",
+    "totalFound": "Found patients: {{count}}",
+    "totalFound_one": "Found {{count}} patient",
+    "totalFound_other": "Found {{count}} patients",
+    "allLoaded": "All patients have been loaded",
+    "noResults": "No patients found",
+    "noResultsDescription": "Try changing search criteria or add new patient to the system.",
+    "birthDate": "Birth Date",
+    "uid": "Patient ID",
+    "insuranceNumber": "Insurance",
+    "phone": "Phone",
+    "email": "Email",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "viewDetails": "View Details",
+    "editPatient": "Edit Patient",
+    "address": "Address"
   },
   "admin": {
     "employeeManagement": "Employee Management",
