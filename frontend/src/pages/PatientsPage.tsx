@@ -148,7 +148,9 @@ export const PatientsPage: React.FC = () => {
                 >
                   <div className="patient-header">
                     <h3 className="patient-name">
+                      {patient.titleBefore ? `${patient.titleBefore} ` : ''}
                       {patient.lastName}, {patient.firstName}
+                      {patient.titleAfter ? `, ${patient.titleAfter}` : ''}
                     </h3>
                     <span className="patient-id">ID: {patient.id}</span>
                   </div>
