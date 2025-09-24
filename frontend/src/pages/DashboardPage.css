@@ -1,13 +1,13 @@
 .dashboard-container {
   min-height: 100vh;
-  background-color: #f7fafc;
+  background-color: var(--color-background-page);
 }
 
 .dashboard-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   color: white;
   padding: 20px 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px var(--color-shadow-medium);
 }
 
 .header-content {
@@ -44,10 +44,20 @@
 .header-right .language-switcher .language-select {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #2d3748;
+  color: var(--color-text-primary);
 }
 
 .header-right .language-switcher .language-select:hover {
+  background: white;
+}
+
+.header-right .theme-selector .theme-select {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--color-text-primary);
+}
+
+.header-right .theme-selector .theme-select:hover {
   background: white;
 }
 
@@ -87,18 +97,18 @@
   align-items: center;
   cursor: pointer;
   padding: 15px 0;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--color-border);
   margin-bottom: 20px;
   transition: border-color 0.2s ease;
 }
 
 .section-header:hover {
-  border-color: #667eea;
+  border-color: var(--color-primary);
 }
 
 .section-header h2,
 .section-header h3 {
-  color: #2d3748;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -114,7 +124,7 @@
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #667eea;
+  color: var(--color-primary);
   cursor: pointer;
   padding: 5px;
   border-radius: 4px;
@@ -122,7 +132,7 @@
 }
 
 .collapse-button:hover {
-  background-color: #f7fafc;
+  background-color: var(--color-background-secondary);
   transform: scale(1.1);
 }
 
@@ -132,7 +142,7 @@
 
 .section-content > p {
   text-align: center;
-  color: #718096;
+  color: var(--color-text-secondary);
   font-size: 1.1rem;
   margin-bottom: 30px;
 }
@@ -156,17 +166,17 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--color-background);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px var(--color-shadow-light);
+  border: 1px solid var(--color-border);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 25px var(--color-shadow-medium);
 }
 
 .stat-card .stat-icon {
@@ -175,21 +185,21 @@
 }
 
 .stat-card h3 {
-  color: #2d3748;
+  color: var(--color-text-primary);
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 12px;
 }
 
 .stat-value {
-  color: #667eea;
+  color: var(--color-primary);
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 8px;
 }
 
 .stat-label {
-  color: #718096;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
   margin-bottom: 4px;
 }
@@ -203,12 +213,12 @@
 }
 
 .action-card {
-  background: white;
+  background: var(--color-background);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px var(--color-shadow-light);
+  border: 1px solid var(--color-border);
   transition: transform 0.2s ease;
 }
 
@@ -217,21 +227,21 @@
 }
 
 .action-card h4 {
-  color: #2d3748;
+  color: var(--color-text-primary);
   font-size: 1.1rem;
   margin-bottom: 8px;
 }
 
 .action-card p {
-  color: #718096;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
   margin-bottom: 16px;
   line-height: 1.4;
 }
 
 .action-button {
-  background: #e2e8f0;
-  color: #718096;
+  background: var(--color-background-tertiary);
+  color: var(--color-text-secondary);
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
@@ -241,7 +251,7 @@
 }
 
 .action-button:not(:disabled) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   color: white;
   cursor: pointer;
 }

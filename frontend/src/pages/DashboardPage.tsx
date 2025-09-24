@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { ThemeSelector } from '../components/ThemeSelector';
 import { PasswordChangeModal } from '../components/PasswordChangeModal';
 import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
 import { DashboardStats } from '../types';
@@ -61,6 +62,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className="header-right">
             <LanguageSwitcher />
+            <ThemeSelector className="compact" />
             <span className="welcome-text">
               {t('dashboard.welcome', { 
                 firstName: user?.firstName || '', 

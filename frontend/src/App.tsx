@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -7,9 +7,18 @@ import { DashboardPage } from './pages/DashboardPage';
 import TestDashboard from './pages/TestDashboard';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import { PatientsPage } from './pages/PatientsPage';
+import { themeManager } from './themes/ThemeManager';
+import './themes/colors.css';
+import './themes/theme-overrides.css';
 import './App.css';
 
 function App() {
+  // Initialize theme system
+  useEffect(() => {
+    // Theme manager automatically handles initialization
+    themeManager.getCurrentTheme();
+  }, []);
+
   return (
     <AuthProvider>
       <Router>

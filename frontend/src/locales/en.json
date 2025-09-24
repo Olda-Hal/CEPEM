@@ -208,5 +208,18 @@
     "other": "Other",
     "cancel": "Cancel",
     "save": "Save"
+  },
+  "themes": {
+    "lightThemes": "Light Themes",
+    "darkThemes": "Dark Themes",
+    "aurora": "Aurora",
+    "nebulaBlue": "Nebula Blue",
+    "emeraldDawn": "Emerald Dawn",
+    "mysticViolet": "Mystic Violet",
+    "obsidian": "Obsidian",
+    "cyberAzure": "Cyber Azure",
+    "forestShadow": "Forest Shadow",
+    "cosmicPurple": "Cosmic Purple",
+    "crimsonNight": "Crimson Night"
   }
 }

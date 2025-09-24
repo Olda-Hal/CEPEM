@@ -1,0 +1,334 @@
+/* Base CSS Variables for Color Themes */
+
+/* Aurora Theme - Light Default */
+:root[data-theme="aurora"], :root {
+  /* Primary Colors - Original gradient colors */
+  --color-primary: #667eea;
+  --color-primary-hover: #764ba2;
+  --color-primary-light: rgba(102, 126, 234, 0.1);
+  --color-accent: #667eea;
+  --color-accent-hover: #764ba2;
+  
+  /* Secondary Colors */
+  --color-secondary: #ecf0f1;
+  --color-secondary-hover: #d5dbdb;
+  
+  /* Text Colors */
+  --color-text-primary: #2d3748;
+  --color-text-secondary: #718096;
+  --color-text-light: #a0aec0;
+  
+  /* Background Colors */
+  --color-background: #ffffff;
+  --color-background-secondary: #f7fafc;
+  --color-background-tertiary: #edf2f7;
+  --color-background-page: #f7fafc;
+  
+  /* Border Colors */
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f3f4;
+  --color-border-focus: #667eea;
+  
+  /* Status Colors */
+  --color-success: #38a169;
+  --color-success-light: #f0fff4;
+  --color-warning: #d69e2e;
+  --color-warning-light: #fffbeb;
+  --color-error: #e53e3e;
+  --color-error-light: #fed7d7;
+  --color-info: #3182ce;
+  --color-info-light: #ebf8ff;
+  
+  /* Shadow Colors */
+  --color-shadow-light: rgba(0, 0, 0, 0.05);
+  --color-shadow-medium: rgba(0, 0, 0, 0.1);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme="nebula-blue"] {
+  /* Primary Colors - Blue gradient variant */
+  --color-primary: #4299e1;
+  --color-primary-hover: #3182ce;
+  --color-primary-light: rgba(66, 153, 225, 0.1);
+  --color-accent: #4299e1;
+  --color-accent-hover: #2b6cb0;
+  
+  /* Keep same base colors as light theme */
+  --color-secondary: #ecf0f1;
+  --color-secondary-hover: #d5dbdb;
+  --color-text-primary: #2d3748;
+  --color-text-secondary: #718096;
+  --color-text-light: #a0aec0;
+  --color-background: #ffffff;
+  --color-background-secondary: #f7fafc;
+  --color-background-tertiary: #edf2f7;
+  --color-background-page: #f7fafc;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f3f4;
+  --color-border-focus: #4299e1;
+  --color-success: #38a169;
+  --color-success-light: #f0fff4;
+  --color-warning: #d69e2e;
+  --color-warning-light: #fffbeb;
+  --color-error: #e53e3e;
+  --color-error-light: #fed7d7;
+  --color-info: #3182ce;
+  --color-info-light: #ebf8ff;
+  --color-shadow-light: rgba(0, 0, 0, 0.05);
+  --color-shadow-medium: rgba(0, 0, 0, 0.1);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme="emerald-dawn"] {
+  /* Primary Colors - Green gradient variant */
+  --color-primary: #48bb78;
+  --color-primary-hover: #38a169;
+  --color-primary-light: rgba(72, 187, 120, 0.1);
+  --color-accent: #48bb78;
+  --color-accent-hover: #2f855a;
+  
+  /* Keep same base colors as light theme */
+  --color-secondary: #ecf0f1;
+  --color-secondary-hover: #d5dbdb;
+  --color-text-primary: #2d3748;
+  --color-text-secondary: #718096;
+  --color-text-light: #a0aec0;
+  --color-background: #ffffff;
+  --color-background-secondary: #f7fafc;
+  --color-background-tertiary: #edf2f7;
+  --color-background-page: #f7fafc;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f3f4;
+  --color-border-focus: #48bb78;
+  --color-success: #38a169;
+  --color-success-light: #f0fff4;
+  --color-warning: #d69e2e;
+  --color-warning-light: #fffbeb;
+  --color-error: #e53e3e;
+  --color-error-light: #fed7d7;
+  --color-info: #3182ce;
+  --color-info-light: #ebf8ff;
+  --color-shadow-light: rgba(0, 0, 0, 0.05);
+  --color-shadow-medium: rgba(0, 0, 0, 0.1);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme="mystic-violet"] {
+  /* Primary Colors - Purple gradient variant */
+  --color-primary: #805ad5;
+  --color-primary-hover: #6b46c1;
+  --color-primary-light: rgba(128, 90, 213, 0.1);
+  --color-accent: #805ad5;
+  --color-accent-hover: #553c9a;
+  
+  /* Keep same base colors as light theme */
+  --color-secondary: #ecf0f1;
+  --color-secondary-hover: #d5dbdb;
+  --color-text-primary: #2d3748;
+  --color-text-secondary: #718096;
+  --color-text-light: #a0aec0;
+  --color-background: #ffffff;
+  --color-background-secondary: #f7fafc;
+  --color-background-tertiary: #edf2f7;
+  --color-background-page: #f7fafc;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f3f4;
+  --color-border-focus: #805ad5;
+  --color-success: #38a169;
+  --color-success-light: #f0fff4;
+  --color-warning: #d69e2e;
+  --color-warning-light: #fffbeb;
+  --color-error: #e53e3e;
+  --color-error-light: #fed7d7;
+  --color-info: #3182ce;
+  --color-info-light: #ebf8ff;
+  --color-shadow-light: rgba(0, 0, 0, 0.05);
+  --color-shadow-medium: rgba(0, 0, 0, 0.1);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.15);
+}
+
+/* Dark Theme - Default */
+:root[data-theme="obsidian"] {
+  /* Primary Colors - Dark version of original gradient */
+  --color-primary: #667eea;
+  --color-primary-hover: #764ba2;
+  --color-primary-light: rgba(102, 126, 234, 0.2);
+  --color-accent: #667eea;
+  --color-accent-hover: #764ba2;
+  
+  /* Secondary Colors */
+  --color-secondary: #374151;
+  --color-secondary-hover: #4b5563;
+  
+  /* Text Colors */
+  --color-text-primary: #f7fafc;
+  --color-text-secondary: #cbd5e0;
+  --color-text-light: #a0aec0;
+  
+  /* Background Colors */
+  --color-background: #1a202c;
+  --color-background-secondary: #2d3748;
+  --color-background-tertiary: #374151;
+  --color-background-page: #171923;
+  
+  /* Border Colors */
+  --color-border: #4a5568;
+  --color-border-light: #374151;
+  --color-border-focus: #667eea;
+  
+  /* Status Colors */
+  --color-success: #68d391;
+  --color-success-light: rgba(104, 211, 145, 0.2);
+  --color-warning: #f6e05e;
+  --color-warning-light: rgba(246, 224, 94, 0.2);
+  --color-error: #fc8181;
+  --color-error-light: rgba(252, 129, 129, 0.2);
+  --color-info: #63b3ed;
+  --color-info-light: rgba(99, 179, 237, 0.2);
+  
+  /* Shadow Colors */
+  --color-shadow-light: rgba(0, 0, 0, 0.3);
+  --color-shadow-medium: rgba(0, 0, 0, 0.4);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="cyber-azure"] {
+  /* Primary Colors - Blue gradient variant for dark */
+  --color-primary: #4299e1;
+  --color-primary-hover: #3182ce;
+  --color-primary-light: rgba(66, 153, 225, 0.2);
+  --color-accent: #4299e1;
+  --color-accent-hover: #2b6cb0;
+  
+  /* Keep same base colors as dark theme */
+  --color-secondary: #374151;
+  --color-secondary-hover: #4b5563;
+  --color-text-primary: #f7fafc;
+  --color-text-secondary: #cbd5e0;
+  --color-text-light: #a0aec0;
+  --color-background: #1a202c;
+  --color-background-secondary: #2d3748;
+  --color-background-tertiary: #374151;
+  --color-background-page: #171923;
+  --color-border: #4a5568;
+  --color-border-light: #374151;
+  --color-border-focus: #4299e1;
+  --color-success: #68d391;
+  --color-success-light: rgba(104, 211, 145, 0.2);
+  --color-warning: #f6e05e;
+  --color-warning-light: rgba(246, 224, 94, 0.2);
+  --color-error: #fc8181;
+  --color-error-light: rgba(252, 129, 129, 0.2);
+  --color-info: #63b3ed;
+  --color-info-light: rgba(99, 179, 237, 0.2);
+  --color-shadow-light: rgba(0, 0, 0, 0.3);
+  --color-shadow-medium: rgba(0, 0, 0, 0.4);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="forest-shadow"] {
+  /* Primary Colors - Green gradient variant for dark */
+  --color-primary: #48bb78;
+  --color-primary-hover: #38a169;
+  --color-primary-light: rgba(72, 187, 120, 0.2);
+  --color-accent: #48bb78;
+  --color-accent-hover: #2f855a;
+  
+  /* Keep same base colors as dark theme */
+  --color-secondary: #374151;
+  --color-secondary-hover: #4b5563;
+  --color-text-primary: #f7fafc;
+  --color-text-secondary: #cbd5e0;
+  --color-text-light: #a0aec0;
+  --color-background: #1a202c;
+  --color-background-secondary: #2d3748;
+  --color-background-tertiary: #374151;
+  --color-background-page: #171923;
+  --color-border: #4a5568;
+  --color-border-light: #374151;
+  --color-border-focus: #48bb78;
+  --color-success: #68d391;
+  --color-success-light: rgba(104, 211, 145, 0.2);
+  --color-warning: #f6e05e;
+  --color-warning-light: rgba(246, 224, 94, 0.2);
+  --color-error: #fc8181;
+  --color-error-light: rgba(252, 129, 129, 0.2);
+  --color-info: #63b3ed;
+  --color-info-light: rgba(99, 179, 237, 0.2);
+  --color-shadow-light: rgba(0, 0, 0, 0.3);
+  --color-shadow-medium: rgba(0, 0, 0, 0.4);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="cosmic-purple"] {
+  /* Primary Colors - Purple gradient variant for dark */
+  --color-primary: #805ad5;
+  --color-primary-hover: #6b46c1;
+  --color-primary-light: rgba(128, 90, 213, 0.2);
+  --color-accent: #805ad5;
+  --color-accent-hover: #553c9a;
+  
+  /* Keep same base colors as dark theme */
+  --color-secondary: #374151;
+  --color-secondary-hover: #4b5563;
+  --color-text-primary: #f7fafc;
+  --color-text-secondary: #cbd5e0;
+  --color-text-light: #a0aec0;
+  --color-background: #1a202c;
+  --color-background-secondary: #2d3748;
+  --color-background-tertiary: #374151;
+  --color-background-page: #171923;
+  --color-border: #4a5568;
+  --color-border-light: #374151;
+  --color-border-focus: #805ad5;
+  --color-success: #68d391;
+  --color-success-light: rgba(104, 211, 145, 0.2);
+  --color-warning: #f6e05e;
+  --color-warning-light: rgba(246, 224, 94, 0.2);
+  --color-error: #fc8181;
+  --color-error-light: rgba(252, 129, 129, 0.2);
+  --color-info: #63b3ed;
+  --color-info-light: rgba(99, 179, 237, 0.2);
+  --color-shadow-light: rgba(0, 0, 0, 0.3);
+  --color-shadow-medium: rgba(0, 0, 0, 0.4);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="crimson-night"] {
+  /* Primary Colors - Red gradient variant for dark */
+  --color-primary: #f56565;
+  --color-primary-hover: #e53e3e;
+  --color-primary-light: rgba(245, 101, 101, 0.2);
+  --color-accent: #f56565;
+  --color-accent-hover: #c53030;
+  
+  /* Keep same base colors as dark theme */
+  --color-secondary: #374151;
+  --color-secondary-hover: #4b5563;
+  --color-text-primary: #f7fafc;
+  --color-text-secondary: #cbd5e0;
+  --color-text-light: #a0aec0;
+  --color-background: #1a202c;
+  --color-background-secondary: #2d3748;
+  --color-background-tertiary: #374151;
+  --color-background-page: #171923;
+  --color-border: #4a5568;
+  --color-border-light: #374151;
+  --color-border-focus: #f56565;
+  --color-success: #68d391;
+  --color-success-light: rgba(104, 211, 145, 0.2);
+  --color-warning: #f6e05e;
+  --color-warning-light: rgba(246, 224, 94, 0.2);
+  --color-error: #fc8181;
+  --color-error-light: rgba(252, 129, 129, 0.2);
+  --color-info: #63b3ed;
+  --color-info-light: rgba(99, 179, 237, 0.2);
+  --color-shadow-light: rgba(0, 0, 0, 0.3);
+  --color-shadow-medium: rgba(0, 0, 0, 0.4);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.5);
+}
+
+/* Theme transition animation */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}

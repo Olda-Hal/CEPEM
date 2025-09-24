@@ -215,5 +215,18 @@
     "other": "Jiné",
     "cancel": "Zrušit",
     "save": "Uložit"
+  },
+  "themes": {
+    "lightThemes": "Světlé motivy",
+    "darkThemes": "Tmavé motivy", 
+    "aurora": "Polární záře",
+    "nebulaBlue": "Modrá mlhovina",
+    "emeraldDawn": "Smaragdový úsvit", 
+    "mysticViolet": "Mystická fialová",
+    "obsidian": "Obsidián",
+    "cyberAzure": "Kybernet azur",
+    "forestShadow": "Lesní stín",
+    "cosmicPurple": "Kosmická purpur",
+    "crimsonNight": "Karmínová noc"
   }
 }

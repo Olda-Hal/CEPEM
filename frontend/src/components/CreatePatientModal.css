@@ -5,6 +5,9 @@
   overflow-y: auto;
   margin: 10px;
   min-height: 750px;
+  background-color: var(--color-background);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px var(--color-shadow-medium);
 }
 
 .create-patient-form {
@@ -30,45 +33,47 @@
 
 .form-group.required label::after {
   content: " *";
-  color: #e74c3c;
+  color: var(--color-error);
 }
 
 .form-group label {
   font-weight: 500;
   font-size: 0.9rem;
-  color: #2c3e50;
+  color: var(--color-text-primary);
 }
 
 .form-group input,
 .form-group select {
   padding: 0.6rem;
-  border: 2px solid #e1e8ed;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   transition: border-color 0.2s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .form-group input.error,
 .form-group select.error {
-  border-color: #e74c3c;
+  border-color: var(--color-error);
 }
 
 .form-group input:disabled,
 .form-group select:disabled {
-  background-color: #f8f9fa;
+  background-color: var(--color-background-secondary);
   cursor: not-allowed;
   opacity: 0.7;
 }
 
 .error-text {
-  color: #e74c3c;
+  color: var(--color-error);
   font-size: 0.8rem;
   margin-top: 0.25rem;
 }
@@ -88,8 +93,8 @@
 
 .regenerate-uid-button {
   padding: 0.75rem;
-  background-color: #f8f9fa;
-  border: 2px solid #e1e8ed;
+  background-color: var(--color-background-secondary);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -98,11 +103,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--color-text-primary);
 }
 
 .regenerate-uid-button:hover:not(:disabled) {
-  background-color: #e9ecef;
-  border-color: #3498db;
+  background-color: var(--color-background-tertiary);
+  border-color: var(--color-border-focus);
 }
 
 .regenerate-uid-button:disabled {
@@ -116,14 +122,15 @@
   justify-content: center;
   align-items: center;
   padding: 1.5rem 1.5rem;
-  border-bottom: 1px solid #e1e8ed;
+  border-bottom: 1px solid var(--color-border);
   margin: -1.5rem -1.5rem 1.2rem -1.5rem;
   position: relative;
+  background-color: var(--color-background);
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #2c3e50;
+  color: var(--color-text-primary);
   font-size: 1.5rem;
   font-weight: 600;
   text-align: center;
@@ -135,7 +142,7 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #7f8c8d;
+  color: var(--color-text-secondary);
   padding: 0.25rem;
   width: 30px;
   height: 30px;
@@ -151,8 +158,8 @@
 }
 
 .close-button:hover:not(:disabled) {
-  background-color: #f8f9fa;
-  color: #2c3e50;
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
 }
 
 .close-button:disabled {
@@ -161,9 +168,9 @@
 }
 
 .error-message {
-  background-color: #fdf2f2;
-  border: 1px solid #e74c3c;
-  color: #e74c3c;
+  background-color: var(--color-error-light);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -175,8 +182,9 @@
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem 1.5rem 1.5rem;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid var(--color-border);
   margin: 0 -1.5rem -1.5rem;
+  background-color: var(--color-background);
 }
 
 .button {
@@ -196,21 +204,21 @@
 }
 
 .button.primary {
-  background-color: #3498db;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .button.primary:hover:not(:disabled) {
-  background-color: #2980b9;
+  background-color: var(--color-primary-hover);
 }
 
 .button.secondary {
-  background-color: #ecf0f1;
-  color: #2c3e50;
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
 }
 
 .button.secondary:hover:not(:disabled) {
-  background-color: #d5dbdb;
+  background-color: var(--color-secondary-hover);
 }
 
 /* Responsive design */

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-shadow-heavy);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,13 +12,13 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--color-background);
   border-radius: 8px;
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px var(--color-shadow-heavy);
 }
 
 .modal-header {
@@ -26,12 +26,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 1.5rem;
 }
 
@@ -40,7 +40,7 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--color-text-secondary);
   padding: 0;
   width: 30px;
   height: 30px;
@@ -52,7 +52,7 @@
 }
 
 .modal-close:hover {
-  background-color: #f0f0f0;
+  background-color: var(--color-background-secondary);
 }
 
 .create-employee-form {
@@ -74,23 +74,25 @@
 .form-group label {
   margin-bottom: 5px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .form-group input,
 .form-group select {
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 14px;
   transition: border-color 0.2s;
+  background: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .uid-input-group {
@@ -104,8 +106,8 @@
 }
 
 .refresh-uid-button {
-  background: #f8f9fa;
-  border: 1px solid #ddd;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 10px;
   cursor: pointer;
@@ -115,10 +117,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--color-text-primary);
 }
 
 .refresh-uid-button:hover:not(:disabled) {
-  background: #e9ecef;
+  background: var(--color-background-tertiary);
 }
 
 .refresh-uid-button:disabled {
@@ -127,7 +130,7 @@
 }
 
 .form-hint {
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 12px;
   margin-top: 5px;
 }
@@ -148,12 +151,12 @@
 }
 
 .error-message {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--color-error-light);
+  color: var(--color-error);
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 15px;
-  border: 1px solid #f5c6cb;
+  border: 1px solid var(--color-error);
 }
 
 .modal-footer {
@@ -161,8 +164,8 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 20px;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f8f9fa;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-background-secondary);
 }
 
 .cancel-button,
@@ -177,21 +180,22 @@
 }
 
 .cancel-button {
-  background-color: #6c757d;
+  background-color: var(--color-text-secondary);
   color: white;
 }
 
 .cancel-button:hover:not(:disabled) {
-  background-color: #5a6268;
+  background-color: var(--color-text-secondary);
+  opacity: 0.9;
 }
 
 .submit-button {
-  background-color: #007bff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   color: white;
 }
 
 .submit-button:hover:not(:disabled) {
-  background-color: #0056b3;
+  opacity: 0.9;
 }
 
 .cancel-button:disabled,
