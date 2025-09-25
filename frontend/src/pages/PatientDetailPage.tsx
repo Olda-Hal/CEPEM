@@ -154,7 +154,7 @@ export const PatientDetailPage: React.FC = () => {
         <div className="patient-events-card">
           <div className="card-header">
             <h2>{t('patients.events')} ({patient.events.length})</h2>
-            <button className="add-event-button">
+            <button className="add-event-btn">
               {t('patients.addEvent')}
             </button>
           </div>
@@ -256,7 +256,7 @@ export const PatientDetailPage: React.FC = () => {
         <div className="patient-appointments-card">
           <div className="card-header">
             <h2>{t('patients.appointments')} ({patient.appointments.length})</h2>
-            <button className="add-appointment-button">
+            <button className="add-appointment-btn">
               {t('patients.addAppointment')}
             </button>
           </div>

@@ -45,18 +45,29 @@
 
 /* Back Button */
 .back-button {
-  background-color: var(--secondary-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-border);
+  padding: 12px 24px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
 }
 
 .back-button:hover {
-  background-color: var(--hover-color);
+  background: var(--color-background-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px var(--color-shadow-light);
 }
 
 /* Patient Info Card */
@@ -166,68 +177,116 @@
 /* Cards */
 .patient-events-card,
 .patient-appointments-card {
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  background: var(--color-background);
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 4px 6px var(--color-shadow-light);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+  margin-top: 30px;
+}
+
+.patient-events-card:hover,
+.patient-appointments-card:hover {
+  box-shadow: 0 6px 20px var(--color-shadow-medium);
+  border-color: var(--color-primary-light);
+  transform: translateY(-2px);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 25px 25px 20px 25px;
+  border-bottom: 2px solid var(--color-border);
 }
 
 .card-header h2 {
-  color: var(--text-color);
-  font-size: 1.3rem;
+  color: var(--color-text-primary);
+  font-size: 1.4rem;
   font-weight: 600;
   margin: 0;
 }
 
-.add-event-button,
-.add-appointment-button {
-  background-color: var(--primary-color);
+.add-event-btn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
+  padding: 12px 24px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
 }
 
-.add-event-button:hover,
-.add-appointment-button:hover {
-  background-color: var(--primary-hover-color);
+.add-event-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--color-shadow-medium);
+  filter: brightness(1.1);
+}
+
+.add-appointment-btn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.add-appointment-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--color-shadow-medium);
+  filter: brightness(1.1);
 }
 
 .no-data {
-  padding: 3rem;
+  padding: 40px;
   text-align: center;
-  color: var(--text-muted-color);
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  background: var(--color-background-secondary);
+  border-radius: 8px;
+  margin: 20px 25px 25px 25px;
+  border: 1px dashed var(--color-border-light);
 }
 
 /* Events List */
 .events-list {
-  padding: 1.5rem;
+  padding: 25px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 20px;
 }
 
 .event-item {
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-  transition: box-shadow 0.2s ease;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s ease;
 }
 
 .event-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px var(--color-shadow-light);
+  border-color: var(--color-primary-light);
+  transform: translateY(-1px);
 }
 
 .event-header {
@@ -299,24 +358,26 @@
 
 /* Appointments List */
 .appointments-list {
-  padding: 1.5rem;
+  padding: 25px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 15px;
 }
 
 .appointment-item {
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  padding: 20px;
   display: flex;
-  gap: 2rem;
-  transition: box-shadow 0.2s ease;
+  gap: 20px;
+  transition: all 0.3s ease;
 }
 
 .appointment-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px var(--color-shadow-light);
+  border-color: var(--color-primary-light);
+  transform: translateY(-1px);
 }
 
 .appointment-time {
