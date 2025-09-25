@@ -178,7 +178,40 @@
       "phoneInvalid": "Invalid phone number format",
       "createFailed": "Failed to create patient"
     },
-    "regenerateUid": "Generate new UID"
+    "regenerateUid": "Generate new UID",
+    "patientDetail": "Patient Detail",
+    "yearsOld": "years old",
+    "status": "Status",
+    "alive": "Alive",
+    "deceased": "Deceased",
+    "comment": "Comment",
+    "events": "Events",
+    "addEvent": "Add Event",
+    "noEvents": "No events",
+    "eventUntil": "Until",
+    "drugUses": "Medications",
+    "examinations": "Examinations",
+    "symptoms": "Symptoms",
+    "injuries": "Injuries",
+    "vaccines": "Vaccines",
+    "pregnancy": "Pregnancy",
+    "appointments": "Appointments",
+    "addAppointment": "Add Appointment",
+    "noAppointments": "No appointments",
+    "genders": {
+      "m": "Male",
+      "f": "Female",
+      "male": "Male",
+      "female": "Female"
+    },
+    "fields": {
+      "uid": "Patient ID",
+      "birthDate": "Birth Date",
+      "gender": "Gender",
+      "insuranceNumber": "Insurance",
+      "email": "Email",
+      "phoneNumber": "Phone"
+    }
   },
   "admin": {
     "employeeManagement": "Employee Management",

@@ -19,7 +19,7 @@ interface CreatePatientData {
 interface CreatePatientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPatientCreated: () => void;
+  onPatientCreated: (patientId?: number) => void;
 }
 
 export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
@@ -162,7 +162,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
         insuranceNumber: parseInt(patientData.insuranceNumber)
       };
 
-      await apiClient.post('/api/patients', createData);
+      const response = await apiClient.post<any>('/api/patients', createData);
       
       // Reset form
       setPatientData({
@@ -181,7 +181,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
       // Generate new UID for next patient
       setTimeout(() => generateUniqueUid(), 100);
       
-      onPatientCreated();
+      onPatientCreated(response?.id);
       onClose();
     } catch (error: any) {
       console.error('Error creating patient:', error);

@@ -138,6 +138,51 @@ export interface PatientSearchResponse {
   hasMore: boolean;
 }
 
+export interface PatientDetail {
+  id: number;
+  personId: number;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  phoneNumber?: string;
+  email?: string;
+  insuranceNumber: number;
+  gender: string;
+  createdAt: string;
+  uid: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  alive: boolean;
+  fullName: string;
+  age: number;
+  comment?: string;
+  events: PatientEvent[];
+  appointments: PatientAppointment[];
+}
+
+export interface PatientEvent {
+  id: number;
+  eventTypeName: string;
+  happenedAt: string;
+  happenedTo?: string;
+  comment?: string;
+  drugUses: string[];
+  examinations: string[];
+  symptoms: string[];
+  injuries: string[];
+  vaccines: string[];
+  hasPregnancy: boolean;
+}
+
+export interface PatientAppointment {
+  id: number;
+  startTime: string;
+  endTime: string;
+  doctorName: string;
+  equipmentName?: string;
+  hospitalName: string;
+}
+
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;

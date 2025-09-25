@@ -65,7 +65,9 @@
     "loadingStats": "Chyba při načítání statistik",
     "changePasswordError": "Chyba při změně hesla:",
     "createEmployeeError": "Chyba při vytváření zaměstnance:",
-    "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu."
+    "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu.",
+    "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
+    "patientNotFound": "Pacient nebyl nalezen"
   },
   "common": {
     "loading": "Načítání...",
@@ -74,7 +76,9 @@
     "english": "English",
     "defaultName": "Jan",
     "cancel": "Zrušit",
-    "creating": "Vytváří se..."
+    "creating": "Vytváří se...",
+    "back": "Zpět",
+    "backToPatients": "Zpět na pacienty"
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -185,7 +189,40 @@
       "phoneInvalid": "Neplatný formát telefonního čísla",
       "createFailed": "Nepodařilo se vytvořit pacienta"
     },
-    "regenerateUid": "Vygenerovat nové UID"
+    "regenerateUid": "Vygenerovat nové UID",
+    "patientDetail": "Detail pacienta",
+    "yearsOld": "let",
+    "status": "Status",
+    "alive": "Živ",
+    "deceased": "Zemřel",
+    "comment": "Poznámka",
+    "events": "Události",
+    "addEvent": "Přidat událost",
+    "noEvents": "Žádné události",
+    "eventUntil": "Do",
+    "drugUses": "Léky",
+    "examinations": "Vyšetření",
+    "symptoms": "Příznaky",
+    "injuries": "Úrazy",
+    "vaccines": "Očkování",
+    "pregnancy": "Těhotenství",
+    "appointments": "Termíny",
+    "addAppointment": "Přidat termín",
+    "noAppointments": "Žádné termíny",
+    "genders": {
+      "m": "Muž",
+      "f": "Žena",
+      "male": "Muž",
+      "female": "Žena"
+    },
+    "fields": {
+      "uid": "ID pacienta",
+      "birthDate": "Datum narození",
+      "gender": "Pohlaví",
+      "insuranceNumber": "Pojišťovna",
+      "email": "Email",
+      "phoneNumber": "Telefon"
+    }
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

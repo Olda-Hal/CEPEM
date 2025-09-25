@@ -219,5 +219,108 @@ namespace DatabaseAPI.Controllers
                 return StatusCode(500, "An error occurred while getting patient");
             }
         }
+
+        [HttpGet("{id}/detail")]
+        public async Task<ActionResult<PatientDetailDto>> GetPatientDetail(int id)
+        {
+            try
+            {
+                var patient = await _context.Patients
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.Comment)
+                    .Include(p => p.Comment)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.EventType)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.Comment)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.DrugUses)
+                            .ThenInclude(du => du.Drug)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.Examinations)
+                            .ThenInclude(ex => ex.ExaminationType)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.PatientSymptoms)
+                            .ThenInclude(ps => ps.Symptom)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.Injuries)
+                            .ThenInclude(i => i.InjuryType)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.Vaccines)
+                            .ThenInclude(v => v.VaccineType)
+                    .Include(p => p.Events)
+                        .ThenInclude(e => e.Pregnancies)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (patient == null)
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
+                var appointments = await _context.Appointments
+                    .Include(a => a.HospitalEmployee)
+                        .ThenInclude(he => he.Employee)
+                            .ThenInclude(e => e.Person)
+                    .Include(a => a.Equipment)
+                    .Include(a => a.Hospital)
+                    .Where(a => a.PersonId == patient.PersonId)
+                    .ToListAsync();
+
+                var age = DateTime.Now.Year - patient.BirthDate.Year;
+                if (DateTime.Now < patient.BirthDate.AddYears(age))
+                    age--;
+
+                var patientDetailDto = new PatientDetailDto
+                {
+                    Id = patient.Id,
+                    PersonId = patient.PersonId,
+                    FirstName = patient.Person.FirstName,
+                    LastName = patient.Person.LastName,
+                    BirthDate = patient.BirthDate,
+                    PhoneNumber = patient.Person.PhoneNumber,
+                    Email = patient.Person.Email,
+                    InsuranceNumber = patient.InsuranceNumber,
+                    Gender = patient.Person.Gender,
+                    CreatedAt = patient.Person.CreatedAt,
+                    UID = patient.Person.UID,
+                    TitleBefore = patient.Person.TitleBefore,
+                    TitleAfter = patient.Person.TitleAfter,
+                    Alive = patient.Alive,
+                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
+                    Age = age,
+                    Comment = patient.Comment?.Text ?? patient.Person.Comment?.Text,
+                    Events = patient.Events.OrderByDescending(e => e.HappenedAt).Select(e => new PatientEventDto
+                    {
+                        Id = e.Id,
+                        EventTypeName = e.EventType.Name?.ToString() ?? "Unknown",
+                        HappenedAt = e.HappenedAt,
+                        HappenedTo = e.HappenedTo,
+                        Comment = e.Comment?.Text,
+                        DrugUses = e.DrugUses.Select(du => du.Drug.Name).ToList(),
+                        Examinations = e.Examinations.Select(ex => ex.ExaminationType.Name).ToList(),
+                        Symptoms = e.PatientSymptoms.Select(ps => ps.Symptom.Name).ToList(),
+                        Injuries = e.Injuries.Select(i => i.InjuryType.Name).ToList(),
+                        Vaccines = e.Vaccines.Select(v => v.VaccineType.Name).ToList(),
+                        HasPregnancy = e.Pregnancies.Any()
+                    }).ToList(),
+                    Appointments = appointments.OrderByDescending(a => a.StartTime).Select(a => new PatientAppointmentDto
+                    {
+                        Id = a.Id,
+                        StartTime = a.StartTime,
+                        EndTime = a.EndTime,
+                        DoctorName = $"{a.HospitalEmployee.Employee.Person.LastName}, {a.HospitalEmployee.Employee.Person.FirstName}",
+                        EquipmentName = a.Equipment?.Name,
+                        HospitalName = a.Hospital.Address ?? "Unknown Hospital"
+                    }).ToList()
+                };
+
+                return Ok(patientDetailDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting patient detail {PatientId}", id);
+                return StatusCode(500, "An error occurred while getting patient detail");
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Patient, PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
@@ -10,6 +11,7 @@ const ITEMS_PER_PAGE = 20;
 
 export const PatientsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -88,10 +90,19 @@ export const PatientsPage: React.FC = () => {
     return new Date(dateString).toLocaleDateString(locale);
   };
 
-  const handlePatientCreated = () => {
-    // Refresh the patients list
-    setPage(0);
-    loadPatients(0, searchQuery, true);
+  const handlePatientCreated = (patientId?: number) => {
+    if (patientId) {
+      // Navigate to patient detail page
+      navigate(`/patients/${patientId}`);
+    } else {
+      // Fallback: refresh the patients list
+      setPage(0);
+      loadPatients(0, searchQuery, true);
+    }
+  };
+
+  const handleViewPatientDetail = (patientId: number) => {
+    navigate(`/patients/${patientId}`);
   };
 
   return (
@@ -205,7 +216,10 @@ export const PatientsPage: React.FC = () => {
                   </div>
                   
                   <div className="patient-actions">
-                    <button className="action-button primary">
+                    <button 
+                      className="action-button primary"
+                      onClick={() => handleViewPatientDetail(patient.id)}
+                    >
                       {t('patients.viewDetails')}
                     </button>
                     <button className="action-button secondary">

@@ -131,5 +131,38 @@ namespace HealthcareAPI.Controllers
                 return StatusCode(500, "An error occurred while getting patient");
             }
         }
+
+        [HttpGet("{id}/detail")]
+        public async Task<IActionResult> GetPatientDetail(int id)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync($"/api/patients/{id}/detail");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var jsonDocument = JsonDocument.Parse(content);
+                    return Ok(jsonDocument.RootElement);
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
+                return StatusCode((int)response.StatusCode, "Error retrieving patient detail");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting patient detail {PatientId}", id);
+                return StatusCode(500, "An error occurred while getting patient detail");
+            }
+        }
     }
 }
