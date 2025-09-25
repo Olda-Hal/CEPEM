@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { testResultsApi } from '../utils/testResultsApi';
 import { TestSummary, ServiceDetails, LiveStatus } from '../types/testResults';
+import { AppHeader } from '../components/AppHeader';
 import './TestDashboard.css';
 
 const TestDashboard: React.FC = () => {
@@ -122,24 +123,19 @@ const TestDashboard: React.FC = () => {
 
   return (
     <div className="test-dashboard">
-      <header className="test-dashboard-header">
-        <div className="container">
-          <h1>{t('testDashboard.title')}</h1>
-          <div className="header-controls">
-            <label className="auto-refresh-control">
-              <input
-                type="checkbox"
-                checked={autoRefresh}
-                onChange={(e) => setAutoRefresh(e.target.checked)}
-              />
-              {t('testDashboard.autoRefresh')}
-            </label>
-            <button onClick={refreshData} className="refresh-button">
-              {t('testDashboard.refresh')}
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader sectionTitle={t('testDashboard.title')}>
+        <label className="auto-refresh-control">
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+          />
+          {t('testDashboard.autoRefresh')}
+        </label>
+        <button onClick={refreshData} className="refresh-button">
+          {t('testDashboard.refresh')}
+        </button>
+      </AppHeader>
 
       <div className="test-dashboard-content">{liveStatus && (
         <div className="live-status-section">

@@ -1,28 +1,7 @@
 .patients-container {
   min-height: 100vh;
   background-color: var(--color-background-page);
-  padding: 20px;
-}
-
-.patients-header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 6px var(--color-shadow-light);
-}
-
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.patients-header h1 {
-  font-size: 2.5rem;
-  font-weight: bold;
+  padding: 0;
   margin: 0;
 }
 
@@ -47,13 +26,16 @@
 }
 
 .search-section {
+  padding: 20px 30px;
+  background-color: var(--color-background-page);
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .search-bar {
   position: relative;
-  max-width: 500px;
+  max-width: 650px;
   width: 100%;
 }
 
@@ -177,6 +159,8 @@
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 2px solid var(--color-border-light);
+  min-height: 100px;
+  gap: 10px;
 }
 
 .patient-name {
@@ -185,6 +169,55 @@
   font-weight: 600;
   margin: 0;
   flex-grow: 1;
+  line-height: 1.2;
+  max-width: calc(100% - 80px);
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px;
+}
+
+.name-title-before {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.name-main {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name-lastname {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.name-firstname {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.name-title-after {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .patient-id {
@@ -348,6 +381,11 @@
     flex-direction: column;
     gap: 10px;
     align-items: flex-start;
+    min-height: auto;
+  }
+
+  .patient-name {
+    max-width: 100%;
   }
 
   .patient-actions {

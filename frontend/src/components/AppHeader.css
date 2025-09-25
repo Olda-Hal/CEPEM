@@ -1,0 +1,169 @@
+.app-header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: white;
+  padding: 30px;
+  box-shadow: 0 4px 6px var(--color-shadow-light);
+  margin: 0;
+  width: 100%;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.app-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.header-left:hover {
+  transform: translateY(-2px);
+}
+
+.app-logo {
+  width: 48px;
+  height: 48px;
+  margin-right: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  fill: white;
+}
+
+.app-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-name {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.app-subtitle {
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.section-title {
+  flex: 1;
+  text-align: center;
+}
+
+.section-title h2 {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0;
+  color: white;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.auto-refresh-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: white;
+}
+
+.auto-refresh-control input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.refresh-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.welcome-text {
+  font-size: 1rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+  color: white;
+}
+
+.logout-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 20px 15px;
+  }
+  
+  .app-header-content {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .header-left {
+    align-self: flex-start;
+  }
+  
+  .logo-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .app-name {
+    font-size: 1.4rem;
+  }
+  
+  .app-subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .section-title h2 {
+    font-size: 1.8rem;
+  }
+}

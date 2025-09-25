@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Patient, PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
+import { AppHeader } from '../components/AppHeader';
 import './PatientsPage.css';
 
 const ITEMS_PER_PAGE = 20;
@@ -95,27 +96,27 @@ export const PatientsPage: React.FC = () => {
 
   return (
     <div className="patients-container">
-      <div className="patients-header">
-        <div className="header-top">
-          <h1>{t('patients.title')}</h1>
-          <button 
-            className="add-patient-button"
-            onClick={() => setShowCreateModal(true)}
-          >
-            + {t('patients.addPatient')}
-          </button>
-        </div>
-        <div className="search-section">
-          <div className="search-bar">
-            <input
-              type="text"
-              placeholder={t('patients.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            <div className="search-icon">🔍</div>
-          </div>
+      <AppHeader 
+        sectionTitle={t('patients.title')}
+      >
+        <button 
+          className="add-patient-button"
+          onClick={() => setShowCreateModal(true)}
+        >
+          + {t('patients.addPatient')}
+        </button>
+      </AppHeader>
+      
+      <div className="search-section">
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder={t('patients.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+          <div className="search-icon">🔍</div>
         </div>
       </div>
 
@@ -147,10 +148,20 @@ export const PatientsPage: React.FC = () => {
                   ref={index === patients.length - 1 ? lastPatientElementCallback : null}
                 >
                   <div className="patient-header">
-                    <h3 className="patient-name">
-                      {patient.titleBefore ? `${patient.titleBefore} ` : ''}
-                      {patient.lastName}, {patient.firstName}
-                      {patient.titleAfter ? `, ${patient.titleAfter}` : ''}
+                    <h3 
+                      className="patient-name"
+                      title={`${patient.titleBefore ? `${patient.titleBefore} ` : ''}${patient.lastName}, ${patient.firstName}${patient.titleAfter ? `, ${patient.titleAfter}` : ''}`}
+                    >
+                      {patient.titleBefore && (
+                        <div className="name-title-before">{patient.titleBefore}</div>
+                      )}
+                      <div className="name-main">
+                        <div className="name-firstname">{patient.firstName}</div>
+                        <div className="name-lastname">{patient.lastName}</div>
+                      </div>
+                      {patient.titleAfter && (
+                        <div className="name-title-after">{patient.titleAfter}</div>
+                      )}
                     </h3>
                     <span className="patient-id">ID: {patient.id}</span>
                   </div>

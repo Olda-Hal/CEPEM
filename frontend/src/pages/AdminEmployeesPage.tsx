@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import './AdminEmployeesPage.css';
 import { EmployeeListItem, Role, UpdateEmployeeRequest, UpdateEmployeeResponse } from '../types';
 import { apiClient } from '../utils/api';
+import { AppHeader } from '../components/AppHeader';
 
 const AdminEmployeesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -85,10 +86,7 @@ const AdminEmployeesPage: React.FC = () => {
 
   return (
     <div className="admin-employees-page">
-      <div className="page-header">
-        <h1>{t('admin.employeeManagement')}</h1>
-        <p>{t('admin.employeeManagementDescription')}</p>
-      </div>
+      <AppHeader sectionTitle={t('admin.employeeManagement')} />
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}

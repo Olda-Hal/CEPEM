@@ -6,6 +6,7 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { ThemeSelector } from '../components/ThemeSelector';
 import { PasswordChangeModal } from '../components/PasswordChangeModal';
 import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
+import { AppHeader } from '../components/AppHeader';
 import { DashboardStats } from '../types';
 import { apiClient } from '../utils/api';
 import { isAdmin } from '../utils/roles';
@@ -54,27 +55,25 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="header-left">
-            <h1>{t('dashboard.title')}</h1>
-            <span className="subtitle">{t('dashboard.subtitle')}</span>
-          </div>
-          <div className="header-right">
-            <LanguageSwitcher />
-            <ThemeSelector className="compact" />
-            <span className="welcome-text">
-              {t('dashboard.welcome', { 
-                firstName: user?.firstName || '', 
-                lastName: user?.lastName || '' 
-              })}
-            </span>
-            <button onClick={logout} className="logout-button">
-              {t('dashboard.logout')}
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader>
+        <LanguageSwitcher />
+        <ThemeSelector className="compact" />
+        <span 
+          className="welcome-text"
+          title={t('dashboard.welcome', { 
+            firstName: user?.firstName || '', 
+            lastName: user?.lastName || '' 
+          })}
+        >
+          {t('dashboard.welcome', { 
+            firstName: user?.firstName || '', 
+            lastName: user?.lastName || '' 
+          })}
+        </span>
+        <button onClick={logout} className="logout-button">
+          {t('dashboard.logout')}
+        </button>
+      </AppHeader>
 
       <main className="dashboard-main">
         <div className="dashboard-content">
@@ -93,7 +92,12 @@ export const DashboardPage: React.FC = () => {
                     <div className="stat-icon">👨‍⚕️</div>
                     <div className="stat-content">
                       <h3>{t('dashboard.myProfile')}</h3>
-                      <p className="stat-value">{user?.firstName} {user?.lastName}</p>
+                      <p 
+                        className="stat-value"
+                        title={`${user?.firstName || ''} ${user?.lastName || ''}`}
+                      >
+                        {user?.firstName} {user?.lastName}
+                      </p>
                       <p className="stat-label">
                         {t('dashboard.uid', { uid: user?.uid || '' })}
                       </p>
