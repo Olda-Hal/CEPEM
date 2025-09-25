@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using DatabaseAPI.Services;
-using DatabaseAPI.Middleware;
 
 namespace DatabaseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[RequireRole("Administrator")]
 public class MigrationsController : ControllerBase
 {
     private readonly IMigrationService _migrationService;

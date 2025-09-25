@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Services;
-using DatabaseAPI.Middleware;
 using System.Diagnostics;
 
 namespace DatabaseAPI.Controllers
@@ -70,7 +69,6 @@ namespace DatabaseAPI.Controllers
         }
 
         [HttpPost("create-employee")]
-        [RequireRole("Administrator")]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
             if (string.IsNullOrEmpty(request.FirstName) || 
@@ -100,7 +98,6 @@ namespace DatabaseAPI.Controllers
         }
 
         [HttpGet("next-uid")]
-        [RequireRole("Administrator")]
         public async Task<ActionResult<string>> GetNextAvailableUid()
         {
             var nextUid = await _authService.GetNextAvailableUidAsync();

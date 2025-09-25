@@ -21,6 +21,9 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
 // Register migration service
 builder.Services.AddScoped<IMigrationService, MigrationService>();
 
+// Register seed service
+builder.Services.AddScoped<ISeedService, SeedService>();
+
 // Register authentication service
 builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
 
@@ -56,10 +59,11 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowHealthcareAPI");
 app.MapControllers();
 
-// Apply database migrations
+// Apply database migrations and seed data
 using (var scope = app.Services.CreateScope())
 {
     var migrationService = scope.ServiceProvider.GetRequiredService<IMigrationService>();
+    var seedService = scope.ServiceProvider.GetRequiredService<ISeedService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     
     try
@@ -75,6 +79,9 @@ using (var scope = app.Services.CreateScope())
             // Apply migrations
             await migrationService.ApplyMigrationsAsync();
             logger.LogInformation("Database ready - migrations applied.");
+            
+            // Seed initial data
+            await seedService.SeedAsync();
         }
     }
     catch (Exception ex)
