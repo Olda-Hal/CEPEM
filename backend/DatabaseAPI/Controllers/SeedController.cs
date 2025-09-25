@@ -24,24 +24,66 @@ namespace DatabaseAPI.Controllers
         public async Task<IActionResult> SeedAdmin()
         {
             // Check if admin already exists
-            if (await _context.Employees.AnyAsync(e => e.Role == "Admin"))
+            var existingAdmin = await _context.Employees
+                .Include(e => e.Person)
+                .ThenInclude(p => p.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .AnyAsync(e => e.Person.UserRoles.Any(ur => ur.Role.Name == "SysAdmin"));
+                
+            if (existingAdmin)
                 return BadRequest("Admin already exists.");
+
+            // Get or create SysAdmin role
+            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "SysAdmin");
+            if (adminRole == null)
+            {
+                adminRole = new Role { Name = "SysAdmin" };
+                _context.Roles.Add(adminRole);
+                await _context.SaveChangesAsync();
+            }
+
+            // Create Person for admin
+            var adminPerson = new Person
+            {
+                FirstName = "Admin",
+                LastName = "User", 
+                Email = "admin@cepem.local",
+                PhoneNumber = "+420000000000",
+                UID = Guid.NewGuid().ToString(),
+                Active = true,
+                Gender = "M",
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            _context.Persons.Add(adminPerson);
+            await _context.SaveChangesAsync();
 
             var password = "Admin123!";
             var passwordHash = HashPassword(password);
-            var admin = new Employee
+            
+            // Create Employee
+            var adminEmployee = new Employee
             {
-                FirstName = "Admin",
-                LastName = "User",
-                Email = "admin@cepem.local",
-                Role = "Admin",
+                PersonId = adminPerson.Id,
                 PasswordHash = passwordHash,
-                PasswordChangedAt = new DateTime(2000, 1, 1), // old date
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
+                Salt = "",
+                PasswordExpiration = new DateTime(2000, 1, 1),
+                LastLoginAt = null
             };
-            _context.Employees.Add(admin);
+            
+            _context.Employees.Add(adminEmployee);
             await _context.SaveChangesAsync();
+
+            // Create UserRole
+            var userRole = new UserRole
+            {
+                UserId = adminPerson.Id,
+                RoleId = adminRole.Id
+            };
+            
+            _context.UserRoles.Add(userRole);
+            await _context.SaveChangesAsync();
+            
             return Ok("Admin user created with password: " + password);
         }
 
