@@ -69,7 +69,10 @@
     "english": "English",
     "defaultName": "John",
     "cancel": "Cancel",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "no": "No",
+    "yes": "Yes",
+    "save": "Save"
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -137,6 +140,7 @@
     "error": "Failed to create employee. Please try again."
   },
   "patients": {
+    "backToPatients": "Back to Patients",
     "title": "Patients",
     "searchPlaceholder": "Search patients by name, surname, UID or email...",
     "loading": "Loading patients...",
@@ -185,6 +189,18 @@
     "alive": "Alive",
     "deceased": "Deceased",
     "comment": "Comment",
+    "quickPreview": "Quick Preview",
+    "covidVaccination": "COVID-19 Vaccination",
+    "fluVaccination": "Flu Vaccination",
+    "diabetes": "Diabetes",
+    "hypertension": "Hypertension",
+    "heartDisease": "Heart Disease",
+    "allergies": "Allergies",
+    "recentEvents": "Recent Events",
+    "upcomingAppointments": "Upcoming Appointments",
+    "lastVisit": "Last Visit",
+    "quickPreviewSettings": "Quick Preview Settings",
+    "quickPreviewSettingsDescription": "Select which information should be displayed in the patient's quick preview.",
     "events": "Events",
     "addEvent": "Add Event",
     "noEvents": "No events",

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { PatientDetail } from '../types';
+import { PatientDetail, QuickPreviewSettings } from '../types';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
+import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
 import './PatientDetailPage.css';
 
 export const PatientDetailPage: React.FC = () => {
@@ -13,6 +14,7 @@ export const PatientDetailPage: React.FC = () => {
   const [patient, setPatient] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -36,6 +38,20 @@ export const PatientDetailPage: React.FC = () => {
 
   const handleBackToPatients = () => {
     navigate('/patients');
+  };
+
+  const handleSaveSettings = async (settings: QuickPreviewSettings) => {
+    try {
+      await apiClient.put('/api/settings/quick-preview', settings);
+      if (patient) {
+        setPatient({
+          ...patient,
+          quickPreviewSettings: settings
+        });
+      }
+    } catch (error) {
+      console.error('Error saving quick preview settings:', error);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -88,7 +104,7 @@ export const PatientDetailPage: React.FC = () => {
     <div className="patient-detail-page">
       <AppHeader sectionTitle={t('patients.patientDetail')}>
         <button onClick={handleBackToPatients} className="back-button">
-          {t('common.backToPatients')}
+          {t('patients.backToPatients')}
         </button>
       </AppHeader>
 
@@ -148,6 +164,93 @@ export const PatientDetailPage: React.FC = () => {
               <p>{patient.comment}</p>
             </div>
           )}
+        </div>
+
+        {/* Quick Preview */}
+        <div className="patient-quick-preview">
+          <div className="quick-preview-header">
+            <h3>{t('patients.quickPreview')}</h3>
+            <button 
+              className="settings-button"
+              onClick={() => setShowSettingsModal(true)}
+              title={t('patients.quickPreviewSettings')}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+              </svg>
+            </button>
+          </div>
+          <div className="quick-preview-grid">
+            {patient.quickPreviewSettings.showCovidVaccination && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.covidVaccination')}:</span>
+                <span className={`preview-value ${patient.quickPreview.hasCovidVaccination ? 'positive' : 'negative'}`}>
+                  {patient.quickPreview.hasCovidVaccination ? t('common.yes') : t('common.no')}
+                </span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showFluVaccination && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.fluVaccination')}:</span>
+                <span className={`preview-value ${patient.quickPreview.hasFluVaccination ? 'positive' : 'negative'}`}>
+                  {patient.quickPreview.hasFluVaccination ? t('common.yes') : t('common.no')}
+                </span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showDiabetes && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.diabetes')}:</span>
+                <span className={`preview-value ${patient.quickPreview.hasDiabetes ? 'warning' : 'negative'}`}>
+                  {patient.quickPreview.hasDiabetes ? t('common.yes') : t('common.no')}
+                </span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showHypertension && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.hypertension')}:</span>
+                <span className={`preview-value ${patient.quickPreview.hasHypertension ? 'warning' : 'negative'}`}>
+                  {patient.quickPreview.hasHypertension ? t('common.yes') : t('common.no')}
+                </span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showHeartDisease && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.heartDisease')}:</span>
+                <span className={`preview-value ${patient.quickPreview.hasHeartDisease ? 'warning' : 'negative'}`}>
+                  {patient.quickPreview.hasHeartDisease ? t('common.yes') : t('common.no')}
+                </span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showAllergies && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.allergies')}:</span>
+                <span className={`preview-value ${patient.quickPreview.hasAllergies ? 'warning' : 'negative'}`}>
+                  {patient.quickPreview.hasAllergies ? t('common.yes') : t('common.no')}
+                </span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showRecentEvents && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.recentEvents')}:</span>
+                <span className="preview-value info">{patient.quickPreview.recentEventsCount}</span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showUpcomingAppointments && (
+              <div className="preview-item">
+                <span className="preview-label">{t('patients.upcomingAppointments')}:</span>
+                <span className="preview-value info">{patient.quickPreview.upcomingAppointmentsCount}</span>
+              </div>
+            )}
+            {patient.quickPreviewSettings.showLastVisit && patient.quickPreview.lastVisit && (
+              <div className="preview-item full-width">
+                <span className="preview-label">{t('patients.lastVisit')}:</span>
+                <span className="preview-value info">
+                  {formatDate(patient.quickPreview.lastVisit)}
+                  {patient.quickPreview.lastVisitType && ` (${patient.quickPreview.lastVisitType})`}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Patient Events */}
@@ -287,6 +390,14 @@ export const PatientDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Quick Preview Settings Modal */}
+      <QuickPreviewSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        settings={patient.quickPreviewSettings}
+        onSave={handleSaveSettings}
+      />
     </div>
   );
 };

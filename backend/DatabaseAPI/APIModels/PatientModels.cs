@@ -1,5 +1,31 @@
 namespace DatabaseAPI.APIModels;
 
+public class QuickPreviewSettingsDto
+{
+    public bool ShowCovidVaccination { get; set; } = true;
+    public bool ShowFluVaccination { get; set; } = true;
+    public bool ShowDiabetes { get; set; } = true;
+    public bool ShowHypertension { get; set; } = true;  
+    public bool ShowHeartDisease { get; set; } = true;
+    public bool ShowAllergies { get; set; } = true;
+    public bool ShowRecentEvents { get; set; } = true;
+    public bool ShowUpcomingAppointments { get; set; } = true;
+    public bool ShowLastVisit { get; set; } = true;
+}
+
+public class UpdateQuickPreviewSettingsRequest
+{
+    public bool ShowCovidVaccination { get; set; }
+    public bool ShowFluVaccination { get; set; }
+    public bool ShowDiabetes { get; set; }
+    public bool ShowHypertension { get; set; }
+    public bool ShowHeartDisease { get; set; }
+    public bool ShowAllergies { get; set; }
+    public bool ShowRecentEvents { get; set; }
+    public bool ShowUpcomingAppointments { get; set; }
+    public bool ShowLastVisit { get; set; }
+}
+
 public class PatientDto
 {
     public int Id { get; set; }
@@ -49,6 +75,20 @@ public class CreatePatientRequest
     public string? TitleAfter { get; set; }
 }
 
+public class PatientQuickPreviewDto
+{
+    public bool HasCovidVaccination { get; set; }
+    public bool HasFluVaccination { get; set; }
+    public bool HasDiabetes { get; set; }
+    public bool HasHypertension { get; set; }
+    public bool HasHeartDisease { get; set; }
+    public bool HasAllergies { get; set; }
+    public int RecentEventsCount { get; set; }
+    public int UpcomingAppointmentsCount { get; set; }
+    public DateTime? LastVisit { get; set; }
+    public string? LastVisitType { get; set; }
+}
+
 public class PatientDetailDto
 {
     public int Id { get; set; }
@@ -68,6 +108,8 @@ public class PatientDetailDto
     public string FullName { get; set; } = string.Empty;
     public int Age { get; set; }
     public string? Comment { get; set; }
+    public PatientQuickPreviewDto QuickPreview { get; set; } = new();
+    public QuickPreviewSettingsDto QuickPreviewSettings { get; set; } = new();
     public List<PatientEventDto> Events { get; set; } = new();
     public List<PatientAppointmentDto> Appointments { get; set; } = new();
 }

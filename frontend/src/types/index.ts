@@ -138,6 +138,31 @@ export interface PatientSearchResponse {
   hasMore: boolean;
 }
 
+export interface PatientQuickPreview {
+  hasCovidVaccination: boolean;
+  hasFluVaccination: boolean;
+  hasDiabetes: boolean;
+  hasHypertension: boolean;
+  hasHeartDisease: boolean;
+  hasAllergies: boolean;
+  recentEventsCount: number;
+  upcomingAppointmentsCount: number;
+  lastVisit?: string;
+  lastVisitType?: string;
+}
+
+export interface QuickPreviewSettings {
+  showCovidVaccination: boolean;
+  showFluVaccination: boolean;
+  showDiabetes: boolean;
+  showHypertension: boolean;
+  showHeartDisease: boolean;
+  showAllergies: boolean;
+  showRecentEvents: boolean;
+  showUpcomingAppointments: boolean;
+  showLastVisit: boolean;
+}
+
 export interface PatientDetail {
   id: number;
   personId: number;
@@ -156,6 +181,8 @@ export interface PatientDetail {
   fullName: string;
   age: number;
   comment?: string;
+  quickPreview: PatientQuickPreview;
+  quickPreviewSettings: QuickPreviewSettings;
   events: PatientEvent[];
   appointments: PatientAppointment[];
 }

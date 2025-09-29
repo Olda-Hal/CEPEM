@@ -78,7 +78,9 @@
     "cancel": "Zrušit",
     "creating": "Vytváří se...",
     "back": "Zpět",
-    "backToPatients": "Zpět na pacienty"
+    "no": "Ne",
+    "yes": "Ano",
+    "save": "Uložit"
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -146,6 +148,7 @@
     "error": "Nepodařilo se vytvořit zaměstnance. Zkuste to znovu."
   },
   "patients": {
+    "backToPatients": "Zpět na pacienty",
     "title": "Pacienti",
     "searchPlaceholder": "Vyhledejte pacienta podle jména, příjmení, UID nebo emailu...",
     "loading": "Načítání pacientů...",
@@ -196,6 +199,18 @@
     "alive": "Živ",
     "deceased": "Zemřel",
     "comment": "Poznámka",
+    "quickPreview": "Rychlý přehled",
+    "covidVaccination": "Očkování COVID-19",
+    "fluVaccination": "Očkování proti chřipce",
+    "diabetes": "Diabetes",
+    "hypertension": "Hypertenze",
+    "heartDisease": "Srdeční onemocnění",
+    "allergies": "Alergie",
+    "recentEvents": "Nedávné události",
+    "upcomingAppointments": "Nadcházející termíny",
+    "lastVisit": "Poslední návštěva",
+    "quickPreviewSettings": "Nastavení rychlého přehledu",
+    "quickPreviewSettingsDescription": "Vyberte, které informace se mají zobrazovat v rychlém přehledu pacienta.",
     "events": "Události",
     "addEvent": "Přidat událost",
     "noEvents": "Žádné události",

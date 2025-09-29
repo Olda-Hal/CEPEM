@@ -270,6 +270,12 @@ namespace DatabaseAPI.Controllers
                 if (DateTime.Now < patient.BirthDate.AddYears(age))
                     age--;
 
+                var allVaccines = patient.Events.SelectMany(e => e.Vaccines.Select(v => v.VaccineType.Name)).ToList();
+                var allSymptoms = patient.Events.SelectMany(e => e.PatientSymptoms.Select(ps => ps.Symptom.Name)).ToList();
+                var recentEvents = patient.Events.Where(e => e.HappenedAt >= DateTime.Now.AddMonths(-6)).ToList();
+                var upcomingAppointments = appointments.Where(a => a.StartTime >= DateTime.Now).ToList();
+                var lastEvent = patient.Events.OrderByDescending(e => e.HappenedAt).FirstOrDefault();
+
                 var patientDetailDto = new PatientDetailDto
                 {
                     Id = patient.Id,
@@ -289,6 +295,20 @@ namespace DatabaseAPI.Controllers
                     FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
                     Age = age,
                     Comment = patient.Comment?.Text ?? patient.Person.Comment?.Text,
+                    QuickPreview = new PatientQuickPreviewDto
+                    {
+                        HasCovidVaccination = allVaccines.Any(v => v.ToLower().Contains("covid")),
+                        HasFluVaccination = allVaccines.Any(v => v.ToLower().Contains("flu") || v.ToLower().Contains("influenza")),
+                        HasDiabetes = allSymptoms.Any(s => s.ToLower().Contains("diabetes")),
+                        HasHypertension = allSymptoms.Any(s => s.ToLower().Contains("hypertension") || s.ToLower().Contains("vysoký tlak")),
+                        HasHeartDisease = allSymptoms.Any(s => s.ToLower().Contains("heart") || s.ToLower().Contains("srdce")),
+                        HasAllergies = allSymptoms.Any(s => s.ToLower().Contains("allergy") || s.ToLower().Contains("alergie")),
+                        RecentEventsCount = recentEvents.Count,
+                        UpcomingAppointmentsCount = upcomingAppointments.Count,
+                        LastVisit = lastEvent?.HappenedAt,
+                        LastVisitType = lastEvent?.EventType.Name?.ToString()
+                    },
+                    QuickPreviewSettings = new QuickPreviewSettingsDto(),
                     Events = patient.Events.OrderByDescending(e => e.HappenedAt).Select(e => new PatientEventDto
                     {
                         Id = e.Id,
