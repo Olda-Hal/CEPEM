@@ -5,6 +5,7 @@ import { PatientDetail, QuickPreviewSettings } from '../types';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
+import AddEventModal from '../components/AddEventModal';
 import './PatientDetailPage.css';
 
 export const PatientDetailPage: React.FC = () => {
@@ -15,6 +16,7 @@ export const PatientDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -51,6 +53,12 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving quick preview settings:', error);
+    }
+  };
+
+  const handleEventAdded = () => {
+    if (id) {
+      loadPatientDetail(parseInt(id));
     }
   };
 
@@ -257,7 +265,7 @@ export const PatientDetailPage: React.FC = () => {
         <div className="patient-events-card">
           <div className="card-header">
             <h2>{t('patients.events')} ({patient.events.length})</h2>
-            <button className="add-event-btn">
+            <button className="add-event-btn" onClick={() => setShowAddEventModal(true)}>
               {t('patients.addEvent')}
             </button>
           </div>
@@ -397,6 +405,14 @@ export const PatientDetailPage: React.FC = () => {
         onClose={() => setShowSettingsModal(false)}
         settings={patient.quickPreviewSettings}
         onSave={handleSaveSettings}
+      />
+
+      {/* Add Event Modal */}
+      <AddEventModal
+        isOpen={showAddEventModal}
+        onClose={() => setShowAddEventModal(false)}
+        patientId={patient.id}
+        onEventAdded={handleEventAdded}
       />
     </div>
   );

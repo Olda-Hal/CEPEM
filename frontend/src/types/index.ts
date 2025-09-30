@@ -210,6 +210,60 @@ export interface PatientAppointment {
   hospitalName: string;
 }
 
+export interface EventType {
+  id: number;
+  name: string;
+}
+
+export interface Drug {
+  id: number;
+  name: string;
+}
+
+export interface ExaminationType {
+  id: number;
+  name: string;
+}
+
+export interface Symptom {
+  id: number;
+  name: string;
+}
+
+export interface InjuryType {
+  id: number;
+  name: string;
+}
+
+export interface VaccineType {
+  id: number;
+  name: string;
+}
+
+export interface EventOptions {
+  eventTypes: EventType[];
+  drugs: Drug[];
+  examinationTypes: ExaminationType[];
+  symptoms: Symptom[];
+  injuryTypes: InjuryType[];
+  vaccineTypes: VaccineType[];
+}
+
+export interface CreateEventRequest {
+  patientId: number;
+  eventTypeId: number;
+  happenedAt: string;
+  happenedTo?: string;
+  comment?: string;
+  drugIds: number[];
+  examinationTypeIds: number[];
+  symptomIds: number[];
+  injuryTypeIds: number[];
+  vaccineTypeIds: number[];
+  isPregnant?: boolean;
+  pregnancyResult?: boolean;
+}
+
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;

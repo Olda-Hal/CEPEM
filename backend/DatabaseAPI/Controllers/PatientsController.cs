@@ -306,13 +306,13 @@ namespace DatabaseAPI.Controllers
                         RecentEventsCount = recentEvents.Count,
                         UpcomingAppointmentsCount = upcomingAppointments.Count,
                         LastVisit = lastEvent?.HappenedAt,
-                        LastVisitType = lastEvent?.EventType.Name?.ToString()
+                        LastVisitType = lastEvent?.EventType.Name
                     },
                     QuickPreviewSettings = new QuickPreviewSettingsDto(),
                     Events = patient.Events.OrderByDescending(e => e.HappenedAt).Select(e => new PatientEventDto
                     {
                         Id = e.Id,
-                        EventTypeName = e.EventType.Name?.ToString() ?? "Unknown",
+                        EventTypeName = e.EventType.Name ?? "Unknown",
                         HappenedAt = e.HappenedAt,
                         HappenedTo = e.HappenedTo,
                         Comment = e.Comment?.Text,

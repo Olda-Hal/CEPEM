@@ -87,6 +87,84 @@ namespace DatabaseAPI.Controllers
             return Ok("Admin user created with password: " + password);
         }
 
+        [HttpPost("event-data")]
+        public async Task<IActionResult> SeedEventData()
+        {
+            // Check if event data already exists
+            if (await _context.EventTypes.AnyAsync())
+                return BadRequest("Event data already exists.");
+
+            // Seed Event Types
+            var eventTypes = new[]
+            {
+                new EventType { Name = "Návštěva" },
+                new EventType { Name = "Operace" }, 
+                new EventType { Name = "Pohotovost" },
+                new EventType { Name = "Kontrola" },
+                new EventType { Name = "Léčba" }
+            };
+            _context.EventTypes.AddRange(eventTypes);
+
+            // Seed Drugs
+            var drugs = new[]
+            {
+                new Drug { Name = "Paracetamol" },
+                new Drug { Name = "Ibuprofen" },
+                new Drug { Name = "Aspirin" },
+                new Drug { Name = "Antibiotika" },
+                new Drug { Name = "Inzulín" }
+            };
+            _context.Drugs.AddRange(drugs);
+
+            // Seed Examination Types
+            var examinationTypes = new[]
+            {
+                new ExaminationType { Name = "Krevní test" },
+                new ExaminationType { Name = "Rentgen" },
+                new ExaminationType { Name = "MRI" },
+                new ExaminationType { Name = "CT" },
+                new ExaminationType { Name = "Ultrazvuk" }
+            };
+            _context.ExaminationTypes.AddRange(examinationTypes);
+
+            // Seed Symptoms
+            var symptoms = new[]
+            {
+                new Symptom { Name = "Horečka" },
+                new Symptom { Name = "Bolest hlavy" },
+                new Symptom { Name = "Kašel" },
+                new Symptom { Name = "Nevolnost" },
+                new Symptom { Name = "Únava" }
+            };
+            _context.Symptoms.AddRange(symptoms);
+
+            // Seed Injury Types
+            var injuryTypes = new[]
+            {
+                new InjuryType { Name = "Zlomenina" },
+                new InjuryType { Name = "Podvrtnutí" },
+                new InjuryType { Name = "Řezná rána" },
+                new InjuryType { Name = "Popálenina" },
+                new InjuryType { Name = "Modřina" }
+            };
+            _context.InjuryTypes.AddRange(injuryTypes);
+
+            // Seed Vaccine Types
+            var vaccineTypes = new[]
+            {
+                new VaccineType { Name = "COVID-19" },
+                new VaccineType { Name = "Chřipka" },
+                new VaccineType { Name = "Tetanus" },
+                new VaccineType { Name = "Hepatitida B" },
+                new VaccineType { Name = "MMR" }
+            };
+            _context.VaccineTypes.AddRange(vaccineTypes);
+
+            await _context.SaveChangesAsync();
+            
+            return Ok("Event data seeded successfully.");
+        }
+
         private static string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
