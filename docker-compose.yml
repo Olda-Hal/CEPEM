@@ -75,11 +75,26 @@ services:
     networks:
       - cepem_network
 
+  # Build number incrementer
+  build-incrementer:
+    image: alpine:latest
+    container_name: cepem_build_incrementer
+    volumes:
+      - .:/workspace
+    command: >
+      sh -c "
+        cd /workspace &&
+        CURRENT=$$(cat BUILD_NUMBER || echo 0) &&
+        NEW_BUILD=$$((CURRENT + 1)) &&
+        echo $$NEW_BUILD > BUILD_NUMBER &&
+        echo 'Build number incremented to' $$NEW_BUILD
+      "
+
   # React Frontend
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/Dockerfile
     container_name: cepem_frontend
     restart: unless-stopped
     ports:
@@ -88,6 +103,7 @@ services:
       - REACT_APP_API_URL=http://localhost:5000
     depends_on:
       - healthcare-api
+      - build-incrementer
     networks:
       - cepem_network
 

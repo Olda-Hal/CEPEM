@@ -21,6 +21,14 @@ export const DashboardPage: React.FC = () => {
   const [showCreateEmployeeModal, setShowCreateEmployeeModal] = useState(false);
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
   const [isActionsExpanded, setIsActionsExpanded] = useState(true);
+  const [buildNumber, setBuildNumber] = useState<string | null>(null);
+  useEffect(() => {
+    // Fetch build number from static file
+    fetch('/build_number.txt')
+      .then((res) => res.text())
+      .then((text) => setBuildNumber(text.trim()))
+      .catch(() => setBuildNumber(null));
+  }, []);
 
   useEffect(() => {
     loadDashboardStats();
@@ -145,7 +153,7 @@ export const DashboardPage: React.FC = () => {
                     <div className="stat-icon">🏥</div>
                     <div className="stat-content">
                       <h3>{t('dashboard.systemInfo')}</h3>
-                      <p className="stat-value">{t('dashboard.systemVersion')}</p>
+                      <p className="stat-value">{buildNumber ? `0.1.${buildNumber}` : '0.1.???'}</p>
                       <p className="stat-label">{t('dashboard.version')}</p>
                       <p className="stat-label">
                         {t('dashboard.employeeId', { uid: user?.uid || '' })}
