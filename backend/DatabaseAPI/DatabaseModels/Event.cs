@@ -14,6 +14,8 @@ public class Event
     public int EventTypeId { get; set; }
     public EventType EventType { get; set; } = null!;
     
+    public Guid? EventGroupId { get; set; }
+    
     public DateTime HappenedAt { get; set; }
     
     public DateTime? HappenedTo { get; set; }

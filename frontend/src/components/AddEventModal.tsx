@@ -20,6 +20,8 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const { t } = useTranslation();
   const [eventOptions, setEventOptions] = useState<EventOptions | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [events, setEvents] = useState<CreateEventRequest[]>([]);
   const [formData, setFormData] = useState<CreateEventRequest>({
     patientId,
     eventTypeId: 0,
@@ -76,41 +78,90 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     return !instantEventKeywords.some(keyword => eventTypeName.includes(keyword));
   };
 
+  const handleAddToGroup = () => {
+    if (!formData.eventTypeId) {
+      return;
+    }
+
+    // Convert selectedDrugs Map to drugUses array
+    const drugUses: DrugUseRequest[] = Array.from(selectedDrugs.entries()).map(([drugId, categoryIds]) => ({
+      drugId,
+      categoryIds
+    }));
+
+    // Determine happenedTo based on event type
+    let happenedTo: string | undefined;
+    if (!shouldShowEndDate()) {
+      happenedTo = formData.happenedAt;
+    } else {
+      happenedTo = formData.happenedTo && formData.happenedTo.trim() !== '' ? formData.happenedTo : undefined;
+    }
+
+    const newEvent = {
+      ...formData,
+      happenedTo,
+      drugUses
+    };
+
+    setEvents([...events, newEvent]);
+    resetForm();
+  };
+
+  const handleRemoveFromGroup = (index: number) => {
+    setEvents(events.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.eventTypeId) {
+    
+    if (isGroupMode && events.length === 0) {
+      alert(t('events.pleaseAddAtLeastOneEvent') || 'Please add at least one event to the group');
+      return;
+    }
+
+    if (!isGroupMode && !formData.eventTypeId) {
       return;
     }
 
     try {
       setLoading(true);
       
-      // Convert selectedDrugs Map to drugUses array
-      const drugUses: DrugUseRequest[] = Array.from(selectedDrugs.entries()).map(([drugId, categoryIds]) => ({
-        drugId,
-        categoryIds
-      }));
-
-      // Determine happenedTo based on event type
-      let happenedTo: string | undefined;
-      if (!shouldShowEndDate()) {
-        // For instant events, set end time same as start time
-        happenedTo = formData.happenedAt;
+      if (isGroupMode) {
+        // Submit as group
+        await apiClient.post('/api/events/group', {
+          patientId,
+          events
+        });
       } else {
-        // For duration events, use the provided end time or undefined if empty
-        happenedTo = formData.happenedTo && formData.happenedTo.trim() !== '' ? formData.happenedTo : undefined;
+        // Single event submission
+        // Convert selectedDrugs Map to drugUses array
+        const drugUses: DrugUseRequest[] = Array.from(selectedDrugs.entries()).map(([drugId, categoryIds]) => ({
+          drugId,
+          categoryIds
+        }));
+
+        // Determine happenedTo based on event type
+        let happenedTo: string | undefined;
+        if (!shouldShowEndDate()) {
+          happenedTo = formData.happenedAt;
+        } else {
+          happenedTo = formData.happenedTo && formData.happenedTo.trim() !== '' ? formData.happenedTo : undefined;
+        }
+
+        const submitData = {
+          ...formData,
+          happenedTo,
+          drugUses
+        };
+
+        await apiClient.post('/api/events', submitData);
       }
-
-      const submitData = {
-        ...formData,
-        happenedTo,
-        drugUses
-      };
-
-      await apiClient.post('/api/events', submitData);
+      
       onEventAdded();
       onClose();
       resetForm();
+      setEvents([]);
+      setIsGroupMode(false);
     } catch (error) {
       console.error('Error creating event:', error);
     } finally {
@@ -177,26 +228,21 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
     const eventTypeName = getSelectedEventTypeName().toLowerCase();
     
-    // Map event type names to their corresponding forms
-    // This works with any event type name containing these keywords
     const showDrugs = eventTypeName.includes('drug') || eventTypeName.includes('lék') || eventTypeName.includes('léčba');
     const showExaminations = eventTypeName.includes('examination') || eventTypeName.includes('vyšetření') || eventTypeName.includes('kontrola');
     const showSymptoms = eventTypeName.includes('symptom') || eventTypeName.includes('příznak');
     const showInjuries = eventTypeName.includes('injury') || eventTypeName.includes('úraz') || eventTypeName.includes('zranění');
     const showVaccines = eventTypeName.includes('vaccine') || eventTypeName.includes('očkování') || eventTypeName.includes('vakcína');
     const showPregnancy = eventTypeName.includes('pregnancy') || eventTypeName.includes('těhotenství');
-    
-    // If no specific match, show all options (for general event types like "Návštěva", "Operace")
-    const showAll = !showDrugs && !showExaminations && !showSymptoms && !showInjuries && !showVaccines && !showPregnancy;
 
     return (
       <>
-        {(showDrugs || showAll) && renderDrugUseForm()}
-        {(showExaminations || showAll) && renderExaminationForm()}
-        {(showSymptoms || showAll) && renderSymptomsForm()}
-        {(showInjuries || showAll) && renderInjuryForm()}
-        {(showVaccines || showAll) && renderVaccineForm()}
-        {(showPregnancy || showAll) && renderPregnancyForm()}
+        {showDrugs && renderDrugUseForm()}
+        {showExaminations && renderExaminationForm()}
+        {showSymptoms && renderSymptomsForm()}
+        {showInjuries && renderInjuryForm()}
+        {showVaccines && renderVaccineForm()}
+        {showPregnancy && renderPregnancyForm()}
       </>
     );
   };
@@ -462,12 +508,70 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               </div>
             )}
 
+            {/* Group mode toggle */}
+            <div className="form-section">
+              <label className="checkbox-item">
+                <input
+                  type="checkbox"
+                  checked={isGroupMode}
+                  onChange={(e) => setIsGroupMode(e.target.checked)}
+                />
+                <span>{t('events.groupModeLabel') || 'Přidat více eventů do skupiny'}</span>
+              </label>
+              <p className="form-help-text">
+                {t('events.groupModeHelp') || 'V režimu skupiny můžete postupně přidat několik různých eventů, které se v UI zobrazí jako jedna věc, ale v databázi budou samostatné.'}
+              </p>
+            </div>
+
+            {/* Events in group */}
+            {isGroupMode && events.length > 0 && (
+              <div className="form-section">
+                <h3>{t('events.eventsInGroup') || 'Události ve skupině'}</h3>
+                <div className="events-list">
+                  {events.map((event, index) => {
+                    const eventType = eventOptions?.eventTypes.find(et => et.id === event.eventTypeId);
+                    return (
+                      <div key={index} className="event-item">
+                        <span>{eventType?.name || 'Unknown'} - {new Date(event.happenedAt).toLocaleString('cs-CZ')}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromGroup(index)}
+                          className="remove-button"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="modal-actions">
               <button type="button" onClick={onClose} className="cancel-button">
                 {t('common.cancel')}
               </button>
-              <button type="submit" disabled={loading || !formData.eventTypeId} className="save-button">
-                {loading ? t('events.creating') : t('events.createEvent')}
+              {isGroupMode && (
+                <button 
+                  type="button" 
+                  onClick={handleAddToGroup} 
+                  disabled={!formData.eventTypeId}
+                  className="add-to-group-button"
+                >
+                  {t('events.addToGroup') || 'Přidat do skupiny'}
+                </button>
+              )}
+              <button 
+                type="submit" 
+                disabled={loading || (!isGroupMode && !formData.eventTypeId) || (isGroupMode && events.length === 0)} 
+                className="save-button"
+              >
+                {loading 
+                  ? t('events.creating') 
+                  : isGroupMode 
+                    ? (t('events.createGroup') || 'Vytvořit skupinu') 
+                    : t('events.createEvent')
+                }
               </button>
             </div>
           </form>

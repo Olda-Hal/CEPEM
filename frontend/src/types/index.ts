@@ -266,6 +266,7 @@ export interface CreateEventRequest {
   happenedAt: string;
   happenedTo?: string;
   comment?: string;
+  eventGroupId?: string;
   drugUses: DrugUseRequest[];
   examinationTypeIds: number[];
   symptomIds: number[];
@@ -273,6 +274,16 @@ export interface CreateEventRequest {
   vaccineTypeIds: number[];
   isPregnant?: boolean;
   pregnancyResult?: boolean;
+}
+
+export interface CreateEventGroupRequest {
+  patientId: number;
+  events: CreateEventRequest[];
+}
+
+export interface CreateEventGroupResponse {
+  eventGroupId: string;
+  eventIds: number[];
 }
 
 export interface AuthContextType {

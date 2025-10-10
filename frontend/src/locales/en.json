@@ -301,6 +301,12 @@
     "symptomsHelp": "Select all symptoms present.",
     "creating": "Creating...",
     "createEvent": "Create Event",
-    "isPregnant": "Pregnancy"
+    "isPregnant": "Pregnancy",
+    "groupModeLabel": "Add multiple events to a group",
+    "groupModeHelp": "In group mode, you can add several different events sequentially, which will appear as one item in the UI but will be stored separately in the database.",
+    "eventsInGroup": "Events in group",
+    "addToGroup": "Add to group",
+    "createGroup": "Create group",
+    "pleaseAddAtLeastOneEvent": "Please add at least one event to the group"
   }
 }

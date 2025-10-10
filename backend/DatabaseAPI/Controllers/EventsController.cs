@@ -91,7 +91,8 @@ public class EventsController : ControllerBase
                 EventTypeId = request.EventTypeId,
                 HappenedAt = request.HappenedAt,
                 HappenedTo = request.HappenedTo,
-                CommentId = comment?.Id
+                CommentId = comment?.Id,
+                EventGroupId = request.EventGroupId
             };
 
             _context.Events.Add(eventEntity);
@@ -178,6 +179,132 @@ public class EventsController : ControllerBase
         {
             await transaction.RollbackAsync();
             return StatusCode(500, $"Error creating event: {ex.Message}");
+        }
+    }
+
+    [HttpPost("group")]
+    public async Task<ActionResult<CreateEventGroupResponse>> CreateEventGroup(CreateEventGroupRequest request)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var eventGroupId = Guid.NewGuid();
+            var eventIds = new List<int>();
+
+            foreach (var eventRequest in request.Events)
+            {
+                eventRequest.PatientId = request.PatientId;
+                eventRequest.EventGroupId = eventGroupId;
+
+                Comment? comment = null;
+                if (!string.IsNullOrEmpty(eventRequest.Comment))
+                {
+                    comment = new Comment { Text = eventRequest.Comment };
+                    _context.Comments.Add(comment);
+                    await _context.SaveChangesAsync();
+                }
+
+                var eventEntity = new Event
+                {
+                    PatientId = eventRequest.PatientId,
+                    EventTypeId = eventRequest.EventTypeId,
+                    HappenedAt = eventRequest.HappenedAt,
+                    HappenedTo = eventRequest.HappenedTo,
+                    CommentId = comment?.Id,
+                    EventGroupId = eventGroupId
+                };
+
+                _context.Events.Add(eventEntity);
+                await _context.SaveChangesAsync();
+
+                foreach (var drugUse in eventRequest.DrugUses)
+                {
+                    var drugUseEntity = new DrugUse
+                    {
+                        DrugId = drugUse.DrugId,
+                        EventId = eventEntity.Id
+                    };
+                    _context.DrugUses.Add(drugUseEntity);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var categoryId in drugUse.CategoryIds)
+                    {
+                        var drugToDrugCategory = new DrugToDrugCategory
+                        {
+                            DrugId = drugUse.DrugId,
+                            CategoryId = categoryId
+                        };
+                        _context.DrugToDrugCategories.Add(drugToDrugCategory);
+                    }
+                }
+
+                foreach (var examinationTypeId in eventRequest.ExaminationTypeIds)
+                {
+                    var examination = new Examination
+                    {
+                        ExaminationTypeId = examinationTypeId,
+                        EventId = eventEntity.Id
+                    };
+                    _context.Examinations.Add(examination);
+                }
+
+                foreach (var symptomId in eventRequest.SymptomIds)
+                {
+                    var patientSymptom = new PatientSymptom
+                    {
+                        SymptomId = symptomId,
+                        EventId = eventEntity.Id
+                    };
+                    _context.PatientSymptoms.Add(patientSymptom);
+                }
+
+                foreach (var injuryTypeId in eventRequest.InjuryTypeIds)
+                {
+                    var injury = new Injury
+                    {
+                        InjuryTypeId = injuryTypeId,
+                        EventId = eventEntity.Id
+                    };
+                    _context.Injuries.Add(injury);
+                }
+
+                foreach (var vaccineTypeId in eventRequest.VaccineTypeIds)
+                {
+                    var vaccine = new Vaccine
+                    {
+                        VaccineTypeId = vaccineTypeId,
+                        EventId = eventEntity.Id
+                    };
+                    _context.Vaccines.Add(vaccine);
+                }
+
+                if (eventRequest.IsPregnant == true)
+                {
+                    var pregnancy = new Pregnancy
+                    {
+                        EventId = eventEntity.Id,
+                        Result = eventRequest.PregnancyResult ?? false
+                    };
+                    _context.Pregnancies.Add(pregnancy);
+                }
+
+                await _context.SaveChangesAsync();
+                eventIds.Add(eventEntity.Id);
+            }
+
+            await transaction.CommitAsync();
+
+            return Ok(new CreateEventGroupResponse
+            {
+                EventGroupId = eventGroupId,
+                EventIds = eventIds
+            });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, $"Error creating event group: {ex.Message}");
         }
     }
 }

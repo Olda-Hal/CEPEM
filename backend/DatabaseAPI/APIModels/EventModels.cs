@@ -25,6 +25,8 @@ public class CreateEventRequest
 
     public string? Comment { get; set; }
 
+    public Guid? EventGroupId { get; set; }
+
     public List<DrugUseRequest> DrugUses { get; set; } = new List<DrugUseRequest>();
 
     public List<int> ExaminationTypeIds { get; set; } = new List<int>();
@@ -38,6 +40,20 @@ public class CreateEventRequest
     public bool? IsPregnant { get; set; }
 
     public bool? PregnancyResult { get; set; }
+}
+
+public class CreateEventGroupRequest
+{
+    [Required]
+    public int PatientId { get; set; }
+
+    public List<CreateEventRequest> Events { get; set; } = new List<CreateEventRequest>();
+}
+
+public class CreateEventGroupResponse
+{
+    public Guid EventGroupId { get; set; }
+    public List<int> EventIds { get; set; } = new List<int>();
 }
 
 public class EventTypeResponse

@@ -101,7 +101,12 @@ namespace DatabaseAPI.Controllers
                 new EventType { Name = "Operace" }, 
                 new EventType { Name = "Pohotovost" },
                 new EventType { Name = "Kontrola" },
-                new EventType { Name = "Léčba" }
+                new EventType { Name = "Vyšetření" },
+                new EventType { Name = "Lék" },
+                new EventType { Name = "Úraz" },
+                new EventType { Name = "Očkování" },
+                new EventType { Name = "Příznak" },
+                new EventType { Name = "Těhotenství" }
             };
             _context.EventTypes.AddRange(eventTypes);
 
@@ -175,6 +180,22 @@ namespace DatabaseAPI.Controllers
             await _context.SaveChangesAsync();
             
             return Ok("Event data seeded successfully.");
+        }
+
+        [HttpPost("add-event-types")]
+        public async Task<IActionResult> AddEventTypes([FromBody] string[] eventTypeNames)
+        {
+            foreach (var name in eventTypeNames)
+            {
+                var exists = await _context.EventTypes.AnyAsync(et => et.Name == name);
+                if (!exists)
+                {
+                    _context.EventTypes.Add(new EventType { Name = name });
+                }
+            }
+            
+            await _context.SaveChangesAsync();
+            return Ok($"Added {eventTypeNames.Length} event types.");
         }
 
         private static string HashPassword(string password)

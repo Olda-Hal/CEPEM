@@ -300,7 +300,13 @@
     "successful": "Úspěšné",
     "unsuccessful": "Neúspěšné",
     "eventCreated": "Událost byla úspěšně vytvořena",
-    "errorCreatingEvent": "Chyba při vytváření události"
+    "errorCreatingEvent": "Chyba při vytváření události",
+    "groupModeLabel": "Přidat více událostí do skupiny",
+    "groupModeHelp": "V režimu skupiny můžete postupně přidat několik různých událostí, které se v UI zobrazí jako jedna věc, ale v databázi budou samostatné.",
+    "eventsInGroup": "Události ve skupině",
+    "addToGroup": "Přidat do skupiny",
+    "createGroup": "Vytvořit skupinu",
+    "pleaseAddAtLeastOneEvent": "Prosím přidejte alespoň jednu událost do skupiny"
   },
   "themes": {
     "lightThemes": "Světlé motivy",
