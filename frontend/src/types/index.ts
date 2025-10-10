@@ -220,6 +220,11 @@ export interface Drug {
   name: string;
 }
 
+export interface DrugCategory {
+  id: number;
+  name: string;
+}
+
 export interface ExaminationType {
   id: number;
   name: string;
@@ -243,10 +248,16 @@ export interface VaccineType {
 export interface EventOptions {
   eventTypes: EventType[];
   drugs: Drug[];
+  drugCategories: DrugCategory[];
   examinationTypes: ExaminationType[];
   symptoms: Symptom[];
   injuryTypes: InjuryType[];
   vaccineTypes: VaccineType[];
+}
+
+export interface DrugUseRequest {
+  drugId: number;
+  categoryIds: number[];
 }
 
 export interface CreateEventRequest {
@@ -255,7 +266,7 @@ export interface CreateEventRequest {
   happenedAt: string;
   happenedTo?: string;
   comment?: string;
-  drugIds: number[];
+  drugUses: DrugUseRequest[];
   examinationTypeIds: number[];
   symptomIds: number[];
   injuryTypeIds: number[];

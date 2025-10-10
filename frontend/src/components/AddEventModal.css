@@ -37,6 +37,13 @@
   color: #555;
 }
 
+.optional-hint {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -182,6 +189,90 @@
   justify-content: center;
   align-items: center;
   padding: 2rem;
+}
+
+/* Drug selection specific styles */
+.drug-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.drug-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1rem;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.drug-item:has(input:checked) {
+  border-color: #007bff;
+  background-color: #f0f7ff;
+}
+
+.drug-checkbox {
+  margin-bottom: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.drug-checkbox:hover {
+  background: transparent;
+  border: none;
+}
+
+.drug-name {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #333;
+}
+
+.drug-categories {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fff;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.category-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.category-checkbox {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.category-checkbox:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.category-checkbox input:checked + span {
+  color: #007bff;
+  font-weight: 500;
+}
+
+.form-help-text {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+  font-style: italic;
 }
 
 /* Responsive design */

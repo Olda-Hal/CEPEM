@@ -116,6 +116,18 @@ namespace DatabaseAPI.Controllers
             };
             _context.Drugs.AddRange(drugs);
 
+            // Seed Drug Categories
+            var drugCategories = new[]
+            {
+                new DrugCategory { Name = "Bolest" },
+                new DrugCategory { Name = "Teplota" },
+                new DrugCategory { Name = "Zánět" },
+                new DrugCategory { Name = "Infekce" },
+                new DrugCategory { Name = "Prevence" },
+                new DrugCategory { Name = "Chronické onemocnění" }
+            };
+            _context.DrugCategories.AddRange(drugCategories);
+
             // Seed Examination Types
             var examinationTypes = new[]
             {

@@ -22,6 +22,7 @@ public class EventsController : ControllerBase
     {
         var eventTypes = await _context.EventTypes.ToListAsync();
         var drugs = await _context.Drugs.OrderBy(d => d.Name).ToListAsync();
+        var drugCategories = await _context.DrugCategories.OrderBy(dc => dc.Name).ToListAsync();
         var examinationTypes = await _context.ExaminationTypes.OrderBy(et => et.Name).ToListAsync();
         var symptoms = await _context.Symptoms.OrderBy(s => s.Name).ToListAsync();
         var injuryTypes = await _context.InjuryTypes.OrderBy(it => it.Name).ToListAsync();
@@ -38,6 +39,11 @@ public class EventsController : ControllerBase
             {
                 Id = d.Id,
                 Name = d.Name
+            }).ToList(),
+            DrugCategories = drugCategories.Select(dc => new DrugCategoryResponse
+            {
+                Id = dc.Id,
+                Name = dc.Name ?? string.Empty
             }).ToList(),
             ExaminationTypes = examinationTypes.Select(et => new ExaminationTypeResponse
             {
@@ -91,14 +97,26 @@ public class EventsController : ControllerBase
             _context.Events.Add(eventEntity);
             await _context.SaveChangesAsync();
 
-            foreach (var drugId in request.DrugIds)
+            foreach (var drugUse in request.DrugUses)
             {
-                var drugUse = new DrugUse
+                var drugUseEntity = new DrugUse
                 {
-                    DrugId = drugId,
+                    DrugId = drugUse.DrugId,
                     EventId = eventEntity.Id
                 };
-                _context.DrugUses.Add(drugUse);
+                _context.DrugUses.Add(drugUseEntity);
+                await _context.SaveChangesAsync();
+
+                // Add drug categories for this drug use
+                foreach (var categoryId in drugUse.CategoryIds)
+                {
+                    var drugToDrugCategory = new DrugToDrugCategory
+                    {
+                        DrugId = drugUse.DrugId,
+                        CategoryId = categoryId
+                    };
+                    _context.DrugToDrugCategories.Add(drugToDrugCategory);
+                }
             }
 
             foreach (var examinationTypeId in request.ExaminationTypeIds)

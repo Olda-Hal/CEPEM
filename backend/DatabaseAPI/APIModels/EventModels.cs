@@ -2,6 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DatabaseAPI.APIModels;
 
+public class DrugUseRequest
+{
+    [Required]
+    public int DrugId { get; set; }
+    
+    public List<int> CategoryIds { get; set; } = new List<int>();
+}
+
 public class CreateEventRequest
 {
     [Required]
@@ -17,7 +25,7 @@ public class CreateEventRequest
 
     public string? Comment { get; set; }
 
-    public List<int> DrugIds { get; set; } = new List<int>();
+    public List<DrugUseRequest> DrugUses { get; set; } = new List<DrugUseRequest>();
 
     public List<int> ExaminationTypeIds { get; set; } = new List<int>();
 
@@ -39,6 +47,12 @@ public class EventTypeResponse
 }
 
 public class DrugResponse
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class DrugCategoryResponse
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -72,6 +86,7 @@ public class EventOptionsResponse
 {
     public List<EventTypeResponse> EventTypes { get; set; } = new List<EventTypeResponse>();
     public List<DrugResponse> Drugs { get; set; } = new List<DrugResponse>();
+    public List<DrugCategoryResponse> DrugCategories { get; set; } = new List<DrugCategoryResponse>();
     public List<ExaminationTypeResponse> ExaminationTypes { get; set; } = new List<ExaminationTypeResponse>();
     public List<SymptomResponse> Symptoms { get; set; } = new List<SymptomResponse>();
     public List<InjuryTypeResponse> InjuryTypes { get; set; } = new List<InjuryTypeResponse>();
