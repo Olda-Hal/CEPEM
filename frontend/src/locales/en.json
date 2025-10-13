@@ -307,6 +307,13 @@
     "eventsInGroup": "Events in group",
     "addToGroup": "Add to group",
     "createGroup": "Create group",
-    "pleaseAddAtLeastOneEvent": "Please add at least one event to the group"
+    "pleaseAddAtLeastOneEvent": "Please add at least one event to the group",
+    "searchExaminations": "Search examinations...",
+    "searchSymptoms": "Search symptoms...",
+    "searchInjuries": "Search injuries...",
+    "searchVaccines": "Search vaccines...",
+    "searchDrugs": "Search medications...",
+    "searchCategories": "Search categories...",
+    "addToList": "Add \"{{name}}\" to list"
   }
 }

@@ -306,7 +306,14 @@
     "eventsInGroup": "Události ve skupině",
     "addToGroup": "Přidat do skupiny",
     "createGroup": "Vytvořit skupinu",
-    "pleaseAddAtLeastOneEvent": "Prosím přidejte alespoň jednu událost do skupiny"
+    "pleaseAddAtLeastOneEvent": "Prosím přidejte alespoň jednu událost do skupiny",
+    "searchExaminations": "Hledat vyšetření...",
+    "searchSymptoms": "Hledat příznaky...",
+    "searchInjuries": "Hledat úrazy...",
+    "searchVaccines": "Hledat očkování...",
+    "searchDrugs": "Hledat léky...",
+    "searchCategories": "Hledat kategorie...",
+    "addToList": "Přidat \"{{name}}\" do seznamu"
   },
   "themes": {
     "lightThemes": "Světlé motivy",

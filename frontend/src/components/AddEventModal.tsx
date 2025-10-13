@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EventOptions, CreateEventRequest, DrugUseRequest } from '../types';
 import { apiClient } from '../utils/api';
+import SearchableMultiSelect from './SearchableMultiSelect';
 import './AddEventModal.css';
 
 interface AddEventModalProps {
@@ -250,42 +251,82 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const renderDrugUseForm = () => {
     if (!eventOptions?.drugs.length) return null;
 
+    const selectedDrugIds = Array.from(selectedDrugs.keys());
+
+    const handleAddNewDrug = async (name: string) => {
+      const response = await apiClient.post<{ id: number; name: string }>('/api/events/drugs', { name });
+      setEventOptions(prev => prev ? {
+        ...prev,
+        drugs: [...prev.drugs, { id: response.id, name: response.name }]
+      } : prev);
+      return response;
+    };
+
+    const handleDrugSelectionChange = (drugIds: number[]) => {
+      const newSelectedDrugs = new Map(selectedDrugs);
+      
+      selectedDrugIds.forEach(oldId => {
+        if (!drugIds.includes(oldId)) {
+          newSelectedDrugs.delete(oldId);
+        }
+      });
+      
+      drugIds.forEach(newId => {
+        if (!selectedDrugs.has(newId)) {
+          newSelectedDrugs.set(newId, []);
+        }
+      });
+      
+      setSelectedDrugs(newSelectedDrugs);
+    };
+
+    const handleAddNewCategory = async (name: string) => {
+      const response = await apiClient.post<{ id: number; name: string }>('/api/events/drug-categories', { name });
+      setEventOptions(prev => prev ? {
+        ...prev,
+        drugCategories: [...prev.drugCategories, { id: response.id, name: response.name }]
+      } : prev);
+      return response;
+    };
+
     return (
       <div className="form-section">
-        <h3>{t('events.drugs')}</h3>
-        <p className="form-help-text">{t('events.drugUseHelp')}</p>
-        <div className="drug-selection">
-          {eventOptions.drugs.map(drug => (
-            <div key={drug.id} className="drug-item">
-              <label className="checkbox-item drug-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedDrugs.has(drug.id)}
-                  onChange={(e) => handleDrugToggle(drug.id, e.target.checked)}
-                />
-                <span className="drug-name">{drug.name}</span>
-              </label>
+        <SearchableMultiSelect
+          label={t('events.drugs')}
+          helpText={t('events.drugUseHelp')}
+          options={eventOptions.drugs}
+          selectedIds={selectedDrugIds}
+          onChange={handleDrugSelectionChange}
+          placeholder={t('events.searchDrugs')}
+          onAddNew={handleAddNewDrug}
+        />
+        
+        {selectedDrugIds.length > 0 && eventOptions.drugCategories.length > 0 && (
+          <div className="drug-categories-section">
+            <p className="category-section-label">{t('events.selectDrugCategories')}</p>
+            {selectedDrugIds.map(drugId => {
+              const drug = eventOptions.drugs.find(d => d.id === drugId);
+              if (!drug) return null;
               
-              {selectedDrugs.has(drug.id) && eventOptions.drugCategories.length > 0 && (
-                <div className="drug-categories">
-                  <p className="category-label">{t('events.selectDrugCategories')}</p>
-                  <div className="category-grid">
-                    {eventOptions.drugCategories.map(category => (
-                      <label key={category.id} className="checkbox-item category-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={(selectedDrugs.get(drug.id) || []).includes(category.id)}
-                          onChange={(e) => handleDrugCategoryToggle(drug.id, category.id, e.target.checked)}
-                        />
-                        <span>{category.name}</span>
-                      </label>
-                    ))}
-                  </div>
+              return (
+                <div key={drugId} className="drug-category-item">
+                  <h4 className="drug-category-title">{drug.name}</h4>
+                  <SearchableMultiSelect
+                    options={eventOptions.drugCategories}
+                    selectedIds={selectedDrugs.get(drugId) || []}
+                    onChange={(categoryIds) => {
+                      const newSelectedDrugs = new Map(selectedDrugs);
+                      newSelectedDrugs.set(drugId, categoryIds);
+                      setSelectedDrugs(newSelectedDrugs);
+                    }}
+                    placeholder={t('events.searchCategories')}
+                    onAddNew={handleAddNewCategory}
+                  />
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -293,22 +334,26 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const renderExaminationForm = () => {
     if (!eventOptions?.examinationTypes.length) return null;
 
+    const handleAddNewExamination = async (name: string) => {
+      const response = await apiClient.post<{ id: number; name: string }>('/api/events/examination-types', { name });
+      setEventOptions(prev => prev ? {
+        ...prev,
+        examinationTypes: [...prev.examinationTypes, { id: response.id, name: response.name }]
+      } : prev);
+      return response;
+    };
+
     return (
       <div className="form-section">
-        <h3>{t('events.examinations')}</h3>
-        <p className="form-help-text">{t('events.examinationHelp')}</p>
-        <div className="checkbox-grid">
-          {eventOptions.examinationTypes.map(exam => (
-            <label key={exam.id} className="checkbox-item">
-              <input
-                type="checkbox"
-                checked={formData.examinationTypeIds.includes(exam.id)}
-                onChange={(e) => handleCheckboxChange('examinationTypeIds', exam.id, e.target.checked)}
-              />
-              <span>{exam.name}</span>
-            </label>
-          ))}
-        </div>
+        <SearchableMultiSelect
+          label={t('events.examinations')}
+          helpText={t('events.examinationHelp')}
+          options={eventOptions.examinationTypes}
+          selectedIds={formData.examinationTypeIds}
+          onChange={(selectedIds) => setFormData(prev => ({ ...prev, examinationTypeIds: selectedIds }))}
+          placeholder={t('events.searchExaminations')}
+          onAddNew={handleAddNewExamination}
+        />
       </div>
     );
   };
@@ -348,22 +393,26 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const renderInjuryForm = () => {
     if (!eventOptions?.injuryTypes.length) return null;
 
+    const handleAddNewInjury = async (name: string) => {
+      const response = await apiClient.post<{ id: number; name: string }>('/api/events/injury-types', { name });
+      setEventOptions(prev => prev ? {
+        ...prev,
+        injuryTypes: [...prev.injuryTypes, { id: response.id, name: response.name }]
+      } : prev);
+      return response;
+    };
+
     return (
       <div className="form-section">
-        <h3>{t('events.injuries')}</h3>
-        <p className="form-help-text">{t('events.injuryHelp')}</p>
-        <div className="checkbox-grid">
-          {eventOptions.injuryTypes.map(injury => (
-            <label key={injury.id} className="checkbox-item">
-              <input
-                type="checkbox"
-                checked={formData.injuryTypeIds.includes(injury.id)}
-                onChange={(e) => handleCheckboxChange('injuryTypeIds', injury.id, e.target.checked)}
-              />
-              <span>{injury.name}</span>
-            </label>
-          ))}
-        </div>
+        <SearchableMultiSelect
+          label={t('events.injuries')}
+          helpText={t('events.injuryHelp')}
+          options={eventOptions.injuryTypes}
+          selectedIds={formData.injuryTypeIds}
+          onChange={(selectedIds) => setFormData(prev => ({ ...prev, injuryTypeIds: selectedIds }))}
+          placeholder={t('events.searchInjuries')}
+          onAddNew={handleAddNewInjury}
+        />
       </div>
     );
   };
@@ -371,22 +420,26 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const renderVaccineForm = () => {
     if (!eventOptions?.vaccineTypes.length) return null;
 
+    const handleAddNewVaccine = async (name: string) => {
+      const response = await apiClient.post<{ id: number; name: string }>('/api/events/vaccine-types', { name });
+      setEventOptions(prev => prev ? {
+        ...prev,
+        vaccineTypes: [...prev.vaccineTypes, { id: response.id, name: response.name }]
+      } : prev);
+      return response;
+    };
+
     return (
       <div className="form-section">
-        <h3>{t('events.vaccines')}</h3>
-        <p className="form-help-text">{t('events.vaccineHelp')}</p>
-        <div className="checkbox-grid">
-          {eventOptions.vaccineTypes.map(vaccine => (
-            <label key={vaccine.id} className="checkbox-item">
-              <input
-                type="checkbox"
-                checked={formData.vaccineTypeIds.includes(vaccine.id)}
-                onChange={(e) => handleCheckboxChange('vaccineTypeIds', vaccine.id, e.target.checked)}
-              />
-              <span>{vaccine.name}</span>
-            </label>
-          ))}
-        </div>
+        <SearchableMultiSelect
+          label={t('events.vaccines')}
+          helpText={t('events.vaccineHelp')}
+          options={eventOptions.vaccineTypes}
+          selectedIds={formData.vaccineTypeIds}
+          onChange={(selectedIds) => setFormData(prev => ({ ...prev, vaccineTypeIds: selectedIds }))}
+          placeholder={t('events.searchVaccines')}
+          onAddNew={handleAddNewVaccine}
+        />
       </div>
     );
   };
@@ -394,22 +447,26 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const renderSymptomsForm = () => {
     if (!eventOptions?.symptoms.length) return null;
 
+    const handleAddNewSymptom = async (name: string) => {
+      const response = await apiClient.post<{ id: number; name: string }>('/api/events/symptoms', { name });
+      setEventOptions(prev => prev ? {
+        ...prev,
+        symptoms: [...prev.symptoms, { id: response.id, name: response.name }]
+      } : prev);
+      return response;
+    };
+
     return (
       <div className="form-section">
-        <h3>{t('events.symptoms')}</h3>
-        <p className="form-help-text">{t('events.symptomsHelp')}</p>
-        <div className="checkbox-grid">
-          {eventOptions.symptoms.map(symptom => (
-            <label key={symptom.id} className="checkbox-item">
-              <input
-                type="checkbox"
-                checked={formData.symptomIds.includes(symptom.id)}
-                onChange={(e) => handleCheckboxChange('symptomIds', symptom.id, e.target.checked)}
-              />
-              <span>{symptom.name}</span>
-            </label>
-          ))}
-        </div>
+        <SearchableMultiSelect
+          label={t('events.symptoms')}
+          helpText={t('events.symptomsHelp')}
+          options={eventOptions.symptoms}
+          selectedIds={formData.symptomIds}
+          onChange={(selectedIds) => setFormData(prev => ({ ...prev, symptomIds: selectedIds }))}
+          placeholder={t('events.searchSymptoms')}
+          onAddNew={handleAddNewSymptom}
+        />
       </div>
     );
   };

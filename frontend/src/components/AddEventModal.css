@@ -258,6 +258,40 @@
   background-color: #fff;
 }
 
+.drug-categories-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: var(--color-background-secondary, #f7fafc);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 4px;
+}
+
+.category-section-label {
+  font-size: 0.95rem;
+  color: var(--color-text-primary, #2d3748);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.drug-category-item {
+  margin-bottom: 1.5rem;
+}
+
+.drug-category-item:last-child {
+  margin-bottom: 0;
+}
+
+.drug-category-title {
+  font-size: 0.9rem;
+  color: var(--color-text-primary, #2d3748);
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-background-tertiary, #edf2f7);
+  border-left: 3px solid var(--color-primary, #667eea);
+  border-radius: 2px;
+}
+
 .category-checkbox:hover {
   border-color: #007bff;
   background-color: #f8f9fa;

@@ -307,4 +307,88 @@ public class EventsController : ControllerBase
             return StatusCode(500, $"Error creating event group: {ex.Message}");
         }
     }
+
+    [HttpPost("examination-types")]
+    public async Task<ActionResult<ExaminationTypeResponse>> CreateExaminationType([FromBody] CreateOptionRequest request)
+    {
+        var examinationType = new ExaminationType { Name = request.Name };
+        _context.ExaminationTypes.Add(examinationType);
+        await _context.SaveChangesAsync();
+
+        return Ok(new ExaminationTypeResponse
+        {
+            Id = examinationType.Id,
+            Name = examinationType.Name
+        });
+    }
+
+    [HttpPost("symptoms")]
+    public async Task<ActionResult<SymptomResponse>> CreateSymptom([FromBody] CreateOptionRequest request)
+    {
+        var symptom = new Symptom { Name = request.Name };
+        _context.Symptoms.Add(symptom);
+        await _context.SaveChangesAsync();
+
+        return Ok(new SymptomResponse
+        {
+            Id = symptom.Id,
+            Name = symptom.Name
+        });
+    }
+
+    [HttpPost("injury-types")]
+    public async Task<ActionResult<InjuryTypeResponse>> CreateInjuryType([FromBody] CreateOptionRequest request)
+    {
+        var injuryType = new InjuryType { Name = request.Name };
+        _context.InjuryTypes.Add(injuryType);
+        await _context.SaveChangesAsync();
+
+        return Ok(new InjuryTypeResponse
+        {
+            Id = injuryType.Id,
+            Name = injuryType.Name
+        });
+    }
+
+    [HttpPost("vaccine-types")]
+    public async Task<ActionResult<VaccineTypeResponse>> CreateVaccineType([FromBody] CreateOptionRequest request)
+    {
+        var vaccineType = new VaccineType { Name = request.Name };
+        _context.VaccineTypes.Add(vaccineType);
+        await _context.SaveChangesAsync();
+
+        return Ok(new VaccineTypeResponse
+        {
+            Id = vaccineType.Id,
+            Name = vaccineType.Name
+        });
+    }
+
+    [HttpPost("drugs")]
+    public async Task<ActionResult<DrugResponse>> CreateDrug([FromBody] CreateOptionRequest request)
+    {
+        var drug = new Drug { Name = request.Name };
+        _context.Drugs.Add(drug);
+        await _context.SaveChangesAsync();
+
+        return Ok(new DrugResponse
+        {
+            Id = drug.Id,
+            Name = drug.Name
+        });
+    }
+
+    [HttpPost("drug-categories")]
+    public async Task<ActionResult<DrugCategoryResponse>> CreateDrugCategory([FromBody] CreateOptionRequest request)
+    {
+        var drugCategory = new DrugCategory { Name = request.Name };
+        _context.DrugCategories.Add(drugCategory);
+        await _context.SaveChangesAsync();
+
+        return Ok(new DrugCategoryResponse
+        {
+            Id = drugCategory.Id,
+            Name = drugCategory.Name ?? string.Empty
+        });
+    }
 }

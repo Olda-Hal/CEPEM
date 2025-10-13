@@ -108,3 +108,9 @@ public class EventOptionsResponse
     public List<InjuryTypeResponse> InjuryTypes { get; set; } = new List<InjuryTypeResponse>();
     public List<VaccineTypeResponse> VaccineTypes { get; set; } = new List<VaccineTypeResponse>();
 }
+
+public class CreateOptionRequest
+{
+    [Required]
+    public string Name { get; set; } = string.Empty;
+}
