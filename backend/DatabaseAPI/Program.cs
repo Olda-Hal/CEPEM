@@ -30,6 +30,10 @@ builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
 // Register employee management service
 builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
 
+// Register photo services
+builder.Services.AddScoped<PhotoEncryptionService>();
+builder.Services.AddScoped<PatientPhotoService>();
+
 // CORS Configuration - Only allow HealthcareAPI to call DatabaseAPI
 builder.Services.AddCors(options =>
 {

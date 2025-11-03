@@ -164,5 +164,97 @@ namespace HealthcareAPI.Controllers
                 return StatusCode(500, "An error occurred while getting patient detail");
             }
         }
+
+        [HttpPost("{id}/photo")]
+        public async Task<IActionResult> UploadPatientPhoto(int id, [FromForm] IFormFile photo)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                
+                using var content = new MultipartFormDataContent();
+                using var fileStream = photo.OpenReadStream();
+                using var streamContent = new StreamContent(fileStream);
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(photo.ContentType);
+                content.Add(streamContent, "photo", photo.FileName);
+
+                var response = await client.PostAsync($"/api/patients/{id}/photo", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var jsonDocument = JsonDocument.Parse(responseContent);
+                    return Ok(jsonDocument.RootElement);
+                }
+
+                return StatusCode((int)response.StatusCode, "Error uploading patient photo");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while uploading photo for patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while uploading patient photo");
+            }
+        }
+
+        [HttpGet("{id}/photo")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPatientPhoto(int id)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync($"/api/patients/{id}/photo");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                    var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                    return File(imageBytes, contentType);
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound();
+                }
+
+                return StatusCode((int)response.StatusCode, "Error retrieving patient photo");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting photo for patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while getting patient photo");
+            }
+        }
+
+        [HttpDelete("{id}/photo")]
+        public async Task<IActionResult> DeletePatientPhoto(int id)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.DeleteAsync($"/api/patients/{id}/photo");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return NoContent();
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound();
+                }
+
+                return StatusCode((int)response.StatusCode, "Error deleting patient photo");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting photo for patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while deleting patient photo");
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using DatabaseAPI.Data;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Services;
 
 namespace DatabaseAPI.Controllers
 {
@@ -13,11 +14,16 @@ namespace DatabaseAPI.Controllers
     {
         private readonly DatabaseContext _context;
         private readonly ILogger<PatientsController> _logger;
+        private readonly PatientPhotoService _photoService;
 
-        public PatientsController(DatabaseContext context, ILogger<PatientsController> logger)
+        public PatientsController(
+            DatabaseContext context, 
+            ILogger<PatientsController> logger,
+            PatientPhotoService photoService)
         {
             _context = context;
             _logger = logger;
+            _photoService = photoService;
         }
 
         [HttpGet("search")]
@@ -85,14 +91,13 @@ namespace DatabaseAPI.Controllers
                         Gender = p.Person.Gender,
                         CreatedAt = p.Person.CreatedAt,
                         UID = p.Person.UID,
-                        TitleBefore = p.Person.TitleBefore,
-                        TitleAfter = p.Person.TitleAfter,
-                        Alive = p.Alive,
-                        FullName = $"{p.Person.LastName}, {p.Person.FirstName}"
-                    })
-                    .ToListAsync();
-
-                var hasMore = totalCount > skip + limit;
+                    TitleBefore = p.Person.TitleBefore,
+                    TitleAfter = p.Person.TitleAfter,
+                    Alive = p.Alive,
+                    FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
+                    PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p)
+                })
+                    .ToListAsync();                var hasMore = totalCount > skip + limit;
 
                 var response = new PatientSearchResponse
                 {
@@ -166,7 +171,8 @@ namespace DatabaseAPI.Controllers
                     TitleBefore = createdPatient.Person.TitleBefore,
                     TitleAfter = createdPatient.Person.TitleAfter,
                     Alive = createdPatient.Alive,
-                    FullName = $"{createdPatient.Person.LastName}, {createdPatient.Person.FirstName}"
+                    FullName = $"{createdPatient.Person.LastName}, {createdPatient.Person.FirstName}",
+                    PhotoUrl = _photoService.GetPatientPhotoUrl(createdPatient.Id, createdPatient)
                 };
 
                 return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patientDto);
@@ -208,7 +214,8 @@ namespace DatabaseAPI.Controllers
                     TitleBefore = patient.Person.TitleBefore,
                     TitleAfter = patient.Person.TitleAfter,
                     Alive = patient.Alive,
-                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}"
+                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
+                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
                 };
 
                 return Ok(patientDto);
@@ -295,6 +302,7 @@ namespace DatabaseAPI.Controllers
                     FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
                     Age = age,
                     Comment = patient.Comment?.Text ?? patient.Person.Comment?.Text,
+                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient),
                     QuickPreview = new PatientQuickPreviewDto
                     {
                         HasCovidVaccination = allVaccines.Any(v => v.ToLower().Contains("covid")),
@@ -340,6 +348,88 @@ namespace DatabaseAPI.Controllers
             {
                 _logger.LogError(ex, "Error occurred while getting patient detail {PatientId}", id);
                 return StatusCode(500, "An error occurred while getting patient detail");
+            }
+        }
+
+        [HttpPost("{id}/photo")]
+        public async Task<IActionResult> UploadPatientPhoto(int id, [FromForm] IFormFile photo)
+        {
+            try
+            {
+                if (photo == null || photo.Length == 0)
+                {
+                    return BadRequest("No photo provided");
+                }
+
+                if (!photo.ContentType.StartsWith("image/"))
+                {
+                    return BadRequest("File must be an image");
+                }
+
+                if (photo.Length > 5 * 1024 * 1024)
+                {
+                    return BadRequest("Photo size must not exceed 5MB");
+                }
+
+                using var memoryStream = new MemoryStream();
+                await photo.CopyToAsync(memoryStream);
+                var photoData = memoryStream.ToArray();
+
+                var fileName = await _photoService.SavePatientPhotoAsync(id, photoData);
+
+                return Ok(new { photoUrl = $"/api/patients/{id}/photo" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Patient not found when uploading photo");
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while uploading patient photo");
+                return StatusCode(500, "An error occurred while uploading photo");
+            }
+        }
+
+        [HttpGet("{id}/photo")]
+        public async Task<IActionResult> GetPatientPhoto(int id)
+        {
+            try
+            {
+                var photoData = await _photoService.GetPatientPhotoAsync(id);
+
+                if (photoData == null)
+                {
+                    return NotFound("Patient photo not found");
+                }
+
+                return File(photoData, "image/jpeg");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting patient photo");
+                return StatusCode(500, "An error occurred while getting photo");
+            }
+        }
+
+        [HttpDelete("{id}/photo")]
+        public async Task<IActionResult> DeletePatientPhoto(int id)
+        {
+            try
+            {
+                var deleted = await _photoService.DeletePatientPhotoAsync(id);
+
+                if (!deleted)
+                {
+                    return NotFound("Patient photo not found");
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting patient photo");
+                return StatusCode(500, "An error occurred while deleting photo");
             }
         }
     }

@@ -130,6 +130,7 @@ export interface Patient {
   titleAfter?: string;
   alive: boolean;
   fullName: string;
+  photoUrl?: string;
 }
 
 export interface PatientSearchResponse {
@@ -181,6 +182,7 @@ export interface PatientDetail {
   fullName: string;
   age: number;
   comment?: string;
+  photoUrl?: string;
   quickPreview: PatientQuickPreview;
   quickPreviewSettings: QuickPreviewSettings;
   events: PatientEvent[];

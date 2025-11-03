@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
+import { CameraCapture } from './CameraCapture';
 import './CreatePatientModal.css';
 
 interface CreatePatientData {
@@ -31,6 +32,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatingUid, setGeneratingUid] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<Blob | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   
   const [patientData, setPatientData] = useState<CreatePatientData>({
     firstName: '',
@@ -164,6 +168,28 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
 
       const response = await apiClient.post<any>('/api/patients', createData);
       
+      if (capturedPhoto && response?.id) {
+        try {
+          const formData = new FormData();
+          formData.append('photo', capturedPhoto, 'patient-photo.jpg');
+          
+          const token = localStorage.getItem('authToken');
+          const uploadResponse = await fetch(`http://localhost:5000/api/patients/${response.id}/photo`, {
+            method: 'POST',
+            headers: {
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+            body: formData,
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error('Failed to upload photo');
+          }
+        } catch (photoError) {
+          console.error('Error uploading photo:', photoError);
+        }
+      }
+      
       // Reset form
       setPatientData({
         firstName: '',
@@ -177,6 +203,8 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
         titleAfter: '',
         uid: ''
       });
+      setCapturedPhoto(null);
+      setPhotoPreview(null);
       
       // Generate new UID for next patient
       setTimeout(() => generateUniqueUid(), 100);
@@ -191,8 +219,23 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
     }
   };
 
+  const handlePhotoCapture = (imageData: Blob) => {
+    setCapturedPhoto(imageData);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(imageData);
+    setShowCamera(false);
+  };
+
+  const handleRemovePhoto = () => {
+    setCapturedPhoto(null);
+    setPhotoPreview(null);
+  };
+
   const handleClose = () => {
-    if (!loading) {
+    if (!loading && !showCamera) {
       setError(null);
       setErrors({});
       onClose();
@@ -202,8 +245,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content create-patient-modal" onClick={(e) => e.stopPropagation()}>
+    <>
+      <div className="modal-overlay" onClick={handleClose}>
+        <div className="modal-content create-patient-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{t('patients.createPatient')}</h2>
           <button 
@@ -216,6 +260,34 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="create-patient-form">
+          <div className="form-row photo-section">
+            <div className="form-group photo-group">
+              <label>{t('patients.photo')}</label>
+              {photoPreview ? (
+                <div className="photo-preview-container">
+                  <img src={photoPreview} alt="Patient" className="photo-preview" />
+                  <button
+                    type="button"
+                    className="button secondary small"
+                    onClick={handleRemovePhoto}
+                    disabled={loading}
+                  >
+                    {t('patients.removePhoto')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={() => setShowCamera(true)}
+                  disabled={loading}
+                >
+                  📷 {t('patients.takePhoto')}
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="titleBefore">{t('patients.titleBefore')}</label>
@@ -397,6 +469,14 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+      </div>
+      
+      {showCamera && (
+        <CameraCapture
+          onCapture={handlePhotoCapture}
+          onCancel={() => setShowCamera(false)}
+        />
+      )}
+    </>
   );
 };

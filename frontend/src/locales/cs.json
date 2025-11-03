@@ -193,6 +193,16 @@
       "createFailed": "Nepodařilo se vytvořit pacienta"
     },
     "regenerateUid": "Vygenerovat nové UID",
+    "photo": "Fotografie",
+    "takePhoto": "Vyfotit pacienta",
+    "removePhoto": "Odstranit fotku",
+    "camera": {
+      "title": "Fotografie pacienta",
+      "capture": "Vyfotit",
+      "retake": "Vyfotit znovu",
+      "confirm": "Použít tuto fotku",
+      "accessDenied": "Přístup ke kameře byl odepřen. Povolte přístup v nastavení prohlížeče."
+    },
     "patientDetail": "Detail pacienta",
     "yearsOld": "let",
     "status": "Status",

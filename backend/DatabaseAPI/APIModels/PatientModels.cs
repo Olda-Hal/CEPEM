@@ -43,6 +43,7 @@ public class PatientDto
     public string? TitleAfter { get; set; }
     public bool Alive { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public string? PhotoUrl { get; set; }
 }
 
 public class PatientSearchRequest
@@ -108,6 +109,7 @@ public class PatientDetailDto
     public string FullName { get; set; } = string.Empty;
     public int Age { get; set; }
     public string? Comment { get; set; }
+    public string? PhotoUrl { get; set; }
     public PatientQuickPreviewDto QuickPreview { get; set; } = new();
     public QuickPreviewSettingsDto QuickPreviewSettings { get; set; } = new();
     public List<PatientEventDto> Events { get; set; } = new();

@@ -20,6 +20,8 @@ public class Patient
     
     public bool Alive { get; set; } = true;
     
+    public string? PhotoPath { get; set; }
+    
     // Navigation properties
     public ICollection<Event> Events { get; set; } = new List<Event>();
 }

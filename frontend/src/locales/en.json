@@ -183,6 +183,16 @@
       "createFailed": "Failed to create patient"
     },
     "regenerateUid": "Generate new UID",
+    "photo": "Photo",
+    "takePhoto": "Take Photo",
+    "removePhoto": "Remove Photo",
+    "camera": {
+      "title": "Patient Photo",
+      "capture": "Capture",
+      "retake": "Retake",
+      "confirm": "Use this photo",
+      "accessDenied": "Camera access was denied. Please allow access in browser settings."
+    },
     "patientDetail": "Patient Detail",
     "yearsOld": "years old",
     "status": "Status",

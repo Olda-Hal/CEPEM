@@ -54,6 +54,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5001
       - ConnectionStrings__DefaultConnection=Server=mysql;Database=cepem_healthcare;User=root;Password=rootpassword;
+    volumes:
+      - patient_photos:/app/patient-photos
     depends_on:
       - mysql
     networks:
@@ -180,6 +182,7 @@ services:
 # ... existing volumes ...
 volumes:
   mysql_data:
+  patient_photos:
   # grafana_data:  # DISABLED - Grafana service disabled
 
 networks:
