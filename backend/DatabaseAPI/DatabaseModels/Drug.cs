@@ -12,4 +12,5 @@ public class Drug
     // Navigation properties
     public ICollection<DrugUse> DrugUses { get; set; } = new List<DrugUse>();
     public ICollection<DrugToDrugCategory> DrugToDrugCategories { get; set; } = new List<DrugToDrugCategory>();
+    public ICollection<DrugTranslation> Translations { get; set; } = new List<DrugTranslation>();
 }

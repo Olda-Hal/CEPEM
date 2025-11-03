@@ -11,4 +11,5 @@ public class EventType
     
     // Navigation properties
     public ICollection<Event> Events { get; set; } = new List<Event>();
+    public ICollection<EventTypeTranslation> Translations { get; set; } = new List<EventTypeTranslation>();
 }

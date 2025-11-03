@@ -109,6 +109,23 @@ namespace DatabaseAPI.Controllers
                 new EventType { Name = "Těhotenství" }
             };
             _context.EventTypes.AddRange(eventTypes);
+            await _context.SaveChangesAsync();
+
+            // Seed Event Type Translations
+            var eventTypeTranslations = new[]
+            {
+                new EventTypeTranslation { EventTypeId = eventTypes[0].Id, Language = "en", Name = "Visit" },
+                new EventTypeTranslation { EventTypeId = eventTypes[1].Id, Language = "en", Name = "Surgery" },
+                new EventTypeTranslation { EventTypeId = eventTypes[2].Id, Language = "en", Name = "Emergency" },
+                new EventTypeTranslation { EventTypeId = eventTypes[3].Id, Language = "en", Name = "Check-up" },
+                new EventTypeTranslation { EventTypeId = eventTypes[4].Id, Language = "en", Name = "Examination" },
+                new EventTypeTranslation { EventTypeId = eventTypes[5].Id, Language = "en", Name = "Medication" },
+                new EventTypeTranslation { EventTypeId = eventTypes[6].Id, Language = "en", Name = "Injury" },
+                new EventTypeTranslation { EventTypeId = eventTypes[7].Id, Language = "en", Name = "Vaccination" },
+                new EventTypeTranslation { EventTypeId = eventTypes[8].Id, Language = "en", Name = "Symptom" },
+                new EventTypeTranslation { EventTypeId = eventTypes[9].Id, Language = "en", Name = "Pregnancy" }
+            };
+            _context.EventTypeTranslations.AddRange(eventTypeTranslations);
 
             // Seed Drugs
             var drugs = new[]
@@ -120,6 +137,18 @@ namespace DatabaseAPI.Controllers
                 new Drug { Name = "Inzulín" }
             };
             _context.Drugs.AddRange(drugs);
+            await _context.SaveChangesAsync();
+
+            // Seed Drug Translations
+            var drugTranslations = new[]
+            {
+                new DrugTranslation { DrugId = drugs[0].Id, Language = "en", Name = "Paracetamol" },
+                new DrugTranslation { DrugId = drugs[1].Id, Language = "en", Name = "Ibuprofen" },
+                new DrugTranslation { DrugId = drugs[2].Id, Language = "en", Name = "Aspirin" },
+                new DrugTranslation { DrugId = drugs[3].Id, Language = "en", Name = "Antibiotics" },
+                new DrugTranslation { DrugId = drugs[4].Id, Language = "en", Name = "Insulin" }
+            };
+            _context.DrugTranslations.AddRange(drugTranslations);
 
             // Seed Drug Categories
             var drugCategories = new[]
@@ -143,6 +172,18 @@ namespace DatabaseAPI.Controllers
                 new ExaminationType { Name = "Ultrazvuk" }
             };
             _context.ExaminationTypes.AddRange(examinationTypes);
+            await _context.SaveChangesAsync();
+
+            // Seed Examination Type Translations
+            var examinationTypeTranslations = new[]
+            {
+                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[0].Id, Language = "en", Name = "Blood Test" },
+                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[1].Id, Language = "en", Name = "X-Ray" },
+                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[2].Id, Language = "en", Name = "MRI" },
+                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[3].Id, Language = "en", Name = "CT" },
+                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[4].Id, Language = "en", Name = "Ultrasound" }
+            };
+            _context.ExaminationTypeTranslations.AddRange(examinationTypeTranslations);
 
             // Seed Symptoms
             var symptoms = new[]
@@ -196,6 +237,113 @@ namespace DatabaseAPI.Controllers
             
             await _context.SaveChangesAsync();
             return Ok($"Added {eventTypeNames.Length} event types.");
+        }
+
+        [HttpPost("translations")]
+        public async Task<IActionResult> SeedTranslations()
+        {
+            var translationsAdded = 0;
+
+            var eventTypeMap = new Dictionary<string, string>
+            {
+                { "Návštěva", "Visit" },
+                { "Operace", "Surgery" },
+                { "Pohotovost", "Emergency" },
+                { "Kontrola", "Check-up" },
+                { "Vyšetření", "Examination" },
+                { "Lék", "Medication" },
+                { "Úraz", "Injury" },
+                { "Očkování", "Vaccination" },
+                { "Příznak", "Symptom" },
+                { "Těhotenství", "Pregnancy" },
+                { "Léčba", "Treatment" }
+            };
+
+            foreach (var kvp in eventTypeMap)
+            {
+                var eventType = await _context.EventTypes.FirstOrDefaultAsync(et => et.Name == kvp.Key);
+                if (eventType != null)
+                {
+                    var existingTranslation = await _context.EventTypeTranslations
+                        .AnyAsync(ett => ett.EventTypeId == eventType.Id && ett.Language == "en");
+                    
+                    if (!existingTranslation)
+                    {
+                        _context.EventTypeTranslations.Add(new EventTypeTranslation
+                        {
+                            EventTypeId = eventType.Id,
+                            Language = "en",
+                            Name = kvp.Value
+                        });
+                        translationsAdded++;
+                    }
+                }
+            }
+
+            var drugMap = new Dictionary<string, string>
+            {
+                { "Paracetamol", "Paracetamol" },
+                { "Ibuprofen", "Ibuprofen" },
+                { "Aspirin", "Aspirin" },
+                { "Antibiotika", "Antibiotics" },
+                { "Inzulín", "Insulin" },
+                { "fentanyl", "Fentanyl" }
+            };
+
+            foreach (var kvp in drugMap)
+            {
+                var drug = await _context.Drugs.FirstOrDefaultAsync(d => d.Name == kvp.Key);
+                if (drug != null)
+                {
+                    var existingTranslation = await _context.DrugTranslations
+                        .AnyAsync(dt => dt.DrugId == drug.Id && dt.Language == "en");
+                    
+                    if (!existingTranslation)
+                    {
+                        _context.DrugTranslations.Add(new DrugTranslation
+                        {
+                            DrugId = drug.Id,
+                            Language = "en",
+                            Name = kvp.Value
+                        });
+                        translationsAdded++;
+                    }
+                }
+            }
+
+            var examinationTypeMap = new Dictionary<string, string>
+            {
+                { "Krevní test", "Blood Test" },
+                { "Rentgen", "X-Ray" },
+                { "MRI", "MRI" },
+                { "CT", "CT" },
+                { "Ultrazvuk", "Ultrasound" },
+                { "MEIK", "MEIK" }
+            };
+
+            foreach (var kvp in examinationTypeMap)
+            {
+                var examinationType = await _context.ExaminationTypes.FirstOrDefaultAsync(et => et.Name == kvp.Key);
+                if (examinationType != null)
+                {
+                    var existingTranslation = await _context.ExaminationTypeTranslations
+                        .AnyAsync(ett => ett.ExaminationTypeId == examinationType.Id && ett.Language == "en");
+                    
+                    if (!existingTranslation)
+                    {
+                        _context.ExaminationTypeTranslations.Add(new ExaminationTypeTranslation
+                        {
+                            ExaminationTypeId = examinationType.Id,
+                            Language = "en",
+                            Name = kvp.Value
+                        });
+                        translationsAdded++;
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok($"Added {translationsAdded} translations.");
         }
 
         private static string HashPassword(string password)

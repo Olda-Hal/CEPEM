@@ -4,6 +4,7 @@ import { EventOptions, CreateEventRequest, DrugUseRequest } from '../types';
 import { apiClient } from '../utils/api';
 import SearchableMultiSelect from './SearchableMultiSelect';
 import './AddEventModal.css';
+import i18n from '../i18n';
 
 interface AddEventModalProps {
   isOpen: boolean;
@@ -45,12 +46,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     if (isOpen) {
       loadEventOptions();
     }
-  }, [isOpen]);
+  }, [isOpen, i18n.language]);
 
   const loadEventOptions = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get<EventOptions>('/api/events/options');
+      const language = i18n.language;
+      const response = await apiClient.get<EventOptions>(`/api/events/options?language=${language}`);
       setEventOptions(response);
     } catch (error) {
       console.error('Error loading event options:', error);

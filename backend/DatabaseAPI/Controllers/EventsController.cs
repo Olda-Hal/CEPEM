@@ -18,12 +18,20 @@ public class EventsController : ControllerBase
     }
 
     [HttpGet("options")]
-    public async Task<ActionResult<EventOptionsResponse>> GetEventOptions()
+    public async Task<ActionResult<EventOptionsResponse>> GetEventOptions([FromQuery] string? language = "cs")
     {
-        var eventTypes = await _context.EventTypes.ToListAsync();
-        var drugs = await _context.Drugs.OrderBy(d => d.Name).ToListAsync();
+        var eventTypes = await _context.EventTypes
+            .Include(et => et.Translations)
+            .ToListAsync();
+        var drugs = await _context.Drugs
+            .Include(d => d.Translations)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
         var drugCategories = await _context.DrugCategories.OrderBy(dc => dc.Name).ToListAsync();
-        var examinationTypes = await _context.ExaminationTypes.OrderBy(et => et.Name).ToListAsync();
+        var examinationTypes = await _context.ExaminationTypes
+            .Include(et => et.Translations)
+            .OrderBy(et => et.Name)
+            .ToListAsync();
         var symptoms = await _context.Symptoms.OrderBy(s => s.Name).ToListAsync();
         var injuryTypes = await _context.InjuryTypes.OrderBy(it => it.Name).ToListAsync();
         var vaccineTypes = await _context.VaccineTypes.OrderBy(vt => vt.Name).ToListAsync();
@@ -33,12 +41,12 @@ public class EventsController : ControllerBase
             EventTypes = eventTypes.Select(et => new EventTypeResponse
             {
                 Id = et.Id,
-                Name = et.Name
+                Name = et.Translations.FirstOrDefault(t => t.Language == language)?.Name ?? et.Name
             }).ToList(),
             Drugs = drugs.Select(d => new DrugResponse
             {
                 Id = d.Id,
-                Name = d.Name
+                Name = d.Translations.FirstOrDefault(t => t.Language == language)?.Name ?? d.Name
             }).ToList(),
             DrugCategories = drugCategories.Select(dc => new DrugCategoryResponse
             {
@@ -48,7 +56,7 @@ public class EventsController : ControllerBase
             ExaminationTypes = examinationTypes.Select(et => new ExaminationTypeResponse
             {
                 Id = et.Id,
-                Name = et.Name
+                Name = et.Translations.FirstOrDefault(t => t.Language == language)?.Name ?? et.Name
             }).ToList(),
             Symptoms = symptoms.Select(s => new SymptomResponse
             {

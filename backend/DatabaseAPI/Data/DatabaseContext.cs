@@ -20,16 +20,19 @@ public class DatabaseContext : DbContext
     // Event related entities
     public DbSet<Event> Events { get; set; }
     public DbSet<EventType> EventTypes { get; set; }
+    public DbSet<EventTypeTranslation> EventTypeTranslations { get; set; }
     
     // Drug related entities
     public DbSet<Drug> Drugs { get; set; }
     public DbSet<DrugCategory> DrugCategories { get; set; }
     public DbSet<DrugToDrugCategory> DrugToDrugCategories { get; set; }
     public DbSet<DrugUse> DrugUses { get; set; }
+    public DbSet<DrugTranslation> DrugTranslations { get; set; }
     
     // Medical entities
     public DbSet<ExaminationType> ExaminationTypes { get; set; }
     public DbSet<Examination> Examinations { get; set; }
+    public DbSet<ExaminationTypeTranslation> ExaminationTypeTranslations { get; set; }
     public DbSet<Symptom> Symptoms { get; set; }
     public DbSet<PatientSymptom> PatientSymptoms { get; set; }
     public DbSet<Pregnancy> Pregnancies { get; set; }
@@ -113,6 +116,17 @@ public class DatabaseContext : DbContext
             .HasOne(e => e.Comment)
             .WithMany(c => c.Events)
             .HasForeignKey(e => e.CommentId);
+            
+        // EventTypeTranslation relationships
+        modelBuilder.Entity<EventTypeTranslation>()
+            .HasOne(ett => ett.EventType)
+            .WithMany(et => et.Translations)
+            .HasForeignKey(ett => ett.EventTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+        modelBuilder.Entity<EventTypeTranslation>()
+            .HasIndex(ett => new { ett.EventTypeId, ett.Language })
+            .IsUnique();
     }
     
     private void ConfigureDrugRelationships(ModelBuilder modelBuilder)
@@ -138,6 +152,17 @@ public class DatabaseContext : DbContext
             .HasOne(dtdc => dtdc.Category)
             .WithMany(dc => dc.DrugToDrugCategories)
             .HasForeignKey(dtdc => dtdc.CategoryId);
+            
+        // DrugTranslation relationships
+        modelBuilder.Entity<DrugTranslation>()
+            .HasOne(dt => dt.Drug)
+            .WithMany(d => d.Translations)
+            .HasForeignKey(dt => dt.DrugId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+        modelBuilder.Entity<DrugTranslation>()
+            .HasIndex(dt => new { dt.DrugId, dt.Language })
+            .IsUnique();
     }
     
     private void ConfigureMedicalRelationships(ModelBuilder modelBuilder)
@@ -152,6 +177,17 @@ public class DatabaseContext : DbContext
             .HasOne(e => e.Event)
             .WithMany(ev => ev.Examinations)
             .HasForeignKey(e => e.EventId);
+            
+        // ExaminationTypeTranslation relationships
+        modelBuilder.Entity<ExaminationTypeTranslation>()
+            .HasOne(ett => ett.ExaminationType)
+            .WithMany(et => et.Translations)
+            .HasForeignKey(ett => ett.ExaminationTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+        modelBuilder.Entity<ExaminationTypeTranslation>()
+            .HasIndex(ett => new { ett.ExaminationTypeId, ett.Language })
+            .IsUnique();
             
         // PatientSymptom relationships
         modelBuilder.Entity<PatientSymptom>()
