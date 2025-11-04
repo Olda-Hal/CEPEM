@@ -234,6 +234,29 @@
     "appointments": "Termíny",
     "addAppointment": "Přidat termín",
     "noAppointments": "Žádné termíny",
+    "documents": {
+      "title": "Dokumenty",
+      "addDocument": "Přidat dokument",
+      "noDocuments": "Žádné dokumenty",
+      "uploadDocument": "Nahrát dokument",
+      "selectUploadMethod": "Vyberte způsob nahrání dokumentu:",
+      "fileRequirements": "Podporované formáty: PDF (max. {{maxSize}} MB)",
+      "scanDocument": "Skenovat dokument",
+      "uploadFile": "Nahrát soubor",
+      "scannedDocument": "Naskenováno",
+      "uploadedFile": "Nahráno",
+      "confirmUpload": "Nahrát dokument",
+      "deleteDocument": "Smazat dokument",
+      "confirmDelete": "Opravdu chcete smazat tento dokument?",
+      "errors": {
+        "mustBePdf": "Soubor musí být ve formátu PDF",
+        "fileTooLarge": "Soubor nesmí být větší než {{maxSize}} MB",
+        "scannerNotAvailable": "Skener není dostupný",
+        "uploadFailed": "Chyba při nahrávání dokumentu",
+        "viewFailed": "Chyba při otevírání dokumentu",
+        "deleteFailed": "Chyba při mazání dokumentu"
+      }
+    },
     "genders": {
       "m": "Muž",
       "f": "Žena",

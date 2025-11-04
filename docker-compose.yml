@@ -56,6 +56,7 @@ services:
       - ConnectionStrings__DefaultConnection=Server=mysql;Database=cepem_healthcare;User=root;Password=rootpassword;
     volumes:
       - patient_photos:/app/patient-photos
+      - patient_documents:/app/patient-documents
     depends_on:
       - mysql
     networks:
@@ -183,6 +184,7 @@ services:
 volumes:
   mysql_data:
   patient_photos:
+  patient_documents:
   # grafana_data:  # DISABLED - Grafana service disabled
 
 networks:

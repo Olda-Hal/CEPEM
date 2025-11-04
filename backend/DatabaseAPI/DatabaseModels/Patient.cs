@@ -24,4 +24,5 @@ public class Patient
     
     // Navigation properties
     public ICollection<Event> Events { get; set; } = new List<Event>();
+    public ICollection<PatientDocument> Documents { get; set; } = new List<PatientDocument>();
 }

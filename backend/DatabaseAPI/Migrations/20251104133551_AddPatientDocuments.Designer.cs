@@ -3,6 +3,7 @@ using System;
 using DatabaseAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DatabaseAPI.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20251104133551_AddPatientDocuments")]
+    partial class AddPatientDocuments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -603,9 +606,6 @@ namespace DatabaseAPI.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("OriginalFileName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1096,7 +1096,7 @@ namespace DatabaseAPI.Migrations
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.PatientDocument", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Patient", "Patient")
-                        .WithMany("Documents")
+                        .WithMany()
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1277,8 +1277,6 @@ namespace DatabaseAPI.Migrations
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Patient", b =>
                 {
-                    b.Navigation("Documents");
-
                     b.Navigation("Events");
                 });
 

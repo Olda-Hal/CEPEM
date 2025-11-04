@@ -224,6 +224,29 @@
     "appointments": "Appointments",
     "addAppointment": "Add Appointment",
     "noAppointments": "No appointments",
+    "documents": {
+      "title": "Documents",
+      "addDocument": "Add Document",
+      "noDocuments": "No documents",
+      "uploadDocument": "Upload Document",
+      "selectUploadMethod": "Select upload method:",
+      "fileRequirements": "Supported formats: PDF (max. {{maxSize}} MB)",
+      "scanDocument": "Scan Document",
+      "uploadFile": "Upload File",
+      "scannedDocument": "Scanned",
+      "uploadedFile": "Uploaded",
+      "confirmUpload": "Upload Document",
+      "deleteDocument": "Delete Document",
+      "confirmDelete": "Are you sure you want to delete this document?",
+      "errors": {
+        "mustBePdf": "File must be a PDF document",
+        "fileTooLarge": "File must not exceed {{maxSize}} MB",
+        "scannerNotAvailable": "Scanner is not available",
+        "uploadFailed": "Error uploading document",
+        "viewFailed": "Error viewing document",
+        "deleteFailed": "Error deleting document"
+      }
+    },
     "genders": {
       "m": "Male",
       "f": "Female",

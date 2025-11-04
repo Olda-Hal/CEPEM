@@ -56,6 +56,9 @@ public class DatabaseContext : DbContext
     
     // System entities
     public DbSet<ActivityLog> ActivityLogs { get; set; }
+    
+    // Document entities
+    public DbSet<PatientDocument> PatientDocuments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -95,6 +98,13 @@ public class DatabaseContext : DbContext
             .HasOne(p => p.Comment)
             .WithMany(c => c.Patients)
             .HasForeignKey(p => p.CommentId);
+            
+        // Patient -> PatientDocument (1:many)
+        modelBuilder.Entity<PatientDocument>()
+            .HasOne(pd => pd.Patient)
+            .WithMany(p => p.Documents)
+            .HasForeignKey(pd => pd.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
     
     private void ConfigureEventRelationships(ModelBuilder modelBuilder)

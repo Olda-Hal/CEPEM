@@ -187,6 +187,7 @@ export interface PatientDetail {
   quickPreviewSettings: QuickPreviewSettings;
   events: PatientEvent[];
   appointments: PatientAppointment[];
+  documents: PatientDocument[];
 }
 
 export interface PatientEvent {
@@ -210,6 +211,13 @@ export interface PatientAppointment {
   doctorName: string;
   equipmentName?: string;
   hospitalName: string;
+}
+
+export interface PatientDocument {
+  id: number;
+  fileName: string;
+  uploadedAt: string;
+  fileSize: number;
 }
 
 export interface EventType {

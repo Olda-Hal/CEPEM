@@ -114,6 +114,7 @@ public class PatientDetailDto
     public QuickPreviewSettingsDto QuickPreviewSettings { get; set; } = new();
     public List<PatientEventDto> Events { get; set; } = new();
     public List<PatientAppointmentDto> Appointments { get; set; } = new();
+    public List<PatientDocumentDto> Documents { get; set; } = new();
 }
 
 public class PatientEventDto

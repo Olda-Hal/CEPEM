@@ -6,6 +6,7 @@ import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
 import AddEventModal from '../components/AddEventModal';
+import { DocumentUpload } from '../components/DocumentUpload';
 import './PatientDetailPage.css';
 
 export const PatientDetailPage: React.FC = () => {
@@ -17,6 +18,8 @@ export const PatientDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -60,6 +63,74 @@ export const PatientDetailPage: React.FC = () => {
     if (id) {
       loadPatientDetail(parseInt(id));
     }
+  };
+
+  const handleDocumentUpload = async (file: File) => {
+    try {
+      setUploadingDocument(true);
+      
+      const formData = new FormData();
+      formData.append('document', file);
+
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`http://localhost:5000/api/patients/${id}/documents`, {
+        method: 'POST',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setShowDocumentUpload(false);
+      
+      if (id) {
+        loadPatientDetail(parseInt(id));
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      alert(t('patients.documents.errors.uploadFailed'));
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
+  const handleDocumentView = async (documentId: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/patients/${id}/documents/${documentId}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      alert(t('patients.documents.errors.viewFailed'));
+    }
+  };
+
+  const handleDocumentDelete = async (documentId: number) => {
+    if (!window.confirm(t('patients.documents.confirmDelete'))) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`/api/patients/${id}/documents/${documentId}`);
+      
+      if (id) {
+        loadPatientDetail(parseInt(id));
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      alert(t('patients.documents.errors.deleteFailed'));
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
   const formatDate = (dateString: string) => {
@@ -410,6 +481,57 @@ export const PatientDetailPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Patient Documents */}
+        <div className="patient-documents-card">
+          <div className="card-header">
+            <h2>{t('patients.documents.title')} ({patient.documents.length})</h2>
+            <button 
+              className="add-document-btn" 
+              onClick={() => setShowDocumentUpload(true)}
+              disabled={uploadingDocument}
+            >
+              {t('patients.documents.addDocument')}
+            </button>
+          </div>
+          
+          {patient.documents.length === 0 ? (
+            <div className="no-data">
+              <p>{t('patients.documents.noDocuments')}</p>
+            </div>
+          ) : (
+            <div className="documents-list">
+              {patient.documents.map((document) => (
+                <div key={document.id} className="document-item">
+                  <div 
+                    className="document-info" 
+                    onClick={() => handleDocumentView(document.id)}
+                  >
+                    <svg viewBox="0 0 24 24" width="24" height="24" className="document-icon">
+                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                    </svg>
+                    <div className="document-details">
+                      <div className="document-name">{document.fileName}</div>
+                      <div className="document-meta">
+                        <span className="document-date">{formatDateTime(document.uploadedAt)}</span>
+                        <span className="document-size">{formatFileSize(document.fileSize)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    className="delete-document-btn"
+                    onClick={() => handleDocumentDelete(document.id)}
+                    title={t('patients.documents.deleteDocument')}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Quick Preview Settings Modal */}
@@ -427,6 +549,14 @@ export const PatientDetailPage: React.FC = () => {
         patientId={patient.id}
         onEventAdded={handleEventAdded}
       />
+
+      {/* Document Upload Modal */}
+      {showDocumentUpload && (
+        <DocumentUpload
+          onUpload={handleDocumentUpload}
+          onCancel={() => setShowDocumentUpload(false)}
+        />
+      )}
     </div>
   );
 };

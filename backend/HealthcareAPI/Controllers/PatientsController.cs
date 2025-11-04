@@ -256,5 +256,114 @@ namespace HealthcareAPI.Controllers
                 return StatusCode(500, "An error occurred while deleting patient photo");
             }
         }
+
+        [HttpPost("{id}/documents")]
+        public async Task<IActionResult> UploadPatientDocument(int id, [FromForm] IFormFile document)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                
+                using var content = new MultipartFormDataContent();
+                using var fileContent = new StreamContent(document.OpenReadStream());
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(document.ContentType);
+                content.Add(fileContent, "document", document.FileName);
+
+                var response = await client.PostAsync($"/api/patients/{id}/documents", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return Ok(JsonSerializer.Deserialize<object>(responseContent));
+                }
+
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return StatusCode((int)response.StatusCode, errorContent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while uploading document for patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while uploading document");
+            }
+        }
+
+        [HttpGet("{id}/documents")]
+        public async Task<IActionResult> GetPatientDocuments(int id)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync($"/api/patients/{id}/documents");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    return Ok(JsonSerializer.Deserialize<object>(content));
+                }
+
+                return StatusCode((int)response.StatusCode, "Error retrieving patient documents");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting documents for patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while getting patient documents");
+            }
+        }
+
+        [HttpGet("{patientId}/documents/{documentId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPatientDocument(int patientId, int documentId)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync($"/api/patients/{patientId}/documents/{documentId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+                    return File(pdfBytes, "application/pdf");
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound();
+                }
+
+                return StatusCode((int)response.StatusCode, "Error retrieving document");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting document {DocumentId} for patient {PatientId}", documentId, patientId);
+                return StatusCode(500, "An error occurred while getting document");
+            }
+        }
+
+        [HttpDelete("{patientId}/documents/{documentId}")]
+        public async Task<IActionResult> DeletePatientDocument(int patientId, int documentId)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.DeleteAsync($"/api/patients/{patientId}/documents/{documentId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return NoContent();
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound();
+                }
+
+                return StatusCode((int)response.StatusCode, "Error deleting document");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting document {DocumentId} for patient {PatientId}", documentId, patientId);
+                return StatusCode(500, "An error occurred while deleting document");
+            }
+        }
     }
 }

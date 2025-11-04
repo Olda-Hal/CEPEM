@@ -15,15 +15,18 @@ namespace DatabaseAPI.Controllers
         private readonly DatabaseContext _context;
         private readonly ILogger<PatientsController> _logger;
         private readonly PatientPhotoService _photoService;
+        private readonly PatientDocumentService _documentService;
 
         public PatientsController(
             DatabaseContext context, 
             ILogger<PatientsController> logger,
-            PatientPhotoService photoService)
+            PatientPhotoService photoService,
+            PatientDocumentService documentService)
         {
             _context = context;
             _logger = logger;
             _photoService = photoService;
+            _documentService = documentService;
         }
 
         [HttpGet("search")]
@@ -273,6 +276,8 @@ namespace DatabaseAPI.Controllers
                     .Where(a => a.PersonId == patient.PersonId)
                     .ToListAsync();
 
+                var documents = await _documentService.GetPatientDocumentsAsync(id);
+
                 var age = DateTime.Now.Year - patient.BirthDate.Year;
                 if (DateTime.Now < patient.BirthDate.AddYears(age))
                     age--;
@@ -339,6 +344,13 @@ namespace DatabaseAPI.Controllers
                         DoctorName = $"{a.HospitalEmployee.Employee.Person.LastName}, {a.HospitalEmployee.Employee.Person.FirstName}",
                         EquipmentName = a.Equipment?.Name,
                         HospitalName = a.Hospital.Address ?? "Unknown Hospital"
+                    }).ToList(),
+                    Documents = documents.Select(d => new PatientDocumentDto
+                    {
+                        Id = d.Id,
+                        FileName = d.OriginalFileName,
+                        UploadedAt = d.UploadedAt,
+                        FileSize = d.FileSize
                     }).ToList()
                 };
 
@@ -430,6 +442,119 @@ namespace DatabaseAPI.Controllers
             {
                 _logger.LogError(ex, "Error occurred while deleting patient photo");
                 return StatusCode(500, "An error occurred while deleting photo");
+            }
+        }
+
+        [HttpPost("{id}/documents")]
+        public async Task<IActionResult> UploadPatientDocument(int id, [FromForm] IFormFile document)
+        {
+            try
+            {
+                if (document == null || document.Length == 0)
+                {
+                    return BadRequest("No document provided");
+                }
+
+                if (document.ContentType != "application/pdf")
+                {
+                    return BadRequest("File must be a PDF document");
+                }
+
+                var maxSize = _documentService.GetMaxFileSizeBytes();
+                if (document.Length > maxSize)
+                {
+                    return BadRequest($"Document size must not exceed {maxSize / 1024 / 1024}MB");
+                }
+
+                using var memoryStream = new MemoryStream();
+                await document.CopyToAsync(memoryStream);
+                var documentData = memoryStream.ToArray();
+
+                var savedDocument = await _documentService.SavePatientDocumentAsync(id, documentData, document.FileName);
+
+                return Ok(new 
+                { 
+                    id = savedDocument.Id,
+                    fileName = savedDocument.OriginalFileName,
+                    uploadedAt = savedDocument.UploadedAt,
+                    fileSize = savedDocument.FileSize
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Error uploading document");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while uploading patient document");
+                return StatusCode(500, "An error occurred while uploading document");
+            }
+        }
+
+        [HttpGet("{id}/documents")]
+        public async Task<ActionResult<List<PatientDocumentDto>>> GetPatientDocuments(int id)
+        {
+            try
+            {
+                var documents = await _documentService.GetPatientDocumentsAsync(id);
+
+                var documentDtos = documents.Select(d => new PatientDocumentDto
+                {
+                    Id = d.Id,
+                    FileName = d.OriginalFileName,
+                    UploadedAt = d.UploadedAt,
+                    FileSize = d.FileSize
+                }).ToList();
+
+                return Ok(documentDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting patient documents");
+                return StatusCode(500, "An error occurred while getting documents");
+            }
+        }
+
+        [HttpGet("{patientId}/documents/{documentId}")]
+        public async Task<IActionResult> GetPatientDocument(int patientId, int documentId)
+        {
+            try
+            {
+                var documentData = await _documentService.GetDocumentDataAsync(documentId);
+
+                if (documentData == null)
+                {
+                    return NotFound("Document not found");
+                }
+
+                return File(documentData, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting patient document");
+                return StatusCode(500, "An error occurred while getting document");
+            }
+        }
+
+        [HttpDelete("{patientId}/documents/{documentId}")]
+        public async Task<IActionResult> DeletePatientDocument(int patientId, int documentId)
+        {
+            try
+            {
+                var deleted = await _documentService.DeleteDocumentAsync(documentId);
+
+                if (!deleted)
+                {
+                    return NotFound("Document not found");
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting patient document");
+                return StatusCode(500, "An error occurred while deleting document");
             }
         }
     }
