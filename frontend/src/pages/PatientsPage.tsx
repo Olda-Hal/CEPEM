@@ -112,7 +112,7 @@ export const PatientsPage: React.FC = () => {
       >
         <button 
           className="add-patient-button"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => navigate('/patients/add')}
         >
           + {t('patients.addPatient')}
         </button>

@@ -365,5 +365,36 @@ namespace HealthcareAPI.Controllers
                 return StatusCode(500, "An error occurred while deleting document");
             }
         }
+
+        [HttpPatch("{id}/comment")]
+        public async Task<IActionResult> UpdatePatientComment(int id, [FromBody] object commentRequest)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                
+                var json = System.Text.Json.JsonSerializer.Serialize(commentRequest);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await client.PatchAsync($"/api/patients/{id}/comment", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return NoContent();
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound();
+                }
+
+                return StatusCode((int)response.StatusCode, "Error updating patient comment");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating comment for patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while updating patient comment");
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ import TestDashboard from './pages/TestDashboard';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { PatientDetailPage } from './pages/PatientDetailPage';
+import { AddPatientFormPage } from './pages/AddPatientFormPage';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
@@ -55,6 +56,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PatientsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/patients/add" 
+              element={
+                <ProtectedRoute>
+                  <AddPatientFormPage />
                 </ProtectedRoute>
               } 
             />

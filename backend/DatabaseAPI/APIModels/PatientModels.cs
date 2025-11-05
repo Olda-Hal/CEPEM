@@ -141,3 +141,8 @@ public class PatientAppointmentDto
     public string? EquipmentName { get; set; }
     public string HospitalName { get; set; } = string.Empty;
 }
+
+public class UpdateCommentRequest
+{
+    public string Comment { get; set; } = string.Empty;
+}

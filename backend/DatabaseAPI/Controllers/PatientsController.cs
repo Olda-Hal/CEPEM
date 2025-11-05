@@ -557,5 +557,44 @@ namespace DatabaseAPI.Controllers
                 return StatusCode(500, "An error occurred while deleting document");
             }
         }
+
+        [HttpPatch("{id}/comment")]
+        public async Task<IActionResult> UpdatePatientComment(int id, [FromBody] UpdateCommentRequest request)
+        {
+            try
+            {
+                var patient = await _context.Patients
+                    .Include(p => p.Person)
+                    .Include(p => p.Comment)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (patient == null)
+                {
+                    return NotFound("Patient not found");
+                }
+
+                if (patient.Comment == null)
+                {
+                    patient.Comment = new Comment
+                    {
+                        Text = request.Comment
+                    };
+                    _context.Comments.Add(patient.Comment);
+                }
+                else
+                {
+                    patient.Comment.Text = request.Comment;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Comment updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating patient comment");
+                return StatusCode(500, "An error occurred while updating comment");
+            }
+        }
     }
 }

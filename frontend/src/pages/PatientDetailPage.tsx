@@ -20,6 +20,11 @@ export const PatientDetailPage: React.FC = () => {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [editingComment, setEditingComment] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -32,6 +37,7 @@ export const PatientDetailPage: React.FC = () => {
       setLoading(true);
       const response = await apiClient.get<PatientDetail>(`/api/patients/${patientId}/detail`);
       setPatient(response);
+      setCommentText(response.comment || '');
       setError(null);
     } catch (error) {
       console.error('Error loading patient detail:', error);
@@ -127,6 +133,100 @@ export const PatientDetailPage: React.FC = () => {
     }
   };
 
+  const handleSaveComment = async () => {
+    if (!patient) return;
+    
+    try {
+      await apiClient.patch(`/api/patients/${patient.id}/comment`, {
+        comment: commentText,
+      });
+      
+      setPatient({ ...patient, comment: commentText });
+      setEditingComment(false);
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      alert('Nepodařilo se uložit komentář');
+    }
+  };
+
+  const handleCancelEditComment = () => {
+    setCommentText(patient?.comment || '');
+    setEditingComment(false);
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: 640, height: 480 } 
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !patient) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        
+        const formData = new FormData();
+        formData.append('photo', blob, 'patient-photo.jpg');
+        
+        try {
+          const token = localStorage.getItem('authToken');
+          await fetch(`http://localhost:5000/api/patients/${patient.id}/photo`, {
+            method: 'POST',
+            headers: {
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+            body: formData
+          });
+          
+          stopCamera();
+          
+          if (id) {
+            loadPatientDetail(parseInt(id));
+          }
+        } catch (error) {
+          console.error('Error uploading photo:', error);
+          alert('Nepodařilo se nahrát fotografii');
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
@@ -191,23 +291,33 @@ export const PatientDetailPage: React.FC = () => {
         {/* Patient Basic Info */}
         <div className="patient-info-card">
           <div className="patient-header">
-            <div className="patient-photo-placeholder">
-              {patient.photoUrl ? (
-                <img 
-                  src={`http://localhost:5000${patient.photoUrl}`} 
-                  alt={patient.fullName}
-                  className="patient-photo"
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    e.currentTarget.style.display = 'none';
-                    const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (placeholder) placeholder.style.display = 'block';
-                  }}
-                />
-              ) : null}
-              <svg className="photo-icon" viewBox="0 0 24 24" style={{ display: patient.photoUrl ? 'none' : 'block' }}>
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
+            <div className="patient-photo-container">
+              <div className="patient-photo-placeholder">
+                {patient.photoUrl ? (
+                  <img 
+                    src={`http://localhost:5000${patient.photoUrl}`} 
+                    alt={patient.fullName}
+                    className="patient-photo"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (placeholder) placeholder.style.display = 'block';
+                    }}
+                  />
+                ) : null}
+                <svg className="photo-icon" viewBox="0 0 24 24" style={{ display: patient.photoUrl ? 'none' : 'block' }}>
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+              <button 
+                className="photo-button"
+                onClick={startCamera}
+                title="Vyfotit pacienta"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="currentColor" d="M12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                </svg>
+              </button>
             </div>
             <div className="patient-basic-info">
               <h1 className="patient-name">
@@ -249,11 +359,49 @@ export const PatientDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
-          
-          {patient.comment && (
-            <div className="patient-comment">
-              <h3>{t('patients.comment')}</h3>
-              <p>{patient.comment}</p>
+        </div>
+
+        {/* Patient Comment */}
+        <div className="patient-comment-section">
+          <div className="comment-header">
+            <h3>Komentář o pacientovi</h3>
+            {!editingComment && (
+              <button 
+                className="edit-comment-btn"
+                onClick={() => setEditingComment(true)}
+                title="Upravit komentář"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+            )}
+          </div>
+          {editingComment ? (
+            <div className="comment-edit">
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                rows={10}
+                className="comment-textarea"
+                placeholder="Zadejte komentář o pacientovi..."
+              />
+              <div className="comment-actions">
+                <button onClick={handleCancelEditComment} className="btn-cancel">
+                  Zrušit
+                </button>
+                <button onClick={handleSaveComment} className="btn-save">
+                  Uložit
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="comment-display">
+              {commentText ? (
+                <p className="comment-text">{commentText}</p>
+              ) : (
+                <p className="comment-empty">Žádný komentář</p>
+              )}
             </div>
           )}
         </div>
@@ -556,6 +704,32 @@ export const PatientDetailPage: React.FC = () => {
           onUpload={handleDocumentUpload}
           onCancel={() => setShowDocumentUpload(false)}
         />
+      )}
+
+      {/* Camera Modal */}
+      {showCamera && (
+        <div className="camera-modal">
+          <div className="camera-content">
+            <div className="camera-header">
+              <h3>Vyfotit pacienta</h3>
+              <button className="close-btn" onClick={stopCamera}>×</button>
+            </div>
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              playsInline
+              className="camera-video"
+            />
+            <div className="camera-actions">
+              <button onClick={stopCamera} className="btn-cancel">
+                Zrušit
+              </button>
+              <button onClick={capturePhoto} className="btn-capture">
+                📷 Vyfotit
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
