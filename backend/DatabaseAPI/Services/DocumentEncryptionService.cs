@@ -13,8 +13,10 @@ public class DocumentEncryptionService
         _logger = logger;
 
         var keyString = configuration["PhotoEncryption:Key"] 
+            ?? Environment.GetEnvironmentVariable("DOCUMENT_ENCRYPTION_KEY")
             ?? "DefaultKey1234567890123456789012";
         var ivString = configuration["PhotoEncryption:IV"] 
+            ?? Environment.GetEnvironmentVariable("DOCUMENT_ENCRYPTION_IV")
             ?? "DefaultIV12345678";
 
         _key = System.Text.Encoding.UTF8.GetBytes(keyString.PadRight(32).Substring(0, 32));

@@ -27,7 +27,9 @@ builder.Services.AddTransient<HealthcareAPI.Handlers.AuthenticationHandler>();
 // Add HttpClient for DatabaseAPI communication
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
-    var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] ?? "http://database-api:5001";
+    var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] 
+        ?? Environment.GetEnvironmentVariable("DATABASE_API_URL") 
+        ?? "http://database-api:5001";
     client.BaseAddress = new Uri(databaseApiUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
@@ -35,7 +37,15 @@ builder.Services.AddHttpClient("DatabaseAPI", client =>
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
-var secretKey = jwtSettings["SecretKey"] ?? Environment.GetEnvironmentVariable("JWT_SECRET") ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
+var secretKey = jwtSettings["SecretKey"] 
+    ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+    ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
+var issuer = jwtSettings["Issuer"] 
+    ?? Environment.GetEnvironmentVariable("JWT_ISSUER") 
+    ?? "test-issuer";
+var audience = jwtSettings["Audience"] 
+    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+    ?? "test-audience";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -46,8 +56,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"] ?? "test-issuer",
-            ValidAudience = jwtSettings["Audience"] ?? "test-audience",
+            ValidIssuer = issuer,
+            ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });

@@ -11,6 +11,7 @@ builder.Services.AddSwaggerGen();
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? Environment.GetEnvironmentVariable("DATABASE_API_CONNECTION_STRING")
     ?? "Server=mysql;Port=3306;Database=cepem_healthcare;User=cepem_user;Password=cepem_password;";
 
 // Use a specific MySQL version to avoid auto-detection issues

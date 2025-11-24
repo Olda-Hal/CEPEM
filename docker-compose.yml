@@ -5,12 +5,12 @@ services:
     container_name: cepem_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: cepem_healthcare
-      MYSQL_USER: cepem_user
-      MYSQL_PASSWORD: cepem_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -24,15 +24,15 @@ services:
     container_name: cepem_healthcare_api
     restart: unless-stopped
     ports:
-      - "5000:80"
+      - "${HEALTHCARE_API_PORT}:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=Server=mysql;Database=cepem_healthcare;Uid=cepem_user;Pwd=cepem_password;
-      - JWT__SecretKey=CEPEMHealthcareSecretKey2024ForJWTTokens!
-      - JWT__Issuer=CEPEM-Healthcare
-      - JWT__Audience=CEPEM-Doctors
-      - DatabaseApiUrl=http://database-api:5001
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS_HEALTHCARE}
+      - ConnectionStrings__DefaultConnection=${HEALTHCARE_API_CONNECTION_STRING}
+      - JWT__SecretKey=${JWT_SECRET_KEY}
+      - JWT__Issuer=${JWT_ISSUER}
+      - JWT__Audience=${JWT_AUDIENCE}
+      - DatabaseApiUrl=${DATABASE_API_URL}
     volumes:
       - ./test-results:/app/test-results:ro
     depends_on:
@@ -49,11 +49,15 @@ services:
     container_name: cepem_database_api
     restart: unless-stopped
     ports:
-      - "5001:5001"
+      - "${DATABASE_API_PORT}:5001"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5001
-      - ConnectionStrings__DefaultConnection=Server=mysql;Database=cepem_healthcare;User=root;Password=rootpassword;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS_DATABASE}
+      - ConnectionStrings__DefaultConnection=${DATABASE_API_CONNECTION_STRING}
+      - PhotoEncryption__Key=${PHOTO_ENCRYPTION_KEY}
+      - PhotoEncryption__IV=${PHOTO_ENCRYPTION_IV}
+      - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
+      - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
     volumes:
       - patient_photos:/app/patient-photos
       - patient_documents:/app/patient-documents
@@ -70,7 +74,10 @@ services:
     container_name: cepem_ai_service
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${AI_SERVICE_PORT}:8000"
+    environment:
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - PORT=8000
     depends_on:
       - mysql
       - healthcare-api
@@ -101,9 +108,9 @@ services:
     container_name: cepem_frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
     depends_on:
       - healthcare-api
       - build-incrementer
@@ -167,14 +174,14 @@ services:
   #   container_name: cepem_grafana
   #   restart: unless-stopped
   #   ports:
-  #     - "3001:3000"
+  #     - "${GRAFANA_PORT}:3000"
   #   volumes:
   #     - grafana_data:/var/lib/grafana
   #     - ./grafana/provisioning:/etc/grafana/provisioning
   #     - ./grafana/dashboards:/var/lib/grafana/dashboards
   #   environment:
-  #     - GF_SECURITY_ADMIN_USER=admin
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
   #   depends_on:
   #     - mysql
   #   networks:
