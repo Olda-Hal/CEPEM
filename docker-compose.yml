@@ -1,5 +1,5 @@
 services:
-  # MySQL Database
+  # MySQL Database (Development only - use AWS Aurora in production)
   mysql:
     image: mysql:8.0
     container_name: cepem_mysql
@@ -15,6 +15,8 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - cepem_network
+    profiles:
+      - dev
 
   # Healthcare API
   healthcare-api:
@@ -36,7 +38,6 @@ services:
     volumes:
       - ./test-results:/app/test-results:ro
     depends_on:
-      - mysql
       - database-api
     networks:
       - cepem_network
@@ -61,8 +62,6 @@ services:
     volumes:
       - patient_photos:/app/patient-photos
       - patient_documents:/app/patient-documents
-    depends_on:
-      - mysql
     networks:
       - cepem_network
 
@@ -79,7 +78,6 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - PORT=8000
     depends_on:
-      - mysql
       - healthcare-api
       - database-api
     networks:
@@ -187,12 +185,13 @@ services:
   #   networks:
   #     - cepem_network
 
-# ... existing volumes ...
 volumes:
   mysql_data:
+    name: cepem_mysql_data
   patient_photos:
+    name: cepem_patient_photos
   patient_documents:
-  # grafana_data:  # DISABLED - Grafana service disabled
+    name: cepem_patient_documents
 
 networks:
   cepem_network:
