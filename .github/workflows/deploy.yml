@@ -34,7 +34,7 @@ jobs:
         run: |
           docker build \
             --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }} \
-            -t frontend ./frontend
+            -t frontend -f frontend/Dockerfile .
 
       - name: Tag frontend image
         run: docker tag frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/frontend:latest

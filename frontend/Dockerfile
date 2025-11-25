@@ -1,12 +1,12 @@
 # Build number increment stage
-FROM alpine as build-counter
+FROM alpine AS build-counter
 COPY BUILD_NUMBER /tmp/current_build
 RUN CURRENT=$(cat /tmp/current_build) && \
     NEW_BUILD=$((CURRENT + 1)) && \
     echo $NEW_BUILD > /tmp/new_build_number.txt
 
 # Multi-stage build for React frontend
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
