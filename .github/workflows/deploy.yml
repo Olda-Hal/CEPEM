@@ -1,81 +1,90 @@
-name: Build and Push to ECR
+name: Build and Push CEPEM Containers to ECR
 
 on:
   push:
     branches:
       - main
-
-env:
-  AWS_REGION: eu-central-1
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  workflow_dispatch:
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      # Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Login to ECR
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # === BUILD HEALTHCARE API ===
-      - name: Build Healthcare API Image
+      ####################################################
+      # FRONTEND
+      ####################################################
+      - name: Build frontend image
         run: |
-          docker build -t healthcare-api:latest ./backend/HealthcareAPI
+          docker build \
+            --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }} \
+            -t frontend ./frontend
 
-      - name: Tag Healthcare API Image
-        run: |
-          docker tag healthcare-api:latest $ECR_REGISTRY/healthcare-api:latest
+      - name: Tag frontend image
+        run: docker tag frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/frontend:latest
 
-      - name: Push Healthcare API Image
-        run: |
-          docker push $ECR_REGISTRY/healthcare-api:latest
+      - name: Push frontend
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/frontend:latest
 
-      # === BUILD DATABASE API ===
-      - name: Build Database API Image
+      ####################################################
+      # HEALTHCARE API
+      ####################################################
+      - name: Build healthcare-api image
         run: |
-          docker build -t database-api:latest ./backend/DatabaseAPI
+          docker build \
+            --build-arg JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
+            --build-arg DATABASE_API_URL=${{ secrets.DATABASE_API_URL }} \
+            -t healthcare-api ./backend/HealthcareAPI
 
-      - name: Tag Database API Image
-        run: |
-          docker tag database-api:latest $ECR_REGISTRY/database-api:latest
+      - name: Tag healthcare-api image
+        run: docker tag healthcare-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/healthcare-api:latest
 
-      - name: Push Database API Image
-        run: |
-          docker push $ECR_REGISTRY/database-api:latest
+      - name: Push healthcare-api
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/healthcare-api:latest
 
-      # === BUILD AI SERVICE ===
-      - name: Build AI Service Image
+      ####################################################
+      # DATABASE API
+      ####################################################
+      - name: Build database-api image
         run: |
-          docker build -t ai-service:latest ./backend/AIService
+          docker build \
+            --build-arg DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }} \
+            --build-arg S3_BUCKET=${{ secrets.S3_BUCKET }} \
+            -t database-api ./backend/DatabaseAPI
 
-      - name: Tag AI Service Image
-        run: |
-          docker tag ai-service:latest $ECR_REGISTRY/ai-service:latest
+      - name: Tag database-api image
+        run: docker tag database-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/database-api:latest
 
-      - name: Push AI Service Image
-        run: |
-          docker push $ECR_REGISTRY/ai-service:latest
+      - name: Push database-api
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/database-api:latest
 
-      # === BUILD FRONTEND ===
-      - name: Build Frontend Image
+      ####################################################
+      # AI SERVICE
+      ####################################################
+      - name: Build ai-service image
         run: |
-          docker build -t frontend:latest ./frontend
+          docker build \
+            --build-arg DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }} \
+            -t ai-service ./backend/AIService
 
-      - name: Tag Frontend Image
-        run: |
-          docker tag frontend:latest $ECR_REGISTRY/frontend:latest
+      - name: Tag ai-service image
+        run: docker tag ai-service:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/ai-service:latest
 
-      - name: Push Frontend Image
-        run: |
-          docker push $ECR_REGISTRY/frontend:latest
+      - name: Push ai-service
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cepem/ai-service:latest
