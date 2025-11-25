@@ -1,0 +1,81 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # === BUILD HEALTHCARE API ===
+      - name: Build Healthcare API Image
+        run: |
+          docker build -t healthcare-api:latest ./backend/HealthcareAPI
+
+      - name: Tag Healthcare API Image
+        run: |
+          docker tag healthcare-api:latest $ECR_REGISTRY/healthcare-api:latest
+
+      - name: Push Healthcare API Image
+        run: |
+          docker push $ECR_REGISTRY/healthcare-api:latest
+
+      # === BUILD DATABASE API ===
+      - name: Build Database API Image
+        run: |
+          docker build -t database-api:latest ./backend/DatabaseAPI
+
+      - name: Tag Database API Image
+        run: |
+          docker tag database-api:latest $ECR_REGISTRY/database-api:latest
+
+      - name: Push Database API Image
+        run: |
+          docker push $ECR_REGISTRY/database-api:latest
+
+      # === BUILD AI SERVICE ===
+      - name: Build AI Service Image
+        run: |
+          docker build -t ai-service:latest ./backend/AIService
+
+      - name: Tag AI Service Image
+        run: |
+          docker tag ai-service:latest $ECR_REGISTRY/ai-service:latest
+
+      - name: Push AI Service Image
+        run: |
+          docker push $ECR_REGISTRY/ai-service:latest
+
+      # === BUILD FRONTEND ===
+      - name: Build Frontend Image
+        run: |
+          docker build -t frontend:latest ./frontend
+
+      - name: Tag Frontend Image
+        run: |
+          docker tag frontend:latest $ECR_REGISTRY/frontend:latest
+
+      - name: Push Frontend Image
+        run: |
+          docker push $ECR_REGISTRY/frontend:latest
