@@ -39,16 +39,15 @@ builder.Services.AddScoped<PatientPhotoService>();
 builder.Services.AddScoped<DocumentEncryptionService>();
 builder.Services.AddScoped<PatientDocumentService>();
 
-// CORS Configuration - Only allow HealthcareAPI to call DatabaseAPI
+// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowHealthcareAPI",
         policy =>
         {
-            policy.WithOrigins("http://healthcare-api:5000", "http://localhost:5000")
+            policy.AllowAnyOrigin()
                   .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
+                  .AllowAnyMethod();
         });
 });
 

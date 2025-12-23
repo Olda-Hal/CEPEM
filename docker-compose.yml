@@ -103,12 +103,13 @@ services:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_DATABASE_API_URL: http://localhost:5001
     container_name: cepem_frontend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT}:3000"
-    environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL}
     depends_on:
       - healthcare-api
       - build-incrementer

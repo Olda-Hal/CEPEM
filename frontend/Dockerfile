@@ -19,6 +19,10 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY frontend/ .
 
+# Build args for API URLs
+ARG REACT_APP_API_URL=http://localhost:5000
+ARG REACT_APP_DATABASE_API_URL=http://localhost:5001
+
 # Build the application
 RUN npm run build
 
