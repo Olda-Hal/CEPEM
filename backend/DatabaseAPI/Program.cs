@@ -42,12 +42,19 @@ builder.Services.AddScoped<PatientDocumentService>();
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(",") 
+        ?? Environment.GetEnvironmentVariable("DATABASE_CORS_ORIGINS")?.Split(",")
+        ?? new[] { "http://localhost:3000" };
+    
+    Console.WriteLine($"[CORS] Allowed origins: {string.Join(", ", allowedOrigins)}");
+    
     options.AddPolicy("AllowHealthcareAPI",
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         });
 });
 

@@ -60,6 +60,7 @@ services:
       - PhotoEncryption__IV=${PHOTO_ENCRYPTION_IV}
       - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
+      - DATABASE_CORS_ORIGINS=${DATABASE_CORS_ORIGINS}
     volumes:
       - patient_photos:/app/patient-photos
       - patient_documents:/app/patient-documents
