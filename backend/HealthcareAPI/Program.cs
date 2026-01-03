@@ -65,11 +65,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Add CORS
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(",") 
+        ?? Environment.GetEnvironmentVariable("HEALTHCARE_CORS_ORIGINS")?.Split(",")
+        ?? new[] { "http://localhost:3000" };
+    
+    Console.WriteLine($"[CORS] Allowed origins: {string.Join(", ", allowedOrigins)}");
+    
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 

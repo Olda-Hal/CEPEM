@@ -35,6 +35,7 @@ services:
       - JWT__Issuer=${JWT_ISSUER}
       - JWT__Audience=${JWT_AUDIENCE}
       - DatabaseApiUrl=${DATABASE_API_URL}
+      - HEALTHCARE_CORS_ORIGINS=${HEALTHCARE_CORS_ORIGINS}
     volumes:
       - ./test-results:/app/test-results:ro
     depends_on:
