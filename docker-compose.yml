@@ -15,8 +15,6 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - cepem_network
-    profiles:
-      - dev
 
   # Healthcare API
   healthcare-api:
