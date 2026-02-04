@@ -59,6 +59,11 @@ public class DatabaseContext : DbContext
     
     // Document entities
     public DbSet<PatientDocument> PatientDocuments { get; set; }
+    
+    // Reservation related entities
+    public DbSet<ExaminationRoom> ExaminationRooms { get; set; }
+    public DbSet<DoctorExaminationRoom> DoctorExaminationRooms { get; set; }
+    public DbSet<Reservation> Reservations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,6 +76,7 @@ public class DatabaseContext : DbContext
         ConfigureMedicalRelationships(modelBuilder);
         ConfigureHistoryRelationships(modelBuilder);
         ConfigureHospitalRelationships(modelBuilder);
+        ConfigureReservationRelationships(modelBuilder);
     }
     
     private void ConfigurePersonRelationships(ModelBuilder modelBuilder)
@@ -319,4 +325,41 @@ public class DatabaseContext : DbContext
             .WithMany(r => r.UserRoles)
             .HasForeignKey(ur => ur.RoleId);
     }
-}
+    
+    private void ConfigureReservationRelationships(ModelBuilder modelBuilder)
+    {
+        // ExaminationRoom relationships
+        modelBuilder.Entity<ExaminationRoom>()
+            .HasMany(er => er.DoctorExaminationRooms)
+            .WithOne(der => der.ExaminationRoom)
+            .HasForeignKey(der => der.ExaminationRoomId);
+            
+        modelBuilder.Entity<ExaminationRoom>()
+            .HasMany(er => er.Reservations)
+            .WithOne(r => r.ExaminationRoom)
+            .HasForeignKey(r => r.ExaminationRoomId);
+            
+        // DoctorExaminationRoom relationships
+        modelBuilder.Entity<DoctorExaminationRoom>()
+            .HasOne(der => der.Doctor)
+            .WithMany(e => e.ExaminationRooms)
+            .HasForeignKey(der => der.DoctorId);
+            
+        // Reservation relationships
+        modelBuilder.Entity<Reservation>()
+            .HasOne(r => r.Doctor)
+            .WithMany(e => e.Reservations)
+            .HasForeignKey(r => r.DoctorId);
+            
+        modelBuilder.Entity<Reservation>()
+            .HasOne(r => r.Patient)
+            .WithMany(p => p.Reservations)
+            .HasForeignKey(r => r.PatientId);
+            
+        modelBuilder.Entity<Reservation>()
+            .HasOne(r => r.ExaminationType)
+            .WithMany(et => et.Reservations)
+            .HasForeignKey(r => r.ExaminationTypeId);
+    }
+
+    }

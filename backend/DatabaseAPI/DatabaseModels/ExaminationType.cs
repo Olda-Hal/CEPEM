@@ -12,4 +12,5 @@ public class ExaminationType
     // Navigation properties
     public ICollection<Examination> Examinations { get; set; } = new List<Examination>();
     public ICollection<ExaminationTypeTranslation> Translations { get; set; } = new List<ExaminationTypeTranslation>();
+    public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 }

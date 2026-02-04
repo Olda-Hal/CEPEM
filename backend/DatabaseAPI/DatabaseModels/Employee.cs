@@ -22,4 +22,6 @@ public class Employee
     
     // Navigation properties
     public ICollection<HospitalEmployee> HospitalEmployees { get; set; } = new List<HospitalEmployee>();
+    public ICollection<DoctorExaminationRoom> ExaminationRooms { get; set; } = new List<DoctorExaminationRoom>();
+    public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 }
