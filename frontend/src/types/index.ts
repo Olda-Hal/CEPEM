@@ -296,6 +296,66 @@ export interface CreateEventGroupResponse {
   eventIds: number[];
 }
 
+export interface ExaminationRoom {
+  id: number;
+  name: string;
+  description?: string;
+  hospitalId: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Hospital {
+  id: number;
+  address?: string;
+  active?: boolean;
+}
+
+export interface DoctorExaminationRoom {
+  id: number;
+  doctorId: number;
+  examinationRoomId: number;
+  roomName: string;
+  hospitalId: number;
+  assignedAt: string;
+}
+
+export interface Reservation {
+  id: number;
+  doctorId: number;
+  doctorName?: string;
+  patientId: number;
+  patientName?: string;
+  examinationRoomId: number;
+  roomName?: string;
+  examinationTypeId: number;
+  examinationTypeName?: string;
+  startDateTime: string;
+  endDateTime: string;
+  notes?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateReservationRequest {
+  doctorId: number;
+  patientId: number;
+  examinationRoomId: number;
+  examinationTypeId: number;
+  startDateTime: string;
+  endDateTime: string;
+  notes?: string;
+}
+
+export interface UpdateReservationRequest {
+  startDateTime?: string;
+  endDateTime?: string;
+  notes?: string;
+  status?: string;
+}
+
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;

@@ -184,6 +184,16 @@ export const DashboardPage: React.FC = () => {
                       </button>
                     </Link>
                   </div>
+
+                  <div className="action-card">
+                    <h4>{t('dashboard.reservations')}</h4>
+                    <p>{t('dashboard.reservationsDesc')}</p>
+                    <Link to="/reservations">
+                      <button className="action-button">
+                        {t('dashboard.reservations')}
+                      </button>
+                    </Link>
+                  </div>
                   
                   <div className="action-card">
                     <h4>{t('dashboard.appointments')}</h4>

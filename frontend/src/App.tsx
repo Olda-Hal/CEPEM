@@ -9,6 +9,7 @@ import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { PatientDetailPage } from './pages/PatientDetailPage';
 import { AddPatientFormPage } from './pages/AddPatientFormPage';
+import { ReservationsPage } from './pages/ReservationsPage';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
@@ -72,6 +73,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PatientDetailPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reservations" 
+              element={
+                <ProtectedRoute>
+                  <ReservationsPage />
                 </ProtectedRoute>
               } 
             />
