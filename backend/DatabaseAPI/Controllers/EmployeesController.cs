@@ -22,8 +22,13 @@ namespace DatabaseAPI.Controllers
         {
             var employee = await _context.Employees
                 .Include(e => e.Person)
-                .ThenInclude(p => p.UserRoles)
-                .ThenInclude(ur => ur.Role)
+                    .ThenInclude(p => p.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                            .ThenInclude(r => r.NameTranslation)
+                .Include(e => e.Person)
+                    .ThenInclude(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
                 .Where(e => e.Id == id && e.Person.Active)
                 .FirstOrDefaultAsync();
 
@@ -38,7 +43,7 @@ namespace DatabaseAPI.Controllers
                 PersonId = employee.PersonId,
                 FirstName = employee.Person.FirstName,
                 LastName = employee.Person.LastName,
-                Email = employee.Person.Email,
+                Email = employee.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault() ?? string.Empty,
                 PasswordHash = "", // Don't return password hash
                 Salt = "", // Don't return salt
                 Active = employee.Person.Active,
@@ -46,7 +51,7 @@ namespace DatabaseAPI.Controllers
                 TitleBefore = employee.Person.TitleBefore,
                 TitleAfter = employee.Person.TitleAfter,
                 LastLoginAt = employee.LastLoginAt,
-                Roles = employee.Person.UserRoles.Select(ur => ur.Role.Name).ToList()
+                Roles = employee.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList()
             };
 
             return Ok(employeeAuthInfo);

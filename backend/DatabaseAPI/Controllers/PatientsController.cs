@@ -51,7 +51,8 @@ namespace DatabaseAPI.Controllers
                         p.Person.FirstName.ToLower().Contains(search) ||
                         p.Person.LastName.ToLower().Contains(search) ||
                         p.Person.UID.ToLower().Contains(search) ||
-                        p.Person.Email.ToLower().Contains(search));
+                        p.Person.ContactToObjects.Any(cto =>
+                            cto.Contact.Emails.Any(e => e.Email.ToLower().Contains(search))));
                 }
 
                 // Apply sorting
@@ -88,8 +89,8 @@ namespace DatabaseAPI.Controllers
                         FirstName = p.Person.FirstName,
                         LastName = p.Person.LastName,
                         BirthDate = p.BirthDate,
-                        PhoneNumber = p.Person.PhoneNumber,
-                        Email = p.Person.Email,
+                        PhoneNumber = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                        Email = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
                         InsuranceNumber = p.InsuranceNumber,
                         Gender = p.Person.Gender,
                         CreatedAt = p.Person.CreatedAt,
@@ -128,8 +129,6 @@ namespace DatabaseAPI.Controllers
                 {
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Email = request.Email ?? string.Empty,
-                    PhoneNumber = request.PhoneNumber ?? string.Empty,
                     Gender = request.Gender,
                     UID = request.Uid,
                     TitleBefore = request.TitleBefore,
@@ -140,6 +139,27 @@ namespace DatabaseAPI.Controllers
 
                 _context.Persons.Add(person);
                 await _context.SaveChangesAsync();
+
+                // Create Contact with email and phone if provided
+                if (!string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.PhoneNumber))
+                {
+                    var contact = new Contact();
+                    _context.Contacts.Add(contact);
+                    await _context.SaveChangesAsync();
+
+                    if (!string.IsNullOrEmpty(request.Email))
+                        _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = request.Email });
+                    if (!string.IsNullOrEmpty(request.PhoneNumber))
+                        _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = request.PhoneNumber });
+
+                    _context.ContactToObjects.Add(new ContactToObject
+                    {
+                        ContactId = contact.Id,
+                        ObjectId = person.Id,
+                        ObjectType = ContactObjectType.Person
+                    });
+                    await _context.SaveChangesAsync();
+                }
 
                 // Then create the Patient
                 var patient = new Patient
@@ -153,9 +173,15 @@ namespace DatabaseAPI.Controllers
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
 
-                // Load the complete patient with person data
                 var createdPatient = await _context.Patients
                     .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.Emails)
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.PhoneNumbers)
                     .FirstAsync(p => p.Id == patient.Id);
 
                 var patientDto = new PatientDto
@@ -165,8 +191,8 @@ namespace DatabaseAPI.Controllers
                     FirstName = createdPatient.Person.FirstName,
                     LastName = createdPatient.Person.LastName,
                     BirthDate = createdPatient.BirthDate,
-                    PhoneNumber = createdPatient.Person.PhoneNumber,
-                    Email = createdPatient.Person.Email,
+                    PhoneNumber = createdPatient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                    Email = createdPatient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
                     InsuranceNumber = createdPatient.InsuranceNumber,
                     Gender = createdPatient.Person.Gender,
                     CreatedAt = createdPatient.Person.CreatedAt,
@@ -194,6 +220,13 @@ namespace DatabaseAPI.Controllers
             {
                 var patient = await _context.Patients
                     .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.Emails)
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.PhoneNumbers)
                     .FirstOrDefaultAsync(p => p.Id == id);
 
                 if (patient == null)
@@ -208,8 +241,8 @@ namespace DatabaseAPI.Controllers
                     FirstName = patient.Person.FirstName,
                     LastName = patient.Person.LastName,
                     BirthDate = patient.BirthDate,
-                    PhoneNumber = patient.Person.PhoneNumber,
-                    Email = patient.Person.Email,
+                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
                     InsuranceNumber = patient.InsuranceNumber,
                     Gender = patient.Person.Gender,
                     CreatedAt = patient.Person.CreatedAt,
@@ -238,26 +271,40 @@ namespace DatabaseAPI.Controllers
                 var patient = await _context.Patients
                     .Include(p => p.Person)
                         .ThenInclude(per => per.Comment)
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.Emails)
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.PhoneNumbers)
                     .Include(p => p.Comment)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.EventType)
+                            .ThenInclude(et => et.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Comment)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.DrugUses)
                             .ThenInclude(du => du.Drug)
+                                .ThenInclude(d => d.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Examinations)
                             .ThenInclude(ex => ex.ExaminationType)
+                                .ThenInclude(et => et.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.PatientSymptoms)
                             .ThenInclude(ps => ps.Symptom)
+                                .ThenInclude(s => s.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Injuries)
                             .ThenInclude(i => i.InjuryType)
+                                .ThenInclude(it => it.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Vaccines)
                             .ThenInclude(v => v.VaccineType)
+                                .ThenInclude(vt => vt.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Pregnancies)
                     .FirstOrDefaultAsync(p => p.Id == id);
@@ -282,8 +329,8 @@ namespace DatabaseAPI.Controllers
                 if (DateTime.Now < patient.BirthDate.AddYears(age))
                     age--;
 
-                var allVaccines = patient.Events.SelectMany(e => e.Vaccines.Select(v => v.VaccineType.Name)).ToList();
-                var allSymptoms = patient.Events.SelectMany(e => e.PatientSymptoms.Select(ps => ps.Symptom.Name)).ToList();
+                var allVaccines = patient.Events.SelectMany(e => e.Vaccines.Select(v => v.VaccineType.NameTranslation?.EN ?? string.Empty)).ToList();
+                var allSymptoms = patient.Events.SelectMany(e => e.PatientSymptoms.Select(ps => ps.Symptom.NameTranslation?.EN ?? string.Empty)).ToList();
                 var recentEvents = patient.Events.Where(e => e.HappenedAt >= DateTime.Now.AddMonths(-6)).ToList();
                 var upcomingAppointments = appointments.Where(a => a.StartTime >= DateTime.Now).ToList();
                 var lastEvent = patient.Events.OrderByDescending(e => e.HappenedAt).FirstOrDefault();
@@ -295,8 +342,8 @@ namespace DatabaseAPI.Controllers
                     FirstName = patient.Person.FirstName,
                     LastName = patient.Person.LastName,
                     BirthDate = patient.BirthDate,
-                    PhoneNumber = patient.Person.PhoneNumber,
-                    Email = patient.Person.Email,
+                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
                     InsuranceNumber = patient.InsuranceNumber,
                     Gender = patient.Person.Gender,
                     CreatedAt = patient.Person.CreatedAt,
@@ -319,21 +366,21 @@ namespace DatabaseAPI.Controllers
                         RecentEventsCount = recentEvents.Count,
                         UpcomingAppointmentsCount = upcomingAppointments.Count,
                         LastVisit = lastEvent?.HappenedAt,
-                        LastVisitType = lastEvent?.EventType.Name
+                        LastVisitType = lastEvent?.EventType.NameTranslation?.EN
                     },
                     QuickPreviewSettings = new QuickPreviewSettingsDto(),
                     Events = patient.Events.OrderByDescending(e => e.HappenedAt).Select(e => new PatientEventDto
                     {
                         Id = e.Id,
-                        EventTypeName = e.EventType.Name ?? "Unknown",
+                        EventTypeName = e.EventType.NameTranslation?.EN ?? "Unknown",
                         HappenedAt = e.HappenedAt,
                         HappenedTo = e.HappenedTo,
                         Comment = e.Comment?.Text,
-                        DrugUses = e.DrugUses.Select(du => du.Drug.Name).ToList(),
-                        Examinations = e.Examinations.Select(ex => ex.ExaminationType.Name).ToList(),
-                        Symptoms = e.PatientSymptoms.Select(ps => ps.Symptom.Name).ToList(),
-                        Injuries = e.Injuries.Select(i => i.InjuryType.Name).ToList(),
-                        Vaccines = e.Vaccines.Select(v => v.VaccineType.Name).ToList(),
+                        DrugUses = e.DrugUses.Select(du => du.Drug.NameTranslation?.EN ?? string.Empty).ToList(),
+                        Examinations = e.Examinations.Select(ex => ex.ExaminationType.NameTranslation?.EN ?? string.Empty).ToList(),
+                        Symptoms = e.PatientSymptoms.Select(ps => ps.Symptom.NameTranslation?.EN ?? string.Empty).ToList(),
+                        Injuries = e.Injuries.Select(i => i.InjuryType.NameTranslation?.EN ?? string.Empty).ToList(),
+                        Vaccines = e.Vaccines.Select(v => v.VaccineType.NameTranslation?.EN ?? string.Empty).ToList(),
                         HasPregnancy = e.Pregnancies.Any()
                     }).ToList(),
                     Appointments = appointments.OrderByDescending(a => a.StartTime).Select(a => new PatientAppointmentDto
@@ -343,7 +390,9 @@ namespace DatabaseAPI.Controllers
                         EndTime = a.EndTime,
                         DoctorName = $"{a.HospitalEmployee.Employee.Person.LastName}, {a.HospitalEmployee.Employee.Person.FirstName}",
                         EquipmentName = a.Equipment?.Name,
-                        HospitalName = a.Hospital.Address ?? "Unknown Hospital"
+                        HospitalName = a.Hospital.Address != null
+                            ? $"{a.Hospital.Address.Street}, {a.Hospital.Address.City}"
+                            : (a.Hospital.Name ?? "Unknown Hospital")
                     }).ToList(),
                     Documents = documents.Select(d => new PatientDocumentDto
                     {

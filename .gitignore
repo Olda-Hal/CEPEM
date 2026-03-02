@@ -143,6 +143,7 @@ docker-data/
 postgres-data/
 mysql-data/
 redis-data/
+data/
 
 # Application logs
 logs/

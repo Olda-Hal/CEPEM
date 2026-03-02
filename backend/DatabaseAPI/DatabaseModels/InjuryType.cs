@@ -1,14 +1,12 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace DatabaseAPI.DatabaseModels;
 
 public class InjuryType
 {
     public int Id { get; set; }
-    
-    [Required]
-    public string Name { get; set; } = string.Empty;
-    
+
+    public int? NameTranslationId { get; set; }
+    public Translation? NameTranslation { get; set; }
+
     // Navigation properties
     public ICollection<Injury> Injuries { get; set; } = new List<Injury>();
 }

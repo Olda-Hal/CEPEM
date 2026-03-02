@@ -149,7 +149,7 @@ export const ReservationsPage: React.FC = () => {
 
   const loadExaminationTypes = async () => {
     try {
-      const response = await apiClient.get<Array<{ id: number; name: string }>>('/api/examinationtypes');
+      const response = await apiClient.get<Array<{ id: number; name: string }>>(`/api/examinationtypes?language=${i18n.language}`);
       setExaminationTypes(response);
     } catch (error) {
       console.error(t('errors.loadingExaminationTypes'), error);
@@ -422,7 +422,7 @@ export const ReservationsPage: React.FC = () => {
                 <div className="list">
                   {hospitals.map(hospital => (
                     <div key={hospital.id} className="list-item">
-                      <span>{hospital.address || t('reservations.noAddress')}</span>
+                      <span>{hospital.name || t('reservations.noAddress')}</span>
                       <span>ID: {hospital.id}</span>
                     </div>
                   ))}
@@ -440,7 +440,7 @@ export const ReservationsPage: React.FC = () => {
                     <option value="">{t('reservations.selectHospitalPlaceholder')}</option>
                     {hospitals.map(hospital => (
                       <option key={hospital.id} value={hospital.id}>
-                        {hospital.address || `Hospital ${hospital.id}`}
+                        {hospital.name || `Hospital ${hospital.id}`}
                       </option>
                     ))}
                   </select>

@@ -38,6 +38,7 @@ builder.Services.AddScoped<PatientPhotoService>();
 // Register document services
 builder.Services.AddScoped<DocumentEncryptionService>();
 builder.Services.AddScoped<PatientDocumentService>();
+builder.Services.AddScoped<ExaminationDocumentService>();
 
 // CORS Configuration
 builder.Services.AddCors(options =>

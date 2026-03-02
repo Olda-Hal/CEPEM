@@ -308,8 +308,17 @@ export interface ExaminationRoom {
 
 export interface Hospital {
   id: number;
-  address?: string;
+  name?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
   active?: boolean;
+  companyIco?: string;
+  companyName?: string;
+  parentHospitalId?: number;
 }
 
 export interface DoctorExaminationRoom {

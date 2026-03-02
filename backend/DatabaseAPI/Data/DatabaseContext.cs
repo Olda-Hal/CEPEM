@@ -20,19 +20,16 @@ public class DatabaseContext : DbContext
     // Event related entities
     public DbSet<Event> Events { get; set; }
     public DbSet<EventType> EventTypes { get; set; }
-    public DbSet<EventTypeTranslation> EventTypeTranslations { get; set; }
     
     // Drug related entities
     public DbSet<Drug> Drugs { get; set; }
     public DbSet<DrugCategory> DrugCategories { get; set; }
     public DbSet<DrugToDrugCategory> DrugToDrugCategories { get; set; }
     public DbSet<DrugUse> DrugUses { get; set; }
-    public DbSet<DrugTranslation> DrugTranslations { get; set; }
     
     // Medical entities
     public DbSet<ExaminationType> ExaminationTypes { get; set; }
     public DbSet<Examination> Examinations { get; set; }
-    public DbSet<ExaminationTypeTranslation> ExaminationTypeTranslations { get; set; }
     public DbSet<Symptom> Symptoms { get; set; }
     public DbSet<PatientSymptom> PatientSymptoms { get; set; }
     public DbSet<Pregnancy> Pregnancies { get; set; }
@@ -52,13 +49,27 @@ public class DatabaseContext : DbContext
     public DbSet<Equipment> Equipment { get; set; }
     public DbSet<HospitalEquipment> HospitalEquipment { get; set; }
     public DbSet<HospitalEmployee> HospitalEmployees { get; set; }
+    public DbSet<HospitalExaminationType> HospitalExaminationTypes { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
     
     // System entities
     public DbSet<ActivityLog> ActivityLogs { get; set; }
     
+    // Translation entities
+    public DbSet<Translation> Translations { get; set; }
+
+    // Contact entities
+    public DbSet<Contact> Contacts { get; set; }
+    public DbSet<ContactPhoneNumber> ContactPhoneNumbers { get; set; }
+    public DbSet<ContactEmail> ContactEmails { get; set; }
+    public DbSet<ContactToObject> ContactToObjects { get; set; }
+
+    // Address entities
+    public DbSet<Address> Addresses { get; set; }
+
     // Document entities
     public DbSet<PatientDocument> PatientDocuments { get; set; }
+    public DbSet<ExaminationDocument> ExaminationDocuments { get; set; }
     
     // Reservation related entities
     public DbSet<ExaminationRoom> ExaminationRooms { get; set; }
@@ -77,6 +88,9 @@ public class DatabaseContext : DbContext
         ConfigureHistoryRelationships(modelBuilder);
         ConfigureHospitalRelationships(modelBuilder);
         ConfigureReservationRelationships(modelBuilder);
+        ConfigureContactRelationships(modelBuilder);
+        ConfigureAddressRelationships(modelBuilder);
+        ConfigureTranslationRelationships(modelBuilder);
     }
     
     private void ConfigurePersonRelationships(ModelBuilder modelBuilder)
@@ -132,17 +146,6 @@ public class DatabaseContext : DbContext
             .HasOne(e => e.Comment)
             .WithMany(c => c.Events)
             .HasForeignKey(e => e.CommentId);
-            
-        // EventTypeTranslation relationships
-        modelBuilder.Entity<EventTypeTranslation>()
-            .HasOne(ett => ett.EventType)
-            .WithMany(et => et.Translations)
-            .HasForeignKey(ett => ett.EventTypeId)
-            .OnDelete(DeleteBehavior.Cascade);
-            
-        modelBuilder.Entity<EventTypeTranslation>()
-            .HasIndex(ett => new { ett.EventTypeId, ett.Language })
-            .IsUnique();
     }
     
     private void ConfigureDrugRelationships(ModelBuilder modelBuilder)
@@ -158,7 +161,7 @@ public class DatabaseContext : DbContext
             .WithMany(e => e.DrugUses)
             .HasForeignKey(du => du.EventId);
             
-        // DrugToDrugCategory relationships
+        // DrugTranslation relationships
         modelBuilder.Entity<DrugToDrugCategory>()
             .HasOne(dtdc => dtdc.Drug)
             .WithMany(d => d.DrugToDrugCategories)
@@ -168,22 +171,11 @@ public class DatabaseContext : DbContext
             .HasOne(dtdc => dtdc.Category)
             .WithMany(dc => dc.DrugToDrugCategories)
             .HasForeignKey(dtdc => dtdc.CategoryId);
-            
-        // DrugTranslation relationships
-        modelBuilder.Entity<DrugTranslation>()
-            .HasOne(dt => dt.Drug)
-            .WithMany(d => d.Translations)
-            .HasForeignKey(dt => dt.DrugId)
-            .OnDelete(DeleteBehavior.Cascade);
-            
-        modelBuilder.Entity<DrugTranslation>()
-            .HasIndex(dt => new { dt.DrugId, dt.Language })
-            .IsUnique();
     }
     
     private void ConfigureMedicalRelationships(ModelBuilder modelBuilder)
     {
-        // Examination relationships
+        // ExaminationTypeTranslation relationships
         modelBuilder.Entity<Examination>()
             .HasOne(e => e.ExaminationType)
             .WithMany(et => et.Examinations)
@@ -193,17 +185,13 @@ public class DatabaseContext : DbContext
             .HasOne(e => e.Event)
             .WithMany(ev => ev.Examinations)
             .HasForeignKey(e => e.EventId);
-            
-        // ExaminationTypeTranslation relationships
-        modelBuilder.Entity<ExaminationTypeTranslation>()
-            .HasOne(ett => ett.ExaminationType)
-            .WithMany(et => et.Translations)
-            .HasForeignKey(ett => ett.ExaminationTypeId)
+
+        // ExaminationDocument relationships
+        modelBuilder.Entity<ExaminationDocument>()
+            .HasOne(ed => ed.Examination)
+            .WithMany(e => e.Documents)
+            .HasForeignKey(ed => ed.ExaminationId)
             .OnDelete(DeleteBehavior.Cascade);
-            
-        modelBuilder.Entity<ExaminationTypeTranslation>()
-            .HasIndex(ett => new { ett.ExaminationTypeId, ett.Language })
-            .IsUnique();
             
         // PatientSymptom relationships
         modelBuilder.Entity<PatientSymptom>()
@@ -271,6 +259,13 @@ public class DatabaseContext : DbContext
     
     private void ConfigureHospitalRelationships(ModelBuilder modelBuilder)
     {
+        // Hospital self-reference (parent/child)
+        modelBuilder.Entity<Hospital>()
+            .HasOne(h => h.ParentHospital)
+            .WithMany(h => h.ChildHospitals)
+            .HasForeignKey(h => h.ParentHospitalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // HospitalEquipment relationships
         modelBuilder.Entity<HospitalEquipment>()
             .HasOne(he => he.Hospital)
@@ -314,6 +309,23 @@ public class DatabaseContext : DbContext
             .WithMany(h => h.Appointments)
             .HasForeignKey(a => a.HospitalId);
             
+        // HospitalExaminationType relationships
+        modelBuilder.Entity<HospitalExaminationType>()
+            .HasOne(het => het.Hospital)
+            .WithMany(h => h.HospitalExaminationTypes)
+            .HasForeignKey(het => het.HospitalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HospitalExaminationType>()
+            .HasOne(het => het.ExaminationType)
+            .WithMany(et => et.HospitalExaminationTypes)
+            .HasForeignKey(het => het.ExaminationTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HospitalExaminationType>()
+            .HasIndex(het => new { het.HospitalId, het.ExaminationTypeId })
+            .IsUnique();
+
         // UserRole relationships
         modelBuilder.Entity<UserRole>()
             .HasOne(ur => ur.User)
@@ -360,6 +372,95 @@ public class DatabaseContext : DbContext
             .HasOne(r => r.ExaminationType)
             .WithMany(et => et.Reservations)
             .HasForeignKey(r => r.ExaminationTypeId);
+    }
+
+    private void ConfigureContactRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ContactPhoneNumber>()
+            .HasOne(cpn => cpn.Contact)
+            .WithMany(c => c.PhoneNumbers)
+            .HasForeignKey(cpn => cpn.ContactId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ContactEmail>()
+            .HasOne(ce => ce.Contact)
+            .WithMany(c => c.Emails)
+            .HasForeignKey(ce => ce.ContactId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ContactToObject>()
+            .HasOne(cto => cto.Contact)
+            .WithMany(c => c.ContactToObjects)
+            .HasForeignKey(cto => cto.ContactId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ContactToObject>()
+            .HasIndex(cto => new { cto.ObjectId, cto.ObjectType, cto.ContactId })
+            .IsUnique();
+    }
+
+    private void ConfigureAddressRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Person>()
+            .HasOne(p => p.Address)
+            .WithOne(a => a.Person)
+            .HasForeignKey<Person>(p => p.AddressId);
+
+        modelBuilder.Entity<Hospital>()
+            .HasOne(h => h.Address)
+            .WithOne(a => a.Hospital)
+            .HasForeignKey<Hospital>(h => h.AddressId);
+    }
+
+    private void ConfigureTranslationRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ExaminationType>()
+            .HasOne(e => e.NameTranslation)
+            .WithMany()
+            .HasForeignKey(e => e.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EventType>()
+            .HasOne(e => e.NameTranslation)
+            .WithMany()
+            .HasForeignKey(e => e.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Drug>()
+            .HasOne(d => d.NameTranslation)
+            .WithMany()
+            .HasForeignKey(d => d.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<DrugCategory>()
+            .HasOne(dc => dc.NameTranslation)
+            .WithMany()
+            .HasForeignKey(dc => dc.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Symptom>()
+            .HasOne(s => s.NameTranslation)
+            .WithMany()
+            .HasForeignKey(s => s.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<InjuryType>()
+            .HasOne(i => i.NameTranslation)
+            .WithMany()
+            .HasForeignKey(i => i.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VaccineType>()
+            .HasOne(v => v.NameTranslation)
+            .WithMany()
+            .HasForeignKey(v => v.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Role>()
+            .HasOne(r => r.NameTranslation)
+            .WithMany()
+            .HasForeignKey(r => r.NameTranslationId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     }

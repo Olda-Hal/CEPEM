@@ -3,6 +3,7 @@ using System;
 using DatabaseAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DatabaseAPI.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260302104434_AddContactToObjectPersonFK")]
+    partial class AddContactToObjectPersonFK
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -452,46 +455,6 @@ namespace DatabaseAPI.Migrations
                     b.HasIndex("ExaminationTypeId");
 
                     b.ToTable("Examinations");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationDocument", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("EncryptedPath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<int>("ExaminationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExaminationId");
-
-                    b.ToTable("ExaminationDocuments");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationRoom", b =>
@@ -1316,17 +1279,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("ExaminationType");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationDocument", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Examination", "Examination")
-                        .WithMany("Documents")
-                        .HasForeignKey("ExaminationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Examination");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationRoom", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Hospital", "Hospital")
@@ -1730,11 +1682,6 @@ namespace DatabaseAPI.Migrations
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.EventType", b =>
                 {
                     b.Navigation("Events");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Examination", b =>
-                {
-                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationRoom", b =>

@@ -41,12 +41,17 @@ namespace DatabaseAPI.Services
 
         private async Task SeedRolesAsync()
         {
-            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "SysAdmin");
+            var adminRole = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == "SysAdmin");
             if (adminRole == null)
             {
-                adminRole = new Role { Name = "SysAdmin" };
+                var translation = new Translation { EN = "SysAdmin" };
+                _context.Translations.Add(translation);
+                await _context.SaveChangesAsync();
+                adminRole = new Role { NameTranslationId = translation.Id };
                 _context.Roles.Add(adminRole);
-                await _context.SaveChangesAsync(); // Save to get the ID
+                await _context.SaveChangesAsync();
                 _logger.LogInformation("SysAdmin role created.");
             }
         }
@@ -58,7 +63,8 @@ namespace DatabaseAPI.Services
                 .Include(e => e.Person)
                 .ThenInclude(p => p.UserRoles)
                 .ThenInclude(ur => ur.Role)
-                .AnyAsync(e => e.Person.UserRoles.Any(ur => ur.Role.Name == "SysAdmin"));
+                    .ThenInclude(r => r.NameTranslation)
+                .AnyAsync(e => e.Person.UserRoles.Any(ur => ur.Role.NameTranslation != null && ur.Role.NameTranslation.EN == "SysAdmin"));
 
             if (existingAdmin)
             {
@@ -67,15 +73,15 @@ namespace DatabaseAPI.Services
             }
 
             // Get SysAdmin role
-            var adminRole = await _context.Roles.FirstAsync(r => r.Name == "SysAdmin");
+            var adminRole = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstAsync(r => r.NameTranslation != null && r.NameTranslation.EN == "SysAdmin");
 
             // Create Person for admin
             var adminPerson = new Person
             {
                 FirstName = "Admin",
                 LastName = "User",
-                Email = "admin@cepem.local",
-                PhoneNumber = "+420000000000",
                 UID = Guid.NewGuid().ToString(),
                 Active = true,
                 Gender = "M",
@@ -84,6 +90,21 @@ namespace DatabaseAPI.Services
 
             _context.Persons.Add(adminPerson);
             await _context.SaveChangesAsync(); // Save to get PersonId
+
+            // Create Contact with email and phone for admin
+            var adminContact = new Contact();
+            _context.Contacts.Add(adminContact);
+            await _context.SaveChangesAsync();
+            _context.ContactEmails.Add(new ContactEmail { ContactId = adminContact.Id, Email = "admin@cepem.local" });
+            _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = adminContact.Id, PhoneNumber = "+420000000000" });
+            _context.ContactToObjects.Add(new ContactToObject
+            {
+                ContactId = adminContact.Id,
+                ObjectId = adminPerson.Id,
+                ObjectType = ContactObjectType.Person,
+                PersonId = adminPerson.Id
+            });
+            await _context.SaveChangesAsync();
 
             // Create Employee for admin
             var password = "admin";
@@ -111,7 +132,7 @@ namespace DatabaseAPI.Services
             _context.UserRoles.Add(userRole);
 
             _logger.LogInformation("SysAdmin user created with email: {Email} and password: {Password}", 
-                adminPerson.Email, password);
+                "admin@cepem.local", password);
         }
     }
 }

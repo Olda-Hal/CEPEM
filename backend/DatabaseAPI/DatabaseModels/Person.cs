@@ -21,12 +21,6 @@ public class Person
     
     public bool Active { get; set; }
     
-    [Required]
-    public string Email { get; set; } = string.Empty;
-    
-    [Required]
-    public string PhoneNumber { get; set; } = string.Empty;
-    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     [Required]
@@ -34,7 +28,10 @@ public class Person
     
     public int? CommentId { get; set; }
     public Comment? Comment { get; set; }
-    
+
+    public int? AddressId { get; set; }
+    public Address? Address { get; set; }
+
     // Navigation properties
     public ICollection<FirstNameHistory> FirstNameHistories { get; set; } = new List<FirstNameHistory>();
     public ICollection<LastNameHistory> LastNameHistories { get; set; } = new List<LastNameHistory>();
@@ -42,6 +39,7 @@ public class Person
     public ICollection<PhoneNumberHistory> PhoneNumberHistories { get; set; } = new List<PhoneNumberHistory>();
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    public ICollection<ContactToObject> ContactToObjects { get; set; } = new List<ContactToObject>();
     public Patient? Patient { get; set; }
     public Employee? Employee { get; set; }
 }

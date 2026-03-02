@@ -19,11 +19,23 @@ public class ExaminationTypesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ExaminationType>>> GetAll()
+    public async Task<ActionResult<List<object>>> GetAll([FromQuery] string? language = "cs")
     {
         try
         {
-            var types = await _context.ExaminationTypes.OrderBy(e => e.Name).ToListAsync();
+            var types = await _context.ExaminationTypes
+                .Include(e => e.NameTranslation)
+                .OrderBy(e => e.NameTranslation!.EN)
+                .Select(e => new
+                {
+                    e.Id,
+                    Name = language == "cs"
+                        ? e.NameTranslation!.CS ?? e.NameTranslation.EN
+                        : language == "nl"
+                            ? e.NameTranslation!.NL ?? e.NameTranslation.EN
+                            : e.NameTranslation!.EN
+                })
+                .ToListAsync();
             return Ok(types);
         }
         catch (Exception ex)
@@ -38,7 +50,9 @@ public class ExaminationTypesController : ControllerBase
     {
         try
         {
-            var type = await _context.ExaminationTypes.FindAsync(id);
+            var type = await _context.ExaminationTypes
+                .Include(e => e.NameTranslation)
+                .FirstOrDefaultAsync(e => e.Id == id);
             if (type == null)
                 return NotFound("Examination type not found");
 
@@ -56,18 +70,14 @@ public class ExaminationTypesController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Name))
-                return BadRequest("Examination type name is required");
+            if (string.IsNullOrWhiteSpace(request.EN))
+                return BadRequest("Examination type EN name is required");
 
-            var existing = await _context.ExaminationTypes.FirstOrDefaultAsync(e => e.Name == request.Name);
-            if (existing != null)
-                return BadRequest("Examination type with this name already exists");
+            var translation = new Translation { EN = request.EN, CS = request.CS, NL = request.NL };
+            _context.Translations.Add(translation);
+            await _context.SaveChangesAsync();
 
-            var examinationType = new ExaminationType
-            {
-                Name = request.Name
-            };
-
+            var examinationType = new ExaminationType { NameTranslationId = translation.Id };
             _context.ExaminationTypes.Add(examinationType);
             await _context.SaveChangesAsync();
 
@@ -85,21 +95,30 @@ public class ExaminationTypesController : ControllerBase
     {
         try
         {
-            var type = await _context.ExaminationTypes.FindAsync(id);
+            var type = await _context.ExaminationTypes
+                .Include(e => e.NameTranslation)
+                .FirstOrDefaultAsync(e => e.Id == id);
             if (type == null)
                 return NotFound("Examination type not found");
 
-            if (string.IsNullOrWhiteSpace(request.Name))
-                return BadRequest("Examination type name is required");
+            if (string.IsNullOrWhiteSpace(request.EN))
+                return BadRequest("Examination type EN name is required");
 
-            var existing = await _context.ExaminationTypes.FirstOrDefaultAsync(e => e.Name == request.Name && e.Id != id);
-            if (existing != null)
-                return BadRequest("Examination type with this name already exists");
+            if (type.NameTranslation == null)
+            {
+                var translation = new Translation { EN = request.EN, CS = request.CS, NL = request.NL };
+                _context.Translations.Add(translation);
+                await _context.SaveChangesAsync();
+                type.NameTranslationId = translation.Id;
+            }
+            else
+            {
+                type.NameTranslation.EN = request.EN;
+                type.NameTranslation.CS = request.CS;
+                type.NameTranslation.NL = request.NL;
+            }
 
-            type.Name = request.Name;
-            _context.ExaminationTypes.Update(type);
             await _context.SaveChangesAsync();
-
             return Ok(new { Message = "Examination type updated successfully" });
         }
         catch (Exception ex)
@@ -137,10 +156,14 @@ public class ExaminationTypesController : ControllerBase
 
 public class CreateExaminationTypeRequest
 {
-    public string Name { get; set; } = string.Empty;
+    public string EN { get; set; } = string.Empty;
+    public string? CS { get; set; }
+    public string? NL { get; set; }
 }
 
 public class UpdateExaminationTypeRequest
 {
-    public string Name { get; set; } = string.Empty;
+    public string EN { get; set; } = string.Empty;
+    public string? CS { get; set; }
+    public string? NL { get; set; }
 }

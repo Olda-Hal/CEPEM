@@ -46,16 +46,22 @@ namespace DatabaseAPI.Services
             // Najdi zaměstnance podle emailu bez ohledu na aktivitu
             var employeeInfo = await _context.Employees
                 .Include(e => e.Person)
-                .ThenInclude(p => p.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .Where(e => e.Person.Email == email)
+                    .ThenInclude(p => p.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                            .ThenInclude(r => r.NameTranslation)
+                .Include(e => e.Person)
+                    .ThenInclude(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
+                .Where(e => e.Person.ContactToObjects.Any(cto =>
+                    cto.Contact.Emails.Any(em => em.Email == email)))
                 .Select(e => new EmployeeAuthInfo
                 {
                     EmployeeId = e.Id,
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,
-                    Email = e.Person.Email,
+                    Email = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(em => em.Email).FirstOrDefault() ?? string.Empty,
                     PasswordHash = e.PasswordHash,
                     Salt = e.Salt,
                     Active = e.Person.Active,
@@ -64,7 +70,7 @@ namespace DatabaseAPI.Services
                     TitleAfter = e.Person.TitleAfter,
                     LastLoginAt = e.LastLoginAt,
                     PasswordExpiration = e.PasswordExpiration == DateTime.MinValue ? null : e.PasswordExpiration,
-                    Roles = e.Person.UserRoles.Select(ur => ur.Role.Name).ToList()
+                    Roles = e.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -216,7 +222,11 @@ namespace DatabaseAPI.Services
             {
                 // Check if email or UID already exists
                 var existingPerson = await _context.Persons
-                    .FirstOrDefaultAsync(p => p.Email == request.Email || p.UID == request.UID);
+                    .Include(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
+                    .FirstOrDefaultAsync(p => p.UID == request.UID ||
+                        p.ContactToObjects.Any(cto => cto.Contact.Emails.Any(e => e.Email == request.Email)));
                 
                 if (existingPerson != null)
                 {
@@ -228,8 +238,6 @@ namespace DatabaseAPI.Services
                 {
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Email = request.Email,
-                    PhoneNumber = request.PhoneNumber,
                     UID = request.UID,
                     Gender = request.Gender,
                     TitleBefore = request.TitleBefore,
@@ -239,6 +247,24 @@ namespace DatabaseAPI.Services
                 };
 
                 _context.Persons.Add(person);
+                await _context.SaveChangesAsync();
+
+                // Create Contact
+                var contact = new Contact();
+                _context.Contacts.Add(contact);
+                await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrEmpty(request.Email))
+                    _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = request.Email });
+                if (!string.IsNullOrEmpty(request.PhoneNumber))
+                    _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = request.PhoneNumber });
+
+                _context.ContactToObjects.Add(new ContactToObject
+                {
+                    ContactId = contact.Id,
+                    ObjectId = person.Id,
+                    ObjectType = ContactObjectType.Person
+                });
                 await _context.SaveChangesAsync();
 
                 // Generate password hash and salt
@@ -263,7 +289,7 @@ namespace DatabaseAPI.Services
                 {
                     EmployeeId = employee.Id,
                     PersonId = person.Id,
-                    Email = person.Email,
+                    Email = request.Email,
                     FullName = $"{person.TitleBefore} {person.FirstName} {person.LastName} {person.TitleAfter}".Trim(),
                     UID = person.UID,
                     Active = person.Active

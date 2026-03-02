@@ -31,7 +31,8 @@ public class ReservationsController : ControllerBase
                 .Include(r => r.ExaminationRoom)
                 .Include(r => r.Patient)
                 .ThenInclude(p => p!.Person)
-                .Include(r => r.ExaminationType);
+                .Include(r => r.ExaminationType)
+                .ThenInclude(et => et!.NameTranslation);
 
             if (from.HasValue)
                 query = query.Where(r => r.StartDateTime >= from.Value);
@@ -67,7 +68,8 @@ public class ReservationsController : ControllerBase
                 .ThenInclude(d => d!.Person)
                 .Include(r => r.Patient)
                 .ThenInclude(p => p!.Person)
-                .Include(r => r.ExaminationType);
+                .Include(r => r.ExaminationType)
+                .ThenInclude(et => et!.NameTranslation);
 
             if (from.HasValue)
                 query = query.Where(r => r.StartDateTime >= from.Value);
@@ -235,7 +237,7 @@ public class ReservationsController : ControllerBase
             ExaminationRoomId = r.ExaminationRoomId,
             RoomName = r.ExaminationRoom?.Name,
             ExaminationTypeId = r.ExaminationTypeId,
-            ExaminationTypeName = r.ExaminationType?.Name,
+            ExaminationTypeName = r.ExaminationType?.NameTranslation?.EN,
             StartDateTime = r.StartDateTime,
             EndDateTime = r.EndDateTime,
             Notes = r.Notes,

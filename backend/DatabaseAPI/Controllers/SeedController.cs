@@ -28,16 +28,21 @@ namespace DatabaseAPI.Controllers
                 .Include(e => e.Person)
                 .ThenInclude(p => p.UserRoles)
                 .ThenInclude(ur => ur.Role)
-                .AnyAsync(e => e.Person.UserRoles.Any(ur => ur.Role.Name == "SysAdmin"));
+                .AnyAsync(e => e.Person.UserRoles.Any(ur => ur.Role.NameTranslation != null && ur.Role.NameTranslation.EN == "SysAdmin"));
                 
             if (existingAdmin)
                 return BadRequest("Admin already exists.");
 
             // Get or create SysAdmin role
-            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "SysAdmin");
+            var adminRole = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == "SysAdmin");
             if (adminRole == null)
             {
-                adminRole = new Role { Name = "SysAdmin" };
+                var translation = new Translation { EN = "SysAdmin" };
+                _context.Translations.Add(translation);
+                await _context.SaveChangesAsync();
+                adminRole = new Role { NameTranslationId = translation.Id };
                 _context.Roles.Add(adminRole);
                 await _context.SaveChangesAsync();
             }
@@ -47,8 +52,6 @@ namespace DatabaseAPI.Controllers
             {
                 FirstName = "Admin",
                 LastName = "User", 
-                Email = "admin@cepem.local",
-                PhoneNumber = "+420000000000",
                 UID = Guid.NewGuid().ToString(),
                 Active = true,
                 Gender = "M",
@@ -56,6 +59,20 @@ namespace DatabaseAPI.Controllers
             };
             
             _context.Persons.Add(adminPerson);
+            await _context.SaveChangesAsync();
+
+            // Create Contact with email and phone for admin
+            var adminContact = new Contact();
+            _context.Contacts.Add(adminContact);
+            await _context.SaveChangesAsync();
+            _context.ContactEmails.Add(new ContactEmail { ContactId = adminContact.Id, Email = "admin@cepem.local" });
+            _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = adminContact.Id, PhoneNumber = "+420000000000" });
+            _context.ContactToObjects.Add(new ContactToObject
+            {
+                ContactId = adminContact.Id,
+                ObjectId = adminPerson.Id,
+                ObjectType = ContactObjectType.Person
+            });
             await _context.SaveChangesAsync();
 
             var password = "Admin123!";
@@ -95,129 +112,128 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Event data already exists.");
 
             // Seed Event Types
-            var eventTypes = new[]
-            {
-                new EventType { Name = "Návštěva" },
-                new EventType { Name = "Operace" }, 
-                new EventType { Name = "Pohotovost" },
-                new EventType { Name = "Kontrola" },
-                new EventType { Name = "Vyšetření" },
-                new EventType { Name = "Lék" },
-                new EventType { Name = "Úraz" },
-                new EventType { Name = "Očkování" },
-                new EventType { Name = "Příznak" },
-                new EventType { Name = "Těhotenství" }
+            var eventTypeData = new[] {
+                (CS: "Návštěva",    EN: "Visit"),
+                (CS: "Operace",     EN: "Surgery"),
+                (CS: "Pohotovost",  EN: "Emergency"),
+                (CS: "Kontrola",    EN: "Check-up"),
+                (CS: "Vyšetření",   EN: "Examination"),
+                (CS: "Lék",         EN: "Medication"),
+                (CS: "Úraz",        EN: "Injury"),
+                (CS: "Očkování",    EN: "Vaccination"),
+                (CS: "Příznak",     EN: "Symptom"),
+                (CS: "Těhotenství", EN: "Pregnancy"),
             };
-            _context.EventTypes.AddRange(eventTypes);
+            foreach (var d in eventTypeData)
+            {
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.EventTypes.Add(new EventType { NameTranslationId = t.Id });
+            }
             await _context.SaveChangesAsync();
-
-            // Seed Event Type Translations
-            var eventTypeTranslations = new[]
-            {
-                new EventTypeTranslation { EventTypeId = eventTypes[0].Id, Language = "en", Name = "Visit" },
-                new EventTypeTranslation { EventTypeId = eventTypes[1].Id, Language = "en", Name = "Surgery" },
-                new EventTypeTranslation { EventTypeId = eventTypes[2].Id, Language = "en", Name = "Emergency" },
-                new EventTypeTranslation { EventTypeId = eventTypes[3].Id, Language = "en", Name = "Check-up" },
-                new EventTypeTranslation { EventTypeId = eventTypes[4].Id, Language = "en", Name = "Examination" },
-                new EventTypeTranslation { EventTypeId = eventTypes[5].Id, Language = "en", Name = "Medication" },
-                new EventTypeTranslation { EventTypeId = eventTypes[6].Id, Language = "en", Name = "Injury" },
-                new EventTypeTranslation { EventTypeId = eventTypes[7].Id, Language = "en", Name = "Vaccination" },
-                new EventTypeTranslation { EventTypeId = eventTypes[8].Id, Language = "en", Name = "Symptom" },
-                new EventTypeTranslation { EventTypeId = eventTypes[9].Id, Language = "en", Name = "Pregnancy" }
-            };
-            _context.EventTypeTranslations.AddRange(eventTypeTranslations);
 
             // Seed Drugs
-            var drugs = new[]
-            {
-                new Drug { Name = "Paracetamol" },
-                new Drug { Name = "Ibuprofen" },
-                new Drug { Name = "Aspirin" },
-                new Drug { Name = "Antibiotika" },
-                new Drug { Name = "Inzulín" }
+            var drugData = new[] {
+                (CS: "Paracetamol", EN: "Paracetamol"),
+                (CS: "Ibuprofen",   EN: "Ibuprofen"),
+                (CS: "Aspirin",     EN: "Aspirin"),
+                (CS: "Antibiotika", EN: "Antibiotics"),
+                (CS: "Inzulín",     EN: "Insulin"),
             };
-            _context.Drugs.AddRange(drugs);
+            foreach (var d in drugData)
+            {
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.Drugs.Add(new Drug { NameTranslationId = t.Id });
+            }
             await _context.SaveChangesAsync();
-
-            // Seed Drug Translations
-            var drugTranslations = new[]
-            {
-                new DrugTranslation { DrugId = drugs[0].Id, Language = "en", Name = "Paracetamol" },
-                new DrugTranslation { DrugId = drugs[1].Id, Language = "en", Name = "Ibuprofen" },
-                new DrugTranslation { DrugId = drugs[2].Id, Language = "en", Name = "Aspirin" },
-                new DrugTranslation { DrugId = drugs[3].Id, Language = "en", Name = "Antibiotics" },
-                new DrugTranslation { DrugId = drugs[4].Id, Language = "en", Name = "Insulin" }
-            };
-            _context.DrugTranslations.AddRange(drugTranslations);
 
             // Seed Drug Categories
-            var drugCategories = new[]
-            {
-                new DrugCategory { Name = "Bolest" },
-                new DrugCategory { Name = "Teplota" },
-                new DrugCategory { Name = "Zánět" },
-                new DrugCategory { Name = "Infekce" },
-                new DrugCategory { Name = "Prevence" },
-                new DrugCategory { Name = "Chronické onemocnění" }
+            var drugCategoryData = new[] {
+                (CS: "Bolest",               EN: "Pain"),
+                (CS: "Teplota",              EN: "Fever"),
+                (CS: "Zánět",                EN: "Inflammation"),
+                (CS: "Infekce",              EN: "Infection"),
+                (CS: "Prevence",             EN: "Prevention"),
+                (CS: "Chronické onemocnění", EN: "Chronic disease"),
             };
-            _context.DrugCategories.AddRange(drugCategories);
-
-            // Seed Examination Types
-            var examinationTypes = new[]
+            foreach (var d in drugCategoryData)
             {
-                new ExaminationType { Name = "Krevní test" },
-                new ExaminationType { Name = "Rentgen" },
-                new ExaminationType { Name = "MRI" },
-                new ExaminationType { Name = "CT" },
-                new ExaminationType { Name = "Ultrazvuk" }
-            };
-            _context.ExaminationTypes.AddRange(examinationTypes);
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.DrugCategories.Add(new DrugCategory { NameTranslationId = t.Id });
+            }
             await _context.SaveChangesAsync();
 
-            // Seed Examination Type Translations
-            var examinationTypeTranslations = new[]
-            {
-                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[0].Id, Language = "en", Name = "Blood Test" },
-                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[1].Id, Language = "en", Name = "X-Ray" },
-                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[2].Id, Language = "en", Name = "MRI" },
-                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[3].Id, Language = "en", Name = "CT" },
-                new ExaminationTypeTranslation { ExaminationTypeId = examinationTypes[4].Id, Language = "en", Name = "Ultrasound" }
+            // Seed Examination Types
+            var examinationTypeData = new[] {
+                (CS: "Krevní test", EN: "Blood Test"),
+                (CS: "Rentgen",     EN: "X-Ray"),
+                (CS: "MRI",         EN: "MRI"),
+                (CS: "CT",          EN: "CT"),
+                (CS: "Ultrazvuk",   EN: "Ultrasound"),
             };
-            _context.ExaminationTypeTranslations.AddRange(examinationTypeTranslations);
+            foreach (var d in examinationTypeData)
+            {
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.ExaminationTypes.Add(new ExaminationType { NameTranslationId = t.Id });
+            }
+            await _context.SaveChangesAsync();
 
             // Seed Symptoms
-            var symptoms = new[]
-            {
-                new Symptom { Name = "Horečka" },
-                new Symptom { Name = "Bolest hlavy" },
-                new Symptom { Name = "Kašel" },
-                new Symptom { Name = "Nevolnost" },
-                new Symptom { Name = "Únava" }
+            var symptomData = new[] {
+                (CS: "Horečka",      EN: "Fever"),
+                (CS: "Bolest hlavy", EN: "Headache"),
+                (CS: "Kašel",        EN: "Cough"),
+                (CS: "Nevolnost",    EN: "Nausea"),
+                (CS: "Únava",        EN: "Fatigue"),
             };
-            _context.Symptoms.AddRange(symptoms);
+            foreach (var d in symptomData)
+            {
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.Symptoms.Add(new Symptom { NameTranslationId = t.Id });
+            }
+            await _context.SaveChangesAsync();
 
             // Seed Injury Types
-            var injuryTypes = new[]
-            {
-                new InjuryType { Name = "Zlomenina" },
-                new InjuryType { Name = "Podvrtnutí" },
-                new InjuryType { Name = "Řezná rána" },
-                new InjuryType { Name = "Popálenina" },
-                new InjuryType { Name = "Modřina" }
+            var injuryTypeData = new[] {
+                (CS: "Zlomenina",   EN: "Fracture"),
+                (CS: "Podvrtnutí",  EN: "Sprain"),
+                (CS: "Řezná rána",  EN: "Cut"),
+                (CS: "Popálenina",  EN: "Burn"),
+                (CS: "Modřina",     EN: "Bruise"),
             };
-            _context.InjuryTypes.AddRange(injuryTypes);
+            foreach (var d in injuryTypeData)
+            {
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.InjuryTypes.Add(new InjuryType { NameTranslationId = t.Id });
+            }
+            await _context.SaveChangesAsync();
 
             // Seed Vaccine Types
-            var vaccineTypes = new[]
-            {
-                new VaccineType { Name = "COVID-19" },
-                new VaccineType { Name = "Chřipka" },
-                new VaccineType { Name = "Tetanus" },
-                new VaccineType { Name = "Hepatitida B" },
-                new VaccineType { Name = "MMR" }
+            var vaccineTypeData = new[] {
+                (CS: "COVID-19",     EN: "COVID-19"),
+                (CS: "Chřipka",      EN: "Influenza"),
+                (CS: "Tetanus",      EN: "Tetanus"),
+                (CS: "Hepatitida B", EN: "Hepatitis B"),
+                (CS: "MMR",          EN: "MMR"),
             };
-            _context.VaccineTypes.AddRange(vaccineTypes);
-
+            foreach (var d in vaccineTypeData)
+            {
+                var t = new Translation { EN = d.EN, CS = d.CS };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.VaccineTypes.Add(new VaccineType { NameTranslationId = t.Id });
+            }
             await _context.SaveChangesAsync();
             
             return Ok("Event data seeded successfully.");
@@ -228,122 +244,13 @@ namespace DatabaseAPI.Controllers
         {
             foreach (var name in eventTypeNames)
             {
-                var exists = await _context.EventTypes.AnyAsync(et => et.Name == name);
-                if (!exists)
-                {
-                    _context.EventTypes.Add(new EventType { Name = name });
-                }
+                var t = new Translation { EN = name };
+                _context.Translations.Add(t);
+                await _context.SaveChangesAsync();
+                _context.EventTypes.Add(new EventType { NameTranslationId = t.Id });
             }
-            
             await _context.SaveChangesAsync();
             return Ok($"Added {eventTypeNames.Length} event types.");
-        }
-
-        [HttpPost("translations")]
-        public async Task<IActionResult> SeedTranslations()
-        {
-            var translationsAdded = 0;
-
-            var eventTypeMap = new Dictionary<string, string>
-            {
-                { "Návštěva", "Visit" },
-                { "Operace", "Surgery" },
-                { "Pohotovost", "Emergency" },
-                { "Kontrola", "Check-up" },
-                { "Vyšetření", "Examination" },
-                { "Lék", "Medication" },
-                { "Úraz", "Injury" },
-                { "Očkování", "Vaccination" },
-                { "Příznak", "Symptom" },
-                { "Těhotenství", "Pregnancy" },
-                { "Léčba", "Treatment" }
-            };
-
-            foreach (var kvp in eventTypeMap)
-            {
-                var eventType = await _context.EventTypes.FirstOrDefaultAsync(et => et.Name == kvp.Key);
-                if (eventType != null)
-                {
-                    var existingTranslation = await _context.EventTypeTranslations
-                        .AnyAsync(ett => ett.EventTypeId == eventType.Id && ett.Language == "en");
-                    
-                    if (!existingTranslation)
-                    {
-                        _context.EventTypeTranslations.Add(new EventTypeTranslation
-                        {
-                            EventTypeId = eventType.Id,
-                            Language = "en",
-                            Name = kvp.Value
-                        });
-                        translationsAdded++;
-                    }
-                }
-            }
-
-            var drugMap = new Dictionary<string, string>
-            {
-                { "Paracetamol", "Paracetamol" },
-                { "Ibuprofen", "Ibuprofen" },
-                { "Aspirin", "Aspirin" },
-                { "Antibiotika", "Antibiotics" },
-                { "Inzulín", "Insulin" },
-                { "fentanyl", "Fentanyl" }
-            };
-
-            foreach (var kvp in drugMap)
-            {
-                var drug = await _context.Drugs.FirstOrDefaultAsync(d => d.Name == kvp.Key);
-                if (drug != null)
-                {
-                    var existingTranslation = await _context.DrugTranslations
-                        .AnyAsync(dt => dt.DrugId == drug.Id && dt.Language == "en");
-                    
-                    if (!existingTranslation)
-                    {
-                        _context.DrugTranslations.Add(new DrugTranslation
-                        {
-                            DrugId = drug.Id,
-                            Language = "en",
-                            Name = kvp.Value
-                        });
-                        translationsAdded++;
-                    }
-                }
-            }
-
-            var examinationTypeMap = new Dictionary<string, string>
-            {
-                { "Krevní test", "Blood Test" },
-                { "Rentgen", "X-Ray" },
-                { "MRI", "MRI" },
-                { "CT", "CT" },
-                { "Ultrazvuk", "Ultrasound" },
-                { "MEIK", "MEIK" }
-            };
-
-            foreach (var kvp in examinationTypeMap)
-            {
-                var examinationType = await _context.ExaminationTypes.FirstOrDefaultAsync(et => et.Name == kvp.Key);
-                if (examinationType != null)
-                {
-                    var existingTranslation = await _context.ExaminationTypeTranslations
-                        .AnyAsync(ett => ett.ExaminationTypeId == examinationType.Id && ett.Language == "en");
-                    
-                    if (!existingTranslation)
-                    {
-                        _context.ExaminationTypeTranslations.Add(new ExaminationTypeTranslation
-                        {
-                            ExaminationTypeId = examinationType.Id,
-                            Language = "en",
-                            Name = kvp.Value
-                        });
-                        translationsAdded++;
-                    }
-                }
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok($"Added {translationsAdded} translations.");
         }
 
         private static string HashPassword(string password)

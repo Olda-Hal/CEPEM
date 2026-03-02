@@ -20,59 +20,58 @@ public class EventsController : ControllerBase
     [HttpGet("options")]
     public async Task<ActionResult<EventOptionsResponse>> GetEventOptions([FromQuery] string? language = "cs")
     {
-        var eventTypes = await _context.EventTypes
-            .Include(et => et.Translations)
-            .ToListAsync();
-        var drugs = await _context.Drugs
-            .Include(d => d.Translations)
-            .OrderBy(d => d.Name)
-            .ToListAsync();
-        var drugCategories = await _context.DrugCategories.OrderBy(dc => dc.Name).ToListAsync();
-        var examinationTypes = await _context.ExaminationTypes
-            .Include(et => et.Translations)
-            .OrderBy(et => et.Name)
-            .ToListAsync();
-        var symptoms = await _context.Symptoms.OrderBy(s => s.Name).ToListAsync();
-        var injuryTypes = await _context.InjuryTypes.OrderBy(it => it.Name).ToListAsync();
-        var vaccineTypes = await _context.VaccineTypes.OrderBy(vt => vt.Name).ToListAsync();
+        var eventTypes = await _context.EventTypes.Include(et => et.NameTranslation).ToListAsync();
+        var drugs = await _context.Drugs.Include(d => d.NameTranslation).ToListAsync();
+        var drugCategories = await _context.DrugCategories.Include(dc => dc.NameTranslation).ToListAsync();
+        var examinationTypes = await _context.ExaminationTypes.Include(et => et.NameTranslation).ToListAsync();
+        var symptoms = await _context.Symptoms.Include(s => s.NameTranslation).ToListAsync();
+        var injuryTypes = await _context.InjuryTypes.Include(it => it.NameTranslation).ToListAsync();
+        var vaccineTypes = await _context.VaccineTypes.Include(vt => vt.NameTranslation).ToListAsync();
+
+        string Resolve(Translation? t) => language switch
+        {
+            "cs" => t?.CS ?? t?.EN ?? string.Empty,
+            "nl" => t?.NL ?? t?.EN ?? string.Empty,
+            _    => t?.EN ?? string.Empty,
+        };
 
         var response = new EventOptionsResponse
         {
             EventTypes = eventTypes.Select(et => new EventTypeResponse
             {
                 Id = et.Id,
-                Name = et.Translations.FirstOrDefault(t => t.Language == language)?.Name ?? et.Name
-            }).ToList(),
+                Name = Resolve(et.NameTranslation)
+            }).OrderBy(x => x.Name).ToList(),
             Drugs = drugs.Select(d => new DrugResponse
             {
                 Id = d.Id,
-                Name = d.Translations.FirstOrDefault(t => t.Language == language)?.Name ?? d.Name
-            }).ToList(),
+                Name = Resolve(d.NameTranslation)
+            }).OrderBy(x => x.Name).ToList(),
             DrugCategories = drugCategories.Select(dc => new DrugCategoryResponse
             {
                 Id = dc.Id,
-                Name = dc.Name ?? string.Empty
-            }).ToList(),
+                Name = Resolve(dc.NameTranslation)
+            }).OrderBy(x => x.Name).ToList(),
             ExaminationTypes = examinationTypes.Select(et => new ExaminationTypeResponse
             {
                 Id = et.Id,
-                Name = et.Translations.FirstOrDefault(t => t.Language == language)?.Name ?? et.Name
-            }).ToList(),
+                Name = Resolve(et.NameTranslation)
+            }).OrderBy(x => x.Name).ToList(),
             Symptoms = symptoms.Select(s => new SymptomResponse
             {
                 Id = s.Id,
-                Name = s.Name
-            }).ToList(),
+                Name = Resolve(s.NameTranslation)
+            }).OrderBy(x => x.Name).ToList(),
             InjuryTypes = injuryTypes.Select(it => new InjuryTypeResponse
             {
                 Id = it.Id,
-                Name = it.Name
-            }).ToList(),
+                Name = Resolve(it.NameTranslation)
+            }).OrderBy(x => x.Name).ToList(),
             VaccineTypes = vaccineTypes.Select(vt => new VaccineTypeResponse
             {
                 Id = vt.Id,
-                Name = vt.Name
-            }).ToList()
+                Name = Resolve(vt.NameTranslation)
+            }).OrderBy(x => x.Name).ToList()
         };
 
         return Ok(response);
@@ -319,84 +318,72 @@ public class EventsController : ControllerBase
     [HttpPost("examination-types")]
     public async Task<ActionResult<ExaminationTypeResponse>> CreateExaminationType([FromBody] CreateOptionRequest request)
     {
-        var examinationType = new ExaminationType { Name = request.Name };
+        var t = new Translation { EN = request.Name };
+        _context.Translations.Add(t);
+        await _context.SaveChangesAsync();
+        var examinationType = new ExaminationType { NameTranslationId = t.Id };
         _context.ExaminationTypes.Add(examinationType);
         await _context.SaveChangesAsync();
-
-        return Ok(new ExaminationTypeResponse
-        {
-            Id = examinationType.Id,
-            Name = examinationType.Name
-        });
+        return Ok(new ExaminationTypeResponse { Id = examinationType.Id, Name = t.EN });
     }
 
     [HttpPost("symptoms")]
     public async Task<ActionResult<SymptomResponse>> CreateSymptom([FromBody] CreateOptionRequest request)
     {
-        var symptom = new Symptom { Name = request.Name };
+        var t = new Translation { EN = request.Name };
+        _context.Translations.Add(t);
+        await _context.SaveChangesAsync();
+        var symptom = new Symptom { NameTranslationId = t.Id };
         _context.Symptoms.Add(symptom);
         await _context.SaveChangesAsync();
-
-        return Ok(new SymptomResponse
-        {
-            Id = symptom.Id,
-            Name = symptom.Name
-        });
+        return Ok(new SymptomResponse { Id = symptom.Id, Name = t.EN });
     }
 
     [HttpPost("injury-types")]
     public async Task<ActionResult<InjuryTypeResponse>> CreateInjuryType([FromBody] CreateOptionRequest request)
     {
-        var injuryType = new InjuryType { Name = request.Name };
+        var t = new Translation { EN = request.Name };
+        _context.Translations.Add(t);
+        await _context.SaveChangesAsync();
+        var injuryType = new InjuryType { NameTranslationId = t.Id };
         _context.InjuryTypes.Add(injuryType);
         await _context.SaveChangesAsync();
-
-        return Ok(new InjuryTypeResponse
-        {
-            Id = injuryType.Id,
-            Name = injuryType.Name
-        });
+        return Ok(new InjuryTypeResponse { Id = injuryType.Id, Name = t.EN });
     }
 
     [HttpPost("vaccine-types")]
     public async Task<ActionResult<VaccineTypeResponse>> CreateVaccineType([FromBody] CreateOptionRequest request)
     {
-        var vaccineType = new VaccineType { Name = request.Name };
+        var t = new Translation { EN = request.Name };
+        _context.Translations.Add(t);
+        await _context.SaveChangesAsync();
+        var vaccineType = new VaccineType { NameTranslationId = t.Id };
         _context.VaccineTypes.Add(vaccineType);
         await _context.SaveChangesAsync();
-
-        return Ok(new VaccineTypeResponse
-        {
-            Id = vaccineType.Id,
-            Name = vaccineType.Name
-        });
+        return Ok(new VaccineTypeResponse { Id = vaccineType.Id, Name = t.EN });
     }
 
     [HttpPost("drugs")]
     public async Task<ActionResult<DrugResponse>> CreateDrug([FromBody] CreateOptionRequest request)
     {
-        var drug = new Drug { Name = request.Name };
+        var t = new Translation { EN = request.Name };
+        _context.Translations.Add(t);
+        await _context.SaveChangesAsync();
+        var drug = new Drug { NameTranslationId = t.Id };
         _context.Drugs.Add(drug);
         await _context.SaveChangesAsync();
-
-        return Ok(new DrugResponse
-        {
-            Id = drug.Id,
-            Name = drug.Name
-        });
+        return Ok(new DrugResponse { Id = drug.Id, Name = t.EN });
     }
 
     [HttpPost("drug-categories")]
     public async Task<ActionResult<DrugCategoryResponse>> CreateDrugCategory([FromBody] CreateOptionRequest request)
     {
-        var drugCategory = new DrugCategory { Name = request.Name };
+        var t = new Translation { EN = request.Name };
+        _context.Translations.Add(t);
+        await _context.SaveChangesAsync();
+        var drugCategory = new DrugCategory { NameTranslationId = t.Id };
         _context.DrugCategories.Add(drugCategory);
         await _context.SaveChangesAsync();
-
-        return Ok(new DrugCategoryResponse
-        {
-            Id = drugCategory.Id,
-            Name = drugCategory.Name ?? string.Empty
-        });
+        return Ok(new DrugCategoryResponse { Id = drugCategory.Id, Name = t.EN });
     }
 }

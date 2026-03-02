@@ -3,6 +3,7 @@ using System;
 using DatabaseAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DatabaseAPI.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260227131131_AddHospitalParentAndCompany")]
+    partial class AddHospitalParentAndCompany
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -242,12 +245,11 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NameTranslationId");
 
                     b.ToTable("Drugs");
                 });
@@ -258,12 +260,10 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NameTranslationId");
 
                     b.ToTable("DrugCategories");
                 });
@@ -287,6 +287,32 @@ namespace DatabaseAPI.Migrations
                     b.HasIndex("DrugId");
 
                     b.ToTable("DrugToDrugCategories");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.DrugTranslation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("DrugId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DrugId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("DrugTranslations");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.DrugUse", b =>
@@ -423,14 +449,39 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NameTranslationId");
-
                     b.ToTable("EventTypes");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EventTypeTranslation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("EventTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventTypeId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("EventTypeTranslations");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Examination", b =>
@@ -452,46 +503,6 @@ namespace DatabaseAPI.Migrations
                     b.HasIndex("ExaminationTypeId");
 
                     b.ToTable("Examinations");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationDocument", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("EncryptedPath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<int>("ExaminationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExaminationId");
-
-                    b.ToTable("ExaminationDocuments");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationRoom", b =>
@@ -534,14 +545,39 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NameTranslationId");
-
                     b.ToTable("ExaminationTypes");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationTypeTranslation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("ExaminationTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExaminationTypeId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("ExaminationTypeTranslations");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.FirstNameHistory", b =>
@@ -631,9 +667,6 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int>("Count")
-                        .HasColumnType("int");
-
                     b.Property<int>("EquipmentId")
                         .HasColumnType("int");
 
@@ -647,28 +680,6 @@ namespace DatabaseAPI.Migrations
                     b.HasIndex("HospitalId");
 
                     b.ToTable("HospitalEquipment");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.HospitalExaminationType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("ExaminationTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HospitalId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExaminationTypeId");
-
-                    b.HasIndex("HospitalId", "ExaminationTypeId")
-                        .IsUnique();
-
-                    b.ToTable("HospitalExaminationTypes");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Injury", b =>
@@ -698,12 +709,11 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NameTranslationId");
 
                     b.ToTable("InjuryTypes");
                 });
@@ -982,12 +992,11 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NameTranslationId");
 
                     b.ToTable("Roles");
                 });
@@ -998,35 +1007,13 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NameTranslationId");
-
-                    b.ToTable("Symptoms");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Translation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("CS")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("EN")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("NL")
-                        .HasColumnType("longtext");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Translations");
+                    b.ToTable("Symptoms");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.UserRole", b =>
@@ -1077,12 +1064,11 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("NameTranslationId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NameTranslationId");
 
                     b.ToTable("VaccineTypes");
                 });
@@ -1150,19 +1136,15 @@ namespace DatabaseAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DatabaseAPI.DatabaseModels.Hospital", "Hospital")
+                    b.HasOne("DatabaseAPI.DatabaseModels.Hospital", null)
                         .WithMany("ContactToObjects")
                         .HasForeignKey("HospitalId");
 
-                    b.HasOne("DatabaseAPI.DatabaseModels.Person", "Person")
+                    b.HasOne("DatabaseAPI.DatabaseModels.Person", null)
                         .WithMany("ContactToObjects")
                         .HasForeignKey("PersonId");
 
                     b.Navigation("Contact");
-
-                    b.Navigation("Hospital");
-
-                    b.Navigation("Person");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.DoctorExaminationRoom", b =>
@@ -1184,26 +1166,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("ExaminationRoom");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Drug", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("NameTranslation");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.DrugCategory", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("NameTranslation");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.DrugToDrugCategory", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.DrugCategory", "Category")
@@ -1217,6 +1179,17 @@ namespace DatabaseAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+
+                    b.Navigation("Drug");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.DrugTranslation", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Drug", "Drug")
+                        .WithMany("Translations")
+                        .HasForeignKey("DrugId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Drug");
                 });
@@ -1287,14 +1260,15 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EventType", b =>
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EventTypeTranslation", b =>
                 {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("DatabaseAPI.DatabaseModels.EventType", "EventType")
+                        .WithMany("Translations")
+                        .HasForeignKey("EventTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("NameTranslation");
+                    b.Navigation("EventType");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Examination", b =>
@@ -1316,17 +1290,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("ExaminationType");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationDocument", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Examination", "Examination")
-                        .WithMany("Documents")
-                        .HasForeignKey("ExaminationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Examination");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationRoom", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Hospital", "Hospital")
@@ -1338,14 +1301,15 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Hospital");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationType", b =>
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationTypeTranslation", b =>
                 {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("DatabaseAPI.DatabaseModels.ExaminationType", "ExaminationType")
+                        .WithMany("Translations")
+                        .HasForeignKey("ExaminationTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("NameTranslation");
+                    b.Navigation("ExaminationType");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.FirstNameHistory", b =>
@@ -1413,25 +1377,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Hospital");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.HospitalExaminationType", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.ExaminationType", "ExaminationType")
-                        .WithMany("HospitalExaminationTypes")
-                        .HasForeignKey("ExaminationTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DatabaseAPI.DatabaseModels.Hospital", "Hospital")
-                        .WithMany("HospitalExaminationTypes")
-                        .HasForeignKey("HospitalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ExaminationType");
-
-                    b.Navigation("Hospital");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Injury", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Event", "Event")
@@ -1449,16 +1394,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("InjuryType");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.InjuryType", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("NameTranslation");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.LastNameHistory", b =>
@@ -1591,26 +1526,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Role", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("NameTranslation");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Symptom", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("NameTranslation");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.UserRole", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Role", "Role")
@@ -1649,16 +1564,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("VaccineType");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.VaccineType", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Translation", "NameTranslation")
-                        .WithMany()
-                        .HasForeignKey("NameTranslationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("NameTranslation");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Address", b =>
                 {
                     b.Navigation("Hospital");
@@ -1689,6 +1594,8 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("DrugToDrugCategories");
 
                     b.Navigation("DrugUses");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.DrugCategory", b =>
@@ -1730,11 +1637,8 @@ namespace DatabaseAPI.Migrations
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.EventType", b =>
                 {
                     b.Navigation("Events");
-                });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Examination", b =>
-                {
-                    b.Navigation("Documents");
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ExaminationRoom", b =>
@@ -1748,9 +1652,9 @@ namespace DatabaseAPI.Migrations
                 {
                     b.Navigation("Examinations");
 
-                    b.Navigation("HospitalExaminationTypes");
-
                     b.Navigation("Reservations");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Hospital", b =>
@@ -1764,8 +1668,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("HospitalEmployees");
 
                     b.Navigation("HospitalEquipments");
-
-                    b.Navigation("HospitalExaminationTypes");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.HospitalEmployee", b =>

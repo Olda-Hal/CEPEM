@@ -27,16 +27,25 @@ namespace DatabaseAPI.Services
         {
             var employees = await _context.Employees
                 .Include(e => e.Person)
-                .ThenInclude(p => p.UserRoles)
-                .ThenInclude(ur => ur.Role)
+                    .ThenInclude(p => p.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                            .ThenInclude(r => r.NameTranslation)
+                .Include(e => e.Person)
+                    .ThenInclude(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
+                .Include(e => e.Person)
+                    .ThenInclude(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.PhoneNumbers)
                 .Select(e => new EmployeeListItem
                 {
                     EmployeeId = e.Id,
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,
-                    Email = e.Person.Email,
-                    PhoneNumber = e.Person.PhoneNumber,
+                    Email = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(em => em.Email).FirstOrDefault(),
+                    PhoneNumber = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
                     UID = e.Person.UID,
                     Gender = e.Person.Gender,
                     TitleBefore = e.Person.TitleBefore,
@@ -44,7 +53,7 @@ namespace DatabaseAPI.Services
                     Active = e.Person.Active,
                     LastLoginAt = e.LastLoginAt,
                     PasswordExpiration = e.PasswordExpiration,
-                    Roles = e.Person.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                    Roles = e.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList(),
                     FullName = $"{e.Person.TitleBefore} {e.Person.FirstName} {e.Person.LastName} {e.Person.TitleAfter}".Trim()
                 })
                 .OrderBy(e => e.LastName)
@@ -58,8 +67,17 @@ namespace DatabaseAPI.Services
         {
             var employee = await _context.Employees
                 .Include(e => e.Person)
-                .ThenInclude(p => p.UserRoles)
-                .ThenInclude(ur => ur.Role)
+                    .ThenInclude(p => p.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                            .ThenInclude(r => r.NameTranslation)
+                .Include(e => e.Person)
+                    .ThenInclude(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
+                .Include(e => e.Person)
+                    .ThenInclude(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.PhoneNumbers)
                 .Where(e => e.Id == employeeId)
                 .Select(e => new EmployeeListItem
                 {
@@ -67,8 +85,8 @@ namespace DatabaseAPI.Services
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,
-                    Email = e.Person.Email,
-                    PhoneNumber = e.Person.PhoneNumber,
+                    Email = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(em => em.Email).FirstOrDefault(),
+                    PhoneNumber = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
                     UID = e.Person.UID,
                     Gender = e.Person.Gender,
                     TitleBefore = e.Person.TitleBefore,
@@ -76,7 +94,7 @@ namespace DatabaseAPI.Services
                     Active = e.Person.Active,
                     LastLoginAt = e.LastLoginAt,
                     PasswordExpiration = e.PasswordExpiration,
-                    Roles = e.Person.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                    Roles = e.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList(),
                     FullName = $"{e.Person.TitleBefore} {e.Person.FirstName} {e.Person.LastName} {e.Person.TitleAfter}".Trim()
                 })
                 .FirstOrDefaultAsync();
@@ -91,7 +109,15 @@ namespace DatabaseAPI.Services
             {
                 var employee = await _context.Employees
                     .Include(e => e.Person)
-                    .ThenInclude(p => p.UserRoles)
+                        .ThenInclude(p => p.UserRoles)
+                    .Include(e => e.Person)
+                        .ThenInclude(p => p.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.Emails)
+                    .Include(e => e.Person)
+                        .ThenInclude(p => p.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.PhoneNumbers)
                     .FirstOrDefaultAsync(e => e.Id == employeeId);
 
                 if (employee == null)
@@ -103,10 +129,14 @@ namespace DatabaseAPI.Services
                     };
                 }
 
-                // Check if email or UID already exists for other persons
+                // Check if UID already exists for other persons
                 var existingPerson = await _context.Persons
-                    .FirstOrDefaultAsync(p => p.Id != employee.PersonId && 
-                                           (p.Email == request.Email || p.UID == request.UID));
+                    .Include(p => p.ContactToObjects)
+                        .ThenInclude(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
+                    .FirstOrDefaultAsync(p => p.Id != employee.PersonId &&
+                                           (p.UID == request.UID ||
+                                            p.ContactToObjects.Any(cto => cto.Contact.Emails.Any(e => e.Email == request.Email))));
 
                 if (existingPerson != null)
                 {
@@ -120,13 +150,40 @@ namespace DatabaseAPI.Services
                 // Update person data
                 employee.Person.FirstName = request.FirstName;
                 employee.Person.LastName = request.LastName;
-                employee.Person.Email = request.Email;
-                employee.Person.PhoneNumber = request.PhoneNumber;
                 employee.Person.UID = request.UID;
                 employee.Person.Gender = request.Gender;
                 employee.Person.TitleBefore = request.TitleBefore;
                 employee.Person.TitleAfter = request.TitleAfter;
                 employee.Person.Active = request.Active;
+
+                // Update Contact email and phone via ContactToObjects
+                var personContact = employee.Person.ContactToObjects.FirstOrDefault();
+                if (personContact == null)
+                {
+                    var contact = new Contact();
+                    _context.Contacts.Add(contact);
+                    await _context.SaveChangesAsync();
+                    _context.ContactToObjects.Add(new ContactToObject
+                    {
+                        ContactId = contact.Id,
+                        ObjectId = employee.PersonId,
+                        ObjectType = ContactObjectType.Person
+                    });
+                    await _context.SaveChangesAsync();
+
+                    _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = request.Email });
+                    _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = request.PhoneNumber });
+                }
+                else
+                {
+                    var existingEmail = personContact.Contact.Emails.FirstOrDefault();
+                    if (existingEmail != null) existingEmail.Email = request.Email;
+                    else _context.ContactEmails.Add(new ContactEmail { ContactId = personContact.ContactId, Email = request.Email });
+
+                    var existingPhone = personContact.Contact.PhoneNumbers.FirstOrDefault();
+                    if (existingPhone != null) existingPhone.PhoneNumber = request.PhoneNumber;
+                    else _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = personContact.ContactId, PhoneNumber = request.PhoneNumber });
+                }
 
                 // Update roles
                 // Remove existing roles
@@ -197,10 +254,11 @@ namespace DatabaseAPI.Services
         public async Task<List<RoleDto>> GetAllRolesAsync()
         {
             var roles = await _context.Roles
+                .Include(r => r.NameTranslation)
                 .Select(r => new RoleDto
                 {
                     Id = r.Id,
-                    Name = r.Name
+                    Name = r.NameTranslation != null ? r.NameTranslation.EN : string.Empty
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();

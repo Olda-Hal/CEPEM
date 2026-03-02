@@ -19,13 +19,30 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Hospital>>> GetAll()
+    public async Task<ActionResult<List<object>>> GetAll()
     {
         try
         {
             var hospitals = await _context.Hospitals
+                .Include(h => h.Address)
                 .Where(h => h.Active == true)
-                .OrderBy(h => h.Address)
+                .OrderBy(h => h.Name)
+                .Select(h => new
+                {
+                    h.Id,
+                    h.Name,
+                    h.Active,
+                    h.CompanyIco,
+                    h.CompanyName,
+                    h.ParentHospitalId,
+                    Address = h.Address == null ? null : new
+                    {
+                        h.Address.Street,
+                        h.Address.City,
+                        h.Address.PostalCode,
+                        h.Address.Country
+                    }
+                })
                 .ToListAsync();
 
             return Ok(hospitals);
@@ -60,14 +77,25 @@ public class HospitalsController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Address))
-                return BadRequest("Hospital address is required");
-
             var hospital = new Hospital
             {
-                Address = request.Address,
+                Name = request.Name,
                 Active = true
             };
+
+            if (request.Street != null || request.City != null || request.PostalCode != null || request.Country != null)
+            {
+                var address = new Address
+                {
+                    Street = request.Street ?? string.Empty,
+                    City = request.City ?? string.Empty,
+                    PostalCode = request.PostalCode ?? string.Empty,
+                    Country = request.Country ?? string.Empty
+                };
+                _context.Addresses.Add(address);
+                await _context.SaveChangesAsync();
+                hospital.AddressId = address.Id;
+            }
 
             _context.Hospitals.Add(hospital);
             await _context.SaveChangesAsync();
@@ -86,15 +114,41 @@ public class HospitalsController : ControllerBase
     {
         try
         {
-            var hospital = await _context.Hospitals.FindAsync(id);
+            var hospital = await _context.Hospitals
+                .Include(h => h.Address)
+                .FirstOrDefaultAsync(h => h.Id == id);
             if (hospital == null)
                 return NotFound("Hospital not found");
 
-            if (!string.IsNullOrWhiteSpace(request.Address))
-                hospital.Address = request.Address;
+            if (request.Name != null)
+                hospital.Name = request.Name;
 
             if (request.Active.HasValue)
                 hospital.Active = request.Active;
+
+            if (request.Street != null || request.City != null || request.PostalCode != null || request.Country != null)
+            {
+                if (hospital.Address != null)
+                {
+                    if (request.Street != null) hospital.Address.Street = request.Street;
+                    if (request.City != null) hospital.Address.City = request.City;
+                    if (request.PostalCode != null) hospital.Address.PostalCode = request.PostalCode;
+                    if (request.Country != null) hospital.Address.Country = request.Country;
+                }
+                else
+                {
+                    var address = new Address
+                    {
+                        Street = request.Street ?? string.Empty,
+                        City = request.City ?? string.Empty,
+                        PostalCode = request.PostalCode ?? string.Empty,
+                        Country = request.Country ?? string.Empty
+                    };
+                    _context.Addresses.Add(address);
+                    await _context.SaveChangesAsync();
+                    hospital.AddressId = address.Id;
+                }
+            }
 
             await _context.SaveChangesAsync();
             return Ok(hospital);
@@ -130,11 +184,19 @@ public class HospitalsController : ControllerBase
 
 public class CreateHospitalRequest
 {
-    public string Address { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public string? Street { get; set; }
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
 }
 
 public class UpdateHospitalRequest
 {
-    public string? Address { get; set; }
+    public string? Name { get; set; }
+    public string? Street { get; set; }
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
     public bool? Active { get; set; }
 }
