@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using DatabaseAPI.Controllers;
-using DatabaseAPI.Models;
+using DatabaseAPI.APIModels;
 
 namespace DatabaseAPI.Tests.Controllers;
 
