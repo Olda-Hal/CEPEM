@@ -66,9 +66,11 @@ public class ReservationsController : ControllerBase
                 return Unauthorized();
 
             var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var selectedDoctorId = request.DoctorId ?? doctorId;
+
             var createRequest = new
             {
-                doctorId,
+                doctorId = selectedDoctorId,
                 patientId = request.PatientId,
                 examinationRoomId = request.ExaminationRoomId,
                 examinationTypeId = request.ExaminationTypeId,
@@ -190,6 +192,7 @@ public class ReservationsController : ControllerBase
 
 public class CreateReservationRequest
 {
+    public int? DoctorId { get; set; }
     public int PatientId { get; set; }
     public int ExaminationRoomId { get; set; }
     public int ExaminationTypeId { get; set; }

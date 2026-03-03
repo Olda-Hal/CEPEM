@@ -117,6 +117,21 @@ public class PatientDetailDto
     public List<PatientDocumentDto> Documents { get; set; } = new();
 }
 
+public class ExaminationDocumentDto
+{
+    public int Id { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public DateTime UploadedAt { get; set; }
+    public long FileSize { get; set; }
+}
+
+public class ExaminationWithDocumentsDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public List<ExaminationDocumentDto> Documents { get; set; } = new();
+}
+
 public class PatientEventDto
 {
     public int Id { get; set; }
@@ -125,7 +140,7 @@ public class PatientEventDto
     public DateTime? HappenedTo { get; set; }
     public string? Comment { get; set; }
     public List<string> DrugUses { get; set; } = new();
-    public List<string> Examinations { get; set; } = new();
+    public List<ExaminationWithDocumentsDto> Examinations { get; set; } = new();
     public List<string> Symptoms { get; set; } = new();
     public List<string> Injuries { get; set; } = new();
     public List<string> Vaccines { get; set; } = new();

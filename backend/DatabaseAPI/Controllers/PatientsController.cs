@@ -294,6 +294,9 @@ namespace DatabaseAPI.Controllers
                             .ThenInclude(ex => ex.ExaminationType)
                                 .ThenInclude(et => et.NameTranslation)
                     .Include(p => p.Events)
+                        .ThenInclude(e => e.Examinations)
+                            .ThenInclude(ex => ex.Documents)
+                    .Include(p => p.Events)
                         .ThenInclude(e => e.PatientSymptoms)
                             .ThenInclude(ps => ps.Symptom)
                                 .ThenInclude(s => s.NameTranslation)
@@ -377,7 +380,20 @@ namespace DatabaseAPI.Controllers
                         HappenedTo = e.HappenedTo,
                         Comment = e.Comment?.Text,
                         DrugUses = e.DrugUses.Select(du => du.Drug.NameTranslation?.EN ?? string.Empty).ToList(),
-                        Examinations = e.Examinations.Select(ex => ex.ExaminationType.NameTranslation?.EN ?? string.Empty).ToList(),
+                        Examinations = e.Examinations.Select(ex => new ExaminationWithDocumentsDto
+                        {
+                            Id = ex.Id,
+                            Name = ex.ExaminationType.NameTranslation?.EN ?? string.Empty,
+                            Documents = ex.Documents
+                                .Where(d => !d.IsDeleted)
+                                .Select(d => new ExaminationDocumentDto
+                                {
+                                    Id = d.Id,
+                                    FileName = d.OriginalFileName,
+                                    UploadedAt = d.UploadedAt,
+                                    FileSize = d.FileSize
+                                }).ToList()
+                        }).ToList(),
                         Symptoms = e.PatientSymptoms.Select(ps => ps.Symptom.NameTranslation?.EN ?? string.Empty).ToList(),
                         Injuries = e.Injuries.Select(i => i.InjuryType.NameTranslation?.EN ?? string.Empty).ToList(),
                         Vaccines = e.Vaccines.Select(v => v.VaccineType.NameTranslation?.EN ?? string.Empty).ToList(),

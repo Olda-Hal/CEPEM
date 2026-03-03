@@ -2,17 +2,20 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient } from '../utils/api';
+import { apiClient, databaseApiClient } from '../utils/api';
 import { isAdmin } from '../utils/roles';
 import {
   CreateReservationRequest,
   DoctorExaminationRoom,
+  DoctorHospital,
+  DoctorRoom,
   EmployeeListItem,
   ExaminationRoom,
   EventOptions,
   Hospital,
   Patient,
   PatientSearchResponse,
+  RoomDoctor,
   Reservation
 } from '../types';
 import './ReservationsPage.css';
@@ -28,13 +31,15 @@ export const ReservationsPage: React.FC = () => {
   const [rooms, setRooms] = useState<ExaminationRoom[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
+  const [assignmentDoctorId, setAssignmentDoctorId] = useState('');
+  const [assignmentRoomId, setAssignmentRoomId] = useState('');
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
-  const [selectedRoomId, setSelectedRoomId] = useState('');
   const [roomName, setRoomName] = useState('');
   const [roomDescription, setRoomDescription] = useState('');
   const [assignedRooms, setAssignedRooms] = useState<DoctorExaminationRoom[]>([]);
   const [selectedCalendarRoomId, setSelectedCalendarRoomId] = useState('');
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [allReservations, setAllReservations] = useState<Reservation[]>([]);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [patientQuery, setPatientQuery] = useState('');
@@ -51,20 +56,26 @@ export const ReservationsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [examinationTypes, setExaminationTypes] = useState<Array<{ id: number; name: string }>>([]);
   const [examinationTypeName, setExaminationTypeName] = useState('');
+  const [doctorHospitals, setDoctorHospitals] = useState<DoctorHospital[]>([]);
+  const [selectedHospitalId, setSelectedHospitalId] = useState<string>('');
+  const [doctorRooms, setDoctorRooms] = useState<DoctorRoom[]>([]);
+  const [roomDoctors, setRoomDoctors] = useState<RoomDoctor[]>([]);
+  const [hospitalExaminationTypes, setHospitalExaminationTypes] = useState<Array<{ id: number; name: string }>>([]);
 
   const isUserAdmin = isAdmin(user);
 
   useEffect(() => {
     if (isUserAdmin) {
-      loadEmployees();
       loadHospitals();
       loadExaminationTypes();
     }
+    loadEmployees();
   }, [isUserAdmin]);
 
   useEffect(() => {
     if (user?.id) {
       loadAssignedRooms(user.id);
+      loadDoctorHospitals(user.id);
     }
   }, [user?.id]);
 
@@ -75,7 +86,58 @@ export const ReservationsPage: React.FC = () => {
   useEffect(() => {
     if (!selectedCalendarRoomId) return;
     loadRoomReservations(selectedCalendarRoomId);
-  }, [selectedCalendarRoomId, fromDate, toDate]);
+  }, [selectedCalendarRoomId, fromDate, toDate, currentMonth]);
+
+  useEffect(() => {
+    if (user?.id && selectedHospitalId) {
+      loadDoctorRoomsByHospital(user.id, selectedHospitalId);
+    } else if (user?.id) {
+      loadDoctorRoomsByHospital(user.id);
+    }
+  }, [user?.id, selectedHospitalId]);
+
+  useEffect(() => {
+    if (isUserAdmin) {
+      if (!selectedHospitalId && hospitals.length > 0) {
+        setSelectedHospitalId(String(hospitals[0].id));
+      }
+      return;
+    }
+
+    if (!selectedHospitalId && doctorHospitals.length > 0) {
+      setSelectedHospitalId(String(doctorHospitals[0].id));
+    }
+  }, [doctorHospitals, hospitals, isUserAdmin, selectedHospitalId]);
+
+  useEffect(() => {
+    if (!selectedHospitalId) {
+      setSelectedCalendarRoomId('');
+      setSelectedDoctorId('');
+      setExaminationTypeId('');
+      setRoomDoctors([]);
+      setHospitalExaminationTypes([]);
+      return;
+    }
+
+    setSelectedCalendarRoomId('');
+    setSelectedDoctorId('');
+    setExaminationTypeId('');
+    setRoomDoctors([]);
+    loadHospitalExaminationTypes(selectedHospitalId);
+
+    if (isUserAdmin) {
+      loadRoomsByHospital(selectedHospitalId);
+    }
+  }, [isUserAdmin, selectedHospitalId, i18n.language]);
+
+  useEffect(() => {
+    if (!selectedCalendarRoomId) {
+      setSelectedDoctorId('');
+      setRoomDoctors([]);
+      return;
+    }
+    loadDoctorsByRoom(selectedCalendarRoomId);
+  }, [selectedCalendarRoomId]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -101,6 +163,9 @@ export const ReservationsPage: React.FC = () => {
       setHospitals(response);
       if (response.length > 0 && !hospitalId) {
         setHospitalId(String(response[0].id));
+      }
+      if (response.length > 0 && !selectedHospitalId) {
+        setSelectedHospitalId(String(response[0].id));
       }
     } catch (error) {
       console.error(t('errors.loadingHospitals'), error);
@@ -129,12 +194,93 @@ export const ReservationsPage: React.FC = () => {
     }
   };
 
+  const loadRoomsByHospital = async (selectedHospital: string) => {
+    if (!selectedHospital) {
+      setRooms([]);
+      return;
+    }
+    try {
+      setRoomsLoading(true);
+      const response = await apiClient.get<ExaminationRoom[]>(`/api/examinationrooms/hospital/${selectedHospital}`);
+      setRooms(response);
+    } catch (error) {
+      console.error(t('errors.loadingRooms'), error);
+      setRooms([]);
+    } finally {
+      setRoomsLoading(false);
+    }
+  };
+
   const loadAssignedRooms = async (doctorId: number) => {
     try {
       const response = await apiClient.get<DoctorExaminationRoom[]>(`/api/doctorexaminationrooms/doctor/${doctorId}`);
       setAssignedRooms(response);
     } catch (error) {
       console.error(t('errors.loadingRooms'), error);
+    }
+  };
+
+  const loadDoctorHospitals = async (doctorId: number) => {
+    try {
+      const response = await apiClient.get<DoctorHospital[]>(`/api/doctorexaminationrooms/doctor/${doctorId}/hospitals`);
+      setDoctorHospitals(response);
+      if (response.length > 0 && !selectedHospitalId) {
+        setSelectedHospitalId(String(response[0].id));
+      }
+    } catch (error) {
+      console.error(t('errors.loadingHospitals'), error);
+    }
+  };
+
+  const loadDoctorRoomsByHospital = async (doctorId: number, hospitalId?: string) => {
+    try {
+      const url = hospitalId 
+        ? `/api/doctorexaminationrooms/doctor/${doctorId}/rooms?hospitalId=${hospitalId}`
+        : `/api/doctorexaminationrooms/doctor/${doctorId}/rooms`;
+      const response = await apiClient.get<DoctorRoom[]>(url);
+      setDoctorRooms(response);
+      if (response.length > 0 && !selectedCalendarRoomId) {
+        setSelectedCalendarRoomId(String(response[0].id));
+      }
+    } catch (error) {
+      console.error(t('errors.loadingRooms'), error);
+    }
+  };
+
+  const loadDoctorsByRoom = async (roomId: string) => {
+    if (!roomId) {
+      setRoomDoctors([]);
+      return;
+    }
+    try {
+      const response = await apiClient.get<RoomDoctor[]>(`/api/doctorexaminationrooms/room/${roomId}/doctors`);
+      setRoomDoctors(response);
+      if (response.length > 0) {
+        setSelectedDoctorId(String(response[0].id));
+      } else {
+        setSelectedDoctorId('');
+      }
+    } catch (error) {
+      console.error(t('errors.loadingEmployees'), error);
+      setRoomDoctors([]);
+      setSelectedDoctorId('');
+    }
+  };
+
+  const loadHospitalExaminationTypes = async (hospitalIdValue: string) => {
+    if (!hospitalIdValue) {
+      setHospitalExaminationTypes([]);
+      return;
+    }
+
+    try {
+      const response = await databaseApiClient.get<Array<{ id: number; name: string }>>(
+        `/api/hospitals/${hospitalIdValue}/examination-types?language=${i18n.language}`
+      );
+      setHospitalExaminationTypes(response);
+    } catch (error) {
+      console.error(t('errors.loadingExaminationTypes'), error);
+      setHospitalExaminationTypes([]);
     }
   };
 
@@ -191,6 +337,15 @@ export const ReservationsPage: React.FC = () => {
       const query = params.toString() ? `?${params.toString()}` : '';
       const response = await apiClient.get<Reservation[]>(`/api/reservations/room/${roomId}${query}`);
       setReservations(response);
+      
+      const monthParams = new URLSearchParams();
+      const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      monthParams.append('from', firstDay.toISOString());
+      monthParams.append('to', lastDay.toISOString());
+      const monthQuery = monthParams.toString() ? `?${monthParams.toString()}` : '';
+      const allMonthRes = await apiClient.get<Reservation[]>(`/api/reservations/room/${roomId}${monthQuery}`);
+      setAllReservations(allMonthRes);
     } catch (error) {
       console.error(t('errors.loadingReservations'), error);
     } finally {
@@ -244,16 +399,16 @@ export const ReservationsPage: React.FC = () => {
   };
 
   const handleAssignRoom = async () => {
-    if (!selectedDoctorId || !selectedRoomId) return;
+    if (!assignmentDoctorId || !assignmentRoomId) return;
     try {
       await apiClient.post('/api/doctorexaminationrooms', {
-        DoctorId: Number(selectedDoctorId),
-        ExaminationRoomId: Number(selectedRoomId)
+        DoctorId: Number(assignmentDoctorId),
+        ExaminationRoomId: Number(assignmentRoomId)
       });
       alert(t('reservations.roomAssignedSuccess'));
-      setSelectedDoctorId('');
-      setSelectedRoomId('');
-      if (user?.id && Number(selectedDoctorId) === user.id) {
+      setAssignmentDoctorId('');
+      setAssignmentRoomId('');
+      if (user?.id && Number(assignmentDoctorId) === user.id) {
         loadAssignedRooms(user.id);
       }
     } catch (error: any) {
@@ -264,7 +419,10 @@ export const ReservationsPage: React.FC = () => {
   };
 
   const handleCreateReservation = async () => {
-    if (!selectedPatientId || !selectedCalendarRoomId || !examinationTypeId || !startDate || !startTime) return;
+    if (!selectedPatientId || !selectedCalendarRoomId || !selectedDoctorId || !examinationTypeId || !startDate || !startTime || Number(durationMinutes) <= 0) {
+      alert(t('errors.missingReservationFields'));
+      return;
+    }
     if (!user?.id) {
       alert(t('errors.userNotFound'));
       return;
@@ -274,7 +432,7 @@ export const ReservationsPage: React.FC = () => {
     const end = new Date(start.getTime() + Number(durationMinutes) * 60000);
 
     const request: CreateReservationRequest = {
-      doctorId: user.id,
+      doctorId: Number(selectedDoctorId),
       patientId: Number(selectedPatientId),
       examinationRoomId: Number(selectedCalendarRoomId),
       examinationTypeId: Number(examinationTypeId),
@@ -304,6 +462,21 @@ export const ReservationsPage: React.FC = () => {
     return new Date(dateString).toLocaleString(locale);
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -324,7 +497,7 @@ export const ReservationsPage: React.FC = () => {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(year, month, day);
-      const hasReservations = reservations.some(r => {
+      const hasReservations = allReservations.some(r => {
         const reservationDate = new Date(r.startDateTime);
         return reservationDate.toDateString() === currentDate.toDateString();
       });
@@ -348,7 +521,7 @@ export const ReservationsPage: React.FC = () => {
   };
 
   const changeMonth = (direction: number) => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + direction, 1));
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + direction, 1));
   };
 
   const handleDayClick = (date: Date) => {
@@ -359,6 +532,13 @@ export const ReservationsPage: React.FC = () => {
     const dateStr = `${year}-${month}-${day}`;
     setFromDate(dateStr);
     setToDate(dateStr);
+  };
+
+  const isSameDay = (date1: Date, date2: Date | null) => {
+    if (!date2) return false;
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
   };
 
   const getMonthName = (date: Date) => {
@@ -385,16 +565,25 @@ export const ReservationsPage: React.FC = () => {
 
   const availableRooms = useMemo(() => {
     if (isUserAdmin) return rooms;
-    return assignedRooms.map(ar => ({
-      id: ar.examinationRoomId,
-      name: ar.roomName,
-      description: '',
-      hospitalId: ar.hospitalId,
+    return doctorRooms.map(room => ({
+      id: room.id,
+      name: room.name,
+      description: room.description || '',
+      hospitalId: room.hospitalId,
       isActive: true,
       createdAt: '',
       updatedAt: ''
     }));
-  }, [assignedRooms, isUserAdmin, rooms]);
+  }, [doctorRooms, isUserAdmin, rooms]);
+
+  const isReservationFormValid =
+    !!selectedPatientId &&
+    !!selectedCalendarRoomId &&
+    !!selectedDoctorId &&
+    !!examinationTypeId &&
+    !!startDate &&
+    !!startTime &&
+    Number(durationMinutes) > 0;
 
   return (
     <div className="reservations-container">
@@ -480,8 +669,8 @@ export const ReservationsPage: React.FC = () => {
                 <div className="form-row">
                   <label>{t('reservations.selectDoctor')}</label>
                   <select
-                    value={selectedDoctorId}
-                    onChange={(e) => setSelectedDoctorId(e.target.value)}
+                    value={assignmentDoctorId}
+                    onChange={(e) => setAssignmentDoctorId(e.target.value)}
                   >
                     <option value="">{t('reservations.selectDoctorPlaceholder')}</option>
                     {employees.map(emp => (
@@ -494,8 +683,8 @@ export const ReservationsPage: React.FC = () => {
                 <div className="form-row">
                   <label>{t('reservations.selectRoom')}</label>
                   <select
-                    value={selectedRoomId}
-                    onChange={(e) => setSelectedRoomId(e.target.value)}
+                    value={assignmentRoomId}
+                    onChange={(e) => setAssignmentRoomId(e.target.value)}
                   >
                     <option value="">{t('reservations.selectRoomPlaceholder')}</option>
                     {rooms.map(room => (
@@ -549,6 +738,46 @@ export const ReservationsPage: React.FC = () => {
           </div>
         )}
 
+        {!isUserAdmin && doctorRooms.length > 0 && (
+          <div className="doctor-section">
+            <h2>{t('reservations.manageRoomAccess')}</h2>
+            <div className="admin-card">
+              <h3>{t('reservations.assignDoctorsToRooms')}</h3>
+              <div className="form-row">
+                <label>{t('reservations.selectDoctor')}</label>
+                <select
+                  value={assignmentDoctorId}
+                  onChange={(e) => setAssignmentDoctorId(e.target.value)}
+                >
+                  <option value="">{t('reservations.selectDoctorPlaceholder')}</option>
+                  {employees.length > 0 ? employees.map(emp => (
+                    <option key={emp.employeeId} value={emp.employeeId}>
+                      {emp.fullName}
+                    </option>
+                  )) : null}
+                </select>
+              </div>
+              <div className="form-row">
+                <label>{t('reservations.selectRoom')}</label>
+                <select
+                  value={assignmentRoomId}
+                  onChange={(e) => setAssignmentRoomId(e.target.value)}
+                >
+                  <option value="">{t('reservations.selectRoomPlaceholder')}</option>
+                  {doctorRooms.map(room => (
+                    <option key={room.id} value={room.id}>
+                      {room.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button className="primary" onClick={handleAssignRoom}>
+                {t('reservations.assignRoom')}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="calendar-section">
           <h2>{t('reservations.calendarTitle')}</h2>
           
@@ -568,7 +797,7 @@ export const ReservationsPage: React.FC = () => {
                 {getDaysInMonth(currentMonth).map((day, index) => (
                   <div
                     key={index}
-                    className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isToday(day.date) ? 'today' : ''} ${day.hasReservations ? 'has-reservations' : ''}`}
+                    className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isToday(day.date) ? 'today' : ''} ${isSameDay(day.date, selectedDate) ? 'selected' : ''} ${day.hasReservations ? 'has-reservations' : ''}`}
                     onClick={() => day.isCurrentMonth && handleDayClick(day.date)}
                   >
                     {day.date.getDate()}
@@ -578,20 +807,6 @@ export const ReservationsPage: React.FC = () => {
             </div>
 
             <div className="calendar-filters">
-              <div className="form-row">
-                <label>{t('reservations.selectRoom')}</label>
-                <select
-                  value={selectedCalendarRoomId}
-                  onChange={(e) => setSelectedCalendarRoomId(e.target.value)}
-                >
-                  <option value="">{t('reservations.selectRoomPlaceholder')}</option>
-                  {availableRooms.map(room => (
-                    <option key={room.id} value={room.id}>
-                      {room.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="form-row">
                 <label>{t('reservations.fromDate')}</label>
                 <input
@@ -627,22 +842,24 @@ export const ReservationsPage: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
+                      <th>{t('reservations.date')}</th>
                       <th>{t('reservations.patient')}</th>
                       <th>{t('reservations.doctor')}</th>
                       <th>{t('reservations.examinationType')}</th>
-                      <th>{t('reservations.start')}</th>
-                      <th>{t('reservations.end')}</th>
+                      <th>{t('reservations.startTime')}</th>
+                      <th>{t('reservations.endTime')}</th>
                       <th>{t('reservations.notes')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reservations.map(reservation => (
                       <tr key={reservation.id}>
+                        <td>{formatDate(reservation.startDateTime)}</td>
                         <td>{reservation.patientName || reservation.patientId}</td>
                         <td>{reservation.doctorName || reservation.doctorId}</td>
                         <td>{reservation.examinationTypeName || reservation.examinationTypeId}</td>
-                        <td>{formatDateTime(reservation.startDateTime)}</td>
-                        <td>{formatDateTime(reservation.endDateTime)}</td>
+                        <td>{formatTime(reservation.startDateTime)}</td>
+                        <td>{formatTime(reservation.endDateTime)}</td>
                         <td>{reservation.notes || '-'}</td>
                       </tr>
                     ))}
@@ -655,6 +872,52 @@ export const ReservationsPage: React.FC = () => {
           <div className="reservation-form">
             <h3>{t('reservations.createReservationTitle')}</h3>
             <div className="form-grid">
+              <div className="form-row">
+                <label>{t('reservations.selectHospital')}</label>
+                <select
+                  value={selectedHospitalId}
+                  onChange={(e) => setSelectedHospitalId(e.target.value)}
+                >
+                  <option value="">{t('reservations.selectHospitalPlaceholder')}</option>
+                  {(isUserAdmin ? hospitals : doctorHospitals).map(hospital => (
+                    <option key={hospital.id} value={hospital.id}>
+                      {hospital.name || `Hospital ${hospital.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-row">
+                <label>{t('reservations.selectRoom')}</label>
+                <select
+                  value={selectedCalendarRoomId}
+                  onChange={(e) => setSelectedCalendarRoomId(e.target.value)}
+                  disabled={!selectedHospitalId || availableRooms.length === 0}
+                >
+                  <option value="">{t('reservations.selectRoomPlaceholder')}</option>
+                  {availableRooms
+                    .filter(room => !selectedHospitalId || String(room.hospitalId) === selectedHospitalId)
+                    .map(room => (
+                      <option key={room.id} value={room.id}>
+                        {room.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="form-row">
+                <label>{t('reservations.selectDoctor')}</label>
+                <select
+                  value={selectedDoctorId}
+                  onChange={(e) => setSelectedDoctorId(e.target.value)}
+                  disabled={!selectedCalendarRoomId || roomDoctors.length === 0}
+                >
+                  <option value="">{t('reservations.selectDoctorPlaceholder')}</option>
+                  {roomDoctors.map(doctor => (
+                    <option key={doctor.id} value={doctor.id}>
+                      {doctor.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="form-row">
                 <label>{t('reservations.patientSearch')}</label>
                 <div className="patient-search-container">
@@ -695,9 +958,10 @@ export const ReservationsPage: React.FC = () => {
                 <select
                   value={examinationTypeId}
                   onChange={(e) => setExaminationTypeId(e.target.value)}
+                  disabled={!selectedDoctorId || hospitalExaminationTypes.length === 0}
                 >
                   <option value="">{t('reservations.selectExaminationType')}</option>
-                  {eventOptions?.examinationTypes.map(type => (
+                  {hospitalExaminationTypes.map(type => (
                     <option key={type.id} value={type.id}>
                       {type.name}
                     </option>
@@ -738,7 +1002,7 @@ export const ReservationsPage: React.FC = () => {
                 />
               </div>
             </div>
-            <button className="primary" onClick={handleCreateReservation}>
+            <button className="primary" onClick={handleCreateReservation} disabled={!isReservationFormValid}>
               {t('reservations.createReservation')}
             </button>
           </div>

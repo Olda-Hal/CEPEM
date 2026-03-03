@@ -190,6 +190,19 @@ export interface PatientDetail {
   documents: PatientDocument[];
 }
 
+export interface ExaminationDocument {
+  id: number;
+  fileName: string;
+  uploadedAt: string;
+  fileSize: number;
+}
+
+export interface ExaminationWithDocuments {
+  id: number;
+  name: string;
+  documents: ExaminationDocument[];
+}
+
 export interface PatientEvent {
   id: number;
   eventTypeName: string;
@@ -197,7 +210,7 @@ export interface PatientEvent {
   happenedTo?: string;
   comment?: string;
   drugUses: string[];
-  examinations: string[];
+  examinations: ExaminationWithDocuments[];
   symptoms: string[];
   injuries: string[];
   vaccines: string[];
@@ -328,6 +341,24 @@ export interface DoctorExaminationRoom {
   roomName: string;
   hospitalId: number;
   assignedAt: string;
+}
+
+export interface DoctorHospital {
+  id: number;
+  name: string;
+  address?: string;
+}
+
+export interface DoctorRoom {
+  id: number;
+  name: string;
+  description?: string;
+  hospitalId: number;
+}
+
+export interface RoomDoctor {
+  id: number;
+  fullName: string;
 }
 
 export interface Reservation {
