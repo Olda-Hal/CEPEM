@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http;
 using System.Text.Json;
 using Xunit;
-using DatabaseAPI.Models;
+using DatabaseAPI.APIModels;
 
 namespace DatabaseAPI.Tests.Integration;
 
