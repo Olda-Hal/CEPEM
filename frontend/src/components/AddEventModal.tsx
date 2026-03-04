@@ -485,21 +485,28 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         />
 
         <div className="examination-documents-section">
-          <p className="form-help-text">{t('patients.documents.selectUploadMethod')}</p>
+          <h4 className="examination-documents-title">{t('patients.documents.title')}</h4>
+          <p className="examination-documents-help">{t('patients.documents.selectUploadMethod')}</p>
           <div className="examination-upload-actions">
             <button
               type="button"
-              className="cancel-button"
+              className="examination-upload-button"
               onClick={() => handleExaminationSourceClick('scanner')}
             >
-              {t('patients.documents.scanDocument')}
+              <svg viewBox="0 0 24 24" width="32" height="32" className="upload-icon">
+                <path d="M19.8 10.7L4.2 5l-.7 1.9L17.6 12H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-5.5c0-.8-.5-1.6-1.2-1.8zM19 18H5v-4h14v4zM6 15h2v2H6v-2z"/>
+              </svg>
+              <span>{t('patients.documents.scanDocument')}</span>
             </button>
             <button
               type="button"
-              className="cancel-button"
+              className="examination-upload-button"
               onClick={() => handleExaminationSourceClick('file')}
             >
-              {t('patients.documents.uploadFile')}
+              <svg viewBox="0 0 24 24" width="32" height="32" className="upload-icon">
+                <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+              </svg>
+              <span>{t('patients.documents.uploadFile')}</span>
             </button>
           </div>
 
@@ -509,27 +516,37 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
           {selectedExaminationFiles.length > 0 && (
             <div className="selected-examination-files">
-              <p className="category-section-label">
+              <h5 className="selected-files-title">
                 {t('events.examinationDocumentsSelected', { count: selectedExaminationFiles.length })}
-              </p>
-              {selectedExaminationFiles.map((selectedFile, index) => (
-                <div key={`${selectedFile.file.name}-${selectedFile.file.lastModified}-${index}`} className="selected-examination-file-item">
-                  <div>
-                    <strong>{selectedFile.file.name}</strong>
-                    <span className="selected-examination-file-meta">
-                      {formatFileSize(selectedFile.file.size)} · {selectedFile.source === 'scanner' ? t('patients.documents.scannedDocument') : t('patients.documents.uploadedFile')}
-                    </span>
+              </h5>
+              <div className="selected-files-list">
+                {selectedExaminationFiles.map((selectedFile, index) => (
+                  <div key={`${selectedFile.file.name}-${selectedFile.file.lastModified}-${index}`} className="selected-examination-file-item">
+                    <div className="file-icon-container">
+                      <svg viewBox="0 0 24 24" width="24" height="24" className="file-icon">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                      </svg>
+                    </div>
+                    <div className="file-details">
+                      <div className="file-name">{selectedFile.file.name}</div>
+                      <div className="file-meta">
+                        {formatFileSize(selectedFile.file.size)} · {selectedFile.source === 'scanner' ? t('patients.documents.scannedDocument') : t('patients.documents.uploadedFile')}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="file-remove-button"
+                      onClick={() => removeExaminationFile(index)}
+                      aria-label={t('common.delete')}
+                      title={t('common.delete')}
+                    >
+                      <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                      </svg>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="remove-button"
-                    onClick={() => removeExaminationFile(index)}
-                    aria-label={t('common.delete')}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>

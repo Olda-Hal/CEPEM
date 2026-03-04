@@ -19,6 +19,7 @@ export const PatientsPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const observer = useRef<IntersectionObserver | null>(null);
@@ -45,6 +46,7 @@ export const PatientsPage: React.FC = () => {
         setPatients(prev => [...prev, ...response.patients]);
       }
 
+      setTotalCount(response.totalCount);
       setHasMore(response.hasMore);
       setError(null);
     } catch (error) {
@@ -147,7 +149,7 @@ export const PatientsPage: React.FC = () => {
           <>
             <div className="patients-stats">
               <span className="total-count">
-                {t('patients.totalFound', { count: patients.length })}
+                {t('patients.totalFound', { count: totalCount })}
               </span>
             </div>
 

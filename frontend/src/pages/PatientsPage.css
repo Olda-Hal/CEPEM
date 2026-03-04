@@ -282,8 +282,10 @@
 }
 
 .action-button.primary:hover {
-  opacity: 0.9;
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-secondary) 100%);
+  color: white;
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .action-button.secondary {

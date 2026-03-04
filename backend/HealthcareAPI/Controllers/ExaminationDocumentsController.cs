@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.Json;
 
 namespace HealthcareAPI.Controllers;
 
@@ -42,6 +43,41 @@ public class ExaminationDocumentsController : ControllerBase
         {
             _logger.LogError(ex, "Error downloading examination document {DocumentId} for examination {ExaminationId}", documentId, examinationId);
             return StatusCode(500, "An error occurred while downloading the document");
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Upload(int examinationId, [FromForm] IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file provided");
+            }
+
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+
+            using var content = new MultipartFormDataContent();
+            using var fileContent = new StreamContent(file.OpenReadStream());
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            content.Add(fileContent, "file", file.FileName);
+
+            var response = await client.PostAsync($"/api/examinations/{examinationId}/documents", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return Ok(JsonSerializer.Deserialize<object>(responseContent));
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return StatusCode((int)response.StatusCode, errorContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading examination document for examination {ExaminationId}", examinationId);
+            return StatusCode(500, "An error occurred while uploading the document");
         }
     }
 }

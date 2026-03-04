@@ -56,6 +56,12 @@ public class CreateEventGroupResponse
     public List<int> EventIds { get; set; } = new List<int>();
 }
 
+public class CreateEventResponse
+{
+    public int EventId { get; set; }
+    public List<int> ExaminationIds { get; set; } = new List<int>();
+}
+
 public class EventTypeResponse
 {
     public int Id { get; set; }

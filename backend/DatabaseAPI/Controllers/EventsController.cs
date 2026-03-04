@@ -78,7 +78,7 @@ public class EventsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<int>> CreateEvent(CreateEventRequest request)
+    public async Task<ActionResult<CreateEventResponse>> CreateEvent(CreateEventRequest request)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -126,6 +126,8 @@ public class EventsController : ControllerBase
                     _context.DrugToDrugCategories.Add(drugToDrugCategory);
                 }
             }
+
+            var examinationIds = new List<int>();
 
             foreach (var examinationTypeId in request.ExaminationTypeIds)
             {
@@ -178,9 +180,17 @@ public class EventsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
+            examinationIds = await _context.Examinations
+                .Where(ex => ex.EventId == eventEntity.Id)
+                .Select(ex => ex.Id)
+                .ToListAsync();
             await transaction.CommitAsync();
 
-            return Ok(eventEntity.Id);
+            return Ok(new CreateEventResponse
+            {
+                EventId = eventEntity.Id,
+                ExaminationIds = examinationIds
+            });
         }
         catch (Exception ex)
         {
