@@ -72,6 +72,31 @@ class ApiClient {
     });
     return this.handleResponse<T>(response);
   }
+
+  async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    const token = localStorage.getItem('authToken');
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    return this.handleResponse<T>(response);
+  }
+
+  async getBlob(endpoint: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.blob();
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

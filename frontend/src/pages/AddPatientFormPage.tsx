@@ -336,14 +336,7 @@ export const AddPatientFormPage: React.FC = () => {
         formData.append('photo', photoFile, 'patient-photo.jpg');
         
         try {
-          const token = localStorage.getItem('authToken');
-          await fetch(`http://localhost:5000/api/patients/${newId}/photo`, {
-            method: 'POST',
-            headers: {
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            body: formData
-          });
+          await apiClient.postFormData(`/api/patients/${newId}/photo`, formData);
         } catch (photoError) {
           console.error('Error uploading photo:', photoError);
         }

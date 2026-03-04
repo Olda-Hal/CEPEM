@@ -173,18 +173,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
           const formData = new FormData();
           formData.append('photo', capturedPhoto, 'patient-photo.jpg');
           
-          const token = localStorage.getItem('authToken');
-          const uploadResponse = await fetch(`http://localhost:5000/api/patients/${response.id}/photo`, {
-            method: 'POST',
-            headers: {
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            body: formData,
-          });
-          
-          if (!uploadResponse.ok) {
-            throw new Error('Failed to upload photo');
-          }
+          await apiClient.postFormData(`/api/patients/${response.id}/photo`, formData);
         } catch (photoError) {
           console.error('Error uploading photo:', photoError);
         }

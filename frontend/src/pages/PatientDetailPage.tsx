@@ -91,18 +91,7 @@ export const PatientDetailPage: React.FC = () => {
       const formData = new FormData();
       formData.append('document', file);
 
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:5000/api/patients/${id}/documents`, {
-        method: 'POST',
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await apiClient.postFormData(`/api/patients/${id}/documents`, formData);
 
       setShowDocumentUpload(false);
       
@@ -119,8 +108,7 @@ export const PatientDetailPage: React.FC = () => {
 
   const handleDocumentView = async (documentId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/patients/${id}/documents/${documentId}`);
-      const blob = await response.blob();
+      const blob = await apiClient.getBlob(`/api/patients/${id}/documents/${documentId}`);
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (error) {
@@ -131,18 +119,7 @@ export const PatientDetailPage: React.FC = () => {
 
   const handleExaminationDocumentView = async (examinationId: number, documentId: number) => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:5000/api/examinations/${examinationId}/documents/${documentId}`, {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
+      const blob = await apiClient.getBlob(`/api/examinations/${examinationId}/documents/${documentId}`);
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (error) {
@@ -232,14 +209,7 @@ export const PatientDetailPage: React.FC = () => {
         formData.append('photo', blob, 'patient-photo.jpg');
         
         try {
-          const token = localStorage.getItem('authToken');
-          await fetch(`http://localhost:5000/api/patients/${patient.id}/photo`, {
-            method: 'POST',
-            headers: {
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            body: formData
-          });
+          await apiClient.postFormData(`/api/patients/${patient.id}/photo`, formData);
           
           stopCamera();
           
@@ -330,7 +300,7 @@ export const PatientDetailPage: React.FC = () => {
               <div className="patient-photo-placeholder">
                 {patient.photoUrl ? (
                   <img 
-                    src={`http://localhost:5000${patient.photoUrl}`} 
+                    src={`${process.env.REACT_APP_API_URL || '/api'}${patient.photoUrl}`} 
                     alt={patient.fullName}
                     className="patient-photo"
                     onError={(e) => {
