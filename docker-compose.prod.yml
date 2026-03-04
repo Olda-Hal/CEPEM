@@ -1,0 +1,101 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cepem_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - cepem_network
+
+  healthcare-api:
+    build:
+      context: ./backend/HealthcareAPI
+      dockerfile: Dockerfile
+    container_name: cepem_healthcare_api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=${HEALTHCARE_API_CONNECTION_STRING}
+      - JWT__SecretKey=${JWT_SECRET_KEY}
+      - JWT__Issuer=${JWT_ISSUER}
+      - JWT__Audience=${JWT_AUDIENCE}
+      - DatabaseApiUrl=http://database-api:5001
+      - HEALTHCARE_CORS_ORIGINS=https://${DOMAIN_NAME}
+    volumes:
+      - ./test-results:/app/test-results:ro
+    depends_on:
+      - database-api
+    networks:
+      - cepem_network
+
+  database-api:
+    build:
+      context: ./backend/DatabaseAPI
+      dockerfile: Dockerfile
+    container_name: cepem_database_api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=${DATABASE_API_CONNECTION_STRING}
+      - PhotoEncryption__Key=${PHOTO_ENCRYPTION_KEY}
+      - PhotoEncryption__IV=${PHOTO_ENCRYPTION_IV}
+      - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
+      - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
+      - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}
+    volumes:
+      - ./data/patient-photos:/app/patient-photos
+      - ./data/patient-documents:/app/patient-documents
+    networks:
+      - cepem_network
+
+  ai-service:
+    build:
+      context: ./backend/AIService
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    container_name: cepem_ai_service
+    restart: unless-stopped
+    environment:
+      - CORS_ORIGINS=https://${DOMAIN_NAME}
+      - PORT=8000
+    depends_on:
+      - healthcare-api
+      - database-api
+    networks:
+      - cepem_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        REACT_APP_API_URL: https://${DOMAIN_NAME}/api
+        REACT_APP_DATABASE_API_URL: https://${DOMAIN_NAME}/api/database
+        REACT_APP_AI_API_URL: https://${DOMAIN_NAME}/api/ai
+    ports:
+      - "127.0.0.1:3000:3000"
+    container_name: cepem_frontend
+    restart: unless-stopped
+    networks:
+      - cepem_network
+
+volumes:
+  mysql_data:
+    name: cepem_mysql_data
+
+networks:
+  cepem_network:
+    driver: bridge
