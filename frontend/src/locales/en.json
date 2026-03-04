@@ -424,6 +424,10 @@
     "searchVaccines": "Search vaccines...",
     "searchDrugs": "Search medications...",
     "searchCategories": "Search categories...",
+    "examinationDocumentsSelected_one": "{{count}} file selected for examination",
+    "examinationDocumentsSelected_other": "{{count}} files selected for examination",
+    "uploadingDocuments": "Uploading documents...",
+    "groupUploadNotSupported": "Examination document upload is available only outside group mode.",
     "addToList": "Add \"{{name}}\" to list"
   }
 }

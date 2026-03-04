@@ -418,6 +418,12 @@
     "searchVaccines": "Hledat očkování...",
     "searchDrugs": "Hledat léky...",
     "searchCategories": "Hledat kategorie...",
+    "examinationDocumentsSelected_one": "Vybrán {{count}} soubor k vyšetření",
+    "examinationDocumentsSelected_few": "Vybrány {{count}} soubory k vyšetření",
+    "examinationDocumentsSelected_many": "Vybráno {{count}} souborů k vyšetření",
+    "examinationDocumentsSelected_other": "Vybráno {{count}} souborů k vyšetření",
+    "uploadingDocuments": "Nahrávání dokumentů...",
+    "groupUploadNotSupported": "Nahrávání dokumentů k vyšetření je dostupné pouze mimo skupinový režim.",
     "addToList": "Přidat \"{{name}}\" do seznamu"
   },
   "themes": {

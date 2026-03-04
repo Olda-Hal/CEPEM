@@ -6,6 +6,21 @@ import SearchableMultiSelect from './SearchableMultiSelect';
 import './AddEventModal.css';
 import i18n from '../i18n';
 
+type UploadSource = 'file' | 'scanner';
+
+interface SelectedExaminationFile {
+  file: File;
+  source: UploadSource;
+}
+
+interface CreateEventResponse {
+  eventId: number;
+  examinationIds: number[];
+}
+
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 interface AddEventModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,10 +35,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   onEventAdded
 }) => {
   const { t } = useTranslation();
+  const examinationFileInputRef = React.useRef<HTMLInputElement>(null);
   const [eventOptions, setEventOptions] = useState<EventOptions | null>(null);
   const [loading, setLoading] = useState(false);
   const [isGroupMode, setIsGroupMode] = useState(false);
   const [events, setEvents] = useState<CreateEventRequest[]>([]);
+  const [selectedExaminationFiles, setSelectedExaminationFiles] = useState<SelectedExaminationFile[]>([]);
+  const [examinationUploadError, setExaminationUploadError] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateEventRequest>({
     patientId,
     eventTypeId: 0,
@@ -54,11 +72,28 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       const language = i18n.language;
       const response = await apiClient.get<EventOptions>(`/api/events/options?language=${language}`);
       setEventOptions(response);
+
+      const defaultExaminationEventTypeId = getDefaultExaminationEventTypeId(response);
+      if (defaultExaminationEventTypeId > 0) {
+        setFormData(prev => ({
+          ...prev,
+          eventTypeId: prev.eventTypeId > 0 ? prev.eventTypeId : defaultExaminationEventTypeId
+        }));
+      }
     } catch (error) {
       console.error('Error loading event options:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getDefaultExaminationEventTypeId = (options: EventOptions): number => {
+    const examinationType = options.eventTypes.find(type => {
+      const normalizedName = type.name.toLowerCase();
+      return normalizedName.includes('vyšetření') || normalizedName.includes('examination');
+    });
+
+    return examinationType?.id ?? 0;
   };
 
   const getSelectedEventTypeName = (): string => {
@@ -126,6 +161,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       return;
     }
 
+    if (isGroupMode && selectedExaminationFiles.length > 0) {
+      alert(t('events.groupUploadNotSupported'));
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -157,7 +197,23 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           drugUses
         };
 
-        await apiClient.post('/api/events', submitData);
+        const createEventResponse = await apiClient.post<number | CreateEventResponse>('/api/events', submitData);
+
+        if (selectedExaminationFiles.length > 0) {
+          const examinationIds = typeof createEventResponse === 'number'
+            ? []
+            : createEventResponse.examinationIds;
+
+          if (examinationIds.length > 0) {
+            for (const examinationId of examinationIds) {
+              for (const selectedFile of selectedExaminationFiles) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', selectedFile.file);
+                await apiClient.postFormData(`/api/examinations/${examinationId}/documents`, uploadFormData);
+              }
+            }
+          }
+        }
       }
       
       onEventAdded();
@@ -173,9 +229,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   };
 
   const resetForm = () => {
+    const defaultExaminationEventTypeId = eventOptions ? getDefaultExaminationEventTypeId(eventOptions) : 0;
+
     setFormData({
       patientId,
-      eventTypeId: 0,
+      eventTypeId: defaultExaminationEventTypeId,
       happenedAt: new Date().toISOString().slice(0, 16),
       happenedTo: '',
       comment: '',
@@ -188,6 +246,75 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       pregnancyResult: undefined
     });
     setSelectedDrugs(new Map());
+    setSelectedExaminationFiles([]);
+    setExaminationUploadError(null);
+  };
+
+  const validateExaminationFile = (file: File): string | null => {
+    if (file.type !== 'application/pdf') {
+      return t('patients.documents.errors.mustBePdf');
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return t('patients.documents.errors.fileTooLarge', { maxSize: MAX_FILE_SIZE_MB });
+    }
+
+    return null;
+  };
+
+  const addExaminationFiles = (files: FileList | null, source: UploadSource) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const existingKeys = new Set(
+      selectedExaminationFiles.map(item => `${item.file.name}-${item.file.size}-${item.file.lastModified}`)
+    );
+
+    const newFiles: SelectedExaminationFile[] = [];
+
+    for (const file of Array.from(files)) {
+      const validationError = validateExaminationFile(file);
+      if (validationError) {
+        setExaminationUploadError(validationError);
+        continue;
+      }
+
+      const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+      if (!existingKeys.has(fileKey)) {
+        existingKeys.add(fileKey);
+        newFiles.push({ file, source });
+      }
+    }
+
+    if (newFiles.length > 0) {
+      setSelectedExaminationFiles(prev => [...prev, ...newFiles]);
+      setExaminationUploadError(null);
+    }
+  };
+
+  const handleExaminationFileInputChange = (event: React.ChangeEvent<HTMLInputElement>, source: UploadSource) => {
+    addExaminationFiles(event.target.files, source);
+    event.target.value = '';
+  };
+
+  const handleExaminationSourceClick = (source: UploadSource) => {
+    if (!examinationFileInputRef.current) {
+      return;
+    }
+
+    examinationFileInputRef.current.dataset.source = source;
+    examinationFileInputRef.current.click();
+  };
+
+  const removeExaminationFile = (index: number) => {
+    setSelectedExaminationFiles(prev => prev.filter((_, currentIndex) => currentIndex !== index));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const handleDrugToggle = (drugId: number, checked: boolean) => {
@@ -356,6 +483,56 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           placeholder={t('events.searchExaminations')}
           onAddNew={handleAddNewExamination}
         />
+
+        <div className="examination-documents-section">
+          <p className="form-help-text">{t('patients.documents.selectUploadMethod')}</p>
+          <div className="examination-upload-actions">
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => handleExaminationSourceClick('scanner')}
+            >
+              {t('patients.documents.scanDocument')}
+            </button>
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => handleExaminationSourceClick('file')}
+            >
+              {t('patients.documents.uploadFile')}
+            </button>
+          </div>
+
+          {examinationUploadError && (
+            <p className="examination-upload-error">{examinationUploadError}</p>
+          )}
+
+          {selectedExaminationFiles.length > 0 && (
+            <div className="selected-examination-files">
+              <p className="category-section-label">
+                {t('events.examinationDocumentsSelected', { count: selectedExaminationFiles.length })}
+              </p>
+              {selectedExaminationFiles.map((selectedFile, index) => (
+                <div key={`${selectedFile.file.name}-${selectedFile.file.lastModified}-${index}`} className="selected-examination-file-item">
+                  <div>
+                    <strong>{selectedFile.file.name}</strong>
+                    <span className="selected-examination-file-meta">
+                      {formatFileSize(selectedFile.file.size)} · {selectedFile.source === 'scanner' ? t('patients.documents.scannedDocument') : t('patients.documents.uploadedFile')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="remove-button"
+                    onClick={() => removeExaminationFile(index)}
+                    aria-label={t('common.delete')}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -626,13 +803,25 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 className="save-button"
               >
                 {loading 
-                  ? t('events.creating') 
+                  ? (selectedExaminationFiles.length > 0 ? t('events.uploadingDocuments') : t('events.creating')) 
                   : isGroupMode 
                     ? (t('events.createGroup') || 'Vytvořit skupinu') 
                     : t('events.createEvent')
                 }
               </button>
             </div>
+
+            <input
+              ref={examinationFileInputRef}
+              type="file"
+              accept="application/pdf"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(event) => {
+                const source = (event.currentTarget.dataset.source as UploadSource | undefined) ?? 'file';
+                handleExaminationFileInputChange(event, source);
+              }}
+            />
           </form>
         )}
       </div>

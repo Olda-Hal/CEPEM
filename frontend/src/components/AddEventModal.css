@@ -311,6 +311,55 @@
   font-style: italic;
 }
 
+.examination-documents-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-background-secondary);
+}
+
+.examination-upload-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.examination-upload-actions .cancel-button {
+  padding: 0.5rem 1rem;
+}
+
+.examination-upload-error {
+  color: var(--color-text-primary);
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.selected-examination-files {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selected-examination-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-background);
+}
+
+.selected-examination-file-meta {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .add-event-modal {
