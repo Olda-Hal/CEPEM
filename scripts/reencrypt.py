@@ -31,6 +31,10 @@ def decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
     decryptor = cipher.decryptor()
     padded = decryptor.update(data) + decryptor.finalize()
     pad_len = padded[-1]
+    if pad_len < 1 or pad_len > 16:
+        raise ValueError(f"Invalid PKCS#7 padding length: {pad_len}")
+    if padded[-pad_len:] != bytes([pad_len]) * pad_len:
+        raise ValueError("Invalid PKCS#7 padding bytes")
     return padded[:-pad_len]
 
 

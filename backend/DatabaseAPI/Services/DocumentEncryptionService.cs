@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 
 namespace DatabaseAPI.Services;
 
@@ -12,15 +13,17 @@ public class DocumentEncryptionService
     {
         _logger = logger;
 
-        var keyString = configuration["PhotoEncryption:Key"] 
+        var keyString = configuration["DocumentEncryption:Key"] 
+            ?? Environment.GetEnvironmentVariable("DocumentEncryption__Key")
             ?? Environment.GetEnvironmentVariable("DOCUMENT_ENCRYPTION_KEY")
-            ?? "DefaultKey1234567890123456789012";
-        var ivString = configuration["PhotoEncryption:IV"] 
+            ?? "3ecd03d810e78227081299f6540681f94e01e210ef56dc6b0491264e5860c349";
+        var ivString = configuration["DocumentEncryption:IV"] 
+            ?? Environment.GetEnvironmentVariable("DocumentEncryption__IV")
             ?? Environment.GetEnvironmentVariable("DOCUMENT_ENCRYPTION_IV")
             ?? "DefaultIV12345678";
 
-        _key = System.Text.Encoding.UTF8.GetBytes(keyString.PadRight(32).Substring(0, 32));
-        _iv = System.Text.Encoding.UTF8.GetBytes(ivString.PadRight(16).Substring(0, 16));
+        _key = Encoding.UTF8.GetBytes(keyString.PadRight(32).Substring(0, 32));
+        _iv = Encoding.UTF8.GetBytes(ivString.PadRight(16).Substring(0, 16));
     }
 
     public async Task<byte[]> EncryptDocumentAsync(byte[] documentData)

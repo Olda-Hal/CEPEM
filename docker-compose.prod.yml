@@ -51,6 +51,8 @@ services:
       - ConnectionStrings__DefaultConnection=${DATABASE_API_CONNECTION_STRING}
       - PhotoEncryption__Key=${PHOTO_ENCRYPTION_KEY}
       - PhotoEncryption__IV=${PHOTO_ENCRYPTION_IV}
+      - DocumentEncryption__Key=${DOCUMENT_ENCRYPTION_KEY}
+      - DocumentEncryption__IV=${DOCUMENT_ENCRYPTION_IV}
       - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
       - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}

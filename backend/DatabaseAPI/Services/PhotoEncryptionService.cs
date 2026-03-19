@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 
 namespace DatabaseAPI.Services;
 
@@ -13,14 +14,16 @@ public class PhotoEncryptionService
         _logger = logger;
         
         var keyString = configuration["PhotoEncryption:Key"] 
+            ?? Environment.GetEnvironmentVariable("PhotoEncryption__Key")
             ?? Environment.GetEnvironmentVariable("PHOTO_ENCRYPTION_KEY")
-            ?? "DefaultKey1234567890123456789012";
+            ?? "45ee252b27948334c8890e367b54d875413f68f46458c692258024c860b5c74f";
         var ivString = configuration["PhotoEncryption:IV"] 
+            ?? Environment.GetEnvironmentVariable("PhotoEncryption__IV")
             ?? Environment.GetEnvironmentVariable("PHOTO_ENCRYPTION_IV")
             ?? "DefaultIV12345678";
         
-        _key = System.Text.Encoding.UTF8.GetBytes(keyString.PadRight(32).Substring(0, 32));
-        _iv = System.Text.Encoding.UTF8.GetBytes(ivString.PadRight(16).Substring(0, 16));
+        _key = Encoding.UTF8.GetBytes(keyString.PadRight(32).Substring(0, 32));
+        _iv = Encoding.UTF8.GetBytes(ivString.PadRight(16).Substring(0, 16));
     }
 
     public async Task<byte[]> EncryptPhotoAsync(byte[] photoData)
