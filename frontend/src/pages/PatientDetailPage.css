@@ -508,6 +508,15 @@
   filter: brightness(1.1);
 }
 
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.button-group .add-event-btn {
+  min-width: 140px;
+}
+
 .add-appointment-btn {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: white;
@@ -632,6 +641,7 @@
   margin: 0;
   color: var(--text-color);
   line-height: 1.4;
+  white-space: pre-wrap;
 }
 
 .event-expanded-content {

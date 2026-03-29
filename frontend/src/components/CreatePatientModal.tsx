@@ -163,7 +163,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
     try {
       const createData = {
         ...patientData,
-        insuranceNumber: parseInt(patientData.insuranceNumber)
+        phoneNumber: patientData.phoneNumber || undefined,
+        email: patientData.email || undefined,
+        insuranceNumber: patientData.insuranceNumber ? parseInt(patientData.insuranceNumber) : undefined
       };
 
       const response = await apiClient.post<any>('/api/patients', createData);

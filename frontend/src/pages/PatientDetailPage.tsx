@@ -6,6 +6,7 @@ import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
 import AddEventModal from '../components/AddEventModal';
+import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
 import { DocumentUpload } from '../components/DocumentUpload';
 import './PatientDetailPage.css';
 
@@ -18,6 +19,7 @@ export const PatientDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showAddIntakeFormModal, setShowAddIntakeFormModal] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [editingComment, setEditingComment] = useState(false);
@@ -502,9 +504,14 @@ export const PatientDetailPage: React.FC = () => {
         <div className="patient-events-card">
           <div className="card-header">
             <h2>{t('patients.events')} ({patient.events.length})</h2>
-            <button className="add-event-btn" onClick={() => setShowAddEventModal(true)}>
-              {t('patients.addEvent')}
-            </button>
+            <div className="button-group">
+              <button className="add-event-btn" onClick={() => setShowAddIntakeFormModal(true)}>
+                📋 Vstupní Formulář
+              </button>
+              <button className="add-event-btn" onClick={() => setShowAddEventModal(true)}>
+                {t('patients.addEvent')}
+              </button>
+            </div>
           </div>
           
           {patient.events.length === 0 ? (
@@ -754,6 +761,16 @@ export const PatientDetailPage: React.FC = () => {
         onClose={() => setShowAddEventModal(false)}
         patientId={patient.id}
         onEventAdded={handleEventAdded}
+      />
+
+      {/* Add Intake Form Event Modal */}
+      <AddIntakeFormEventModal
+        isOpen={showAddIntakeFormModal}
+        patientId={patient.id}
+        patientFirstName={patient.firstName}
+        patientLastName={patient.lastName}
+        onClose={() => setShowAddIntakeFormModal(false)}
+        onEventCreated={handleEventAdded}
       />
 
       {/* Document Upload Modal */}

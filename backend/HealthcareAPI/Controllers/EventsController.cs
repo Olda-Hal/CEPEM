@@ -226,4 +226,28 @@ public class EventsController : ControllerBase
             return StatusCode(500, $"Error forwarding request to DatabaseAPI: {ex.Message}");
         }
     }
+
+    [HttpPost("intake-form")]
+    public async Task<IActionResult> CreateIntakeForm([FromBody] JsonElement requestData)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(requestData);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/events/intake-form", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return Content(responseContent, "application/json");
+            }
+
+            return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error forwarding request to DatabaseAPI: {ex.Message}");
+        }
+    }
 }

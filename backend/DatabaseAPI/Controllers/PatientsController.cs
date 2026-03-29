@@ -166,12 +166,38 @@ namespace DatabaseAPI.Controllers
                 {
                     PersonId = person.Id,
                     BirthDate = request.BirthDate,
-                    InsuranceNumber = request.InsuranceNumber,
+                    InsuranceNumber = request.InsuranceNumber ?? 0,
                     Alive = true
                 };
 
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
+
+                // Create Intake Form Event
+                var intakeFormEventType = await _context.EventTypes
+                    .Include(et => et.NameTranslation)
+                    .FirstOrDefaultAsync(et => et.NameTranslation.CS == "Vstupní Formulář");
+                
+                if (intakeFormEventType != null)
+                {
+                    var intakeFormComment = new Comment
+                    {
+                        Text = $"Váha: {request.Weight} kg\nVýška: {request.Height} cm" + 
+                               (!string.IsNullOrEmpty(request.Comment) ? $"\n{request.Comment}" : "")
+                    };
+                    _context.Comments.Add(intakeFormComment);
+                    await _context.SaveChangesAsync();
+
+                    var intakeFormEvent = new Event
+                    {
+                        PatientId = patient.Id,
+                        EventTypeId = intakeFormEventType.Id,
+                        HappenedAt = DateTime.UtcNow,
+                        CommentId = intakeFormComment.Id
+                    };
+                    _context.Events.Add(intakeFormEvent);
+                    await _context.SaveChangesAsync();
+                }
 
                 var createdPatient = await _context.Patients
                     .Include(p => p.Person)

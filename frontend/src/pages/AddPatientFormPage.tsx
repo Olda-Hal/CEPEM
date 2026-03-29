@@ -2,86 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
+import { PatientFormFields, PatientFormData } from '../components/PatientFormFields';
 import './AddPatientFormPage.css';
-
-interface PatientFormData {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender: string;
-  weight: string;
-  height: string;
-  insuranceCompany: string;
-  email: string;
-  phone: string;
-  address: string;
-  postalCode: string;
-  
-  medBloodPressure: boolean;
-  medHeart: boolean;
-  medCholesterol: boolean;
-  medBloodThinners: boolean;
-  medDiabetes: boolean;
-  medThyroid: boolean;
-  medNerves: boolean;
-  medPsych: boolean;
-  medDigestion: boolean;
-  medPain: boolean;
-  medDehydration: boolean;
-  medBreathing: boolean;
-  medAntibiotics: boolean;
-  medSupplements: boolean;
-  medAllergies: boolean;
-  
-  poorSleep: boolean;
-  digestiveIssues: boolean;
-  physicalStress: boolean;
-  mentalStress: boolean;
-  smoking: boolean;
-  fatigue: boolean;
-  lastMealHours: string;
-  
-  confirmAccuracy: boolean;
-  termsAccepted: boolean;
-  signaturePlace: string;
-  signatureDate: string;
-  signature: string;
-  
-  additionalHealthInfo: string;
-  
-  hadCovid: boolean;
-  covidWhen: string;
-  covidVaccine: boolean;
-  vaccinesAfter2023: boolean;
-  
-  lastMenstruationDate: string;
-  menstruationCycleDays: string;
-  yearsSinceLastMenstruation: string;
-  gaveBirth: boolean;
-  birthCount: string;
-  birthWhen: string;
-  breastfed: boolean;
-  breastfeedingMonths: string;
-  breastfeedingInflammation: boolean;
-  endedWithInflammation: boolean;
-  contraception: boolean;
-  contraceptionDuration: string;
-  estrogen: boolean;
-  estrogenType: string;
-  interruption: boolean;
-  interruptionCount: string;
-  miscarriage: boolean;
-  miscarriageCount: string;
-  breastInjury: boolean;
-  mammogram: boolean;
-  mammogramCount: string;
-  breastBiopsy: boolean;
-  breastImplants: boolean;
-  breastSurgery: boolean;
-  breastSurgeryType: string;
-  familyTumors: boolean;
-  familyTumorType: string;
-}
 
 export const AddPatientFormPage: React.FC = () => {
   const { t } = useTranslation();
@@ -236,34 +158,30 @@ export const AddPatientFormPage: React.FC = () => {
 
   const buildComment = (): string => {
     const parts: string[] = [];
-    
-    const meds: string[] = [];
-    if (form.medBloodPressure) meds.push('Tlak');
-    if (form.medHeart) meds.push('Srdce');
-    if (form.medCholesterol) meds.push('Cholesterol');
-    if (form.medBloodThinners) meds.push('Srážlivost');
-    if (form.medDiabetes) meds.push('Cukrovka');
-    if (form.medThyroid) meds.push('Štítná žláza');
-    if (form.medNerves) meds.push('Nervy');
-    if (form.medPsych) meds.push('Psychika');
-    if (form.medDigestion) meds.push('Zažívání');
-    if (form.medPain) meds.push('Bolest');
-    if (form.medDehydration) meds.push('Odvodnění');
-    if (form.medBreathing) meds.push('Dýchání');
-    if (form.medAntibiotics) meds.push('Antibiotika');
-    if (form.medSupplements) meds.push('Doplňky stravy');
-    if (form.medAllergies) meds.push('Alergie');
-    if (meds.length > 0) parts.push(`Léky: ${meds.join(', ')}`);
-    
-    const issues: string[] = [];
-    if (form.poorSleep) issues.push('Špatný spánek');
-    if (form.digestiveIssues) issues.push('Zažívání');
-    if (form.physicalStress) issues.push('Fyzická zátěž');
-    if (form.mentalStress) issues.push('Psychická zátěž');
-    if (form.smoking) issues.push('Kouření');
-    if (form.fatigue) issues.push('Pocity únavy');
-    if (form.lastMealHours) issues.push(`Poslední jídlo před ${form.lastMealHours} hod`);
-    if (issues.length > 0) parts.push(`Zdravotní stav: ${issues.join(', ')}`);
+
+    if (form.medBloodPressure) parts.push('Léky: Tlak');
+    if (form.medHeart) parts.push('Léky: Srdce');
+    if (form.medCholesterol) parts.push('Léky: Cholesterol');
+    if (form.medBloodThinners) parts.push('Léky: Srážlivost');
+    if (form.medDiabetes) parts.push('Léky: Cukrovka');
+    if (form.medThyroid) parts.push('Léky: Štítná žláza');
+    if (form.medNerves) parts.push('Léky: Nervy');
+    if (form.medPsych) parts.push('Léky: Psychika');
+    if (form.medDigestion) parts.push('Léky: Zažívání');
+    if (form.medPain) parts.push('Léky: Bolest');
+    if (form.medDehydration) parts.push('Léky: Odvodnění');
+    if (form.medBreathing) parts.push('Léky: Dýchání');
+    if (form.medAntibiotics) parts.push('Léky: Antibiotika');
+    if (form.medSupplements) parts.push('Léky: Doplňky stravy');
+    if (form.medAllergies) parts.push('Léky: Alergie');
+
+    if (form.poorSleep) parts.push('Zdravotní stav: Špatný spánek');
+    if (form.digestiveIssues) parts.push('Zdravotní stav: Zažívání');
+    if (form.physicalStress) parts.push('Zdravotní stav: Fyzická zátěž');
+    if (form.mentalStress) parts.push('Zdravotní stav: Psychická zátěž');
+    if (form.smoking) parts.push('Zdravotní stav: Kouření');
+    if (form.fatigue) parts.push('Zdravotní stav: Pocity únavy');
+    if (form.lastMealHours) parts.push(`Zdravotní stav: Poslední jídlo před ${form.lastMealHours} hod`);
     
     if (form.hadCovid) {
       parts.push(`COVID: Prodělal/a (${form.covidWhen || 'neuvedeno kdy'})`);
@@ -289,7 +207,7 @@ export const AddPatientFormPage: React.FC = () => {
     if (form.breastSurgery) parts.push(`Operace prsu: ${form.breastSurgeryType || 'Ano'}`);
     if (form.familyTumors) parts.push(`Nádory v rodině: ${form.familyTumorType || 'Ano'}`);
     
-    if (form.additionalHealthInfo) parts.push(`\n${form.additionalHealthInfo}`);
+    if (form.additionalHealthInfo) parts.push(`Poznámky: ${form.additionalHealthInfo}`);
     
     return parts.join('\n');
   };
@@ -320,9 +238,9 @@ export const AddPatientFormPage: React.FC = () => {
         lastName: form.lastName,
         birthDate: form.dateOfBirth,
         gender: form.gender,
-        phoneNumber: form.phone,
-        email: form.email,
-        insuranceNumber: form.insuranceCompany,
+        phoneNumber: form.phone || undefined,
+        email: form.email || undefined,
+        insuranceNumber: form.insuranceCompany ? parseInt(form.insuranceCompany) : undefined,
         weight: form.weight ? parseFloat(form.weight) : undefined,
         height: form.height ? parseFloat(form.height) : undefined,
         comment: buildComment(),
@@ -398,297 +316,12 @@ export const AddPatientFormPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="form-section">
-            <h2>Základní údaje</h2>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Příjmení *</label>
-                <input type="text" value={form.lastName} onChange={e => handleChange('lastName', e.target.value)} required />
-              </div>
-              <div className="form-field">
-                <label>Jméno *</label>
-                <input type="text" value={form.firstName} onChange={e => handleChange('firstName', e.target.value)} required />
-              </div>
-              <div className="form-field">
-                <label>Datum narození *</label>
-                <input type="date" value={form.dateOfBirth} onChange={e => handleChange('dateOfBirth', e.target.value)} required />
-              </div>
-            </div>
-            
-            <div className="form-row">
-              <div className="form-field">
-                <label>Pohlaví *</label>
-                <select value={form.gender} onChange={e => handleChange('gender', e.target.value)} required>
-                  <option value="">Vyberte pohlaví</option>
-                  <option value="M">Muž</option>
-                  <option value="F">Žena</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Váha (kg)</label>
-                <input type="number" step="0.1" value={form.weight} onChange={e => handleChange('weight', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Výška (cm)</label>
-                <input type="number" value={form.height} onChange={e => handleChange('height', e.target.value)} />
-              </div>
-            </div>
-            
-            <div className="form-row">
-              <div className="form-field">
-                <label>Pojišťovna</label>
-                <input type="text" value={form.insuranceCompany} onChange={e => handleChange('insuranceCompany', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Email</label>
-                <input type="email" value={form.email} onChange={e => handleChange('email', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Telefon</label>
-                <input type="tel" value={form.phone} onChange={e => handleChange('phone', e.target.value)} />
-              </div>
-            </div>
-            
-            <div className="form-row">
-              <div className="form-field">
-                <label>Adresa + PSČ</label>
-                <input type="text" value={form.address} onChange={e => handleChange('address', e.target.value)} placeholder="Ulice, město, PSČ" />
-              </div>
-            </div>
-          </section>
-
-          <section className="form-section">
-            <h2>Užívám léky na:</h2>
-            <div className="checkbox-grid">
-              <label className="checkbox-label"><input type="checkbox" checked={form.medBloodPressure} onChange={e => handleChange('medBloodPressure', e.target.checked)} />Tlak</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medHeart} onChange={e => handleChange('medHeart', e.target.checked)} />Srdce</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medCholesterol} onChange={e => handleChange('medCholesterol', e.target.checked)} />Cholesterol</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medBloodThinners} onChange={e => handleChange('medBloodThinners', e.target.checked)} />Srážlivost</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medDiabetes} onChange={e => handleChange('medDiabetes', e.target.checked)} />Cukrovka</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medThyroid} onChange={e => handleChange('medThyroid', e.target.checked)} />Štítná žláza</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medNerves} onChange={e => handleChange('medNerves', e.target.checked)} />Nervy</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medPsych} onChange={e => handleChange('medPsych', e.target.checked)} />Psychika</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medDigestion} onChange={e => handleChange('medDigestion', e.target.checked)} />Zažívání</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medPain} onChange={e => handleChange('medPain', e.target.checked)} />Bolest</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medDehydration} onChange={e => handleChange('medDehydration', e.target.checked)} />Odvodnění</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medBreathing} onChange={e => handleChange('medBreathing', e.target.checked)} />Dýchání</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medAntibiotics} onChange={e => handleChange('medAntibiotics', e.target.checked)} />Antibiotika</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medSupplements} onChange={e => handleChange('medSupplements', e.target.checked)} />Doplňky stravy</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.medAllergies} onChange={e => handleChange('medAllergies', e.target.checked)} />Alergie</label>
-            </div>
-          </section>
-
-          <section className="form-section">
-            <h2>Doplňující informace</h2>
-            <div className="checkbox-grid">
-              <label className="checkbox-label"><input type="checkbox" checked={form.poorSleep} onChange={e => handleChange('poorSleep', e.target.checked)} />Špatný spánek</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.digestiveIssues} onChange={e => handleChange('digestiveIssues', e.target.checked)} />Zažívání</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.physicalStress} onChange={e => handleChange('physicalStress', e.target.checked)} />Fyzická zátěž</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.mentalStress} onChange={e => handleChange('mentalStress', e.target.checked)} />Psychická zátěž</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.smoking} onChange={e => handleChange('smoking', e.target.checked)} />Kouření</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.fatigue} onChange={e => handleChange('fatigue', e.target.checked)} />Pocity únavy</label>
-            </div>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Poslední jídlo před (hod.)</label>
-                <input type="number" value={form.lastMealHours} onChange={e => handleChange('lastMealHours', e.target.value)} />
-              </div>
-            </div>
-          </section>
-
-          <section className="form-section">
-            <h2>Další informace o stavu organizmu</h2>
-            <textarea rows={6} value={form.additionalHealthInfo} onChange={e => handleChange('additionalHealthInfo', e.target.value)} placeholder="Další informace o stavu organizmu, které půjdou do komentáře k pacientovi..." />
-          </section>
-
-          <section className="form-section">
-            <h2>COVID</h2>
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.hadCovid} onChange={e => handleChange('hadCovid', e.target.checked)} />Prodělal/a jsem COVID</label>
-            </div>
-            {form.hadCovid && (
-              <div className="form-row">
-                <div className="form-field">
-                  <label>Kdy?</label>
-                  <input type="text" value={form.covidWhen} onChange={e => handleChange('covidWhen', e.target.value)} placeholder="např. 2021, lehký průběh" />
-                </div>
-              </div>
-            )}
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.covidVaccine} onChange={e => handleChange('covidVaccine', e.target.checked)} />Vakcinace proti COVID-u</label>
-            </div>
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.vaccinesAfter2023} onChange={e => handleChange('vaccinesAfter2023', e.target.checked)} />Vakcinace jiné po r.2023</label>
-            </div>
-          </section>
-
-          <section className="form-section optional-section">
-            <h2>Doplnění jen k mamární diagnostice MEIK (nepovinné)</h2>
-            <p className="section-note">Tuto sekci vyplňte pouze pokud je relevantní</p>
-            
-            <div className="form-row">
-              <div className="form-field">
-                <label>Kdy poslední menzes</label>
-                <input type="text" value={form.lastMenstruationDate} onChange={e => handleChange('lastMenstruationDate', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Po kolika dnech se opakuje</label>
-                <input type="number" value={form.menstruationCycleDays} onChange={e => handleChange('menstruationCycleDays', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Počet let od poslední menzes</label>
-                <input type="number" value={form.yearsSinceLastMenstruation} onChange={e => handleChange('yearsSinceLastMenstruation', e.target.value)} />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.gaveBirth} onChange={e => handleChange('gaveBirth', e.target.checked)} />Rodila</label>
-              {form.gaveBirth && (
-                <>
-                  <div className="form-field">
-                    <label>Kolikrát</label>
-                    <input type="number" value={form.birthCount} onChange={e => handleChange('birthCount', e.target.value)} />
-                  </div>
-                  <div className="form-field">
-                    <label>Kdy</label>
-                    <input type="text" value={form.birthWhen} onChange={e => handleChange('birthWhen', e.target.value)} placeholder="např. 2015, 2018" />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.breastfed} onChange={e => handleChange('breastfed', e.target.checked)} />Kojila</label>
-              {form.breastfed && (
-                <div className="form-field">
-                  <label>Počet měsíců</label>
-                  <input type="number" value={form.breastfeedingMonths} onChange={e => handleChange('breastfeedingMonths', e.target.value)} />
-                </div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.breastfeedingInflammation} onChange={e => handleChange('breastfeedingInflammation', e.target.checked)} />Záněty při kojení?</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.endedWithInflammation} onChange={e => handleChange('endedWithInflammation', e.target.checked)} />Končilo kojení zánětem?</label>
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.contraception} onChange={e => handleChange('contraception', e.target.checked)} />Antikoncepce</label>
-              {form.contraception && (
-                <div className="form-field">
-                  <label>Jak dlouho?</label>
-                  <input type="text" value={form.contraceptionDuration} onChange={e => handleChange('contraceptionDuration', e.target.value)} />
-                </div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.estrogen} onChange={e => handleChange('estrogen', e.target.checked)} />Estrogen</label>
-              {form.estrogen && (
-                <div className="form-field">
-                  <label>Druh?</label>
-                  <input type="text" value={form.estrogenType} onChange={e => handleChange('estrogenType', e.target.value)} />
-                </div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.interruption} onChange={e => handleChange('interruption', e.target.checked)} />Interrupce</label>
-              {form.interruption && (
-                <div className="form-field">
-                  <label>Počet?</label>
-                  <input type="number" value={form.interruptionCount} onChange={e => handleChange('interruptionCount', e.target.value)} />
-                </div>
-              )}
-              <label className="checkbox-label"><input type="checkbox" checked={form.miscarriage} onChange={e => handleChange('miscarriage', e.target.checked)} />Potrat</label>
-              {form.miscarriage && (
-                <div className="form-field">
-                  <label>Počet?</label>
-                  <input type="number" value={form.miscarriageCount} onChange={e => handleChange('miscarriageCount', e.target.value)} />
-                </div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.breastInjury} onChange={e => handleChange('breastInjury', e.target.checked)} />Úraz prsu?</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.mammogram} onChange={e => handleChange('mammogram', e.target.checked)} />RTG Mamograf?</label>
-              {form.mammogram && (
-                <div className="form-field">
-                  <label>Počet?</label>
-                  <input type="number" value={form.mammogramCount} onChange={e => handleChange('mammogramCount', e.target.value)} />
-                </div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.breastBiopsy} onChange={e => handleChange('breastBiopsy', e.target.checked)} />Biopsie prsu?</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.breastImplants} onChange={e => handleChange('breastImplants', e.target.checked)} />Impl?</label>
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.breastSurgery} onChange={e => handleChange('breastSurgery', e.target.checked)} />Operace prsu?</label>
-              {form.breastSurgery && (
-                <div className="form-field">
-                  <label>Jaká?</label>
-                  <input type="text" value={form.breastSurgeryType} onChange={e => handleChange('breastSurgeryType', e.target.value)} />
-                </div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <label className="checkbox-label"><input type="checkbox" checked={form.familyTumors} onChange={e => handleChange('familyTumors', e.target.checked)} />Nádory v rodině?</label>
-              {form.familyTumors && (
-                <div className="form-field">
-                  <label>Druh?</label>
-                  <input type="text" value={form.familyTumorType} onChange={e => handleChange('familyTumorType', e.target.value)} />
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="form-section terms-section">
-            <h2>Potvrzení správnosti vyplněných údajů</h2>
-            <div className="form-row">
-              <label className="checkbox-label">
-                <input type="checkbox" checked={form.confirmAccuracy} onChange={e => handleChange('confirmAccuracy', e.target.checked)} required />
-                Potvrzuji správnost vyplnění výše uvedených údajů *
-              </label>
-            </div>
-            
-            <h2>Smluvní podmínky</h2>
-            <div className="terms-text">
-              <ol>
-                <li>Klient souhlasí se zpracováním svých osobních údajů Centrem Preventivní Medicíny (dále CPM).</li>
-                <li>Klient, při pobytu v CPM, respektuje organizační pokyny personálu CPM.</li>
-                <li>CPM zachází s osobními údaji klientů podle platných zákonů EU a ČR, které to upravují.</li>
-                <li>CPM uchovává dokumenty, výsledky různých vyšetření v CPM nebo které Klient CPM předal.</li>
-                <li>CPM používá výsledky vyšetření Klienta jen k dalšímu odbornému posouzení, eventuálně k další výzkumné činnosti nebo ke statistice v navazujících databázích. Ve všech těchto případech respektuje anonymitu klientů (není možno spojit osobní údaje s výsledkem vyšetření).</li>
-                <li>CPM může informovat Klienta o změně v organizaci poskytování svých služeb tím způsobem, který si při objednání služeb zvolil Klient sám.</li>
-                <li>Klienta CPM vyškrtne z aktuální evidence jen na základě jeho písemné žádosti nebo při úmrtí.</li>
-              </ol>
-            </div>
-            <div className="form-row">
-              <label className="checkbox-label">
-                <input type="checkbox" checked={form.termsAccepted} onChange={e => handleChange('termsAccepted', e.target.checked)} required />
-                Se smluvními podmínkami CPM souhlasím *
-              </label>
-            </div>
-
-            <div className="form-row">
-              <div className="form-field">
-                <label>Kde</label>
-                <input type="text" value={form.signaturePlace} onChange={e => handleChange('signaturePlace', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Datum</label>
-                <input type="date" value={form.signatureDate} onChange={e => handleChange('signatureDate', e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Podpis klienta</label>
-                <input type="text" value={form.signature} onChange={e => handleChange('signature', e.target.value)} placeholder="Jméno a příjmení" />
-              </div>
-            </div>
-          </section>
+          <PatientFormFields 
+            form={form}
+            onChange={handleChange}
+            disabled={loading}
+            showPhoto={false}
+          />
 
           <div className="form-actions">
             <button type="button" onClick={() => navigate('/patients')} className="btn-cancel">

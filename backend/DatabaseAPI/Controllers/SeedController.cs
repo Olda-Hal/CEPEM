@@ -113,6 +113,7 @@ namespace DatabaseAPI.Controllers
 
             // Seed Event Types
             var eventTypeData = new[] {
+                (CS: "Vstupní Formulář", EN: "Intake Form"),
                 (CS: "Návštěva",    EN: "Visit"),
                 (CS: "Operace",     EN: "Surgery"),
                 (CS: "Pohotovost",  EN: "Emergency"),
