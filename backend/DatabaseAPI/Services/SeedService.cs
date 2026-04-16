@@ -29,6 +29,7 @@ namespace DatabaseAPI.Services
             {
                 await SeedRolesAsync();
                 await SeedAdminUserAsync();
+                await SeedIntakeFormEventTypeAsync();
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Database seeded successfully.");
             }
@@ -133,6 +134,38 @@ namespace DatabaseAPI.Services
 
             _logger.LogInformation("SysAdmin user created with email: {Email} and password: {Password}", 
                 "admin@cepem.local", password);
+        }
+
+        private async Task SeedIntakeFormEventTypeAsync()
+        {
+            var intakeType = await _context.EventTypes
+                .Include(et => et.NameTranslation)
+                .FirstOrDefaultAsync(et => et.NameTranslation != null &&
+                    (et.NameTranslation.EN == "Intake Form" ||
+                     et.NameTranslation.CS == "Vstupni Formular" ||
+                     et.NameTranslation.CS == "Vstupní Formulář"));
+
+            if (intakeType != null)
+            {
+                return;
+            }
+
+            var translation = new Translation
+            {
+                EN = "Intake Form",
+                CS = "Vstupni Formular"
+            };
+
+            _context.Translations.Add(translation);
+            await _context.SaveChangesAsync();
+
+            _context.EventTypes.Add(new EventType
+            {
+                NameTranslationId = translation.Id
+            });
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Intake Form event type created.");
         }
     }
 }

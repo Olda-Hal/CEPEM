@@ -41,7 +41,7 @@ export interface PatientFormData {
   termsAccepted: boolean;
   signaturePlace: string;
   signatureDate: string;
-  signature: string;
+  signatureVector: string;
   
   additionalHealthInfo: string;
   
@@ -86,6 +86,139 @@ interface PatientFormFieldsProps {
   disabled?: boolean;
   className?: string;
 }
+
+interface SignaturePoint {
+  x: number;
+  y: number;
+}
+
+type SignatureStroke = SignaturePoint[];
+
+const SignaturePad: React.FC<{
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}> = ({ value, disabled, onChange }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const drawingRef = React.useRef(false);
+  const currentStrokeRef = React.useRef<SignatureStroke>([]);
+
+  const parseStrokes = React.useCallback((raw: string): SignatureStroke[] => {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter(Array.isArray)
+        .map((stroke: any[]) =>
+          stroke
+            .filter((point: any) => point && typeof point.x === 'number' && typeof point.y === 'number')
+            .map((point: any) => ({ x: point.x, y: point.y }))
+        )
+        .filter((stroke: SignatureStroke) => stroke.length > 0);
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const getCanvasPoint = React.useCallback((event: React.PointerEvent<HTMLCanvasElement>): SignaturePoint => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }, []);
+
+  const drawStroke = React.useCallback((ctx: CanvasRenderingContext2D, stroke: SignatureStroke) => {
+    if (stroke.length === 0) return;
+
+    ctx.beginPath();
+    ctx.moveTo(stroke[0].x, stroke[0].y);
+
+    for (let i = 1; i < stroke.length; i += 1) {
+      ctx.lineTo(stroke[i].x, stroke[i].y);
+    }
+
+    ctx.stroke();
+  }, []);
+
+  const redraw = React.useCallback((strokes: SignatureStroke[]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.lineWidth = 2;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.strokeStyle = '#1f2937';
+
+    strokes.forEach((stroke) => drawStroke(context, stroke));
+  }, [drawStroke]);
+
+  React.useEffect(() => {
+    redraw(parseStrokes(value));
+  }, [value, parseStrokes, redraw]);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (disabled) return;
+    drawingRef.current = true;
+    currentStrokeRef.current = [getCanvasPoint(event)];
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current || disabled) return;
+
+    const point = getCanvasPoint(event);
+    currentStrokeRef.current = [...currentStrokeRef.current, point];
+
+    const strokes = [...parseStrokes(value), currentStrokeRef.current];
+    redraw(strokes);
+  };
+
+  const finishStroke = () => {
+    if (!drawingRef.current || disabled) return;
+    drawingRef.current = false;
+
+    const completedStroke = currentStrokeRef.current;
+    currentStrokeRef.current = [];
+
+    if (completedStroke.length === 0) return;
+
+    const strokes = [...parseStrokes(value), completedStroke];
+    onChange(JSON.stringify(strokes));
+  };
+
+  const clearSignature = () => {
+    if (disabled) return;
+    onChange('');
+  };
+
+  return (
+    <div className="signature-pad-wrapper">
+      <canvas
+        ref={canvasRef}
+        width={640}
+        height={220}
+        className={`signature-pad-canvas${disabled ? ' disabled' : ''}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishStroke}
+        onPointerLeave={finishStroke}
+      />
+      <div className="signature-pad-actions">
+        <button type="button" className="btn-secondary" onClick={clearSignature} disabled={disabled}>
+          Vymazat podpis
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
   form,
@@ -559,12 +692,10 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
           </div>
           <div className="form-field">
             <label>Podpis klienta</label>
-            <input 
-              type="text" 
-              value={form.signature} 
-              onChange={e => onChange('signature', e.target.value)} 
-              placeholder="Jméno a příjmení"
+            <SignaturePad
+              value={form.signatureVector}
               disabled={disabled}
+              onChange={(nextValue) => onChange('signatureVector', nextValue)}
             />
           </div>
         </div>

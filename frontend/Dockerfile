@@ -21,7 +21,6 @@ COPY frontend/ .
 
 # Build args for API URLs (passed from docker-compose.yml)
 ARG REACT_APP_API_URL
-ARG REACT_APP_DATABASE_API_URL
 ARG REACT_APP_AI_API_URL
 
 # Build the application

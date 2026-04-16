@@ -1,10 +1,15 @@
 namespace DatabaseAPI.APIModels;
 
+using System.Text.Json.Serialization;
+
 public class CreateIntakeFormEventRequest
 {
     public int PatientId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDateTimeConverter))]
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
     public float? Weight { get; set; }
     public float? Height { get; set; }
     public int? InsuranceNumber { get; set; }
@@ -39,10 +44,58 @@ public class CreateIntakeFormEventRequest
     public string? LastMealHours { get; set; }
     
     public bool? HadCovid { get; set; }
+    public string? CovidWhen { get; set; }
     public bool? CovidVaccine { get; set; }
     public bool? VaccinesAfter2023 { get; set; }
     
+    public string? LastMenstruationDate { get; set; }
+    public int? MenstruationCycleDays { get; set; }
+    public int? YearsSinceLastMenstruation { get; set; }
+    public bool? GaveBirth { get; set; }
+    public int? BirthCount { get; set; }
+    public string? BirthWhen { get; set; }
+    public bool? Breastfed { get; set; }
+    public int? BreastfeedingMonths { get; set; }
+    public bool? BreastfeedingInflammation { get; set; }
+    public bool? EndedWithInflammation { get; set; }
+    public bool? Contraception { get; set; }
+    public string? ContraceptionDuration { get; set; }
+    public bool? Estrogen { get; set; }
+    public string? EstrogenType { get; set; }
+    public bool? Interruption { get; set; }
+    public int? InterruptionCount { get; set; }
+    public bool? Miscarriage { get; set; }
+    public int? MiscarriageCount { get; set; }
+    public bool? BreastInjury { get; set; }
+    public bool? Mammogram { get; set; }
+    public int? MammogramCount { get; set; }
+    public bool? BreastBiopsy { get; set; }
+    public bool? BreastImplants { get; set; }
+    public bool? BreastSurgery { get; set; }
+    public string? BreastSurgeryType { get; set; }
+    public bool? FamilyTumors { get; set; }
+    public string? FamilyTumorType { get; set; }
+
+    public bool? ConfirmAccuracy { get; set; }
+    public bool? TermsAccepted { get; set; }
+    public string? SignaturePlace { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDateTimeConverter))]
+    public DateTime? SignatureDate { get; set; }
+    public string? SignatureVector { get; set; }
+
     public string? AdditionalHealthInfo { get; set; }
+
+    public List<SicknessHistoryRequestItem> SicknessHistories { get; set; } = [];
+}
+
+public class SicknessHistoryRequestItem
+{
+    public string? SicknessName { get; set; }
+    public bool? HadSickness { get; set; }
+    public string? SicknessWhen { get; set; }
+    public bool? Vaccinated { get; set; }
+    public string? VaccinationWhen { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class IntakeFormEventDto

@@ -79,6 +79,22 @@ public class CreatePatientRequest
     public string? Comment { get; set; }
 }
 
+public class UpdatePatientRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public DateTime BirthDate { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? Email { get; set; }
+    public int InsuranceNumber { get; set; }
+    public string Gender { get; set; } = string.Empty;
+    public string Uid { get; set; } = string.Empty;
+    public string? TitleBefore { get; set; }
+    public string? TitleAfter { get; set; }
+    public bool Alive { get; set; } = true;
+    public string? Comment { get; set; }
+}
+
 public class PatientQuickPreviewDto
 {
     public bool HasCovidVaccination { get; set; }
@@ -115,6 +131,7 @@ public class PatientDetailDto
     public string? PhotoUrl { get; set; }
     public PatientQuickPreviewDto QuickPreview { get; set; } = new();
     public QuickPreviewSettingsDto QuickPreviewSettings { get; set; } = new();
+    public FormSubmissionDto? FormSubmission { get; set; }
     public List<PatientEventDto> Events { get; set; } = new();
     public List<PatientAppointmentDto> Appointments { get; set; } = new();
     public List<PatientDocumentDto> Documents { get; set; } = new();

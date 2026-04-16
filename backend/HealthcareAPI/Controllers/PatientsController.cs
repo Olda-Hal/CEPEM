@@ -165,6 +165,45 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePatient(int id, [FromBody] object updatePatientRequest)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+
+                var json = System.Text.Json.JsonSerializer.Serialize(updatePatientRequest);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await client.PutAsync($"/api/patients/{id}", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var jsonDocument = JsonDocument.Parse(responseContent);
+                    return Ok(jsonDocument.RootElement);
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return BadRequest(errorContent);
+                }
+
+                return StatusCode((int)response.StatusCode, "Error updating patient");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while updating patient");
+            }
+        }
+
         [HttpPost("{id}/photo")]
         public async Task<IActionResult> UploadPatientPhoto(int id, [FromForm] IFormFile photo)
         {

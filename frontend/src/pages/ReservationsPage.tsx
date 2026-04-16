@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient, databaseApiClient } from '../utils/api';
+import { apiClient } from '../utils/api';
 import { isAdmin } from '../utils/roles';
 import {
   CreateReservationRequest,
@@ -274,7 +274,7 @@ export const ReservationsPage: React.FC = () => {
     }
 
     try {
-      const response = await databaseApiClient.get<Array<{ id: number; name: string }>>(
+      const response = await apiClient.get<Array<{ id: number; name: string }>>(
         `/api/hospitals/${hospitalIdValue}/examination-types?language=${i18n.language}`
       );
       setHospitalExaminationTypes(response);

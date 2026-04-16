@@ -173,32 +173,6 @@ namespace DatabaseAPI.Controllers
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
 
-                // Create Intake Form Event
-                var intakeFormEventType = await _context.EventTypes
-                    .Include(et => et.NameTranslation)
-                    .FirstOrDefaultAsync(et => et.NameTranslation.CS == "Vstupní Formulář");
-                
-                if (intakeFormEventType != null)
-                {
-                    var intakeFormComment = new Comment
-                    {
-                        Text = $"Váha: {request.Weight} kg\nVýška: {request.Height} cm" + 
-                               (!string.IsNullOrEmpty(request.Comment) ? $"\n{request.Comment}" : "")
-                    };
-                    _context.Comments.Add(intakeFormComment);
-                    await _context.SaveChangesAsync();
-
-                    var intakeFormEvent = new Event
-                    {
-                        PatientId = patient.Id,
-                        EventTypeId = intakeFormEventType.Id,
-                        HappenedAt = DateTime.UtcNow,
-                        CommentId = intakeFormComment.Id
-                    };
-                    _context.Events.Add(intakeFormEvent);
-                    await _context.SaveChangesAsync();
-                }
-
                 var createdPatient = await _context.Patients
                     .Include(p => p.Person)
                         .ThenInclude(per => per.ContactToObjects)
@@ -289,6 +263,159 @@ namespace DatabaseAPI.Controllers
             }
         }
 
+        [HttpPut("{id}")]
+        public async Task<ActionResult<PatientDto>> UpdatePatient(int id, [FromBody] UpdatePatientRequest request)
+        {
+            try
+            {
+                var patient = await _context.Patients
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.Emails)
+                    .Include(p => p.Person)
+                        .ThenInclude(per => per.ContactToObjects)
+                            .ThenInclude(cto => cto.Contact)
+                                .ThenInclude(c => c.PhoneNumbers)
+                    .Include(p => p.Comment)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (patient == null)
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
+                patient.Person.FirstName = request.FirstName;
+                patient.Person.LastName = request.LastName;
+                patient.Person.UID = request.Uid;
+                patient.Person.Gender = request.Gender;
+                patient.Person.TitleBefore = request.TitleBefore;
+                patient.Person.TitleAfter = request.TitleAfter;
+
+                patient.BirthDate = request.BirthDate;
+                patient.InsuranceNumber = request.InsuranceNumber;
+                patient.Alive = request.Alive;
+
+                var personContactLink = patient.Person.ContactToObjects
+                    .FirstOrDefault(cto => cto.ObjectType == ContactObjectType.Person);
+
+                if ((request.Email ?? string.Empty).Trim().Length > 0 || (request.PhoneNumber ?? string.Empty).Trim().Length > 0)
+                {
+                    Contact contact;
+                    if (personContactLink == null)
+                    {
+                        contact = new Contact();
+                        _context.Contacts.Add(contact);
+                        await _context.SaveChangesAsync();
+
+                        personContactLink = new ContactToObject
+                        {
+                            ContactId = contact.Id,
+                            ObjectId = patient.PersonId,
+                            ObjectType = ContactObjectType.Person,
+                            PersonId = patient.PersonId
+                        };
+                        _context.ContactToObjects.Add(personContactLink);
+                    }
+                    else
+                    {
+                        contact = personContactLink.Contact;
+                    }
+
+                    var trimmedEmail = request.Email?.Trim();
+                    var existingEmail = contact.Emails.FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(trimmedEmail))
+                    {
+                        if (existingEmail == null)
+                        {
+                            _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = trimmedEmail });
+                        }
+                        else
+                        {
+                            existingEmail.Email = trimmedEmail;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var email in contact.Emails.ToList())
+                        {
+                            _context.ContactEmails.Remove(email);
+                        }
+                    }
+
+                    var trimmedPhone = request.PhoneNumber?.Trim();
+                    var existingPhone = contact.PhoneNumbers.FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(trimmedPhone))
+                    {
+                        if (existingPhone == null)
+                        {
+                            _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = trimmedPhone });
+                        }
+                        else
+                        {
+                            existingPhone.PhoneNumber = trimmedPhone;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var phone in contact.PhoneNumbers.ToList())
+                        {
+                            _context.ContactPhoneNumbers.Remove(phone);
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Comment))
+                {
+                    if (patient.Comment == null)
+                    {
+                        patient.Comment = new Comment
+                        {
+                            Text = request.Comment.Trim()
+                        };
+                        _context.Comments.Add(patient.Comment);
+                    }
+                    else
+                    {
+                        patient.Comment.Text = request.Comment.Trim();
+                    }
+                }
+                else if (patient.Comment != null)
+                {
+                    patient.Comment.Text = string.Empty;
+                }
+
+                await _context.SaveChangesAsync();
+
+                var updatedPatientDto = new PatientDto
+                {
+                    Id = patient.Id,
+                    PersonId = patient.PersonId,
+                    FirstName = patient.Person.FirstName,
+                    LastName = patient.Person.LastName,
+                    BirthDate = patient.BirthDate,
+                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
+                    InsuranceNumber = patient.InsuranceNumber,
+                    Gender = patient.Person.Gender,
+                    CreatedAt = patient.Person.CreatedAt,
+                    UID = patient.Person.UID,
+                    TitleBefore = patient.Person.TitleBefore,
+                    TitleAfter = patient.Person.TitleAfter,
+                    Alive = patient.Alive,
+                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
+                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
+                };
+
+                return Ok(updatedPatientDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while updating patient");
+            }
+        }
+
         [HttpGet("{id}/detail")]
         public async Task<ActionResult<PatientDetailDto>> GetPatientDetail(int id)
         {
@@ -336,6 +463,16 @@ namespace DatabaseAPI.Controllers
                                 .ThenInclude(vt => vt.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Pregnancies)
+                    .Include(p => p.FormSubmissions)
+                        .ThenInclude(fs => fs.Medication)
+                    .Include(p => p.FormSubmissions)
+                        .ThenInclude(fs => fs.Lifestyle)
+                    .Include(p => p.FormSubmissions)
+                        .ThenInclude(fs => fs.ReproductiveHealth)
+                    .Include(p => p.FormSubmissions)
+                        .ThenInclude(fs => fs.Consent)
+                    .Include(p => p.FormSubmissions)
+                        .ThenInclude(fs => fs.SicknessHistories)
                     .FirstOrDefaultAsync(p => p.Id == id);
 
                 if (patient == null)
@@ -398,6 +535,95 @@ namespace DatabaseAPI.Controllers
                         LastVisitType = lastEvent?.EventType.NameTranslation?.EN
                     },
                     QuickPreviewSettings = new QuickPreviewSettingsDto(),
+                    FormSubmission = patient.FormSubmissions.FirstOrDefault() != null ? new FormSubmissionDto
+                    {
+                        Id = patient.FormSubmissions.First().Id,
+                        PatientId = patient.FormSubmissions.First().PatientId,
+                        EventId = patient.FormSubmissions.First().EventId,
+                        SubmittedAtUtc = patient.FormSubmissions.First().SubmittedAtUtc,
+                        Medication = patient.FormSubmissions.First().Medication != null ? new FormSubmissionMedicationDto
+                        {
+                            Id = patient.FormSubmissions.First().Medication.Id,
+                            MedBloodPressure = patient.FormSubmissions.First().Medication.MedBloodPressure,
+                            MedHeart = patient.FormSubmissions.First().Medication.MedHeart,
+                            MedCholesterol = patient.FormSubmissions.First().Medication.MedCholesterol,
+                            MedBloodThinners = patient.FormSubmissions.First().Medication.MedBloodThinners,
+                            MedDiabetes = patient.FormSubmissions.First().Medication.MedDiabetes,
+                            MedThyroid = patient.FormSubmissions.First().Medication.MedThyroid,
+                            MedNerves = patient.FormSubmissions.First().Medication.MedNerves,
+                            MedPsych = patient.FormSubmissions.First().Medication.MedPsych,
+                            MedDigestion = patient.FormSubmissions.First().Medication.MedDigestion,
+                            MedPain = patient.FormSubmissions.First().Medication.MedPain,
+                            MedDehydration = patient.FormSubmissions.First().Medication.MedDehydration,
+                            MedBreathing = patient.FormSubmissions.First().Medication.MedBreathing,
+                            MedAntibiotics = patient.FormSubmissions.First().Medication.MedAntibiotics,
+                            MedSupplements = patient.FormSubmissions.First().Medication.MedSupplements,
+                            MedAllergies = patient.FormSubmissions.First().Medication.MedAllergies
+                        } : null,
+                        Lifestyle = patient.FormSubmissions.First().Lifestyle != null ? new FormSubmissionLifestyleDto
+                        {
+                            Id = patient.FormSubmissions.First().Lifestyle.Id,
+                            PoorSleep = patient.FormSubmissions.First().Lifestyle.PoorSleep,
+                            DigestiveIssues = patient.FormSubmissions.First().Lifestyle.DigestiveIssues,
+                            PhysicalStress = patient.FormSubmissions.First().Lifestyle.PhysicalStress,
+                            MentalStress = patient.FormSubmissions.First().Lifestyle.MentalStress,
+                            Smoking = patient.FormSubmissions.First().Lifestyle.Smoking,
+                            Fatigue = patient.FormSubmissions.First().Lifestyle.Fatigue,
+                            LastMealHours = patient.FormSubmissions.First().Lifestyle.LastMealHours,
+                            VaccinesAfter2023 = patient.FormSubmissions.First().Lifestyle.VaccinesAfter2023,
+                            AdditionalHealthInfo = patient.FormSubmissions.First().Lifestyle.AdditionalHealthInfo
+                        } : null,
+                        ReproductiveHealth = patient.FormSubmissions.First().ReproductiveHealth != null ? new FormSubmissionReproductiveHealthDto
+                        {
+                            Id = patient.FormSubmissions.First().ReproductiveHealth.Id,
+                            LastMenstruationDate = patient.FormSubmissions.First().ReproductiveHealth.LastMenstruationDate,
+                            MenstruationCycleDays = patient.FormSubmissions.First().ReproductiveHealth.MenstruationCycleDays,
+                            YearsSinceLastMenstruation = patient.FormSubmissions.First().ReproductiveHealth.YearsSinceLastMenstruation,
+                            GaveBirth = patient.FormSubmissions.First().ReproductiveHealth.GaveBirth,
+                            BirthCount = patient.FormSubmissions.First().ReproductiveHealth.BirthCount,
+                            BirthWhen = patient.FormSubmissions.First().ReproductiveHealth.BirthWhen,
+                            Breastfed = patient.FormSubmissions.First().ReproductiveHealth.Breastfed,
+                            BreastfeedingMonths = patient.FormSubmissions.First().ReproductiveHealth.BreastfeedingMonths,
+                            BreastfeedingInflammation = patient.FormSubmissions.First().ReproductiveHealth.BreastfeedingInflammation,
+                            EndedWithInflammation = patient.FormSubmissions.First().ReproductiveHealth.EndedWithInflammation,
+                            Contraception = patient.FormSubmissions.First().ReproductiveHealth.Contraception,
+                            ContraceptionDuration = patient.FormSubmissions.First().ReproductiveHealth.ContraceptionDuration,
+                            Estrogen = patient.FormSubmissions.First().ReproductiveHealth.Estrogen,
+                            EstrogenType = patient.FormSubmissions.First().ReproductiveHealth.EstrogenType,
+                            Interruption = patient.FormSubmissions.First().ReproductiveHealth.Interruption,
+                            InterruptionCount = patient.FormSubmissions.First().ReproductiveHealth.InterruptionCount,
+                            Miscarriage = patient.FormSubmissions.First().ReproductiveHealth.Miscarriage,
+                            MiscarriageCount = patient.FormSubmissions.First().ReproductiveHealth.MiscarriageCount,
+                            BreastInjury = patient.FormSubmissions.First().ReproductiveHealth.BreastInjury,
+                            Mammogram = patient.FormSubmissions.First().ReproductiveHealth.Mammogram,
+                            MammogramCount = patient.FormSubmissions.First().ReproductiveHealth.MammogramCount,
+                            BreastBiopsy = patient.FormSubmissions.First().ReproductiveHealth.BreastBiopsy,
+                            BreastImplants = patient.FormSubmissions.First().ReproductiveHealth.BreastImplants,
+                            BreastSurgery = patient.FormSubmissions.First().ReproductiveHealth.BreastSurgery,
+                            BreastSurgeryType = patient.FormSubmissions.First().ReproductiveHealth.BreastSurgeryType,
+                            FamilyTumors = patient.FormSubmissions.First().ReproductiveHealth.FamilyTumors,
+                            FamilyTumorType = patient.FormSubmissions.First().ReproductiveHealth.FamilyTumorType
+                        } : null,
+                        Consent = patient.FormSubmissions.First().Consent != null ? new FormSubmissionConsentDto
+                        {
+                            Id = patient.FormSubmissions.First().Consent.Id,
+                            ConfirmAccuracy = patient.FormSubmissions.First().Consent.ConfirmAccuracy,
+                            TermsAccepted = patient.FormSubmissions.First().Consent.TermsAccepted,
+                            SignaturePlace = patient.FormSubmissions.First().Consent.SignaturePlace,
+                            SignatureDate = patient.FormSubmissions.First().Consent.SignatureDate,
+                            SignatureVector = patient.FormSubmissions.First().Consent.SignatureVector
+                        } : null,
+                        SicknessHistories = patient.FormSubmissions.First().SicknessHistories.Select(sh => new SicknessHistoryDto
+                        {
+                            Id = sh.Id,
+                            SicknessName = sh.SicknessName,
+                            HadSickness = sh.HadSickness,
+                            SicknessWhen = sh.SicknessWhen,
+                            Vaccinated = sh.Vaccinated,
+                            VaccinationWhen = sh.VaccinationWhen,
+                            Notes = sh.Notes
+                        }).ToList()
+                    } : null,
                     Events = patient.Events.OrderByDescending(e => e.HappenedAt).Select(e => new PatientEventDto
                     {
                         Id = e.Id,

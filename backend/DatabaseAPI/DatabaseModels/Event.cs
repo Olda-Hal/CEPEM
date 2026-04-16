@@ -30,4 +30,5 @@ public class Event
     public ICollection<Pregnancy> Pregnancies { get; set; } = new List<Pregnancy>();
     public ICollection<Injury> Injuries { get; set; } = new List<Injury>();
     public ICollection<Vaccine> Vaccines { get; set; } = new List<Vaccine>();
+    public ICollection<FormSubmission> FormSubmissions { get; set; } = [];
 }

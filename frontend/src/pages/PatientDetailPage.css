@@ -79,6 +79,86 @@
   box-shadow: var(--shadow);
 }
 
+.patient-intake-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.intake-card-description {
+  margin-top: 0.25rem;
+  color: var(--text-muted-color);
+}
+
+.intake-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.intake-overview-item {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.intake-label {
+  color: var(--text-muted-color);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.intake-value {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.intake-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.intake-section {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.intake-section.full-width {
+  grid-column: 1 / -1;
+}
+
+.intake-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.intake-section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.intake-section li + li {
+  margin-top: 0.45rem;
+}
+
+.intake-section p {
+  margin: 0;
+  color: var(--text-muted-color);
+}
+
 .patient-header {
   display: flex;
   gap: 2rem;

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.APIModels;
+using System.Globalization;
 
 namespace DatabaseAPI.Controllers;
 
@@ -404,6 +405,16 @@ public class EventsController : ControllerBase
         {
             var patient = await _context.Patients
                 .Include(p => p.Person)
+                    .ThenInclude(per => per.Address)
+                .Include(p => p.Person)
+                    .ThenInclude(per => per.FirstNameHistories)
+                .Include(p => p.Person)
+                    .ThenInclude(per => per.LastNameHistories)
+                .Include(p => p.Person)
+                    .ThenInclude(per => per.EmailHistories)
+                .Include(p => p.Person)
+                    .ThenInclude(per => per.PhoneNumberHistories)
+                .Include(p => p.Person)
                     .ThenInclude(per => per.ContactToObjects)
                         .ThenInclude(cto => cto.Contact)
                             .ThenInclude(c => c.Emails)
@@ -418,10 +429,13 @@ public class EventsController : ControllerBase
 
             var intakeFormEventType = await _context.EventTypes
                 .Include(et => et.NameTranslation)
-                .FirstOrDefaultAsync(et => et.NameTranslation.CS == "Vstupní Formulář");
+                .FirstOrDefaultAsync(et => et.NameTranslation != null &&
+                    (et.NameTranslation.EN == "Intake Form" ||
+                     et.NameTranslation.CS == "Vstupní Formulář" ||
+                     et.NameTranslation.CS == "Vstupni Formular"));
 
             if (intakeFormEventType == null)
-                return BadRequest("Intake Form event type not found");
+                return BadRequest("Intake Form event type not found. Ensure seed data is applied.");
 
             // Build change summary
             var changesSummary = BuildChangesSummary(patient, request);
@@ -450,6 +464,8 @@ public class EventsController : ControllerBase
 
             _context.Events.Add(intakeFormEvent);
             await _context.SaveChangesAsync();
+
+            await SaveFormSubmissionData(request, patient, intakeFormEvent.Id);
 
             return Ok(new IntakeFormEventDto
             {
@@ -490,6 +506,12 @@ public class EventsController : ControllerBase
 
         if (request.InsuranceNumber.HasValue && request.InsuranceNumber != patient.InsuranceNumber)
             changes.Add($"Pojišťovna: {patient.InsuranceNumber} → {request.InsuranceNumber}");
+
+        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value.Date != patient.BirthDate.Date)
+            changes.Add($"Datum narození: {patient.BirthDate:yyyy-MM-dd} → {request.DateOfBirth.Value:yyyy-MM-dd}");
+
+        if (!string.IsNullOrWhiteSpace(request.Gender) && request.Gender != patient.Person.Gender)
+            changes.Add($"Pohlaví: {patient.Person.Gender} → {request.Gender}");
 
         if (!string.IsNullOrEmpty(request.Email) && request.Email != currentEmail)
             changes.Add($"Email: {currentEmail} → {request.Email}");
@@ -539,7 +561,7 @@ public class EventsController : ControllerBase
         if (!string.IsNullOrEmpty(request.LastMealHours)) parts.Add($"Zdravotní stav: Poslední jídlo před {request.LastMealHours} hod");
 
         if (request.HadCovid == true)
-            parts.Add("COVID: Prodělal/a");
+            parts.Add($"COVID: Prodělal/a ({request.CovidWhen ?? "neuvedeno kdy"})");
         if (request.CovidVaccine == true)
             parts.Add("Vakcinace proti COVID: Ano");
         if (request.VaccinesAfter2023 == true)
@@ -547,6 +569,24 @@ public class EventsController : ControllerBase
 
         if (!string.IsNullOrEmpty(request.AdditionalHealthInfo))
             parts.Add($"Poznámky: {request.AdditionalHealthInfo}");
+
+        if (!string.IsNullOrEmpty(request.LastMenstruationDate)) parts.Add($"Poslední menzes: {request.LastMenstruationDate}");
+        if (request.MenstruationCycleDays.HasValue) parts.Add($"Cyklus opakování: {request.MenstruationCycleDays} dnů");
+        if (request.YearsSinceLastMenstruation.HasValue) parts.Add($"Roky od poslední menzes: {request.YearsSinceLastMenstruation}");
+        if (request.GaveBirth == true) parts.Add($"Rodila: {request.BirthCount?.ToString() ?? "?"}x ({request.BirthWhen ?? "?"})");
+        if (request.Breastfed == true) parts.Add($"Kojila: {request.BreastfeedingMonths?.ToString() ?? "?"} měsíců");
+        if (request.BreastfeedingInflammation == true) parts.Add("Záněty při kojení: Ano");
+        if (request.EndedWithInflammation == true) parts.Add("Končilo kojení zánětem: Ano");
+        if (request.Contraception == true) parts.Add($"Antikoncepce: {request.ContraceptionDuration ?? "Ano"}");
+        if (request.Estrogen == true) parts.Add($"Estrogen: {request.EstrogenType ?? "Ano"}");
+        if (request.Interruption == true) parts.Add($"Interrupce: {request.InterruptionCount?.ToString() ?? "?"}x");
+        if (request.Miscarriage == true) parts.Add($"Potrat: {request.MiscarriageCount?.ToString() ?? "?"}x");
+        if (request.BreastInjury == true) parts.Add("Úraz prsu: Ano");
+        if (request.Mammogram == true) parts.Add($"RTG mamograf: {request.MammogramCount?.ToString() ?? "?"}x");
+        if (request.BreastBiopsy == true) parts.Add("Biopsie prsu: Ano");
+        if (request.BreastImplants == true) parts.Add("Implantáty: Ano");
+        if (request.BreastSurgery == true) parts.Add($"Operace prsu: {request.BreastSurgeryType ?? "Ano"}");
+        if (request.FamilyTumors == true) parts.Add($"Nádory v rodině: {request.FamilyTumorType ?? "Ano"}");
 
         return string.Join("\n", parts);
     }
@@ -600,6 +640,18 @@ public class EventsController : ControllerBase
         if (request.InsuranceNumber.HasValue && request.InsuranceNumber != patient.InsuranceNumber)
         {
             patient.InsuranceNumber = request.InsuranceNumber.Value;
+            hasChanges = true;
+        }
+
+        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value.Date != patient.BirthDate.Date)
+        {
+            patient.BirthDate = request.DateOfBirth.Value.Date;
+            hasChanges = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Gender) && request.Gender != patient.Person.Gender)
+        {
+            patient.Person.Gender = request.Gender;
             hasChanges = true;
         }
 
@@ -687,9 +739,211 @@ public class EventsController : ControllerBase
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Address) || !string.IsNullOrWhiteSpace(request.PostalCode))
+        {
+            var (street, city) = ParseAddress(request.Address);
+
+            if (patient.Person.Address == null)
+            {
+                patient.Person.Address = new Address
+                {
+                    Street = street,
+                    City = city,
+                    PostalCode = request.PostalCode ?? string.Empty,
+                    Country = "CZ"
+                };
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(street))
+                    patient.Person.Address.Street = street;
+
+                if (!string.IsNullOrWhiteSpace(city))
+                    patient.Person.Address.City = city;
+
+                if (!string.IsNullOrWhiteSpace(request.PostalCode))
+                    patient.Person.Address.PostalCode = request.PostalCode;
+
+                if (string.IsNullOrWhiteSpace(patient.Person.Address.Country))
+                    patient.Person.Address.Country = "CZ";
+            }
+
+            hasChanges = true;
+        }
+
         if (hasChanges)
         {
             await _context.SaveChangesAsync();
         }
+    }
+
+    private async Task SaveFormSubmissionData(CreateIntakeFormEventRequest request, Patient patient, int eventId)
+    {
+        var submission = new FormSubmission
+        {
+            PatientId = patient.Id,
+            EventId = eventId,
+            SubmittedAtUtc = DateTime.UtcNow
+        };
+        _context.FormSubmissions.Add(submission);
+        await _context.SaveChangesAsync();
+
+        var medication = new FormSubmissionMedication
+        {
+            FormSubmissionId = submission.Id,
+            MedBloodPressure = request.MedBloodPressure == true,
+            MedHeart = request.MedHeart == true,
+            MedCholesterol = request.MedCholesterol == true,
+            MedBloodThinners = request.MedBloodThinners == true,
+            MedDiabetes = request.MedDiabetes == true,
+            MedThyroid = request.MedThyroid == true,
+            MedNerves = request.MedNerves == true,
+            MedPsych = request.MedPsych == true,
+            MedDigestion = request.MedDigestion == true,
+            MedPain = request.MedPain == true,
+            MedDehydration = request.MedDehydration == true,
+            MedBreathing = request.MedBreathing == true,
+            MedAntibiotics = request.MedAntibiotics == true,
+            MedSupplements = request.MedSupplements == true,
+            MedAllergies = request.MedAllergies == true
+        };
+
+        var lifestyle = new FormSubmissionLifestyle
+        {
+            FormSubmissionId = submission.Id,
+            PoorSleep = request.PoorSleep == true,
+            DigestiveIssues = request.DigestiveIssues == true,
+            PhysicalStress = request.PhysicalStress == true,
+            MentalStress = request.MentalStress == true,
+            Smoking = request.Smoking == true,
+            Fatigue = request.Fatigue == true,
+            LastMealHours = ParseNullableFloat(request.LastMealHours),
+            VaccinesAfter2023 = request.VaccinesAfter2023 == true,
+            AdditionalHealthInfo = request.AdditionalHealthInfo
+        };
+
+        var reproductiveHealth = new FormSubmissionReproductiveHealth
+        {
+            FormSubmissionId = submission.Id,
+            LastMenstruationDate = request.LastMenstruationDate,
+            MenstruationCycleDays = request.MenstruationCycleDays,
+            YearsSinceLastMenstruation = request.YearsSinceLastMenstruation,
+            GaveBirth = request.GaveBirth == true,
+            BirthCount = request.BirthCount,
+            BirthWhen = request.BirthWhen,
+            Breastfed = request.Breastfed == true,
+            BreastfeedingMonths = request.BreastfeedingMonths,
+            BreastfeedingInflammation = request.BreastfeedingInflammation == true,
+            EndedWithInflammation = request.EndedWithInflammation == true,
+            Contraception = request.Contraception == true,
+            ContraceptionDuration = request.ContraceptionDuration,
+            Estrogen = request.Estrogen == true,
+            EstrogenType = request.EstrogenType,
+            Interruption = request.Interruption == true,
+            InterruptionCount = request.InterruptionCount,
+            Miscarriage = request.Miscarriage == true,
+            MiscarriageCount = request.MiscarriageCount,
+            BreastInjury = request.BreastInjury == true,
+            Mammogram = request.Mammogram == true,
+            MammogramCount = request.MammogramCount,
+            BreastBiopsy = request.BreastBiopsy == true,
+            BreastImplants = request.BreastImplants == true,
+            BreastSurgery = request.BreastSurgery == true,
+            BreastSurgeryType = request.BreastSurgeryType,
+            FamilyTumors = request.FamilyTumors == true,
+            FamilyTumorType = request.FamilyTumorType
+        };
+
+        var consent = new FormSubmissionConsent
+        {
+            FormSubmissionId = submission.Id,
+            ConfirmAccuracy = request.ConfirmAccuracy == true,
+            TermsAccepted = request.TermsAccepted == true,
+            SignaturePlace = string.IsNullOrWhiteSpace(request.SignaturePlace) ? null : request.SignaturePlace,
+            SignatureDate = request.SignatureDate,
+            SignatureVector = string.IsNullOrWhiteSpace(request.SignatureVector) ? null : request.SignatureVector
+        };
+
+        _context.FormSubmissionMedications.Add(medication);
+        _context.FormSubmissionLifestyles.Add(lifestyle);
+        _context.FormSubmissionReproductiveHealths.Add(reproductiveHealth);
+        _context.FormSubmissionConsents.Add(consent);
+
+        foreach (var sickness in NormalizeSicknessHistory(request))
+        {
+            sickness.FormSubmissionId = submission.Id;
+            _context.SicknessHistories.Add(sickness);
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private IEnumerable<SicknessHistory> NormalizeSicknessHistory(CreateIntakeFormEventRequest request)
+    {
+        var sicknesses = new List<SicknessHistory>();
+
+        if (request.SicknessHistories is { Count: > 0 })
+        {
+            sicknesses.AddRange(request.SicknessHistories
+                .Where(s =>
+                    !string.IsNullOrWhiteSpace(s.SicknessName) &&
+                    (s.HadSickness == true ||
+                     !string.IsNullOrWhiteSpace(s.SicknessWhen) ||
+                     s.Vaccinated == true ||
+                     !string.IsNullOrWhiteSpace(s.VaccinationWhen) ||
+                     !string.IsNullOrWhiteSpace(s.Notes)))
+                .Select(s => new SicknessHistory
+                {
+                    SicknessName = s.SicknessName!.Trim(),
+                    HadSickness = s.HadSickness,
+                    SicknessWhen = s.SicknessWhen,
+                    Vaccinated = s.Vaccinated,
+                    VaccinationWhen = s.VaccinationWhen,
+                    Notes = s.Notes
+                }));
+        }
+
+        if (!sicknesses.Any() && (request.HadCovid.HasValue || !string.IsNullOrWhiteSpace(request.CovidWhen) || request.CovidVaccine.HasValue))
+        {
+            sicknesses.Add(new SicknessHistory
+            {
+                SicknessName = "COVID-19",
+                HadSickness = request.HadCovid,
+                SicknessWhen = request.CovidWhen,
+                Vaccinated = request.CovidVaccine,
+                Notes = request.VaccinesAfter2023 == true ? "Other vaccines after 2023: yes" : null
+            });
+        }
+
+        return sicknesses;
+    }
+
+    private static float? ParseNullableFloat(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariantParsed))
+            return invariantParsed;
+
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out var localParsed))
+            return localParsed;
+
+        return null;
+    }
+
+    private static (string street, string city) ParseAddress(string? rawAddress)
+    {
+        if (string.IsNullOrWhiteSpace(rawAddress))
+            return (string.Empty, string.Empty);
+
+        var segments = rawAddress.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+            return (string.Empty, string.Empty);
+
+        if (segments.Length == 1)
+            return (segments[0], string.Empty);
+
+        return (segments[0], segments[1]);
     }
 }

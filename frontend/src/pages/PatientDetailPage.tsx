@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PatientDetail, QuickPreviewSettings } from '../types';
@@ -9,6 +9,179 @@ import AddEventModal from '../components/AddEventModal';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
 import { DocumentUpload } from '../components/DocumentUpload';
 import './PatientDetailPage.css';
+
+interface IntakeSummary {
+  weight: string | null;
+  height: string | null;
+  medications: string[];
+  healthStatus: string[];
+  covid: string[];
+  gynecology: string[];
+  notes: string | null;
+  rawLines: string[];
+}
+
+const parseIntakeSummary = (comment?: string | null): IntakeSummary => {
+  const summary: IntakeSummary = {
+    weight: null,
+    height: null,
+    medications: [],
+    healthStatus: [],
+    covid: [],
+    gynecology: [],
+    notes: null,
+    rawLines: []
+  };
+
+  if (!comment) {
+    return summary;
+  }
+
+  const lines = comment.split('\n').map(line => line.trim()).filter(Boolean);
+  summary.rawLines = lines;
+
+  lines.forEach(line => {
+    if (line.startsWith('Váha:')) {
+      summary.weight = line.replace('Váha:', '').trim();
+      return;
+    }
+
+    if (line.startsWith('Výška:')) {
+      summary.height = line.replace('Výška:', '').trim();
+      return;
+    }
+
+    if (line.startsWith('Léky:')) {
+      summary.medications.push(line.replace('Léky:', '').trim());
+      return;
+    }
+
+    if (line.startsWith('Zdravotní stav:')) {
+      summary.healthStatus.push(line.replace('Zdravotní stav:', '').trim());
+      return;
+    }
+
+    if (line.startsWith('COVID:') || line.startsWith('Vakcinace')) {
+      summary.covid.push(line);
+      return;
+    }
+
+    if (
+      line.startsWith('Poslední menzes:') ||
+      line.startsWith('Cyklus opakování:') ||
+      line.startsWith('Roky od poslední menzes:') ||
+      line.startsWith('Rodila:') ||
+      line.startsWith('Kojila:') ||
+      line.startsWith('Záněty při kojení:') ||
+      line.startsWith('Končilo kojení zánětem:') ||
+      line.startsWith('Antikoncepce:') ||
+      line.startsWith('Estrogen:') ||
+      line.startsWith('Interrupce:') ||
+      line.startsWith('Potrat:') ||
+      line.startsWith('Úraz prsu:') ||
+      line.startsWith('RTG mamograf:') ||
+      line.startsWith('Biopsie prsu:') ||
+      line.startsWith('Implantáty:') ||
+      line.startsWith('Operace prsu:') ||
+      line.startsWith('Nádory v rodině:')
+    ) {
+      summary.gynecology.push(line);
+      return;
+    }
+
+    if (line.startsWith('Poznámky:')) {
+      summary.notes = line.replace('Poznámky:', '').trim();
+      return;
+    }
+
+  });
+
+  return summary;
+};
+
+const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmission'] | null): IntakeSummary => {
+  const summary: IntakeSummary = {
+    weight: null,
+    height: null,
+    medications: [],
+    healthStatus: [],
+    covid: [],
+    gynecology: [],
+    notes: null,
+    rawLines: []
+  };
+
+  if (!formSubmission) {
+    return summary;
+  }
+
+  const medicationList: string[] = [];
+  
+  if (formSubmission.medication?.medBloodPressure) medicationList.push('Léky na krevní tlak');
+  if (formSubmission.medication?.medHeart) medicationList.push('Léky na srdce');
+  if (formSubmission.medication?.medCholesterol) medicationList.push('Léky na cholesterol');
+  if (formSubmission.medication?.medBloodThinners) medicationList.push('Antikoagulancia');
+  if (formSubmission.medication?.medDiabetes) medicationList.push('Léky na cukrovku');
+  if (formSubmission.medication?.medThyroid) medicationList.push('Léky na štítnou žlázu');
+  if (formSubmission.medication?.medNerves) medicationList.push('Léky na nervy');
+  if (formSubmission.medication?.medPsych) medicationList.push('Psychofarmaká');
+  if (formSubmission.medication?.medDigestion) medicationList.push('Léky na trávení');
+  if (formSubmission.medication?.medPain) medicationList.push('Bolest léky');
+  if (formSubmission.medication?.medDehydration) medicationList.push('Hydratace léky');
+  if (formSubmission.medication?.medBreathing) medicationList.push('Léky na dýchání');
+  if (formSubmission.medication?.medAntibiotics) medicationList.push('Antibiotika');
+  if (formSubmission.medication?.medSupplements) medicationList.push('Doplňky stravy');
+  if (formSubmission.medication?.medAllergies) medicationList.push('Léky na alergie');
+
+  summary.medications = medicationList;
+
+  const healthStatusList: string[] = [];
+  
+  if (formSubmission.lifestyle?.poorSleep) healthStatusList.push('Špatný spánek');
+  if (formSubmission.lifestyle?.digestiveIssues) healthStatusList.push('Zažívací problémy');
+  if (formSubmission.lifestyle?.physicalStress) healthStatusList.push('Fyzický stres');
+  if (formSubmission.lifestyle?.mentalStress) healthStatusList.push('Duševní stres');
+  if (formSubmission.lifestyle?.smoking) healthStatusList.push('Kouření');
+  if (formSubmission.lifestyle?.fatigue) healthStatusList.push('Únava');
+
+  summary.healthStatus = healthStatusList;
+  summary.notes = formSubmission.lifestyle?.additionalHealthInfo || null;
+
+  const covidList: string[] = [];
+  formSubmission.sicknessHistories?.forEach(history => {
+    if (history.hadSickness) {
+      covidList.push(`${history.sicknessName}: ano`);
+    }
+    if (history.vaccinated) {
+      covidList.push(`Vakcinace (${history.sicknessName}): ${history.vaccinationWhen || 'ano'}`);
+    }
+  });
+  summary.covid = covidList;
+
+  const gynecologyList: string[] = [];
+
+  if (formSubmission.reproductiveHealth?.lastMenstruationDate) gynecologyList.push(`Poslední menzes: ${formSubmission.reproductiveHealth.lastMenstruationDate}`);
+  if (formSubmission.reproductiveHealth?.menstruationCycleDays) gynecologyList.push(`Cyklus opakování: ${formSubmission.reproductiveHealth.menstruationCycleDays} dní`);
+  if (formSubmission.reproductiveHealth?.yearsSinceLastMenstruation) gynecologyList.push(`Roky od poslední menzes: ${formSubmission.reproductiveHealth.yearsSinceLastMenstruation}`);
+  if (formSubmission.reproductiveHealth?.gaveBirth) gynecologyList.push(`Rodila: ano${formSubmission.reproductiveHealth.birthCount ? ` (${formSubmission.reproductiveHealth.birthCount}x)` : ''}`);
+  if (formSubmission.reproductiveHealth?.breastfed) gynecologyList.push(`Kojila: ano${formSubmission.reproductiveHealth.breastfeedingMonths ? ` (${formSubmission.reproductiveHealth.breastfeedingMonths} měsíců)` : ''}`);
+  if (formSubmission.reproductiveHealth?.breastfeedingInflammation) gynecologyList.push('Záněty při kojení: ano');
+  if (formSubmission.reproductiveHealth?.endedWithInflammation) gynecologyList.push('Končilo kojení zánětem: ano');
+  if (formSubmission.reproductiveHealth?.contraception) gynecologyList.push(`Antikoncepce: ano${formSubmission.reproductiveHealth.contraceptionDuration ? ` (${formSubmission.reproductiveHealth.contraceptionDuration})` : ''}`);
+  if (formSubmission.reproductiveHealth?.estrogen) gynecologyList.push(`Estrogen: ano${formSubmission.reproductiveHealth.estrogenType ? ` (${formSubmission.reproductiveHealth.estrogenType})` : ''}`);
+  if (formSubmission.reproductiveHealth?.interruption) gynecologyList.push(`Interrupce: ano${formSubmission.reproductiveHealth.interruptionCount ? ` (${formSubmission.reproductiveHealth.interruptionCount}x)` : ''}`);
+  if (formSubmission.reproductiveHealth?.miscarriage) gynecologyList.push(`Potrat: ano${formSubmission.reproductiveHealth.miscarriageCount ? ` (${formSubmission.reproductiveHealth.miscarriageCount}x)` : ''}`);
+  if (formSubmission.reproductiveHealth?.breastInjury) gynecologyList.push('Úraz prsu: ano');
+  if (formSubmission.reproductiveHealth?.mammogram) gynecologyList.push(`RTG mamograf: ano${formSubmission.reproductiveHealth.mammogramCount ? ` (${formSubmission.reproductiveHealth.mammogramCount}x)` : ''}`);
+  if (formSubmission.reproductiveHealth?.breastBiopsy) gynecologyList.push('Biopsie prsu: ano');
+  if (formSubmission.reproductiveHealth?.breastImplants) gynecologyList.push('Implantáty: ano');
+  if (formSubmission.reproductiveHealth?.breastSurgery) gynecologyList.push(`Operace prsu: ano${formSubmission.reproductiveHealth.breastSurgeryType ? ` (${formSubmission.reproductiveHealth.breastSurgeryType})` : ''}`);
+  if (formSubmission.reproductiveHealth?.familyTumors) gynecologyList.push(`Nádory v rodině: ano${formSubmission.reproductiveHealth.familyTumorType ? ` (${formSubmission.reproductiveHealth.familyTumorType})` : ''}`);
+
+  summary.gynecology = gynecologyList;
+
+  return summary;
+};
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,8 +202,25 @@ export const PatientDetailPage: React.FC = () => {
   const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
+  const intakeSummary = useMemo(() => {
+    if (!patient) {
+      return parseIntakeSummary(null);
+    }
+
+    if (patient.formSubmission) {
+      return formSubmissionToIntakeSummary(patient.formSubmission);
+    }
+
+    const intakeEvent = patient.events.find((event: PatientDetail['events'][number]) => {
+      const eventName = event.eventTypeName.toLowerCase();
+      return eventName.includes('formul') || (event.comment?.includes('Váha:') && event.comment?.includes('Výška:'));
+    });
+
+    return parseIntakeSummary(intakeEvent?.comment ?? null);
+  }, [patient]);
+
   const toggleEvent = (eventId: number) => {
-    setExpandedEvents(prev => {
+    setExpandedEvents((prev: Set<number>) => {
       const next = new Set(prev);
       if (next.has(eventId)) {
         next.delete(eventId);
@@ -187,7 +377,7 @@ export const PatientDetailPage: React.FC = () => {
 
   const stopCamera = () => {
     if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       setCameraStream(null);
     }
     setShowCamera(false);
@@ -229,7 +419,7 @@ export const PatientDetailPage: React.FC = () => {
   React.useEffect(() => {
     return () => {
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       }
     };
   }, [cameraStream]);
@@ -289,6 +479,9 @@ export const PatientDetailPage: React.FC = () => {
   return (
     <div className="patient-detail-page">
       <AppHeader sectionTitle={t('patients.patientDetail')}>
+        <button onClick={() => navigate(`/patients/${patient.id}/edit`)} className="back-button">
+          {t('patients.editPatient')}
+        </button>
         <button onClick={handleBackToPatients} className="back-button">
           {t('patients.backToPatients')}
         </button>
@@ -367,6 +560,90 @@ export const PatientDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Intake Form Summary */}
+        {intakeSummary.rawLines.length > 0 && (
+          <div className="patient-intake-card">
+            <div className="card-header">
+              <div>
+                <h2>{t('patients.intakeForm')}</h2>
+                <p className="intake-card-description">{t('patients.intakeFormSummaryDescription')}</p>
+              </div>
+            </div>
+
+            <div className="intake-overview-grid">
+              <div className="intake-overview-item">
+                <span className="intake-label">{t('patients.weight')}</span>
+                <span className="intake-value">{intakeSummary.weight || t('common.notProvided')}</span>
+              </div>
+              <div className="intake-overview-item">
+                <span className="intake-label">{t('patients.height')}</span>
+                <span className="intake-value">{intakeSummary.height || t('common.notProvided')}</span>
+              </div>
+            </div>
+
+            <div className="intake-sections-grid">
+              <div className="intake-section">
+                <h3>{t('patients.medications')}</h3>
+                {intakeSummary.medications.length > 0 ? (
+                  <ul>
+                    {intakeSummary.medications.map(item => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{t('common.notProvided')}</p>
+                )}
+              </div>
+
+              <div className="intake-section">
+                <h3>{t('patients.healthStatus')}</h3>
+                {intakeSummary.healthStatus.length > 0 ? (
+                  <ul>
+                    {intakeSummary.healthStatus.map(item => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{t('common.notProvided')}</p>
+                )}
+              </div>
+
+              <div className="intake-section">
+                <h3>{t('patients.covidAndVaccination')}</h3>
+                {intakeSummary.covid.length > 0 ? (
+                  <ul>
+                    {intakeSummary.covid.map(item => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{t('common.notProvided')}</p>
+                )}
+              </div>
+
+              <div className="intake-section full-width">
+                <h3>{t('patients.gynecology')}</h3>
+                {intakeSummary.gynecology.length > 0 ? (
+                  <ul>
+                    {intakeSummary.gynecology.map(item => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{t('common.notProvided')}</p>
+                )}
+              </div>
+
+              {intakeSummary.notes && (
+                <div className="intake-section full-width">
+                  <h3>{t('patients.notes')}</h3>
+                  <p>{intakeSummary.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Patient Comment */}
         <div className="patient-comment-section">

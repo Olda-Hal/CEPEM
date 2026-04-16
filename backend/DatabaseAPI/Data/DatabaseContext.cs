@@ -58,6 +58,14 @@ public class DatabaseContext : DbContext
     // Translation entities
     public DbSet<Translation> Translations { get; set; }
 
+    // Form submission entities
+    public DbSet<FormSubmission> FormSubmissions { get; set; }
+    public DbSet<FormSubmissionMedication> FormSubmissionMedications { get; set; }
+    public DbSet<FormSubmissionLifestyle> FormSubmissionLifestyles { get; set; }
+    public DbSet<FormSubmissionReproductiveHealth> FormSubmissionReproductiveHealths { get; set; }
+    public DbSet<FormSubmissionConsent> FormSubmissionConsents { get; set; }
+    public DbSet<SicknessHistory> SicknessHistories { get; set; }
+
     // Contact entities
     public DbSet<Contact> Contacts { get; set; }
     public DbSet<ContactPhoneNumber> ContactPhoneNumbers { get; set; }
@@ -91,6 +99,7 @@ public class DatabaseContext : DbContext
         ConfigureContactRelationships(modelBuilder);
         ConfigureAddressRelationships(modelBuilder);
         ConfigureTranslationRelationships(modelBuilder);
+        ConfigureFormSubmissionRelationships(modelBuilder);
     }
     
     private void ConfigurePersonRelationships(ModelBuilder modelBuilder)
@@ -461,6 +470,51 @@ public class DatabaseContext : DbContext
             .WithMany()
             .HasForeignKey(r => r.NameTranslationId)
             .OnDelete(DeleteBehavior.SetNull);
+    }
+
+    private void ConfigureFormSubmissionRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<FormSubmission>()
+            .HasOne(fs => fs.Patient)
+            .WithMany(p => p.FormSubmissions)
+            .HasForeignKey(fs => fs.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FormSubmission>()
+            .HasOne(fs => fs.Event)
+            .WithMany(e => e.FormSubmissions)
+            .HasForeignKey(fs => fs.EventId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FormSubmissionMedication>()
+            .HasOne(fsm => fsm.FormSubmission)
+            .WithOne(fs => fs.Medication)
+            .HasForeignKey<FormSubmissionMedication>(fsm => fsm.FormSubmissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FormSubmissionLifestyle>()
+            .HasOne(fsl => fsl.FormSubmission)
+            .WithOne(fs => fs.Lifestyle)
+            .HasForeignKey<FormSubmissionLifestyle>(fsl => fsl.FormSubmissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FormSubmissionReproductiveHealth>()
+            .HasOne(fsr => fsr.FormSubmission)
+            .WithOne(fs => fs.ReproductiveHealth)
+            .HasForeignKey<FormSubmissionReproductiveHealth>(fsr => fsr.FormSubmissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FormSubmissionConsent>()
+            .HasOne(fsc => fsc.FormSubmission)
+            .WithOne(fs => fs.Consent)
+            .HasForeignKey<FormSubmissionConsent>(fsc => fsc.FormSubmissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SicknessHistory>()
+            .HasOne(sh => sh.FormSubmission)
+            .WithMany(fs => fs.SicknessHistories)
+            .HasForeignKey(sh => sh.FormSubmissionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     }

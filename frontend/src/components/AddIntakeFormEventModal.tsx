@@ -54,7 +54,7 @@ const getDefaultFormData = (firstName: string, lastName: string): PatientFormDat
   termsAccepted: false,
   signaturePlace: '',
   signatureDate: new Date().toISOString().split('T')[0],
-  signature: '',
+  signatureVector: '',
   
   additionalHealthInfo: '',
   
@@ -189,12 +189,19 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
       return;
     }
 
+    if (!form.signatureVector) {
+      setError('Podpis je povinný');
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         patientId,
         firstName: form.firstName || undefined,
         lastName: form.lastName || undefined,
+        dateOfBirth: form.dateOfBirth || undefined,
+        gender: form.gender || undefined,
         insuranceNumber: form.insuranceCompany ? parseInt(form.insuranceCompany) : undefined,
         email: form.email || undefined,
         phoneNumber: form.phone || undefined,
@@ -225,9 +232,53 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
         fatigue: form.fatigue,
         lastMealHours: form.lastMealHours || undefined,
         hadCovid: form.hadCovid,
+        covidWhen: form.covidWhen || undefined,
         covidVaccine: form.covidVaccine,
         vaccinesAfter2023: form.vaccinesAfter2023,
+        lastMenstruationDate: form.lastMenstruationDate || undefined,
+        menstruationCycleDays: form.menstruationCycleDays ? parseInt(form.menstruationCycleDays) : undefined,
+        yearsSinceLastMenstruation: form.yearsSinceLastMenstruation ? parseInt(form.yearsSinceLastMenstruation) : undefined,
+        gaveBirth: form.gaveBirth,
+        birthCount: form.birthCount ? parseInt(form.birthCount) : undefined,
+        birthWhen: form.birthWhen || undefined,
+        breastfed: form.breastfed,
+        breastfeedingMonths: form.breastfeedingMonths ? parseInt(form.breastfeedingMonths) : undefined,
+        breastfeedingInflammation: form.breastfeedingInflammation,
+        endedWithInflammation: form.endedWithInflammation,
+        contraception: form.contraception,
+        contraceptionDuration: form.contraceptionDuration || undefined,
+        estrogen: form.estrogen,
+        estrogenType: form.estrogenType || undefined,
+        interruption: form.interruption,
+        interruptionCount: form.interruptionCount ? parseInt(form.interruptionCount) : undefined,
+        miscarriage: form.miscarriage,
+        miscarriageCount: form.miscarriageCount ? parseInt(form.miscarriageCount) : undefined,
+        breastInjury: form.breastInjury,
+        mammogram: form.mammogram,
+        mammogramCount: form.mammogramCount ? parseInt(form.mammogramCount) : undefined,
+        breastBiopsy: form.breastBiopsy,
+        breastImplants: form.breastImplants,
+        breastSurgery: form.breastSurgery,
+        breastSurgeryType: form.breastSurgeryType || undefined,
+        familyTumors: form.familyTumors,
+        familyTumorType: form.familyTumorType || undefined,
+        confirmAccuracy: form.confirmAccuracy,
+        termsAccepted: form.termsAccepted,
+        signaturePlace: form.signaturePlace || undefined,
+        signatureDate: form.signatureDate || undefined,
+        signatureVector: form.signatureVector,
         additionalHealthInfo: form.additionalHealthInfo || undefined,
+        sicknessHistories: (form.hadCovid || form.covidVaccine || !!form.covidWhen)
+          ? [
+              {
+                sicknessName: 'COVID-19',
+                hadSickness: form.hadCovid,
+                sicknessWhen: form.covidWhen || undefined,
+                vaccinated: form.covidVaccine,
+                notes: form.vaccinesAfter2023 ? 'Other vaccines after 2023: yes' : undefined,
+              },
+            ]
+          : [],
       };
 
       await apiClient.post('/api/events/intake-form', payload);

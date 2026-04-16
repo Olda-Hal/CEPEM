@@ -25,6 +25,9 @@ public class HospitalsController : ControllerBase
         {
             var hospitals = await _context.Hospitals
                 .Include(h => h.Address)
+                .Include(h => h.ContactToObjects)
+                    .ThenInclude(cto => cto.Contact)
+                        .ThenInclude(c => c.PhoneNumbers)
                 .Where(h => h.Active == true)
                 .OrderBy(h => h.Name)
                 .Select(h => new
@@ -35,6 +38,10 @@ public class HospitalsController : ControllerBase
                     h.CompanyIco,
                     h.CompanyName,
                     h.ParentHospitalId,
+                    PhoneNumber = h.ContactToObjects
+                        .SelectMany(cto => cto.Contact.PhoneNumbers)
+                        .Select(p => p.PhoneNumber)
+                        .FirstOrDefault(),
                     Address = h.Address == null ? null : new
                     {
                         h.Address.Street,

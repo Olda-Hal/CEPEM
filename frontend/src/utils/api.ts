@@ -1,5 +1,4 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
-const DATABASE_API_BASE_URL = process.env.REACT_APP_DATABASE_API_URL || 'http://localhost:5001';
 
 class ApiClient {
   private baseUrl: string;
@@ -100,4 +99,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
-export const databaseApiClient = new ApiClient(DATABASE_API_BASE_URL);

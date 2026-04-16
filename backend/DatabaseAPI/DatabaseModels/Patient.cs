@@ -24,6 +24,7 @@ public class Patient
     
     // Navigation properties
     public ICollection<Event> Events { get; set; } = new List<Event>();
+    public ICollection<FormSubmission> FormSubmissions { get; set; } = [];
     public ICollection<PatientDocument> Documents { get; set; } = new List<PatientDocument>();
     public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 }

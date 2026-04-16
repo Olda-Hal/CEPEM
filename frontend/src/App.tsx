@@ -9,6 +9,7 @@ import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { PatientDetailPage } from './pages/PatientDetailPage';
 import { AddPatientFormPage } from './pages/AddPatientFormPage';
+import { EditPatientPage } from './pages/EditPatientPage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
@@ -73,6 +74,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PatientDetailPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/patients/:id/edit" 
+              element={
+                <ProtectedRoute>
+                  <EditPatientPage />
                 </ProtectedRoute>
               } 
             />

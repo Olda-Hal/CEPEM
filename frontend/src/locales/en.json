@@ -119,7 +119,6 @@
     "examinationType": "Examination type",
     "start": "Start",
     "end": "End",
-    "startTime": "Start Time",
     "endTime": "End Time",
     "notes": "Notes",
     "allHospitals": "All hospitals",
@@ -142,6 +141,7 @@
     "defaultName": "John",
     "cancel": "Cancel",
     "creating": "Creating...",
+    "notProvided": "Not provided",
     "no": "No",
     "yes": "Yes",
     "save": "Save",
@@ -240,6 +240,16 @@
     "createPatient": "Create Patient",
     "firstName": "First Name",
     "lastName": "Last Name",
+    "createdAt": "Created",
+    "intakeForm": "Intake Form",
+    "intakeFormSummaryDescription": "Structured overview of the data saved from the initial intake form.",
+    "weight": "Weight",
+    "height": "Height",
+    "medications": "Medications",
+    "healthStatus": "Health Status",
+    "covidAndVaccination": "COVID and Vaccination",
+    "gynecology": "Gynecology",
+    "notes": "Notes",
     "titleBefore": "Title Before Name",
     "titleAfter": "Title After Name",
     "titleBeforePlaceholder": "e.g. Dr.",
@@ -337,7 +347,9 @@
       "insuranceNumber": "Insurance",
       "email": "Email",
       "phoneNumber": "Phone"
-    }
+    },
+    "updateSuccess": "Patient information was updated successfully",
+    "updateFailed": "Failed to update patient information"
   },
   "admin": {
     "employeeManagement": "Employee Management",

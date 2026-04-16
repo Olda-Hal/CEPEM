@@ -356,6 +356,31 @@ textarea {
   justify-content: flex-end;
 }
 
+.signature-pad-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.signature-pad-canvas {
+  width: 100%;
+  max-width: 640px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background);
+  cursor: crosshair;
+}
+
+.signature-pad-canvas.disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.signature-pad-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .btn-capture {
   padding: 10px 20px;
   border: none;

@@ -38,6 +38,27 @@ public class HospitalsController : ControllerBase
         }
     }
 
+    [HttpGet("{hospitalId}/examination-types")]
+    public async Task<IActionResult> GetHospitalExaminationTypes(int hospitalId, [FromQuery] string language = "en")
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.GetAsync($"/api/hospitals/{hospitalId}/examination-types?language={Uri.EscapeDataString(language)}");
+
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error retrieving hospital examination types");
+
+            var content = await response.Content.ReadAsStringAsync();
+            return Content(content, "application/json");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting hospital examination types for hospital {HospitalId}", hospitalId);
+            return StatusCode(500, new { Error = "Error getting hospital examination types", Details = ex.Message });
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateHospitalRequest request)
     {

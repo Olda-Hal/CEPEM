@@ -139,6 +139,21 @@ export interface PatientSearchResponse {
   hasMore: boolean;
 }
 
+export interface UpdatePatientRequest {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  phoneNumber?: string;
+  email?: string;
+  insuranceNumber: number;
+  gender: string;
+  uid: string;
+  titleBefore?: string;
+  titleAfter?: string;
+  alive: boolean;
+  comment?: string;
+}
+
 export interface PatientQuickPreview {
   hasCovidVaccination: boolean;
   hasFluVaccination: boolean;
@@ -164,6 +179,100 @@ export interface QuickPreviewSettings {
   showLastVisit: boolean;
 }
 
+export interface SicknessHistory {
+  id: number;
+  sicknessName: string;
+  hadSickness?: boolean;
+  sicknessWhen?: string;
+  vaccinated?: boolean;
+  vaccinationWhen?: string;
+  notes?: string;
+}
+
+export interface FormSubmissionMedication {
+  id: number;
+  medBloodPressure: boolean;
+  medHeart: boolean;
+  medCholesterol: boolean;
+  medBloodThinners: boolean;
+  medDiabetes: boolean;
+  medThyroid: boolean;
+  medNerves: boolean;
+  medPsych: boolean;
+  medDigestion: boolean;
+  medPain: boolean;
+  medDehydration: boolean;
+  medBreathing: boolean;
+  medAntibiotics: boolean;
+  medSupplements: boolean;
+  medAllergies: boolean;
+}
+
+export interface FormSubmissionLifestyle {
+  id: number;
+  poorSleep: boolean;
+  digestiveIssues: boolean;
+  physicalStress: boolean;
+  mentalStress: boolean;
+  smoking: boolean;
+  fatigue: boolean;
+  lastMealHours?: number;
+  vaccinesAfter2023: boolean;
+  additionalHealthInfo?: string;
+}
+
+export interface FormSubmissionReproductiveHealth {
+  id: number;
+  lastMenstruationDate?: string;
+  menstruationCycleDays?: number;
+  yearsSinceLastMenstruation?: number;
+  gaveBirth: boolean;
+  birthCount?: number;
+  birthWhen?: string;
+  breastfed: boolean;
+  breastfeedingMonths?: number;
+  breastfeedingInflammation: boolean;
+  endedWithInflammation: boolean;
+  contraception: boolean;
+  contraceptionDuration?: string;
+  estrogen: boolean;
+  estrogenType?: string;
+  interruption: boolean;
+  interruptionCount?: number;
+  miscarriage: boolean;
+  miscarriageCount?: number;
+  breastInjury: boolean;
+  mammogram: boolean;
+  mammogramCount?: number;
+  breastBiopsy: boolean;
+  breastImplants: boolean;
+  breastSurgery: boolean;
+  breastSurgeryType?: string;
+  familyTumors: boolean;
+  familyTumorType?: string;
+}
+
+export interface FormSubmissionConsent {
+  id: number;
+  confirmAccuracy: boolean;
+  termsAccepted: boolean;
+  signaturePlace?: string;
+  signatureDate?: string;
+  signatureVector?: string;
+}
+
+export interface FormSubmission {
+  id: number;
+  patientId: number;
+  eventId: number;
+  submittedAtUtc: string;
+  medication?: FormSubmissionMedication;
+  lifestyle?: FormSubmissionLifestyle;
+  reproductiveHealth?: FormSubmissionReproductiveHealth;
+  consent?: FormSubmissionConsent;
+  sicknessHistories: SicknessHistory[];
+}
+
 export interface PatientDetail {
   id: number;
   personId: number;
@@ -185,6 +294,7 @@ export interface PatientDetail {
   photoUrl?: string;
   quickPreview: PatientQuickPreview;
   quickPreviewSettings: QuickPreviewSettings;
+  formSubmission?: FormSubmission;
   events: PatientEvent[];
   appointments: PatientAppointment[];
   documents: PatientDocument[];

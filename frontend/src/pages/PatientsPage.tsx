@@ -107,6 +107,10 @@ export const PatientsPage: React.FC = () => {
     navigate(`/patients/${patientId}`);
   };
 
+  const handleEditPatient = (patientId: number) => {
+    navigate(`/patients/${patientId}/edit`);
+  };
+
   return (
     <div className="patients-container">
       <AppHeader 
@@ -224,7 +228,10 @@ export const PatientsPage: React.FC = () => {
                     >
                       {t('patients.viewDetails')}
                     </button>
-                    <button className="action-button secondary">
+                    <button
+                      className="action-button secondary"
+                      onClick={() => handleEditPatient(patient.id)}
+                    >
                       {t('patients.editPatient')}
                     </button>
                   </div>

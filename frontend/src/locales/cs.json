@@ -121,7 +121,6 @@
     "examinationType": "Typ vyšetření",
     "start": "Začátek",
     "end": "Konec",
-    "startTime": "Začátek",
     "endTime": "Konec",
     "notes": "Poznámka",
     "allHospitals": "Všechny nemocnice",
@@ -145,6 +144,7 @@
     "cancel": "Zrušit",
     "creating": "Vytváří se...",
     "back": "Zpět",
+    "notProvided": "Není uvedeno",
     "no": "Ne",
     "yes": "Ano",
     "save": "Uložit",
@@ -245,6 +245,16 @@
     "createPatient": "Vytvořit pacienta",
     "firstName": "Jméno",
     "lastName": "Příjmení",
+    "createdAt": "Vytvořeno",
+    "intakeForm": "Vstupní formulář",
+    "intakeFormSummaryDescription": "Přehled uložených údajů z vstupního formuláře ve strukturované podobě.",
+    "weight": "Váha",
+    "height": "Výška",
+    "medications": "Léky",
+    "healthStatus": "Zdravotní stav",
+    "covidAndVaccination": "COVID a očkování",
+    "gynecology": "Gynekologie",
+    "notes": "Poznámky",
     "titleBefore": "Titul před jménem",
     "titleAfter": "Titul za jménem",
     "titleBeforePlaceholder": "např. MUDr.",
@@ -342,7 +352,9 @@
       "insuranceNumber": "Pojišťovna",
       "email": "Email",
       "phoneNumber": "Telefon"
-    }
+    },
+    "updateSuccess": "Informace o pacientovi byly úspěšně upraveny",
+    "updateFailed": "Nepodařilo se upravit informace o pacientovi"
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",
