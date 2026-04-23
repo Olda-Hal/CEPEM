@@ -3,6 +3,7 @@ using System;
 using DatabaseAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DatabaseAPI.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260416071706_ReplaceReservationPatientWithPerson")]
+    partial class ReplaceReservationPatientWithPerson
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -968,47 +971,6 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("InjuryTypes");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.IntakeFormLink", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("ExpiresAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("PersonId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReservationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("RevokedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
-
-                    b.Property<DateTime?>("UsedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PersonId");
-
-                    b.HasIndex("ReservationId");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.ToTable("IntakeFormLinks");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.LastNameHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -1859,24 +1821,6 @@ namespace DatabaseAPI.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("NameTranslation");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.IntakeFormLink", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Person", "Person")
-                        .WithMany()
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DatabaseAPI.DatabaseModels.Reservation", "Reservation")
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Person");
-
-                    b.Navigation("Reservation");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.LastNameHistory", b =>

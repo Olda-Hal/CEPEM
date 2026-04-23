@@ -83,6 +83,7 @@ public class DatabaseContext : DbContext
     public DbSet<ExaminationRoom> ExaminationRooms { get; set; }
     public DbSet<DoctorExaminationRoom> DoctorExaminationRooms { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<IntakeFormLink> IntakeFormLinks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -373,14 +374,29 @@ public class DatabaseContext : DbContext
             .HasForeignKey(r => r.DoctorId);
             
         modelBuilder.Entity<Reservation>()
-            .HasOne(r => r.Patient)
+            .HasOne(r => r.Person)
             .WithMany(p => p.Reservations)
-            .HasForeignKey(r => r.PatientId);
+            .HasForeignKey(r => r.PersonId);
             
         modelBuilder.Entity<Reservation>()
             .HasOne(r => r.ExaminationType)
             .WithMany(et => et.Reservations)
             .HasForeignKey(r => r.ExaminationTypeId);
+
+        modelBuilder.Entity<IntakeFormLink>()
+            .HasOne(l => l.Person)
+            .WithMany()
+            .HasForeignKey(l => l.PersonId);
+
+        modelBuilder.Entity<IntakeFormLink>()
+            .HasOne(l => l.Reservation)
+            .WithMany()
+            .HasForeignKey(l => l.ReservationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<IntakeFormLink>()
+            .HasIndex(l => l.TokenHash)
+            .IsUnique();
     }
 
     private void ConfigureContactRelationships(ModelBuilder modelBuilder)

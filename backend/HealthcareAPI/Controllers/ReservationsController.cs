@@ -71,7 +71,8 @@ public class ReservationsController : ControllerBase
             var createRequest = new
             {
                 doctorId = selectedDoctorId,
-                patientId = request.PatientId,
+                personId = request.PersonId,
+                newPerson = request.NewPerson,
                 examinationRoomId = request.ExaminationRoomId,
                 examinationTypeId = request.ExaminationTypeId,
                 startDateTime = request.StartDateTime,
@@ -193,12 +194,21 @@ public class ReservationsController : ControllerBase
 public class CreateReservationRequest
 {
     public int? DoctorId { get; set; }
-    public int PatientId { get; set; }
+    public int? PersonId { get; set; }
+    public CreateReservationPersonRequest? NewPerson { get; set; }
     public int ExaminationRoomId { get; set; }
     public int ExaminationTypeId { get; set; }
     public DateTime StartDateTime { get; set; }
     public DateTime EndDateTime { get; set; }
     public string? Notes { get; set; }
+}
+
+public class CreateReservationPersonRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? Email { get; set; }
 }
 
 public class UpdateReservationRequest

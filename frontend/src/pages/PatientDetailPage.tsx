@@ -276,6 +276,29 @@ export const PatientDetailPage: React.FC = () => {
     }
   };
 
+  const handleGenerateIntakeLink = async () => {
+    if (!patient) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.post<{ intakePath: string }>('/api/events/intake-form-links', {
+        personId: patient.personId
+      });
+
+      const absoluteLink = `${window.location.origin}${response.intakePath}`;
+
+      try {
+        await navigator.clipboard.writeText(absoluteLink);
+        alert(t('patients.intakeLinkCopied', { link: absoluteLink }));
+      } catch {
+        alert(t('patients.intakeLinkGenerated', { link: absoluteLink }));
+      }
+    } catch (err: any) {
+      alert(err.message || t('patients.intakeLinkGenerationFailed'));
+    }
+  };
+
   const handleDocumentUpload = async (file: File) => {
     try {
       setUploadingDocument(true);
@@ -784,6 +807,9 @@ export const PatientDetailPage: React.FC = () => {
             <div className="button-group">
               <button className="add-event-btn" onClick={() => setShowAddIntakeFormModal(true)}>
                 📋 Vstupní Formulář
+              </button>
+              <button className="add-event-btn" onClick={handleGenerateIntakeLink}>
+                {t('patients.generateIntakeLink')}
               </button>
               <button className="add-event-btn" onClick={() => setShowAddEventModal(true)}>
                 {t('patients.addEvent')}

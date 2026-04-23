@@ -129,7 +129,7 @@ public class ReservationsControllerTests
         // Arrange
         var request = new CreateReservationRequest
         {
-            PatientId = 1,
+            PersonId = 1,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = DateTime.UtcNow.AddDays(1),
@@ -167,7 +167,7 @@ public class ReservationsControllerTests
         // Arrange
         var request = new CreateReservationRequest
         {
-            PatientId = -1,
+            PersonId = -1,
             ExaminationRoomId = -1,
             ExaminationTypeId = -1,
             StartDateTime = DateTime.UtcNow.AddDays(1),
@@ -202,7 +202,7 @@ public class ReservationsControllerTests
 
 public class CreateReservationRequest
 {
-    public int PatientId { get; set; }
+    public int PersonId { get; set; }
     public int ExaminationRoomId { get; set; }
     public int ExaminationTypeId { get; set; }
     public DateTime StartDateTime { get; set; }

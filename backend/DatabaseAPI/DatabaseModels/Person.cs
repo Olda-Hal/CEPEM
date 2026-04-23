@@ -39,6 +39,7 @@ public class Person
     public ICollection<PhoneNumberHistory> PhoneNumberHistories { get; set; } = new List<PhoneNumberHistory>();
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     public ICollection<ContactToObject> ContactToObjects { get; set; } = new List<ContactToObject>();
     public Patient? Patient { get; set; }
     public Employee? Employee { get; set; }

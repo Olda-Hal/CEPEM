@@ -108,3 +108,30 @@ public class IntakeFormEventDto
     public string PatientName { get; set; } = string.Empty;
 }
 
+public class CreateIntakeFormLinkRequest
+{
+    public int PersonId { get; set; }
+    public int? ReservationId { get; set; }
+    public int? ExpiresInHours { get; set; }
+}
+
+public class IntakeFormLinkDto
+{
+    public int LinkId { get; set; }
+    public string Token { get; set; } = string.Empty;
+    public string IntakePath { get; set; } = string.Empty;
+    public DateTime ExpiresAtUtc { get; set; }
+    public int PersonId { get; set; }
+    public string PersonName { get; set; } = string.Empty;
+    public int? ReservationId { get; set; }
+}
+
+public class IntakeFormLinkInfoDto
+{
+    public int PersonId { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public int? ReservationId { get; set; }
+    public DateTime ExpiresAtUtc { get; set; }
+}
+

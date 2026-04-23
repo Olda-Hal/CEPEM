@@ -81,7 +81,7 @@ public class ReservationsControllerTests : IAsyncLifetime
         var request = new CreateReservationRequest
         {
             DoctorId = 1,
-            PatientId = 1,
+            PersonId = 1,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = DateTime.UtcNow.AddDays(1),
@@ -130,7 +130,7 @@ public class ReservationsControllerTests : IAsyncLifetime
         var request = new CreateReservationRequest
         {
             DoctorId = 1,
-            PatientId = 1,
+            PersonId = 1,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = now,
@@ -152,7 +152,7 @@ public class ReservationsControllerTests : IAsyncLifetime
         var request = new CreateReservationRequest
         {
             DoctorId = 1,
-            PatientId = 1,
+            PersonId = 1,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = now.AddHours(2),
@@ -173,7 +173,7 @@ public class ReservationsControllerTests : IAsyncLifetime
         var request = new CreateReservationRequest
         {
             DoctorId = 999,
-            PatientId = 1,
+            PersonId = 1,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = DateTime.UtcNow.AddDays(1),
@@ -188,7 +188,7 @@ public class ReservationsControllerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateReservation_ReturnsNotFound_WhenPatientDoesNotExist()
+    public async Task CreateReservation_ReturnsNotFound_WhenPersonDoesNotExist()
     {
         // Arrange
         var doctor = new Employee { PersonId = 1 };
@@ -198,7 +198,7 @@ public class ReservationsControllerTests : IAsyncLifetime
         var request = new CreateReservationRequest
         {
             DoctorId = doctor.Id,
-            PatientId = 999,
+            PersonId = 999,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = DateTime.UtcNow.AddDays(1),
@@ -217,15 +217,22 @@ public class ReservationsControllerTests : IAsyncLifetime
     {
         // Arrange
         var doctor = new Employee { PersonId = 1 };
-        var patient = new Patient { PersonId = 1 };
+        var person = new Person
+        {
+            FirstName = "Jane",
+            LastName = "Doe",
+            UID = "person-test-uid",
+            Gender = "Unknown",
+            Active = true
+        };
         _context.Employees.Add(doctor);
-        _context.Patients.Add(patient);
+        _context.Persons.Add(person);
         await _context.SaveChangesAsync();
 
         var request = new CreateReservationRequest
         {
             DoctorId = doctor.Id,
-            PatientId = patient.Id,
+            PersonId = person.Id,
             ExaminationRoomId = 999,
             ExaminationTypeId = 1,
             StartDateTime = DateTime.UtcNow.AddDays(1),
@@ -263,7 +270,7 @@ public class ReservationsControllerTests : IAsyncLifetime
         var reservation = new Reservation
         {
             DoctorId = 1,
-            PatientId = 1,
+            PersonId = 1,
             ExaminationRoomId = 1,
             ExaminationTypeId = 1,
             StartDateTime = DateTime.UtcNow.AddDays(1),

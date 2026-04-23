@@ -124,13 +124,43 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                var uid = request.Uid;
+                if (string.IsNullOrWhiteSpace(uid) || !int.TryParse(uid, out _))
+                {
+                    var existingUids = await _context.Persons
+                        .Select(p => p.UID)
+                        .Where(existingUid => !string.IsNullOrWhiteSpace(existingUid))
+                        .ToListAsync();
+
+                    var numericUids = existingUids
+                        .Where(existingUid => int.TryParse(existingUid, out _))
+                        .Select(int.Parse)
+                        .OrderBy(existingUid => existingUid)
+                        .ToList();
+
+                    var nextUid = 1;
+                    foreach (var existingUid in numericUids)
+                    {
+                        if (existingUid == nextUid)
+                        {
+                            nextUid++;
+                        }
+                        else if (existingUid > nextUid)
+                        {
+                            break;
+                        }
+                    }
+
+                    uid = nextUid.ToString();
+                }
+
                 // First create the Person
                 var person = new Person
                 {
                     FirstName = request.FirstName,
                     LastName = request.LastName,
                     Gender = request.Gender,
-                    UID = request.Uid,
+                    UID = uid,
                     TitleBefore = request.TitleBefore,
                     TitleAfter = request.TitleAfter,
                     CreatedAt = DateTime.UtcNow,
@@ -489,6 +519,43 @@ namespace DatabaseAPI.Controllers
                     .Where(a => a.PersonId == patient.PersonId)
                     .ToListAsync();
 
+                var reservations = await _context.Reservations
+                    .Include(r => r.Doctor)
+                        .ThenInclude(d => d!.Person)
+                    .Include(r => r.ExaminationRoom)
+                        .ThenInclude(room => room!.Hospital)
+                            .ThenInclude(h => h!.Address)
+                    .Include(r => r.ExaminationType)
+                        .ThenInclude(et => et!.NameTranslation)
+                    .Where(r => r.PersonId == patient.PersonId && r.Status != "Cancelled")
+                    .ToListAsync();
+
+                var mergedAppointments = appointments.Select(a => new PatientAppointmentDto
+                {
+                    Id = a.Id,
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    DoctorName = $"{a.HospitalEmployee.Employee.Person.LastName}, {a.HospitalEmployee.Employee.Person.FirstName}",
+                    EquipmentName = a.Equipment?.Name,
+                    HospitalName = a.Hospital.Address != null
+                        ? $"{a.Hospital.Address.Street}, {a.Hospital.Address.City}"
+                        : (a.Hospital.Name ?? "Unknown Hospital")
+                }).Concat(reservations.Select(r => new PatientAppointmentDto
+                {
+                    Id = -r.Id,
+                    StartTime = r.StartDateTime,
+                    EndTime = r.EndDateTime,
+                    DoctorName = !string.IsNullOrWhiteSpace(r.Doctor?.Person?.FirstName) && !string.IsNullOrWhiteSpace(r.Doctor?.Person?.LastName)
+                        ? $"{r.Doctor.Person.LastName}, {r.Doctor.Person.FirstName}"
+                        : "Unknown doctor",
+                    EquipmentName = r.ExaminationType?.NameTranslation?.EN,
+                    HospitalName = r.ExaminationRoom?.Hospital?.Address != null
+                        ? $"{r.ExaminationRoom.Hospital.Address.Street}, {r.ExaminationRoom.Hospital.Address.City} · {r.ExaminationRoom.Name}"
+                        : (r.ExaminationRoom?.Hospital?.Name != null
+                            ? $"{r.ExaminationRoom.Hospital.Name} · {r.ExaminationRoom.Name}"
+                            : (r.ExaminationRoom?.Name ?? "Unknown room"))
+                })).OrderByDescending(a => a.StartTime).ToList();
+
                 var documents = await _documentService.GetPatientDocumentsAsync(id);
 
                 var age = DateTime.Now.Year - patient.BirthDate.Year;
@@ -498,7 +565,7 @@ namespace DatabaseAPI.Controllers
                 var allVaccines = patient.Events.SelectMany(e => e.Vaccines.Select(v => v.VaccineType.NameTranslation?.EN ?? string.Empty)).ToList();
                 var allSymptoms = patient.Events.SelectMany(e => e.PatientSymptoms.Select(ps => ps.Symptom.NameTranslation?.EN ?? string.Empty)).ToList();
                 var recentEvents = patient.Events.Where(e => e.HappenedAt >= DateTime.Now.AddMonths(-6)).ToList();
-                var upcomingAppointments = appointments.Where(a => a.StartTime >= DateTime.Now).ToList();
+                var upcomingAppointments = mergedAppointments.Where(a => a.StartTime >= DateTime.Now).ToList();
                 var lastEvent = patient.Events.OrderByDescending(e => e.HappenedAt).FirstOrDefault();
 
                 var patientDetailDto = new PatientDetailDto
@@ -651,17 +718,7 @@ namespace DatabaseAPI.Controllers
                         Vaccines = e.Vaccines.Select(v => v.VaccineType.NameTranslation?.EN ?? string.Empty).ToList(),
                         HasPregnancy = e.Pregnancies.Any()
                     }).ToList(),
-                    Appointments = appointments.OrderByDescending(a => a.StartTime).Select(a => new PatientAppointmentDto
-                    {
-                        Id = a.Id,
-                        StartTime = a.StartTime,
-                        EndTime = a.EndTime,
-                        DoctorName = $"{a.HospitalEmployee.Employee.Person.LastName}, {a.HospitalEmployee.Employee.Person.FirstName}",
-                        EquipmentName = a.Equipment?.Name,
-                        HospitalName = a.Hospital.Address != null
-                            ? $"{a.Hospital.Address.Street}, {a.Hospital.Address.City}"
-                            : (a.Hospital.Name ?? "Unknown Hospital")
-                    }).ToList(),
+                    Appointments = mergedAppointments,
                     Documents = documents.Select(d => new PatientDocumentDto
                     {
                         Id = d.Id,

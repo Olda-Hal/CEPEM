@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../utils/api';
 import { isAdmin } from '../utils/roles';
 import {
+  CreateIntakeFormLinkRequest,
   CreateReservationRequest,
   DoctorExaminationRoom,
   DoctorHospital,
@@ -16,6 +17,7 @@ import {
   Patient,
   PatientSearchResponse,
   RoomDoctor,
+  IntakeFormLinkResponse,
   Reservation
 } from '../types';
 import './ReservationsPage.css';
@@ -44,7 +46,14 @@ export const ReservationsPage: React.FC = () => {
   const [toDate, setToDate] = useState('');
   const [patientQuery, setPatientQuery] = useState('');
   const [patientResults, setPatientResults] = useState<Patient[]>([]);
-  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [selectedPersonId, setSelectedPersonId] = useState('');
+  const [selectedPersonLabel, setSelectedPersonLabel] = useState('');
+  const [createForNewPerson, setCreateForNewPerson] = useState(false);
+  const [newPersonFirstName, setNewPersonFirstName] = useState('');
+  const [newPersonLastName, setNewPersonLastName] = useState('');
+  const [newPersonPhoneNumber, setNewPersonPhoneNumber] = useState('');
+  const [newPersonEmail, setNewPersonEmail] = useState('');
+  const [generateIntakeLinkAfterReservation, setGenerateIntakeLinkAfterReservation] = useState(true);
   const [examinationTypeId, setExaminationTypeId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -419,7 +428,11 @@ export const ReservationsPage: React.FC = () => {
   };
 
   const handleCreateReservation = async () => {
-    if (!selectedPatientId || !selectedCalendarRoomId || !selectedDoctorId || !examinationTypeId || !startDate || !startTime || Number(durationMinutes) <= 0) {
+    const hasValidPersonInput = createForNewPerson
+      ? !!newPersonFirstName.trim() && !!newPersonLastName.trim()
+      : !!selectedPersonId;
+
+    if (!hasValidPersonInput || !selectedCalendarRoomId || !selectedDoctorId || !examinationTypeId || !startDate || !startTime || Number(durationMinutes) <= 0) {
       alert(t('errors.missingReservationFields'));
       return;
     }
@@ -433,7 +446,15 @@ export const ReservationsPage: React.FC = () => {
 
     const request: CreateReservationRequest = {
       doctorId: Number(selectedDoctorId),
-      patientId: Number(selectedPatientId),
+      personId: createForNewPerson ? undefined : Number(selectedPersonId),
+      newPerson: createForNewPerson
+        ? {
+            firstName: newPersonFirstName.trim(),
+            lastName: newPersonLastName.trim(),
+            phoneNumber: newPersonPhoneNumber.trim() || undefined,
+            email: newPersonEmail.trim() || undefined
+          }
+        : undefined,
       examinationRoomId: Number(selectedCalendarRoomId),
       examinationTypeId: Number(examinationTypeId),
       startDateTime: start.toISOString(),
@@ -442,18 +463,68 @@ export const ReservationsPage: React.FC = () => {
     };
 
     try {
-      await apiClient.post('/api/reservations', request);
+      const createdReservation = await apiClient.post<Reservation>('/api/reservations', request);
+
+      if (generateIntakeLinkAfterReservation) {
+        const linkRequest: CreateIntakeFormLinkRequest = {
+          personId: createdReservation.personId,
+          reservationId: createdReservation.id
+        };
+
+        const linkResponse = await apiClient.post<IntakeFormLinkResponse>('/api/events/intake-form-links', linkRequest);
+        const absoluteLink = `${window.location.origin}${linkResponse.intakePath}`;
+
+        try {
+          await navigator.clipboard.writeText(absoluteLink);
+          alert(t('reservations.intakeLinkGeneratedAndCopied', { link: absoluteLink }));
+        } catch {
+          alert(t('reservations.intakeLinkGenerated', { link: absoluteLink }));
+        }
+      }
+
       alert(t('reservations.reservationCreated'));
       setNotes('');
-      setSelectedPatientId('');
+      setSelectedPersonId('');
+      setSelectedPersonLabel('');
       setPatientQuery('');
       setStartDate('');
       setStartTime('');
+      setCreateForNewPerson(false);
+      setNewPersonFirstName('');
+      setNewPersonLastName('');
+      setNewPersonPhoneNumber('');
+      setNewPersonEmail('');
       loadRoomReservations(selectedCalendarRoomId);
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('errors.creatingReservation');
       alert(errorMessage);
       console.error(t('errors.creatingReservation'), error);
+    }
+  };
+
+  const handleGenerateIntakeLinkForSelectedPerson = async () => {
+    if (!selectedPersonId) {
+      alert(t('reservations.selectPersonForIntakeLink'));
+      return;
+    }
+
+    try {
+      const linkRequest: CreateIntakeFormLinkRequest = {
+        personId: Number(selectedPersonId)
+      };
+
+      const linkResponse = await apiClient.post<IntakeFormLinkResponse>('/api/events/intake-form-links', linkRequest);
+      const absoluteLink = `${window.location.origin}${linkResponse.intakePath}`;
+
+      try {
+        await navigator.clipboard.writeText(absoluteLink);
+        alert(t('reservations.intakeLinkGeneratedAndCopied', { link: absoluteLink }));
+      } catch {
+        alert(t('reservations.intakeLinkGenerated', { link: absoluteLink }));
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || t('reservations.intakeLinkGenerationFailed');
+      alert(errorMessage);
     }
   };
 
@@ -577,7 +648,9 @@ export const ReservationsPage: React.FC = () => {
   }, [doctorRooms, isUserAdmin, rooms]);
 
   const isReservationFormValid =
-    !!selectedPatientId &&
+    (createForNewPerson
+      ? !!newPersonFirstName.trim() && !!newPersonLastName.trim()
+      : !!selectedPersonId) &&
     !!selectedCalendarRoomId &&
     !!selectedDoctorId &&
     !!examinationTypeId &&
@@ -855,7 +928,7 @@ export const ReservationsPage: React.FC = () => {
                     {reservations.map(reservation => (
                       <tr key={reservation.id}>
                         <td>{formatDate(reservation.startDateTime)}</td>
-                        <td>{reservation.patientName || reservation.patientId}</td>
+                        <td>{reservation.personName || reservation.personId}</td>
                         <td>{reservation.doctorName || reservation.doctorId}</td>
                         <td>{reservation.examinationTypeName || reservation.examinationTypeId}</td>
                         <td>{formatTime(reservation.startDateTime)}</td>
@@ -919,39 +992,102 @@ export const ReservationsPage: React.FC = () => {
                 </select>
               </div>
               <div className="form-row">
-                <label>{t('reservations.patientSearch')}</label>
-                <div className="patient-search-container">
+                <label>{t('reservations.reservationPerson')}</label>
+                <div className="checkbox-row">
                   <input
-                    type="text"
-                    value={patientQuery}
-                    onChange={(e) => setPatientQuery(e.target.value)}
-                    placeholder={t('reservations.patientSearchPlaceholder')}
-                    className="patient-search-input"
+                    id="create-new-person"
+                    type="checkbox"
+                    checked={createForNewPerson}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setCreateForNewPerson(checked);
+                      setSelectedPersonId('');
+                      setSelectedPersonLabel('');
+                      setPatientQuery('');
+                      setPatientResults([]);
+                    }}
                   />
-                  {patientResults.length > 0 && patientQuery && (
-                    <div className="patient-search-results">
-                      {patientResults.map(patient => (
-                        <div
-                          key={patient.id}
-                          className="patient-search-result-item"
-                          onClick={() => {
-                            setSelectedPatientId(String(patient.id));
-                            setPatientQuery(patient.fullName);
-                            setPatientResults([]);
-                          }}
-                        >
-                          <div className="patient-name">{patient.fullName}</div>
-                          {patient.uid && <div className="patient-uid">{patient.uid}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <label htmlFor="create-new-person">{t('reservations.createReservationForNewPerson')}</label>
                 </div>
-                {selectedPatientId && (
-                  <div className="selected-patient-info">
-                    {patientResults.find(p => String(p.id) === selectedPatientId)?.fullName || 'Selected'}
-                  </div>
+
+                {createForNewPerson ? (
+                  <>
+                    <input
+                      type="text"
+                      value={newPersonFirstName}
+                      onChange={(e) => setNewPersonFirstName(e.target.value)}
+                      placeholder={t('reservations.newPersonFirstName')}
+                    />
+                    <input
+                      type="text"
+                      value={newPersonLastName}
+                      onChange={(e) => setNewPersonLastName(e.target.value)}
+                      placeholder={t('reservations.newPersonLastName')}
+                    />
+                    <input
+                      type="text"
+                      value={newPersonPhoneNumber}
+                      onChange={(e) => setNewPersonPhoneNumber(e.target.value)}
+                      placeholder={t('reservations.newPersonPhoneOptional')}
+                    />
+                    <input
+                      type="email"
+                      value={newPersonEmail}
+                      onChange={(e) => setNewPersonEmail(e.target.value)}
+                      placeholder={t('reservations.newPersonEmailOptional')}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="patient-search-container">
+                      <input
+                        type="text"
+                        value={patientQuery}
+                        onChange={(e) => setPatientQuery(e.target.value)}
+                        placeholder={t('reservations.patientSearchPlaceholder')}
+                        className="patient-search-input"
+                      />
+                      {patientResults.length > 0 && patientQuery && (
+                        <div className="patient-search-results">
+                          {patientResults.map(patient => (
+                            <div
+                              key={patient.id}
+                              className="patient-search-result-item"
+                              onClick={() => {
+                                setSelectedPersonId(String(patient.personId));
+                                setSelectedPersonLabel(patient.fullName);
+                                setPatientQuery(patient.fullName);
+                                setPatientResults([]);
+                              }}
+                            >
+                              <div className="patient-name">{patient.fullName}</div>
+                              {patient.uid && <div className="patient-uid">{patient.uid}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {selectedPersonId && (
+                      <div className="selected-patient-info">
+                        {selectedPersonLabel || t('reservations.selectedPerson')}
+                      </div>
+                    )}
+                    <button type="button" onClick={handleGenerateIntakeLinkForSelectedPerson} disabled={!selectedPersonId}>
+                      {t('reservations.generateIntakeLink')}
+                    </button>
+                  </>
                 )}
+              </div>
+              <div className="form-row">
+                <div className="checkbox-row">
+                  <input
+                    id="generate-intake-link"
+                    type="checkbox"
+                    checked={generateIntakeLinkAfterReservation}
+                    onChange={(e) => setGenerateIntakeLinkAfterReservation(e.target.checked)}
+                  />
+                  <label htmlFor="generate-intake-link">{t('reservations.generateIntakeLinkAfterReservation')}</label>
+                </div>
               </div>
               <div className="form-row">
                 <label>{t('reservations.examinationType')}</label>

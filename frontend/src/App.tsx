@@ -11,6 +11,7 @@ import { PatientDetailPage } from './pages/PatientDetailPage';
 import { AddPatientFormPage } from './pages/AddPatientFormPage';
 import { EditPatientPage } from './pages/EditPatientPage';
 import { ReservationsPage } from './pages/ReservationsPage';
+import { IntakeFormByLinkPage } from './pages/IntakeFormByLinkPage';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
@@ -29,6 +30,7 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/intake/:token" element={<IntakeFormByLinkPage />} />
             <Route 
               path="/dashboard" 
               element={

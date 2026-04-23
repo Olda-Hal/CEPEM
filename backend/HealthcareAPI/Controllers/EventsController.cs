@@ -250,4 +250,73 @@ public class EventsController : ControllerBase
             return StatusCode(500, $"Error forwarding request to DatabaseAPI: {ex.Message}");
         }
     }
+
+    [HttpPost("intake-form-links")]
+    public async Task<IActionResult> CreateIntakeFormLink([FromBody] JsonElement requestData)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(requestData);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/events/intake-form-links", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return Content(responseContent, "application/json");
+            }
+
+            return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error forwarding request to DatabaseAPI: {ex.Message}");
+        }
+    }
+
+    [HttpGet("intake-form-links/{token}")]
+    public async Task<IActionResult> GetIntakeFormLinkInfo(string token)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/events/intake-form-links/{token}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return Content(responseContent, "application/json");
+            }
+
+            return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error forwarding request to DatabaseAPI: {ex.Message}");
+        }
+    }
+
+    [HttpPost("intake-form-links/{token}/submit")]
+    public async Task<IActionResult> SubmitIntakeFormByLink(string token, [FromBody] JsonElement requestData)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(requestData);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"/api/events/intake-form-links/{token}/submit", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return Content(responseContent, "application/json");
+            }
+
+            return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error forwarding request to DatabaseAPI: {ex.Message}");
+        }
+    }
 }

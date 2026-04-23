@@ -475,8 +475,8 @@ export interface Reservation {
   id: number;
   doctorId: number;
   doctorName?: string;
-  patientId: number;
-  patientName?: string;
+  personId: number;
+  personName?: string;
   examinationRoomId: number;
   roomName?: string;
   examinationTypeId: number;
@@ -489,9 +489,17 @@ export interface Reservation {
   updatedAt: string;
 }
 
+export interface CreateReservationPersonRequest {
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
 export interface CreateReservationRequest {
   doctorId: number;
-  patientId: number;
+  personId?: number;
+  newPerson?: CreateReservationPersonRequest;
   examinationRoomId: number;
   examinationTypeId: number;
   startDateTime: string;
@@ -504,6 +512,30 @@ export interface UpdateReservationRequest {
   endDateTime?: string;
   notes?: string;
   status?: string;
+}
+
+export interface CreateIntakeFormLinkRequest {
+  personId: number;
+  reservationId?: number;
+  expiresInHours?: number;
+}
+
+export interface IntakeFormLinkResponse {
+  linkId: number;
+  token: string;
+  intakePath: string;
+  expiresAtUtc: string;
+  personId: number;
+  personName: string;
+  reservationId?: number;
+}
+
+export interface IntakeFormLinkInfo {
+  personId: number;
+  firstName: string;
+  lastName: string;
+  reservationId?: number;
+  expiresAtUtc: string;
 }
 
 export interface AuthContextType {

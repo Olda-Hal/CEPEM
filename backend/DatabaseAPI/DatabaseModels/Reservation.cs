@@ -22,10 +22,10 @@ public class Reservation
     public Employee? Doctor { get; set; }
 
     [Required]
-    public int PatientId { get; set; }
+    public int PersonId { get; set; }
 
-    [ForeignKey(nameof(PatientId))]
-    public Patient? Patient { get; set; }
+    [ForeignKey(nameof(PersonId))]
+    public Person? Person { get; set; }
 
     [Required]
     public int ExaminationTypeId { get; set; }

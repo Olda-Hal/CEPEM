@@ -500,7 +500,7 @@ CREATE TABLE `Reservations` (
     `Id` int NOT NULL AUTO_INCREMENT,
     `ExaminationRoomId` int NOT NULL,
     `DoctorId` int NOT NULL,
-    `PatientId` int NOT NULL,
+    `PersonId` int NOT NULL,
     `ExaminationTypeId` int NOT NULL,
     `StartDateTime` datetime(6) NOT NULL,
     `EndDateTime` datetime(6) NOT NULL,
@@ -512,7 +512,21 @@ CREATE TABLE `Reservations` (
     CONSTRAINT `FK_Reservations_Employees_DoctorId` FOREIGN KEY (`DoctorId`) REFERENCES `Employees` (`Id`) ON DELETE CASCADE,
     CONSTRAINT `FK_Reservations_ExaminationRooms_ExaminationRoomId` FOREIGN KEY (`ExaminationRoomId`) REFERENCES `ExaminationRooms` (`Id`) ON DELETE CASCADE,
     CONSTRAINT `FK_Reservations_ExaminationTypes_ExaminationTypeId` FOREIGN KEY (`ExaminationTypeId`) REFERENCES `ExaminationTypes` (`Id`) ON DELETE CASCADE,
-    CONSTRAINT `FK_Reservations_Patients_PatientId` FOREIGN KEY (`PatientId`) REFERENCES `Patients` (`Id`) ON DELETE CASCADE
+    CONSTRAINT `FK_Reservations_Persons_PersonId` FOREIGN KEY (`PersonId`) REFERENCES `Persons` (`Id`) ON DELETE CASCADE
+) CHARACTER SET=utf8mb4;
+
+CREATE TABLE `IntakeFormLinks` (
+    `Id` int NOT NULL AUTO_INCREMENT,
+    `TokenHash` varchar(128) CHARACTER SET utf8mb4 NOT NULL,
+    `PersonId` int NOT NULL,
+    `ReservationId` int NULL,
+    `ExpiresAtUtc` datetime(6) NOT NULL,
+    `CreatedAtUtc` datetime(6) NOT NULL,
+    `UsedAtUtc` datetime(6) NULL,
+    `RevokedAtUtc` datetime(6) NULL,
+    CONSTRAINT `PK_IntakeFormLinks` PRIMARY KEY (`Id`),
+    CONSTRAINT `FK_IntakeFormLinks_Persons_PersonId` FOREIGN KEY (`PersonId`) REFERENCES `Persons` (`Id`) ON DELETE CASCADE,
+    CONSTRAINT `FK_IntakeFormLinks_Reservations_ReservationId` FOREIGN KEY (`ReservationId`) REFERENCES `Reservations` (`Id`) ON DELETE SET NULL
 ) CHARACTER SET=utf8mb4;
 
 CREATE INDEX `IX_DoctorExaminationRooms_DoctorId` ON `DoctorExaminationRooms` (`DoctorId`);
@@ -522,12 +536,15 @@ CREATE INDEX `IX_DoctorExaminationRooms_ExaminationRoomId` ON `DoctorExamination
 CREATE INDEX `IX_ExaminationRooms_HospitalId` ON `ExaminationRooms` (`HospitalId`);
 
 CREATE INDEX `IX_Reservations_DoctorId` ON `Reservations` (`DoctorId`);
+CREATE INDEX `IX_IntakeFormLinks_PersonId` ON `IntakeFormLinks` (`PersonId`);
+CREATE INDEX `IX_IntakeFormLinks_ReservationId` ON `IntakeFormLinks` (`ReservationId`);
+CREATE UNIQUE INDEX `IX_IntakeFormLinks_TokenHash` ON `IntakeFormLinks` (`TokenHash`);
 
 CREATE INDEX `IX_Reservations_ExaminationRoomId` ON `Reservations` (`ExaminationRoomId`);
 
 CREATE INDEX `IX_Reservations_ExaminationTypeId` ON `Reservations` (`ExaminationTypeId`);
 
-CREATE INDEX `IX_Reservations_PatientId` ON `Reservations` (`PatientId`);
+CREATE INDEX `IX_Reservations_PersonId` ON `Reservations` (`PersonId`);
 
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
 VALUES ('20260204000804_AddReservationSystem', '8.0.0');

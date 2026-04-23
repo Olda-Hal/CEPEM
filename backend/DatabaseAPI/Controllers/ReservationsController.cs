@@ -29,8 +29,7 @@ public class ReservationsController : ControllerBase
             IQueryable<Reservation> query = _context.Reservations
                 .Where(r => r.DoctorId == doctorId)
                 .Include(r => r.ExaminationRoom)
-                .Include(r => r.Patient)
-                .ThenInclude(p => p!.Person)
+                .Include(r => r.Person)
                 .Include(r => r.ExaminationType)
                 .ThenInclude(et => et!.NameTranslation);
 
@@ -66,8 +65,7 @@ public class ReservationsController : ControllerBase
                 .Where(r => r.ExaminationRoomId == roomId)
                 .Include(r => r.Doctor)
                 .ThenInclude(d => d!.Person)
-                .Include(r => r.Patient)
-                .ThenInclude(p => p!.Person)
+                .Include(r => r.Person)
                 .Include(r => r.ExaminationType)
                 .ThenInclude(et => et!.NameTranslation);
 
@@ -103,9 +101,75 @@ public class ReservationsController : ControllerBase
             if (!doctorExists)
                 return NotFound("Doctor not found");
 
-            var patientExists = await _context.Patients.AnyAsync(p => p.Id == request.PatientId);
-            if (!patientExists)
-                return NotFound("Patient not found");
+            var personId = request.PersonId;
+
+            if (request.NewPerson != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.NewPerson.FirstName) || string.IsNullOrWhiteSpace(request.NewPerson.LastName))
+                    return BadRequest("New person first name and last name are required");
+
+                var uid = $"res-{Guid.NewGuid():N}";
+                while (await _context.Persons.AnyAsync(p => p.UID == uid))
+                {
+                    uid = $"res-{Guid.NewGuid():N}";
+                }
+
+                var person = new Person
+                {
+                    FirstName = request.NewPerson.FirstName.Trim(),
+                    LastName = request.NewPerson.LastName.Trim(),
+                    Gender = "Unknown",
+                    UID = uid,
+                    Active = true
+                };
+
+                _context.Persons.Add(person);
+                await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrWhiteSpace(request.NewPerson.PhoneNumber) || !string.IsNullOrWhiteSpace(request.NewPerson.Email))
+                {
+                    var contact = new Contact();
+                    _context.Contacts.Add(contact);
+                    await _context.SaveChangesAsync();
+
+                    _context.ContactToObjects.Add(new ContactToObject
+                    {
+                        ContactId = contact.Id,
+                        ObjectId = person.Id,
+                        ObjectType = ContactObjectType.Person,
+                        PersonId = person.Id
+                    });
+
+                    if (!string.IsNullOrWhiteSpace(request.NewPerson.PhoneNumber))
+                    {
+                        _context.ContactPhoneNumbers.Add(new ContactPhoneNumber
+                        {
+                            ContactId = contact.Id,
+                            PhoneNumber = request.NewPerson.PhoneNumber.Trim()
+                        });
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(request.NewPerson.Email))
+                    {
+                        _context.ContactEmails.Add(new ContactEmail
+                        {
+                            ContactId = contact.Id,
+                            Email = request.NewPerson.Email.Trim()
+                        });
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+                personId = person.Id;
+            }
+
+            if (!personId.HasValue)
+                return BadRequest("personId is required when newPerson is not provided");
+
+            var personExists = await _context.Persons.AnyAsync(p => p.Id == personId.Value);
+            if (!personExists)
+                return NotFound("Person not found");
 
             var roomExists = await _context.ExaminationRooms
                 .AnyAsync(r => r.Id == request.ExaminationRoomId && r.IsActive);
@@ -133,7 +197,7 @@ public class ReservationsController : ControllerBase
             var reservation = new Reservation
             {
                 DoctorId = request.DoctorId,
-                PatientId = request.PatientId,
+                PersonId = personId.Value,
                 ExaminationRoomId = request.ExaminationRoomId,
                 ExaminationTypeId = request.ExaminationTypeId,
                 StartDateTime = request.StartDateTime,
@@ -230,9 +294,9 @@ public class ReservationsController : ControllerBase
             DoctorName = !string.IsNullOrEmpty(r.Doctor?.Person?.FirstName) && !string.IsNullOrEmpty(r.Doctor?.Person?.LastName) 
                 ? $"{r.Doctor.Person.FirstName} {r.Doctor.Person.LastName}".Trim() 
                 : null,
-            PatientId = r.PatientId,
-            PatientName = !string.IsNullOrEmpty(r.Patient?.Person?.FirstName) && !string.IsNullOrEmpty(r.Patient?.Person?.LastName) 
-                ? $"{r.Patient.Person.FirstName} {r.Patient.Person.LastName}".Trim() 
+            PersonId = r.PersonId,
+            PersonName = !string.IsNullOrEmpty(r.Person?.FirstName) && !string.IsNullOrEmpty(r.Person?.LastName)
+                ? $"{r.Person.FirstName} {r.Person.LastName}".Trim()
                 : null,
             ExaminationRoomId = r.ExaminationRoomId,
             RoomName = r.ExaminationRoom?.Name,
@@ -251,12 +315,21 @@ public class ReservationsController : ControllerBase
 public class CreateReservationRequest
 {
     public int DoctorId { get; set; }
-    public int PatientId { get; set; }
+    public int? PersonId { get; set; }
+    public CreateReservationPersonRequest? NewPerson { get; set; }
     public int ExaminationRoomId { get; set; }
     public int ExaminationTypeId { get; set; }
     public DateTime StartDateTime { get; set; }
     public DateTime EndDateTime { get; set; }
     public string? Notes { get; set; }
+}
+
+public class CreateReservationPersonRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? Email { get; set; }
 }
 
 public class UpdateReservationRequest
@@ -272,8 +345,8 @@ public class ReservationDto
     public int Id { get; set; }
     public int DoctorId { get; set; }
     public string? DoctorName { get; set; }
-    public int PatientId { get; set; }
-    public string? PatientName { get; set; }
+    public int PersonId { get; set; }
+    public string? PersonName { get; set; }
     public int ExaminationRoomId { get; set; }
     public string? RoomName { get; set; }
     public int ExaminationTypeId { get; set; }

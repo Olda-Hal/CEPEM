@@ -4,6 +4,8 @@ using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.APIModels;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DatabaseAPI.Controllers;
 
@@ -483,6 +485,201 @@ public class EventsController : ControllerBase
         }
     }
 
+    [HttpPost("intake-form-links")]
+    public async Task<ActionResult<IntakeFormLinkDto>> CreateIntakeFormLink([FromBody] CreateIntakeFormLinkRequest request)
+    {
+        try
+        {
+            var person = await _context.Persons
+                .FirstOrDefaultAsync(p => p.Id == request.PersonId);
+
+            if (person == null)
+                return NotFound("Person not found");
+
+            if (request.ReservationId.HasValue)
+            {
+                var reservation = await _context.Reservations
+                    .FirstOrDefaultAsync(r => r.Id == request.ReservationId.Value);
+
+                if (reservation == null)
+                    return NotFound("Reservation not found");
+
+                if (reservation.PersonId != request.PersonId)
+                    return BadRequest("Reservation does not belong to this person");
+            }
+
+            var tokenBytes = RandomNumberGenerator.GetBytes(32);
+            var token = Convert.ToHexString(tokenBytes).ToLowerInvariant();
+            var tokenHash = ComputeTokenHash(token);
+
+            var expiresInHours = request.ExpiresInHours.GetValueOrDefault(72);
+            if (expiresInHours <= 0)
+                expiresInHours = 72;
+
+            var link = new IntakeFormLink
+            {
+                TokenHash = tokenHash,
+                PersonId = person.Id,
+                ReservationId = request.ReservationId,
+                ExpiresAtUtc = DateTime.UtcNow.AddHours(expiresInHours)
+            };
+
+            _context.IntakeFormLinks.Add(link);
+            await _context.SaveChangesAsync();
+
+            return Ok(new IntakeFormLinkDto
+            {
+                LinkId = link.Id,
+                Token = token,
+                IntakePath = $"/intake/{token}",
+                ExpiresAtUtc = link.ExpiresAtUtc,
+                PersonId = person.Id,
+                PersonName = BuildPersonName(person.FirstName, person.LastName),
+                ReservationId = link.ReservationId
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error creating intake form link: {ex.Message}");
+        }
+    }
+
+    [HttpGet("intake-form-links/{token}")]
+    public async Task<ActionResult<IntakeFormLinkInfoDto>> GetIntakeFormLinkInfo(string token)
+    {
+        try
+        {
+            var tokenHash = ComputeTokenHash(token);
+
+            var link = await _context.IntakeFormLinks
+                .Include(l => l.Person)
+                .FirstOrDefaultAsync(l => l.TokenHash == tokenHash);
+
+            if (link == null)
+                return NotFound("Intake link not found");
+
+            if (link.RevokedAtUtc.HasValue)
+                return BadRequest("Intake link has been revoked");
+
+            if (link.UsedAtUtc.HasValue)
+                return BadRequest("Intake link has already been used");
+
+            if (link.ExpiresAtUtc < DateTime.UtcNow)
+                return BadRequest("Intake link has expired");
+
+            return Ok(new IntakeFormLinkInfoDto
+            {
+                PersonId = link.PersonId,
+                FirstName = link.Person.FirstName,
+                LastName = link.Person.LastName,
+                ReservationId = link.ReservationId,
+                ExpiresAtUtc = link.ExpiresAtUtc
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error loading intake form link: {ex.Message}");
+        }
+    }
+
+    [HttpPost("intake-form-links/{token}/submit")]
+    public async Task<ActionResult<IntakeFormEventDto>> SubmitIntakeFormByLink(string token, [FromBody] CreateIntakeFormEventRequest request)
+    {
+        try
+        {
+            var tokenHash = ComputeTokenHash(token);
+
+            var link = await _context.IntakeFormLinks
+                .Include(l => l.Person)
+                .FirstOrDefaultAsync(l => l.TokenHash == tokenHash);
+
+            if (link == null)
+                return NotFound("Intake link not found");
+
+            if (link.RevokedAtUtc.HasValue)
+                return BadRequest("Intake link has been revoked");
+
+            if (link.UsedAtUtc.HasValue)
+                return BadRequest("Intake link has already been used");
+
+            if (link.ExpiresAtUtc < DateTime.UtcNow)
+                return BadRequest("Intake link has expired");
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.PersonId == link.PersonId);
+
+            if (patient == null)
+            {
+                var birthDate = request.DateOfBirth ?? DateTime.UtcNow.Date;
+                var uid = link.Person.UID;
+
+                if (!int.TryParse(uid, out _))
+                {
+                    var existingUids = await _context.Persons
+                        .Select(p => p.UID)
+                        .Where(existingUid => !string.IsNullOrWhiteSpace(existingUid))
+                        .ToListAsync();
+
+                    var numericUids = existingUids
+                        .Where(existingUid => int.TryParse(existingUid, out _))
+                        .Select(int.Parse)
+                        .OrderBy(existingUid => existingUid)
+                        .ToList();
+
+                    var nextUid = 1;
+                    foreach (var existingUid in numericUids)
+                    {
+                        if (existingUid == nextUid)
+                        {
+                            nextUid++;
+                        }
+                        else if (existingUid > nextUid)
+                        {
+                            break;
+                        }
+                    }
+
+                    uid = nextUid.ToString();
+                    link.Person.UID = uid;
+                }
+
+                patient = new Patient
+                {
+                    PersonId = link.PersonId,
+                    BirthDate = birthDate,
+                    InsuranceNumber = request.InsuranceNumber ?? 0,
+                    Alive = true
+                };
+
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+            }
+
+            request.PatientId = patient.Id;
+
+            var intakeResult = await CreateIntakeFormEvent(request);
+            if (intakeResult.Result is ObjectResult objectResult && objectResult.StatusCode >= 400)
+            {
+                return objectResult;
+            }
+
+            link.UsedAtUtc = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return intakeResult.Value ?? (intakeResult.Result as OkObjectResult)?.Value as IntakeFormEventDto ??
+                   new IntakeFormEventDto
+                   {
+                       EventId = 0,
+                       CreatedAt = DateTime.UtcNow,
+                       PatientName = BuildPersonName(link.Person.FirstName, link.Person.LastName)
+                   };
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error submitting intake form by link: {ex.Message}");
+        }
+    }
+
     private string BuildChangesSummary(Patient patient, CreateIntakeFormEventRequest request)
     {
         var changes = new List<string>();
@@ -945,5 +1142,16 @@ public class EventsController : ControllerBase
             return (segments[0], string.Empty);
 
         return (segments[0], segments[1]);
+    }
+
+    private static string ComputeTokenHash(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    private static string BuildPersonName(string firstName, string lastName)
+    {
+        return $"{firstName} {lastName}".Trim();
     }
 }
