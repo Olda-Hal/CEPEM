@@ -554,13 +554,14 @@ export const ReservationsPage: React.FC = () => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+    let startingDayOfWeek = firstDay.getDay();
+    if (startingDayOfWeek === 0) startingDayOfWeek = 7;
     const days: Array<{ date: Date; isCurrentMonth: boolean; hasReservations: boolean }> = [];
 
     const prevMonthLastDay = new Date(year, month, 0).getDate();
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+    for (let i = startingDayOfWeek - 1; i > 0; i--) {
       days.push({
-        date: new Date(year, month - 1, prevMonthLastDay - i),
+        date: new Date(year, month - 1, prevMonthLastDay - i + 1),
         isCurrentMonth: false,
         hasReservations: false
       });
