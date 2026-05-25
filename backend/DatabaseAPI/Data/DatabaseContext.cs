@@ -83,6 +83,7 @@ public class DatabaseContext : DbContext
     public DbSet<ExaminationRoom> ExaminationRooms { get; set; }
     public DbSet<DoctorExaminationRoom> DoctorExaminationRooms { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ReservationSlot> ReservationSlots { get; set; }
     public DbSet<IntakeFormLink> IntakeFormLinks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -382,6 +383,29 @@ public class DatabaseContext : DbContext
             .HasOne(r => r.ExaminationType)
             .WithMany(et => et.Reservations)
             .HasForeignKey(r => r.ExaminationTypeId);
+
+        modelBuilder.Entity<ReservationSlot>()
+            .HasOne(rs => rs.Hospital)
+            .WithMany()
+            .HasForeignKey(rs => rs.HospitalId);
+
+        modelBuilder.Entity<ReservationSlot>()
+            .HasOne(rs => rs.Doctor)
+            .WithMany()
+            .HasForeignKey(rs => rs.DoctorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ReservationSlot>()
+            .HasOne(rs => rs.Person)
+            .WithMany()
+            .HasForeignKey(rs => rs.PersonId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ReservationSlot>()
+            .HasOne(rs => rs.ExaminationType)
+            .WithMany()
+            .HasForeignKey(rs => rs.ExaminationTypeId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<IntakeFormLink>()
             .HasOne(l => l.Person)
