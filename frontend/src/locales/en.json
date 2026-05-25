@@ -146,6 +146,119 @@
     "createReservation": "Create reservation",
     "reservationCreated": "Reservation created successfully"
   },
+  "reservationSlots": {
+    "title": "Reservation Slots",
+    "eyebrow": "Slot Planning",
+    "heroTitle": "Manage daily reservation slots",
+    "heroDescription": "Create availability windows, copy days and process blocked requests.",
+    "hospital": "Hospital",
+    "selectHospital": "Select hospital",
+    "fallbackHospital": "Hospital #{{id}}",
+    "viewDay": "Viewed day",
+    "noPublicNote": "No public note",
+    "stats": {
+      "total": "Total slots",
+      "available": "Available",
+      "blocked": "Blocked",
+      "reserved": "Reserved"
+    },
+    "status": {
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "blocked": "Blocked",
+      "reserved": "Reserved"
+    },
+    "create": {
+      "title": "Generate slots",
+      "description": "Generate a sequence of slots for a selected day and time range.",
+      "date": "Day",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "duration": "Slot length (minutes)",
+      "publicNote": "Public note",
+      "internalNote": "Internal note",
+      "initialStatus": "Initial status",
+      "generateButton": "Generate slots"
+    },
+    "copy": {
+      "title": "Copy slots from another day",
+      "description": "Copy slots from source day to target day within the same hospital.",
+      "sourceDate": "Source day",
+      "targetDate": "Target day",
+      "preserveStatus": "Preserve original slot status",
+      "button": "Copy day slots"
+    },
+    "request": {
+      "title": "Block slot for patient",
+      "description": "Select an available slot and fill patient details.",
+      "selectHint": "Pick a slot from the table first.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone",
+      "email": "Email",
+      "examinationType": "Examination type",
+      "selectExaminationType": "Select examination type",
+      "blockButton": "Block selected slot"
+    },
+    "overview": {
+      "title": "Day overview",
+      "loading": "Loading slots...",
+      "loaded": "{{count}} slots for {{day}}"
+    },
+    "table": {
+      "time": "Time",
+      "status": "Status",
+      "patient": "Patient",
+      "examination": "Examination",
+      "publicNote": "Public note",
+      "internalNote": "Internal note",
+      "actions": "Actions",
+      "noSlots": "No slots for selected day",
+      "select": "Select",
+      "edit": "Edit",
+      "confirm": "Confirm",
+      "reject": "Reject"
+    },
+    "editor": {
+      "title": "Edit slot",
+      "description": "Update comments, status or release the current slot.",
+      "publicNote": "Public note",
+      "internalNote": "Internal note",
+      "status": "Status",
+      "saveButton": "Save changes",
+      "releaseButton": "Release slot",
+      "deleteButton": "Delete slot"
+    },
+    "messages": {
+      "generatedSuccess": "Slots generated successfully.",
+      "copySuccess": "Slots copied successfully.",
+      "blockedSuccess": "Slot blocked successfully.",
+      "confirmedSuccess": "Slot confirmed successfully.",
+      "rejectedSuccess": "Slot rejected successfully.",
+      "updatedSuccess": "Slot updated successfully.",
+      "releasedSuccess": "Slot released successfully.",
+      "deletedSuccess": "Slot deleted successfully.",
+      "confirmDeleteSlot": "Delete this slot permanently?"
+    },
+    "errors": {
+      "loadingSlots": "Error loading reservation slots",
+      "selectHospitalFirst": "Select a hospital first.",
+      "fillSchedule": "Fill all scheduling fields.",
+      "startBeforeEnd": "Start time must be before end time.",
+      "noGeneratedSlots": "No slots were generated for this range.",
+      "creatingSlots": "Error creating slots.",
+      "selectCopyDates": "Select both source and target day.",
+      "copyFailed": "Error copying slots.",
+      "selectAvailableSlot": "Select an available slot.",
+      "fillBookingData": "Fill first name, last name and examination type.",
+      "blockFailed": "Error blocking slot.",
+      "confirmFailed": "Error confirming slot.",
+      "rejectFailed": "Error rejecting slot.",
+      "updateFailed": "Error updating slot.",
+      "releaseFailed": "Error releasing slot.",
+      "deleteFailed": "Error deleting slot."
+    }
+  },
   "common": {
     "loading": "Loading...",
     "welcome": "Welcome to the system",

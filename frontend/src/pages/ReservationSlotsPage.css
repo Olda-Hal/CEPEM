@@ -1,0 +1,368 @@
+.reservation-slots-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(12, 115, 123, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(244, 174, 28, 0.12), transparent 28%),
+    linear-gradient(180deg, #f7faf9 0%, #eef4f2 100%);
+}
+
+.reservation-slots-layout {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 24px 56px;
+  display: grid;
+  gap: 20px;
+}
+
+.hero-panel,
+.panel,
+.stat-card {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(13, 42, 51, 0.08);
+  box-shadow: 0 18px 48px rgba(20, 39, 43, 0.08);
+}
+
+.hero-panel {
+  border-radius: 28px;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(340px, 0.9fr);
+  gap: 24px;
+  align-items: end;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #0e6a71;
+  font-weight: 700;
+}
+
+.hero-panel h2,
+.panel-header h3 {
+  margin: 0;
+  color: #10292f;
+}
+
+.hero-copy,
+.panel-header p {
+  margin: 10px 0 0;
+  color: #4a5f64;
+  line-height: 1.6;
+}
+
+.hero-controls {
+  display: grid;
+  gap: 14px;
+}
+
+.hero-controls label,
+.form-grid label {
+  display: grid;
+  gap: 6px;
+  color: #274247;
+  font-size: 0.95rem;
+}
+
+.hero-controls span,
+.form-grid span {
+  font-weight: 600;
+}
+
+.hero-controls select,
+.hero-controls input,
+.form-grid select,
+.form-grid input,
+.form-grid textarea {
+  width: 100%;
+  border: 1px solid rgba(16, 41, 47, 0.16);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #10292f;
+  font: inherit;
+}
+
+.hero-controls select:focus,
+.hero-controls input:focus,
+.form-grid select:focus,
+.form-grid input:focus,
+.form-grid textarea:focus {
+  outline: none;
+  border-color: #0e6a71;
+  box-shadow: 0 0 0 3px rgba(14, 106, 113, 0.12);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  border-radius: 22px;
+  padding: 20px 22px;
+  display: grid;
+  gap: 6px;
+}
+
+.stat-card span {
+  color: #5d7378;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.stat-card strong {
+  font-size: 2rem;
+  color: #10292f;
+}
+
+.stat-card.available strong {
+  color: #0f7a58;
+}
+
+.stat-card.blocked strong {
+  color: #ad6511;
+}
+
+.stat-card.reserved strong {
+  color: #09556a;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.panel {
+  border-radius: 26px;
+  padding: 24px;
+}
+
+.panel-header {
+  margin-bottom: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.form-grid textarea {
+  resize: vertical;
+}
+
+.primary-button,
+.ghost-button,
+.success-button,
+.danger-button {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+
+.primary-button {
+  margin-top: 18px;
+  background: linear-gradient(135deg, #0e6a71 0%, #134e5a 100%);
+  color: white;
+  box-shadow: 0 14px 28px rgba(14, 106, 113, 0.24);
+}
+
+.ghost-button {
+  background: rgba(15, 122, 88, 0.08);
+  color: #0f7a58;
+}
+
+.success-button {
+  background: rgba(15, 122, 88, 0.14);
+  color: #0f7a58;
+}
+
+.danger-button {
+  background: rgba(180, 86, 22, 0.14);
+  color: #9d5511;
+}
+
+.primary-button:hover,
+.ghost-button:hover,
+.success-button:hover,
+.danger-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled,
+.ghost-button:disabled,
+.success-button:disabled,
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.selected-slot-banner {
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(14, 106, 113, 0.08), rgba(244, 174, 28, 0.08));
+  color: #18353c;
+  display: grid;
+  gap: 4px;
+}
+
+.table-panel {
+  overflow: hidden;
+}
+
+.slots-table-wrapper {
+  overflow: auto;
+}
+
+.slots-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.slots-table th,
+.slots-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(16, 41, 47, 0.08);
+  vertical-align: top;
+  text-align: left;
+}
+
+.slots-table th {
+  color: #5d7378;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.selected-row {
+  background: rgba(14, 106, 113, 0.05);
+}
+
+.slot-editor-row {
+  background: rgba(14, 106, 113, 0.04);
+}
+
+.slot-editor-cell {
+  padding: 0 12px 16px;
+}
+
+.slot-editor {
+  border-radius: 20px;
+  border: 1px solid rgba(14, 106, 113, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.slot-editor .panel-header {
+  margin-bottom: 14px;
+}
+
+.slot-editor-actions {
+  margin-top: 18px;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.status-available {
+  background: rgba(15, 122, 88, 0.12);
+  color: #0f7a58;
+}
+
+.status-blocked {
+  background: rgba(173, 101, 17, 0.14);
+  color: #ad6511;
+}
+
+.status-reserved {
+  background: rgba(9, 85, 106, 0.12);
+  color: #09556a;
+}
+
+.status-unavailable {
+  background: rgba(77, 92, 96, 0.14);
+  color: #4d5c60;
+}
+
+.slot-time-cell {
+  display: grid;
+  gap: 4px;
+}
+
+.slot-time-cell span {
+  color: #6c8084;
+  font-size: 0.82rem;
+}
+
+.action-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.empty-row {
+  text-align: center;
+  color: #5d7378;
+  padding: 28px 12px;
+}
+
+@media (max-width: 1100px) {
+  .hero-panel,
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .reservation-slots-layout {
+    padding: 18px 14px 42px;
+  }
+
+  .hero-panel,
+  .panel {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .form-grid,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .slots-table th,
+  .slots-table td {
+    padding: 12px 10px;
+  }
+}

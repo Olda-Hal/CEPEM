@@ -74,6 +74,7 @@
     "assigningRoom": "Chyba při přiřazování vyšetřovacího místa",
     "creatingReservation": "Chyba při vytváření rezervace",
     "missingReservationFields": "Vyplňte prosím všechna povinná pole rezervace.",
+    "userNotFound": "Uživatel nebyl nalezen. Přihlaste se prosím znovu.",
     "loadingExaminationTypes": "Chyba při načítání typů vyšetření",    "loadingHospitals": "Chyba při načítání nemocnic",
     "creatingHospital": "Chyba při vytváření nemocnice",    "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu.",
     "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
@@ -147,6 +148,119 @@
     "duration": "Doba trvání (minuty)",
     "createReservation": "Vytvořit rezervaci",
     "reservationCreated": "Rezervace byla úspěšně vytvořena"
+  },
+  "reservationSlots": {
+    "title": "Rezervační sloty",
+    "eyebrow": "Plánování slotů",
+    "heroTitle": "Správa denních rezervačních slotů",
+    "heroDescription": "Vytvářejte časová okna, kopírujte dny a zpracovávejte blokované požadavky.",
+    "hospital": "Nemocnice",
+    "selectHospital": "Vyberte nemocnici",
+    "fallbackHospital": "Nemocnice č. {{id}}",
+    "viewDay": "Zobrazený den",
+    "noPublicNote": "Bez veřejné poznámky",
+    "stats": {
+      "total": "Slotů celkem",
+      "available": "Volné",
+      "blocked": "Blokované",
+      "reserved": "Rezervované"
+    },
+    "status": {
+      "available": "Volný",
+      "unavailable": "Nedostupný",
+      "blocked": "Blokovaný",
+      "reserved": "Rezervovaný"
+    },
+    "create": {
+      "title": "Generování slotů",
+      "description": "Vygenerujte sekvenci slotů pro vybraný den a časové rozmezí.",
+      "date": "Den",
+      "startTime": "Čas začátku",
+      "endTime": "Čas konce",
+      "duration": "Délka slotu (minuty)",
+      "publicNote": "Veřejná poznámka",
+      "internalNote": "Interní poznámka",
+      "initialStatus": "Výchozí stav",
+      "generateButton": "Vygenerovat sloty"
+    },
+    "copy": {
+      "title": "Kopírování slotů z jiného dne",
+      "description": "Zkopírujte sloty ze zdrojového dne na cílový den v rámci stejné nemocnice.",
+      "sourceDate": "Zdrojový den",
+      "targetDate": "Cílový den",
+      "preserveStatus": "Zachovat původní stav slotů",
+      "button": "Zkopírovat sloty dne"
+    },
+    "request": {
+      "title": "Blokace slotu pro pacienta",
+      "description": "Vyberte volný slot a vyplňte údaje pacienta.",
+      "selectHint": "Nejdříve vyberte slot v tabulce.",
+      "firstName": "Jméno",
+      "lastName": "Příjmení",
+      "phone": "Telefon",
+      "email": "Email",
+      "examinationType": "Typ vyšetření",
+      "selectExaminationType": "Vyberte typ vyšetření",
+      "blockButton": "Blokovat vybraný slot"
+    },
+    "overview": {
+      "title": "Přehled dne",
+      "loading": "Načítám sloty...",
+      "loaded": "{{count}} slotů pro den {{day}}"
+    },
+    "table": {
+      "time": "Čas",
+      "status": "Stav",
+      "patient": "Pacient",
+      "examination": "Vyšetření",
+      "publicNote": "Veřejná poznámka",
+      "internalNote": "Interní poznámka",
+      "actions": "Akce",
+      "noSlots": "Pro vybraný den nejsou žádné sloty",
+      "select": "Vybrat",
+      "edit": "Upravit",
+      "confirm": "Potvrdit",
+      "reject": "Zamítnout"
+    },
+    "editor": {
+      "title": "Úprava slotu",
+      "description": "Aktualizujte poznámky, stav nebo slot uvolněte.",
+      "publicNote": "Veřejná poznámka",
+      "internalNote": "Interní poznámka",
+      "status": "Stav",
+      "saveButton": "Uložit změny",
+      "releaseButton": "Uvolnit slot",
+      "deleteButton": "Smazat slot"
+    },
+    "messages": {
+      "generatedSuccess": "Sloty byly úspěšně vygenerovány.",
+      "copySuccess": "Sloty byly úspěšně zkopírovány.",
+      "blockedSuccess": "Slot byl úspěšně blokován.",
+      "confirmedSuccess": "Slot byl úspěšně potvrzen.",
+      "rejectedSuccess": "Slot byl úspěšně zamítnut.",
+      "updatedSuccess": "Slot byl úspěšně upraven.",
+      "releasedSuccess": "Slot byl úspěšně uvolněn.",
+      "deletedSuccess": "Slot byl úspěšně smazán.",
+      "confirmDeleteSlot": "Opravdu chcete tento slot trvale smazat?"
+    },
+    "errors": {
+      "loadingSlots": "Chyba při načítání rezervačních slotů",
+      "selectHospitalFirst": "Nejprve vyberte nemocnici.",
+      "fillSchedule": "Vyplňte všechna pole plánování.",
+      "startBeforeEnd": "Čas začátku musí být před časem konce.",
+      "noGeneratedSlots": "Pro zadané rozmezí se nevygenerovaly žádné sloty.",
+      "creatingSlots": "Chyba při vytváření slotů.",
+      "selectCopyDates": "Vyberte zdrojový i cílový den.",
+      "copyFailed": "Chyba při kopírování slotů.",
+      "selectAvailableSlot": "Vyberte dostupný slot.",
+      "fillBookingData": "Vyplňte jméno, příjmení a typ vyšetření.",
+      "blockFailed": "Chyba při blokaci slotu.",
+      "confirmFailed": "Chyba při potvrzení slotu.",
+      "rejectFailed": "Chyba při zamítnutí slotu.",
+      "updateFailed": "Chyba při úpravě slotu.",
+      "releaseFailed": "Chyba při uvolnění slotu.",
+      "deleteFailed": "Chyba při mazání slotu."
+    }
   },
   "common": {
     "loading": "Načítání...",

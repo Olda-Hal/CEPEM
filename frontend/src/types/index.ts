@@ -489,6 +489,71 @@ export interface Reservation {
   updatedAt: string;
 }
 
+export type ReservationSlotStatus = 'UNAVAILABLE' | 'AVAILABLE' | 'BLOCKED' | 'RESERVED';
+
+export interface ReservationSlot {
+  id: number;
+  hospitalId: number;
+  hospitalName?: string;
+  doctorId?: number;
+  doctorName?: string;
+  personId?: number;
+  personName?: string;
+  examinationTypeId?: number;
+  examinationTypeName?: string;
+  startDateTime: string;
+  endDateTime: string;
+  publicNote?: string;
+  internalNote?: string;
+  status: ReservationSlotStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateReservationSlotItemRequest {
+  startDateTime: string;
+  endDateTime: string;
+  publicNote?: string;
+  internalNote?: string;
+  status?: ReservationSlotStatus;
+}
+
+export interface CreateReservationSlotsRequest {
+  hospitalId: number;
+  slots: CreateReservationSlotItemRequest[];
+}
+
+export interface UpdateReservationSlotRequest {
+  startDateTime?: string;
+  endDateTime?: string;
+  publicNote?: string;
+  internalNote?: string;
+  status?: ReservationSlotStatus;
+}
+
+export interface BlockReservationSlotPersonRequest {
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
+export interface BlockReservationSlotRequest {
+  personId?: number;
+  newPerson?: BlockReservationSlotPersonRequest;
+  examinationTypeId: number;
+}
+
+export interface ConfirmReservationSlotRequest {
+  doctorId: number;
+}
+
+export interface CopyReservationSlotsDayRequest {
+  sourceDate: string;
+  targetDate: string;
+  preserveStatus?: boolean;
+}
+
 export interface CreateReservationPersonRequest {
   firstName: string;
   lastName: string;
