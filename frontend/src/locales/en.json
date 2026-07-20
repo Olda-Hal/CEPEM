@@ -45,6 +45,8 @@
     "appointmentsDesc": "Appointment management and scheduling",
     "reservations": "Reservations",
     "reservationsDesc": "Room scheduling and patient reservations",
+    "examinations": "Examinations",
+    "examinationsDesc": "Browse, filter and export recorded examinations",
     "reports": "Reports",
     "reportsDesc": "Medical reports and documentation",
     "settings": "Settings",
@@ -257,6 +259,42 @@
       "updateFailed": "Error updating slot.",
       "releaseFailed": "Error releasing slot.",
       "deleteFailed": "Error deleting slot."
+    }
+  },
+  "examinations": {
+    "title": "Examinations",
+    "centerFallback": "Center",
+    "totalFound": "Found {{count}} examinations",
+    "export": "Export ZIP + metadata",
+    "exporting": "Exporting...",
+    "empty": "No examinations match current filters",
+    "filters": {
+      "searchPlaceholder": "Search patient, examination or center",
+      "allCenters": "All centers",
+      "hospitalCountryScopeId": "Center country scope ID",
+      "patientCountryCode": "Patient country code (e.g. CZ)",
+      "examinationCountryCode": "Examination country code (e.g. CZ)",
+      "apply": "Apply filters",
+      "reset": "Reset"
+    },
+    "table": {
+      "happenedAt": "Happened at",
+      "patient": "Patient",
+      "examinationType": "Examination",
+      "center": "Center",
+      "centerCountryScopeId": "Center country scope",
+      "patientCountry": "Patient country",
+      "examinationCountry": "Examination country",
+      "documents": "Documents"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{total}}"
+    },
+    "errors": {
+      "loading": "Error loading examinations",
+      "export": "Error exporting examinations"
     }
   },
   "common": {
@@ -632,6 +670,8 @@
       "get_api_doctorexaminationrooms_room_roomid_doctors": "List Room Doctors",
       "post_api_doctorexaminationrooms": "Assign Doctor To Room",
       "delete_api_doctorexaminationrooms_assignmentid": "Remove Doctor Room Assignment",
+      "get_api_examinations": "List Examinations",
+      "get_api_examinations_export": "Export Examinations",
       "get_api_examinations_examinationid_documents_documentid": "Download Examination Document",
       "post_api_examinations_examinationid_documents": "Upload Examination Document",
       "get_api_patients_search": "Search Patients",

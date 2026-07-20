@@ -63,6 +63,8 @@ public static class PermissionCatalogDisplayNames
 
             ["GET:/api/examinations/{examinationid}/documents/{documentid}"] = "Download Examination Document",
             ["POST:/api/examinations/{examinationid}/documents"] = "Upload Examination Document",
+            ["GET:/api/examinations"] = "List Examinations",
+            ["GET:/api/examinations/export"] = "Export Examinations",
 
             ["GET:/api/patients/search"] = "Search Patients",
             ["POST:/api/patients"] = "Create Patient",

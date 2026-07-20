@@ -48,6 +48,8 @@
     "appointmentsDesc": "Správa a plánování termínů",
     "reservations": "Rezervace",
     "reservationsDesc": "Plánování místností a rezervací pacientů",
+    "examinations": "Vyšetření",
+    "examinationsDesc": "Přehled, filtrace a export zaznamenaných vyšetření",
     "reports": "Zprávy",
     "reportsDesc": "Lékařské zprávy a dokumentace",
     "settings": "Nastavení",
@@ -260,6 +262,42 @@
       "updateFailed": "Chyba při úpravě slotu.",
       "releaseFailed": "Chyba při uvolnění slotu.",
       "deleteFailed": "Chyba při mazání slotu."
+    }
+  },
+  "examinations": {
+    "title": "Vyšetření",
+    "centerFallback": "Centrum",
+    "totalFound": "Nalezeno {{count}} vyšetření",
+    "export": "Export ZIP + metadata",
+    "exporting": "Exportuji...",
+    "empty": "Žádná vyšetření neodpovídají aktuálním filtrům",
+    "filters": {
+      "searchPlaceholder": "Hledejte pacienta, vyšetření nebo centrum",
+      "allCenters": "Všechna centra",
+      "hospitalCountryScopeId": "Country scope ID centra",
+      "patientCountryCode": "Kód země pacienta (např. CZ)",
+      "examinationCountryCode": "Kód země vyšetření (např. CZ)",
+      "apply": "Použít filtry",
+      "reset": "Reset"
+    },
+    "table": {
+      "happenedAt": "Proběhlo",
+      "patient": "Pacient",
+      "examinationType": "Vyšetření",
+      "center": "Centrum",
+      "centerCountryScopeId": "Country scope centra",
+      "patientCountry": "Země pacienta",
+      "examinationCountry": "Země vyšetření",
+      "documents": "Soubory"
+    },
+    "pagination": {
+      "previous": "Předchozí",
+      "next": "Další",
+      "page": "Strana {{current}} z {{total}}"
+    },
+    "errors": {
+      "loading": "Chyba při načítání vyšetření",
+      "export": "Chyba při exportu vyšetření"
     }
   },
   "common": {
@@ -638,6 +676,8 @@
       "get_api_doctorexaminationrooms_room_roomid_doctors": "Seznam doktorů místnosti",
       "post_api_doctorexaminationrooms": "Přiřadit doktora k místnosti",
       "delete_api_doctorexaminationrooms_assignmentid": "Odebrat přiřazení doktora k místnosti",
+      "get_api_examinations": "Seznam vyšetření",
+      "get_api_examinations_export": "Export vyšetření",
       "get_api_examinations_examinationid_documents_documentid": "Stáhnout dokument vyšetření",
       "post_api_examinations_examinationid_documents": "Nahrát dokument vyšetření",
       "get_api_patients_search": "Vyhledat pacienty",

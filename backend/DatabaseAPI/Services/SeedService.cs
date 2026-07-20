@@ -257,7 +257,9 @@ namespace DatabaseAPI.Services
                 Allow("POST:/api/patients/{id}/photo"),
                 Allow("POST:/api/patients/{id}/documents"),
                 Allow("GET:/api/patients/{id}/documents"),
-                Allow("POST:/api/examinations/{examinationid}/documents")
+                Allow("POST:/api/examinations/{examinationid}/documents"),
+                Allow("GET:/api/examinations"),
+                Allow("GET:/api/examinations/export")
             };
         }
 
@@ -273,7 +275,9 @@ namespace DatabaseAPI.Services
                 Allow("GET:/api/patients/{id}/detail"),
                 Allow("GET:/api/patients/{id}/documents"),
                 Allow("GET:/api/patients/{patientid}/documents/{documentid}"),
-                Allow("GET:/api/examinations/{examinationid}/documents/{documentid}")
+                Allow("GET:/api/examinations/{examinationid}/documents/{documentid}"),
+                Allow("GET:/api/examinations"),
+                Allow("GET:/api/examinations/export")
             };
         }
 
@@ -299,7 +303,9 @@ namespace DatabaseAPI.Services
                 Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Hospital", 0)),
                 Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Hospital", 0)),
                 Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Hospital", 0))
+                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Hospital", 0)),
+                Allow("GET:/api/examinations"),
+                Allow("GET:/api/examinations/export")
             };
         }
 
@@ -332,7 +338,9 @@ namespace DatabaseAPI.Services
                 Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Country", 203)),
                 Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Country", 203)),
                 Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Country", 203))
+                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Country", 203)),
+                Allow("GET:/api/examinations"),
+                Allow("GET:/api/examinations/export")
             };
         }
 

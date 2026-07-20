@@ -13,6 +13,7 @@ import { PatientDetailPage } from './pages/PatientDetailPage';
 import { AddPatientFormPage } from './pages/AddPatientFormPage';
 import { EditPatientPage } from './pages/EditPatientPage';
 import { ReservationSlotsPage } from './pages/ReservationSlotsPage';
+import { ExaminationsPage } from './pages/ExaminationsPage';
 import { IntakeFormByLinkPage } from './pages/IntakeFormByLinkPage';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
@@ -110,6 +111,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ReservationSlotsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/examinations" 
+              element={
+                <ProtectedRoute>
+                  <ExaminationsPage />
                 </ProtectedRoute>
               } 
             />

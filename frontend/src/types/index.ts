@@ -354,6 +354,33 @@ export interface ExaminationDocument {
   fileSize: number;
 }
 
+export interface ExaminationListItem {
+  id: number;
+  eventId: number;
+  happenedAt: string;
+  happenedTo?: string;
+  examinationTypeId: number;
+  examinationTypeName: string;
+  patientId: number;
+  personId: number;
+  patientFirstName: string;
+  patientLastName: string;
+  patientCountryCode: string;
+  examinationCountryCode: string;
+  hospitalId?: number;
+  hospitalName?: string;
+  hospitalCountryScopeId?: number;
+  documentCount: number;
+  documents: ExaminationDocument[];
+}
+
+export interface ExaminationSearchResponse {
+  totalCount: number;
+  page: number;
+  limit: number;
+  items: ExaminationListItem[];
+}
+
 export interface ExaminationWithDocuments {
   id: number;
   name: string;
