@@ -16,6 +16,10 @@ public class DatabaseContext : DbContext
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
+    public DbSet<RolePermissionRule> RolePermissionRules { get; set; }
+    public DbSet<RolePermissionScope> RolePermissionScopes { get; set; }
+    public DbSet<EmployeePermissionRule> EmployeePermissionRules { get; set; }
+    public DbSet<EmployeePermissionScope> EmployeePermissionScopes { get; set; }
     
     // Event related entities
     public DbSet<Event> Events { get; set; }
@@ -102,10 +106,16 @@ public class DatabaseContext : DbContext
         ConfigureAddressRelationships(modelBuilder);
         ConfigureTranslationRelationships(modelBuilder);
         ConfigureFormSubmissionRelationships(modelBuilder);
+        ConfigureAccessControlRelationships(modelBuilder);
     }
     
     private void ConfigurePersonRelationships(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Person>()
+            .Property(person => person.CountryCode)
+            .HasMaxLength(2)
+            .HasDefaultValue(Person.DefaultCountryCode);
+
         // Person -> Patient (1:0..1)
         modelBuilder.Entity<Patient>()
             .HasOne(p => p.Person)
@@ -186,6 +196,16 @@ public class DatabaseContext : DbContext
     
     private void ConfigureMedicalRelationships(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Event>()
+            .Property(e => e.CountryCode)
+            .HasMaxLength(2)
+            .HasDefaultValue(Event.DefaultCountryCode);
+
+        modelBuilder.Entity<Examination>()
+            .Property(examination => examination.CountryCode)
+            .HasMaxLength(2)
+            .HasDefaultValue(Examination.DefaultCountryCode);
+
         // ExaminationTypeTranslation relationships
         modelBuilder.Entity<Examination>()
             .HasOne(e => e.ExaminationType)
@@ -277,6 +297,10 @@ public class DatabaseContext : DbContext
             .HasForeignKey(h => h.ParentHospitalId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<Hospital>()
+            .Property(h => h.CountryScopeId)
+            .HasDefaultValue(Hospital.CzechCountryScopeId);
+
         // HospitalEquipment relationships
         modelBuilder.Entity<HospitalEquipment>()
             .HasOne(he => he.Hospital)
@@ -351,6 +375,16 @@ public class DatabaseContext : DbContext
     
     private void ConfigureReservationRelationships(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Patient>()
+            .Property(patient => patient.CountryCode)
+            .HasMaxLength(2)
+            .HasDefaultValue(Patient.DefaultCountryCode);
+
+        modelBuilder.Entity<ReservationSlot>()
+            .Property(slot => slot.CountryCode)
+            .HasMaxLength(2)
+            .HasDefaultValue(ReservationSlot.DefaultCountryCode);
+
         // ExaminationRoom relationships
         modelBuilder.Entity<ExaminationRoom>()
             .HasMany(er => er.DoctorExaminationRooms)
@@ -557,4 +591,46 @@ public class DatabaseContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
     }
 
+    private void ConfigureAccessControlRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<RolePermissionRule>()
+            .HasOne(rpr => rpr.Role)
+            .WithMany(r => r.PermissionRules)
+            .HasForeignKey(rpr => rpr.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermissionRule>()
+            .HasIndex(rpr => new { rpr.RoleId, rpr.PermissionKey })
+            .IsUnique();
+
+        modelBuilder.Entity<RolePermissionScope>()
+            .HasOne(rps => rps.RolePermissionRule)
+            .WithMany(rpr => rpr.Scopes)
+            .HasForeignKey(rps => rps.RolePermissionRuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermissionScope>()
+            .HasIndex(rps => new { rps.RolePermissionRuleId, rps.ResourceType, rps.ResourceId })
+            .IsUnique();
+
+        modelBuilder.Entity<EmployeePermissionRule>()
+            .HasOne(epr => epr.Employee)
+            .WithMany(e => e.PermissionRules)
+            .HasForeignKey(epr => epr.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EmployeePermissionRule>()
+            .HasIndex(epr => new { epr.EmployeeId, epr.PermissionKey })
+            .IsUnique();
+
+        modelBuilder.Entity<EmployeePermissionScope>()
+            .HasOne(eps => eps.EmployeePermissionRule)
+            .WithMany(epr => epr.Scopes)
+            .HasForeignKey(eps => eps.EmployeePermissionRuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EmployeePermissionScope>()
+            .HasIndex(eps => new { eps.EmployeePermissionRuleId, eps.ResourceType, eps.ResourceId })
+            .IsUnique();
     }
+}

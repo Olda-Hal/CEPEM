@@ -20,10 +20,12 @@ namespace DatabaseAPI.Services
     public class EmployeeAuthService : IEmployeeAuthService
     {
         private readonly DatabaseContext _context;
+        private readonly IActorCountryContextService _actorCountryContextService;
 
-        public EmployeeAuthService(DatabaseContext context)
+        public EmployeeAuthService(DatabaseContext context, IActorCountryContextService actorCountryContextService)
         {
             _context = context;
+            _actorCountryContextService = actorCountryContextService;
         }
 
         public async Task<EmployeeAuthInfo?> AuthenticateAsync(string email, string password)
@@ -70,6 +72,8 @@ namespace DatabaseAPI.Services
                     TitleAfter = e.Person.TitleAfter,
                     LastLoginAt = e.LastLoginAt,
                     PasswordExpiration = e.PasswordExpiration == DateTime.MinValue ? null : e.PasswordExpiration,
+                    AccessControlVersion = e.AccessControlVersion,
+                    CountryCode = e.Person.CountryCode,
                     Roles = e.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -240,6 +244,7 @@ namespace DatabaseAPI.Services
                     LastName = request.LastName,
                     UID = request.UID,
                     Gender = request.Gender,
+                    CountryCode = await _actorCountryContextService.GetActorCountryCodeAsync(),
                     TitleBefore = request.TitleBefore,
                     TitleAfter = request.TitleAfter,
                     Active = request.Active,

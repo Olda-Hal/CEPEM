@@ -73,7 +73,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [HttpPost("create-employee")]
-        [RequireRole("SysAdmin")]
+        [Authorize]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
             if (string.IsNullOrEmpty(request.FirstName) || 
@@ -103,7 +103,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [HttpGet("next-uid")]
-        [RequireRole("SysAdmin")]
+        [Authorize]
         public async Task<ActionResult<string>> GetNextAvailableUid()
         {
             var nextUid = await _authService.GetNextAvailableUidAsync();

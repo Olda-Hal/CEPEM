@@ -13,6 +13,7 @@ namespace HealthcareAPI.Models
         public string UID { get; set; } = string.Empty;
         public string? TitleBefore { get; set; }
         public string? TitleAfter { get; set; }
+        public string CountryCode { get; set; } = "CZ";
         public DateTime? LastLoginAt { get; set; }
         public DateTime? PasswordExpiration { get; set; }
         public List<string> Roles { get; set; } = new List<string>();

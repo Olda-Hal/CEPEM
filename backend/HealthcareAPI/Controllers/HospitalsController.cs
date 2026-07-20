@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using HealthcareAPI.Attributes;
+using HealthcareAPI.Utils;
+using System.Security.Claims;
 
 namespace HealthcareAPI.Controllers;
 
@@ -18,12 +21,20 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpGet]
+    [PermissionDisplayName("List Hospitals")]
     public async Task<IActionResult> GetAll()
     {
         try
         {
             var client = _httpClientFactory.CreateClient("DatabaseAPI");
-            var response = await client.GetAsync("/api/hospitals");
+            var actorCountryCode = User.FindFirst("country_code")?.Value;
+            var actorCountryScopeId = CountryScopeMapper.ToScopeId(actorCountryCode);
+            var isCountryAdmin = User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin");
+            var endpoint = isCountryAdmin
+                ? $"/api/hospitals?countryScopeId={actorCountryScopeId}"
+                : "/api/hospitals";
+
+            var response = await client.GetAsync(endpoint);
 
             if (!response.IsSuccessStatusCode)
                 return StatusCode((int)response.StatusCode, "Error retrieving hospitals");
@@ -39,6 +50,7 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpGet("{hospitalId}/examination-types")]
+    [PermissionDisplayName("List Hospital Examination Types")]
     public async Task<IActionResult> GetHospitalExaminationTypes(int hospitalId, [FromQuery] string language = "en")
     {
         try
@@ -60,10 +72,21 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpPost]
+    [PermissionDisplayName("Create Hospital")]
     public async Task<IActionResult> Create([FromBody] CreateHospitalRequest request)
     {
         try
         {
+            var actorCountryCode = CountryScopeMapper.NormalizeCode(User.FindFirst("country_code")?.Value);
+            var actorCountryScopeId = CountryScopeMapper.ToScopeId(actorCountryCode);
+            var isCountryAdmin = User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin");
+
+            if (isCountryAdmin)
+            {
+                request.CountryScopeId = actorCountryScopeId;
+                request.Country = actorCountryCode;
+            }
+
             var client = _httpClientFactory.CreateClient("DatabaseAPI");
             var httpContent = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
@@ -89,10 +112,21 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpPut("{hospitalId}")]
+    [PermissionDisplayName("Update Hospital")]
     public async Task<IActionResult> Update(int hospitalId, [FromBody] UpdateHospitalRequest request)
     {
         try
         {
+            var actorCountryCode = CountryScopeMapper.NormalizeCode(User.FindFirst("country_code")?.Value);
+            var actorCountryScopeId = CountryScopeMapper.ToScopeId(actorCountryCode);
+            var isCountryAdmin = User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin");
+
+            if (isCountryAdmin)
+            {
+                request.CountryScopeId = actorCountryScopeId;
+                request.Country = actorCountryCode;
+            }
+
             var client = _httpClientFactory.CreateClient("DatabaseAPI");
             var httpContent = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
@@ -118,6 +152,7 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpDelete("{hospitalId}")]
+    [PermissionDisplayName("Deactivate Hospital")]
     public async Task<IActionResult> Delete(int hospitalId)
     {
         try
@@ -139,15 +174,54 @@ public class HospitalsController : ControllerBase
             return StatusCode(500, new { Error = "Error deleting hospital", Details = ex.Message });
         }
     }
+
+    [HttpPut("{hospitalId}/examination-types")]
+    [PermissionDisplayName("Set Hospital Examination Types")]
+    public async Task<IActionResult> SetHospitalExaminationTypes(int hospitalId, [FromBody] int[] examinationTypeIds)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var httpContent = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(examinationTypeIds ?? Array.Empty<int>()),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            var response = await client.PutAsync($"/api/hospitals/{hospitalId}/examination-types", httpContent);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                return StatusCode((int)response.StatusCode, error);
+            }
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting hospital examination types");
+            return StatusCode(500, new { Error = "Error setting hospital examination types", Details = ex.Message });
+        }
+    }
 }
 
 public class CreateHospitalRequest
 {
-    public string Address { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public string? Street { get; set; }
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
+    public int? CountryScopeId { get; set; }
 }
 
 public class UpdateHospitalRequest
 {
-    public string? Address { get; set; }
+    public string? Name { get; set; }
+    public string? Street { get; set; }
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
+    public int? CountryScopeId { get; set; }
     public bool? Active { get; set; }
 }

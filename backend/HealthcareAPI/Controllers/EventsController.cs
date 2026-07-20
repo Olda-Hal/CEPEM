@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
 
 namespace HealthcareAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class EventsController : ControllerBase
 {
     private readonly HttpClient _httpClient;
@@ -276,6 +278,7 @@ public class EventsController : ControllerBase
     }
 
     [HttpGet("intake-form-links/{token}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetIntakeFormLinkInfo(string token)
     {
         try
@@ -297,6 +300,7 @@ public class EventsController : ControllerBase
     }
 
     [HttpPost("intake-form-links/{token}/submit")]
+    [AllowAnonymous]
     public async Task<IActionResult> SubmitIntakeFormByLink(string token, [FromBody] JsonElement requestData)
     {
         try

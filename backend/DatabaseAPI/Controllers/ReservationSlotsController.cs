@@ -1,5 +1,6 @@
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,11 +12,13 @@ public class ReservationSlotsController : ControllerBase
 {
     private readonly DatabaseContext _context;
     private readonly ILogger<ReservationSlotsController> _logger;
+    private readonly IActorCountryContextService _actorCountryContextService;
 
-    public ReservationSlotsController(DatabaseContext context, ILogger<ReservationSlotsController> logger)
+    public ReservationSlotsController(DatabaseContext context, ILogger<ReservationSlotsController> logger, IActorCountryContextService actorCountryContextService)
     {
         _context = context;
         _logger = logger;
+        _actorCountryContextService = actorCountryContextService;
     }
 
     [HttpGet("hospital/{hospitalId}")]
@@ -63,6 +66,7 @@ public class ReservationSlotsController : ControllerBase
     {
         try
         {
+            var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             if (request.HospitalId <= 0)
                 return BadRequest("HospitalId is required");
 
@@ -101,6 +105,7 @@ public class ReservationSlotsController : ControllerBase
                     EndDateTime = slotRequest.EndDateTime,
                     PublicNote = slotRequest.PublicNote,
                     InternalNote = slotRequest.InternalNote,
+                    CountryCode = actorCountryCode,
                     Status = string.IsNullOrWhiteSpace(slotRequest.Status) ? "AVAILABLE" : slotRequest.Status.Trim().ToUpperInvariant()
                 };
 
@@ -125,6 +130,7 @@ public class ReservationSlotsController : ControllerBase
     {
         try
         {
+            var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             var sourceDayStart = request.SourceDate.Date;
             var sourceDayEnd = sourceDayStart.AddDays(1);
             var targetDayStart = request.TargetDate.Date;
@@ -168,6 +174,7 @@ public class ReservationSlotsController : ControllerBase
                     EndDateTime = sourceSlot.EndDateTime.Add(dayOffset),
                     PublicNote = sourceSlot.PublicNote,
                     InternalNote = sourceSlot.InternalNote,
+                    CountryCode = actorCountryCode,
                     Status = ResolveCopiedStatus(sourceSlot.Status, request.PreserveStatus)
                 };
 
@@ -343,6 +350,7 @@ public class ReservationSlotsController : ControllerBase
                     FirstName = request.NewPerson.FirstName.Trim(),
                     LastName = request.NewPerson.LastName.Trim(),
                     Gender = "Unknown",
+                    CountryCode = await _actorCountryContextService.GetActorCountryCodeAsync(),
                     UID = uid,
                     Active = true
                 };

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.APIModels;
+using DatabaseAPI.Services;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,10 +15,12 @@ namespace DatabaseAPI.Controllers;
 public class EventsController : ControllerBase
 {
     private readonly DatabaseContext _context;
+    private readonly IActorCountryContextService _actorCountryContextService;
 
-    public EventsController(DatabaseContext context)
+    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService)
     {
         _context = context;
+        _actorCountryContextService = actorCountryContextService;
     }
 
     [HttpGet("options")]
@@ -87,6 +90,7 @@ public class EventsController : ControllerBase
 
         try
         {
+            var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             Comment? comment = null;
             if (!string.IsNullOrEmpty(request.Comment))
             {
@@ -102,6 +106,7 @@ public class EventsController : ControllerBase
                 HappenedAt = request.HappenedAt,
                 HappenedTo = request.HappenedTo,
                 CommentId = comment?.Id,
+                CountryCode = actorCountryCode,
                 EventGroupId = request.EventGroupId
             };
 
@@ -137,7 +142,8 @@ public class EventsController : ControllerBase
                 var examination = new Examination
                 {
                     ExaminationTypeId = examinationTypeId,
-                    EventId = eventEntity.Id
+                    EventId = eventEntity.Id,
+                    CountryCode = actorCountryCode
                 };
                 _context.Examinations.Add(examination);
             }
@@ -209,6 +215,7 @@ public class EventsController : ControllerBase
 
         try
         {
+            var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             var eventGroupId = Guid.NewGuid();
             var eventIds = new List<int>();
 
@@ -232,6 +239,7 @@ public class EventsController : ControllerBase
                     HappenedAt = eventRequest.HappenedAt,
                     HappenedTo = eventRequest.HappenedTo,
                     CommentId = comment?.Id,
+                    CountryCode = actorCountryCode,
                     EventGroupId = eventGroupId
                 };
 
@@ -264,7 +272,8 @@ public class EventsController : ControllerBase
                     var examination = new Examination
                     {
                         ExaminationTypeId = examinationTypeId,
-                        EventId = eventEntity.Id
+                        EventId = eventEntity.Id,
+                        CountryCode = actorCountryCode
                     };
                     _context.Examinations.Add(examination);
                 }

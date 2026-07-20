@@ -61,5 +61,17 @@ namespace DatabaseAPI.Controllers
             var roles = await _employeeManagementService.GetAllRolesAsync();
             return Ok(roles);
         }
+
+        [HttpPost("roles")]
+        public async Task<ActionResult<RoleDto>> CreateRole([FromBody] CreateRoleRequest request)
+        {
+            var role = await _employeeManagementService.CreateRoleAsync(request);
+            if (role == null)
+            {
+                return BadRequest("Role already exists or is invalid");
+            }
+
+            return Ok(role);
+        }
     }
 }

@@ -9,7 +9,7 @@ import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
 import { AppHeader } from '../components/AppHeader';
 import { DashboardStats } from '../types';
 import { apiClient } from '../utils/api';
-import { isAdmin } from '../utils/roles';
+import { hasRole, isAdmin } from '../utils/roles';
 import './DashboardPage.css';
 
 export const DashboardPage: React.FC = () => {
@@ -22,6 +22,7 @@ export const DashboardPage: React.FC = () => {
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
   const [isActionsExpanded, setIsActionsExpanded] = useState(true);
   const [buildNumber, setBuildNumber] = useState<string | null>(null);
+  const canManageCenters = isAdmin(user) || hasRole(user, 'Country Admin');
   useEffect(() => {
     // Fetch build number from static file
     fetch('/build_number.txt')
@@ -254,6 +255,30 @@ export const DashboardPage: React.FC = () => {
                       <Link to="/admin/employees">
                         <button className="action-button admin-button">
                           {t('admin.employeeManagement')}
+                        </button>
+                      </Link>
+                    </div>
+                  )}
+
+                  {isAdmin(user) && (
+                    <div className="action-card admin-action">
+                      <h4>{t('admin.roleManagement')}</h4>
+                      <p>{t('admin.roleManagementDescription')}</p>
+                      <Link to="/admin/roles">
+                        <button className="action-button admin-button">
+                          {t('admin.roleManagementButton')}
+                        </button>
+                      </Link>
+                    </div>
+                  )}
+
+                  {canManageCenters && (
+                    <div className="action-card admin-action">
+                      <h4>{t('admin.centerManagement')}</h4>
+                      <p>{t('admin.centerManagementDescription')}</p>
+                      <Link to="/admin/centers">
+                        <button className="action-button admin-button">
+                          {t('admin.centerManagementButton')}
                         </button>
                       </Link>
                     </div>

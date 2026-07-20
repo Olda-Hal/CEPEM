@@ -4,6 +4,8 @@ namespace DatabaseAPI.DatabaseModels;
 
 public class Event
 {
+    public const string DefaultCountryCode = "CZ";
+
     public int Id { get; set; }
     
     [Required]
@@ -22,6 +24,10 @@ public class Event
     
     public int? CommentId { get; set; }
     public Comment? Comment { get; set; }
+
+    [Required]
+    [StringLength(2)]
+    public string CountryCode { get; set; } = DefaultCountryCode;
     
     // Navigation properties
     public ICollection<DrugUse> DrugUses { get; set; } = new List<DrugUse>();

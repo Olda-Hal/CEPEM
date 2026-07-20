@@ -4,6 +4,8 @@ namespace DatabaseAPI.DatabaseModels;
 
 public class Person
 {
+    public const string DefaultCountryCode = "CZ";
+
     public int Id { get; set; }
     
     [Required]
@@ -25,6 +27,10 @@ public class Person
     
     [Required]
     public string Gender { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(2)]
+    public string CountryCode { get; set; } = DefaultCountryCode;
     
     public int? CommentId { get; set; }
     public Comment? Comment { get; set; }

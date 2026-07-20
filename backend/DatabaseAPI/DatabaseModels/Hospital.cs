@@ -2,6 +2,8 @@ namespace DatabaseAPI.DatabaseModels;
 
 public class Hospital
 {
+    public const int CzechCountryScopeId = 203;
+
     public int Id { get; set; }
 
     public string? Name { get; set; }
@@ -17,6 +19,8 @@ public class Hospital
     public string? CompanyIco { get; set; }
 
     public string? CompanyName { get; set; }
+
+    public int CountryScopeId { get; set; } = CzechCountryScopeId;
 
     // Navigation properties
     public ICollection<Hospital> ChildHospitals { get; set; } = new List<Hospital>();

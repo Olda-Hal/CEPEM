@@ -1,4 +1,5 @@
 using HealthcareAPI.Models;
+using HealthcareAPI.Utils;
 using System.Text.Json;
 
 namespace HealthcareAPI.Services
@@ -38,6 +39,8 @@ namespace HealthcareAPI.Services
                             Email = employeeAuthInfo.Email,
                             TitleBefore = employeeAuthInfo.TitleBefore,
                             TitleAfter = employeeAuthInfo.TitleAfter,
+                            CountryCode = CountryScopeMapper.NormalizeCode(employeeAuthInfo.CountryCode),
+                            CountryScopeId = CountryScopeMapper.ToScopeId(employeeAuthInfo.CountryCode),
                             UID = employeeAuthInfo.UID,
                             Active = employeeAuthInfo.Active,
                             LastLoginAt = employeeAuthInfo.LastLoginAt,

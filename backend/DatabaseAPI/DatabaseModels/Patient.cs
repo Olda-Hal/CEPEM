@@ -4,6 +4,8 @@ namespace DatabaseAPI.DatabaseModels;
 
 public class Patient
 {
+    public const string DefaultCountryCode = "CZ";
+
     public int Id { get; set; }
     
     [Required]
@@ -19,6 +21,10 @@ public class Patient
     public Comment? Comment { get; set; }
     
     public bool Alive { get; set; } = true;
+
+    [Required]
+    [StringLength(2)]
+    public string CountryCode { get; set; } = DefaultCountryCode;
     
     public string? PhotoPath { get; set; }
     

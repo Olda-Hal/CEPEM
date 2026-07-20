@@ -19,9 +19,11 @@ public class Employee
     public string Salt { get; set; } = string.Empty;
     
     public DateTime? LastLoginAt { get; set; }
+    public int AccessControlVersion { get; set; } = 1;
     
     // Navigation properties
     public ICollection<HospitalEmployee> HospitalEmployees { get; set; } = new List<HospitalEmployee>();
     public ICollection<DoctorExaminationRoom> ExaminationRooms { get; set; } = new List<DoctorExaminationRoom>();
     public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+    public ICollection<EmployeePermissionRule> PermissionRules { get; set; } = new List<EmployeePermissionRule>();
 }

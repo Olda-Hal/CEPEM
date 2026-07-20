@@ -6,6 +6,8 @@ namespace DatabaseAPI.DatabaseModels;
 [Table("ReservationSlots")]
 public class ReservationSlot
 {
+    public const string DefaultCountryCode = "CZ";
+
     [Key]
     public int Id { get; set; }
 
@@ -45,6 +47,10 @@ public class ReservationSlot
     [Required]
     [StringLength(50)]
     public string Status { get; set; } = "AVAILABLE";
+
+    [Required]
+    [StringLength(2)]
+    public string CountryCode { get; set; } = DefaultCountryCode;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

@@ -19,22 +19,31 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<object>>> GetAll()
+    public async Task<ActionResult<List<object>>> GetAll([FromQuery] int? countryScopeId = null)
     {
         try
         {
-            var hospitals = await _context.Hospitals
+            var query = _context.Hospitals
                 .Include(h => h.Address)
                 .Include(h => h.ContactToObjects)
                     .ThenInclude(cto => cto.Contact)
                         .ThenInclude(c => c.PhoneNumbers)
                 .Where(h => h.Active == true)
+                .AsQueryable();
+
+            if (countryScopeId.HasValue && countryScopeId.Value > 0)
+            {
+                query = query.Where(h => h.CountryScopeId == countryScopeId.Value);
+            }
+
+            var hospitals = await query
                 .OrderBy(h => h.Name)
                 .Select(h => new
                 {
                     h.Id,
                     h.Name,
                     h.Active,
+                    h.CountryScopeId,
                     h.CompanyIco,
                     h.CompanyName,
                     h.ParentHospitalId,
@@ -87,6 +96,7 @@ public class HospitalsController : ControllerBase
             var hospital = new Hospital
             {
                 Name = request.Name,
+                CountryScopeId = request.CountryScopeId ?? Hospital.CzechCountryScopeId,
                 Active = true
             };
 
@@ -132,6 +142,9 @@ public class HospitalsController : ControllerBase
 
             if (request.Active.HasValue)
                 hospital.Active = request.Active;
+
+            if (request.CountryScopeId.HasValue && request.CountryScopeId.Value > 0)
+                hospital.CountryScopeId = request.CountryScopeId.Value;
 
             if (request.Street != null || request.City != null || request.PostalCode != null || request.Country != null)
             {
@@ -196,6 +209,7 @@ public class CreateHospitalRequest
     public string? City { get; set; }
     public string? PostalCode { get; set; }
     public string? Country { get; set; }
+    public int? CountryScopeId { get; set; }
 }
 
 public class UpdateHospitalRequest
@@ -205,5 +219,6 @@ public class UpdateHospitalRequest
     public string? City { get; set; }
     public string? PostalCode { get; set; }
     public string? Country { get; set; }
+    public int? CountryScopeId { get; set; }
     public bool? Active { get; set; }
 }

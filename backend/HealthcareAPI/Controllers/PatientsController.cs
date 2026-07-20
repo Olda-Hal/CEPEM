@@ -350,7 +350,6 @@ namespace HealthcareAPI.Controllers
         }
 
         [HttpGet("{patientId}/documents/{documentId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetPatientDocument(int patientId, int documentId)
         {
             try

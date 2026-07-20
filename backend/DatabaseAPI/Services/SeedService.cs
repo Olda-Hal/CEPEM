@@ -29,6 +29,7 @@ namespace DatabaseAPI.Services
             {
                 await SeedRolesAsync();
                 await SeedAdminUserAsync();
+                await SeedAccessControlRulesAsync();
                 await SeedIntakeFormEventTypeAsync();
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Database seeded successfully.");
@@ -42,19 +43,11 @@ namespace DatabaseAPI.Services
 
         private async Task SeedRolesAsync()
         {
-            var adminRole = await _context.Roles
-                .Include(r => r.NameTranslation)
-                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == "SysAdmin");
-            if (adminRole == null)
-            {
-                var translation = new Translation { EN = "SysAdmin" };
-                _context.Translations.Add(translation);
-                await _context.SaveChangesAsync();
-                adminRole = new Role { NameTranslationId = translation.Id };
-                _context.Roles.Add(adminRole);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("SysAdmin role created.");
-            }
+            await EnsureRoleExistsAsync("SysAdmin");
+            await EnsureRoleExistsAsync("Examiner");
+            await EnsureRoleExistsAsync("Doctor");
+            await EnsureRoleExistsAsync("Center Admin");
+            await EnsureRoleExistsAsync("Country Admin");
         }
 
         private async Task SeedAdminUserAsync()
@@ -166,6 +159,200 @@ namespace DatabaseAPI.Services
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Intake Form event type created.");
+        }
+
+        private async Task SeedAccessControlRulesAsync()
+        {
+            await SeedSysAdminRulesAsync();
+            await SeedRoleRulesIfEmptyAsync("Examiner", BuildExaminerRules());
+            await SeedRoleRulesIfEmptyAsync("Doctor", BuildDoctorRules());
+            await SeedRoleRulesIfEmptyAsync("Center Admin", BuildCenterAdminRules());
+            await SeedRoleRulesIfEmptyAsync("Country Admin", BuildCountryAdminRules());
+        }
+
+        private async Task EnsureRoleExistsAsync(string roleName)
+        {
+            var existingRole = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
+
+            if (existingRole != null)
+                return;
+
+            var translation = new Translation { EN = roleName };
+            _context.Translations.Add(translation);
+            await _context.SaveChangesAsync();
+
+            _context.Roles.Add(new Role { NameTranslationId = translation.Id });
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("{RoleName} role created.", roleName);
+        }
+
+        private async Task SeedSysAdminRulesAsync()
+        {
+            var adminRole = await GetRoleByNameAsync("SysAdmin");
+            if (adminRole == null)
+                return;
+
+            var hasWildcardRule = await _context.RolePermissionRules
+                .AnyAsync(r => r.RoleId == adminRole.Id && r.PermissionKey == "*");
+
+            if (hasWildcardRule)
+                return;
+
+            _context.RolePermissionRules.Add(new RolePermissionRule
+            {
+                RoleId = adminRole.Id,
+                PermissionKey = "*",
+                Effect = AccessRuleEffect.Allow
+            });
+
+            _logger.LogInformation("Seeded SysAdmin wildcard permission rule.");
+        }
+
+        private async Task SeedRoleRulesIfEmptyAsync(string roleName, List<RolePermissionRule> rules)
+        {
+            var role = await GetRoleByNameAsync(roleName);
+            if (role == null)
+                return;
+
+            var hasAnyRules = await _context.RolePermissionRules.AnyAsync(r => r.RoleId == role.Id);
+            if (hasAnyRules)
+                return;
+
+            foreach (var rule in rules)
+            {
+                rule.RoleId = role.Id;
+            }
+
+            _context.RolePermissionRules.AddRange(rules);
+            _logger.LogInformation("Seeded default ACL rules for role {RoleName}.", roleName);
+        }
+
+        private async Task<Role?> GetRoleByNameAsync(string roleName)
+        {
+            return await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
+        }
+
+        private static List<RolePermissionRule> BuildExaminerRules()
+        {
+            return new List<RolePermissionRule>
+            {
+                Allow("POST:/api/auth/change-password"),
+                Allow("POST:/api/auth/create-employee"),
+                Allow("GET:/api/auth/next-uid"),
+                Allow("GET:/api/admin/employees"),
+                Allow("GET:/api/admin/employees/{employeeid}"),
+                Allow("GET:/api/admin/roles"),
+                Allow("GET:/api/employees/me"),
+                Allow("GET:/api/employees/dashboard-stats"),
+                Allow("GET:/api/events/options"),
+                Allow("POST:/api/events*"),
+                Allow("GET:/api/patients/search"),
+                Allow("POST:/api/patients"),
+                Allow("GET:/api/patients/{id}"),
+                Allow("GET:/api/patients/{id}/detail"),
+                Allow("POST:/api/patients/{id}/photo"),
+                Allow("POST:/api/patients/{id}/documents"),
+                Allow("GET:/api/patients/{id}/documents"),
+                Allow("POST:/api/examinations/{examinationid}/documents")
+            };
+        }
+
+        private static List<RolePermissionRule> BuildDoctorRules()
+        {
+            return new List<RolePermissionRule>
+            {
+                Allow("POST:/api/auth/change-password"),
+                Allow("GET:/api/employees/me"),
+                Allow("GET:/api/employees/dashboard-stats"),
+                Allow("GET:/api/patients/search"),
+                Allow("GET:/api/patients/{id}"),
+                Allow("GET:/api/patients/{id}/detail"),
+                Allow("GET:/api/patients/{id}/documents"),
+                Allow("GET:/api/patients/{patientid}/documents/{documentid}"),
+                Allow("GET:/api/examinations/{examinationid}/documents/{documentid}")
+            };
+        }
+
+        private static List<RolePermissionRule> BuildCenterAdminRules()
+        {
+            return new List<RolePermissionRule>
+            {
+                Allow("POST:/api/auth/change-password"),
+                Allow("GET:/api/employees/me"),
+                Allow("GET:/api/employees/dashboard-stats"),
+                Allow("GET:/api/hospitals", Scope("Hospital", 0)),
+                Allow("GET:/api/hospitals/{hospitalid}/examination-types", Scope("Hospital", 0)),
+                Allow("PUT:/api/hospitals/{hospitalid}", Scope("Hospital", 0)),
+                Allow("GET:/api/examinationrooms/hospital/{hospitalid}", Scope("Hospital", 0)),
+                Allow("POST:/api/examinationrooms", Scope("Hospital", 0)),
+                Allow("PUT:/api/examinationrooms/{roomid}", Scope("Hospital", 0)),
+                Allow("DELETE:/api/examinationrooms/{roomid}", Scope("Hospital", 0)),
+                Allow("GET:/api/reservations/slots/hospital/{hospitalid}", Scope("Hospital", 0)),
+                Allow("POST:/api/reservations/slots", Scope("Hospital", 0)),
+                Allow("POST:/api/reservations/slots/hospital/{hospitalid}/copy-day", Scope("Hospital", 0)),
+                Allow("PUT:/api/reservations/slots/{slotid}", Scope("Hospital", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/release", Scope("Hospital", 0)),
+                Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Hospital", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Hospital", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Hospital", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Hospital", 0))
+            };
+        }
+
+        private static List<RolePermissionRule> BuildCountryAdminRules()
+        {
+            return new List<RolePermissionRule>
+            {
+                Allow("POST:/api/auth/change-password"),
+                Allow("GET:/api/employees/me"),
+                Allow("GET:/api/employees/dashboard-stats"),
+                Allow("GET:/api/hospitals"),
+                Allow("POST:/api/hospitals", Scope("Country", 203)),
+                Allow("GET:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 203)),
+                Allow("PUT:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 203)),
+                Allow("PUT:/api/hospitals/{hospitalid}", Scope("Country", 203)),
+                Allow("DELETE:/api/hospitals/{hospitalid}", Scope("Country", 203)),
+                Allow("GET:/api/examinationrooms/hospital/{hospitalid}", Scope("Country", 203)),
+                Allow("POST:/api/examinationrooms", Scope("Country", 203)),
+                Allow("PUT:/api/examinationrooms/{roomid}", Scope("Country", 203)),
+                Allow("DELETE:/api/examinationrooms/{roomid}", Scope("Country", 203)),
+                Allow("GET:/api/admin/employees"),
+                Allow("POST:/api/doctorexaminationrooms", Scope("Country", 203)),
+                Allow("DELETE:/api/doctorexaminationrooms/{assignmentid}", Scope("Country", 203)),
+                Allow("GET:/api/doctorexaminationrooms/doctor/{doctorid}", Scope("Country", 203)),
+                Allow("GET:/api/reservations/slots/hospital/{hospitalid}", Scope("Country", 203)),
+                Allow("POST:/api/reservations/slots", Scope("Country", 203)),
+                Allow("POST:/api/reservations/slots/hospital/{hospitalid}/copy-day", Scope("Country", 203)),
+                Allow("PUT:/api/reservations/slots/{slotid}", Scope("Country", 203)),
+                Allow("POST:/api/reservations/slots/{slotid}/release", Scope("Country", 203)),
+                Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Country", 203)),
+                Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Country", 203)),
+                Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Country", 203)),
+                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Country", 203))
+            };
+        }
+
+        private static RolePermissionRule Allow(string permissionKey, params RolePermissionScope[] scopes)
+        {
+            return new RolePermissionRule
+            {
+                PermissionKey = permissionKey,
+                Effect = AccessRuleEffect.Allow,
+                Scopes = scopes.ToList()
+            };
+        }
+
+        private static RolePermissionScope Scope(string resourceType, int resourceId)
+        {
+            return new RolePermissionScope
+            {
+                ResourceType = resourceType,
+                ResourceId = resourceId
+            };
         }
     }
 }

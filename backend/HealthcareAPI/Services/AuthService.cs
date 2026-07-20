@@ -122,7 +122,9 @@ namespace HealthcareAPI.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, employeeInfo.EmployeeId.ToString()),
                 new Claim(ClaimTypes.Email, employeeInfo.Email),
-                new Claim(ClaimTypes.Name, employeeInfo.FullName)
+                new Claim(ClaimTypes.Name, employeeInfo.FullName),
+                new Claim("acl_version", employeeInfo.AccessControlVersion.ToString()),
+                new Claim("country_code", employeeInfo.CountryCode)
             };
 
             // Add role claims

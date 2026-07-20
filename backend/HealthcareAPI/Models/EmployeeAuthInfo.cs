@@ -15,6 +15,8 @@ namespace HealthcareAPI.Models
         public string? TitleAfter { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public DateTime? PasswordExpiration { get; set; }
+        public int AccessControlVersion { get; set; }
+        public string CountryCode { get; set; } = "CZ";
         public List<string> Roles { get; set; } = new List<string>();
         
         public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();

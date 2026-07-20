@@ -12,6 +12,7 @@ namespace DatabaseAPI.Services
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
         Task<bool> DeactivateEmployeeAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
+        Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
     }
 
     public class EmployeeManagementService : IEmployeeManagementService
@@ -264,6 +265,45 @@ namespace DatabaseAPI.Services
                 .ToListAsync();
 
             return roles;
+        }
+
+        public async Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request)
+        {
+            var roleName = request.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(roleName))
+            {
+                return null;
+            }
+
+            var exists = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .AnyAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
+
+            if (exists)
+            {
+                return null;
+            }
+
+            var translation = new Translation
+            {
+                EN = roleName,
+                CS = roleName
+            };
+            _context.Translations.Add(translation);
+            await _context.SaveChangesAsync();
+
+            var role = new Role
+            {
+                NameTranslationId = translation.Id
+            };
+            _context.Roles.Add(role);
+            await _context.SaveChangesAsync();
+
+            return new RoleDto
+            {
+                Id = role.Id,
+                Name = roleName
+            };
         }
     }
 }

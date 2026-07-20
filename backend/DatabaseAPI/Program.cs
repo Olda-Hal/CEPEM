@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
 using DatabaseAPI.Services;
+using DatabaseAPI.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -30,6 +32,11 @@ builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
 
 // Register employee management service
 builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
+
+// Register access control services
+builder.Services.AddScoped<IAccessControlRepository, AccessControlRepository>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+builder.Services.AddScoped<IActorCountryContextService, ActorCountryContextService>();
 
 // Register photo services
 builder.Services.AddScoped<PhotoEncryptionService>();

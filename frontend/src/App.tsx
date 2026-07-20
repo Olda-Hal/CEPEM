@@ -6,6 +6,8 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import TestDashboard from './pages/TestDashboard';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
+import RoleManagementPage from './pages/RoleManagementPage';
+import CenterManagementPage from './pages/CenterManagementPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { PatientDetailPage } from './pages/PatientDetailPage';
 import { AddPatientFormPage } from './pages/AddPatientFormPage';
@@ -52,6 +54,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminEmployeesPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/roles" 
+              element={
+                <ProtectedRoute>
+                  <RoleManagementPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/centers" 
+              element={
+                <ProtectedRoute>
+                  <CenterManagementPage />
                 </ProtectedRoute>
               } 
             />

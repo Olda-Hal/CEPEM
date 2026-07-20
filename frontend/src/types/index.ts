@@ -15,6 +15,8 @@ export interface Employee {
   firstName: string;
   lastName: string;
   email: string;
+  countryCode?: string;
+  countryScopeId?: number;
   titleBefore?: string;
   titleAfter?: string;
   uid: string;
@@ -65,6 +67,51 @@ export interface UpdateEmployeeResponse {
 export interface Role {
   id: number;
   name: string;
+}
+
+export interface PermissionRuleScope {
+  resourceType: string;
+  resourceId: number;
+}
+
+export interface PermissionRule {
+  permissionKey: string;
+  effect: 'allow' | 'deny';
+  scopes: PermissionRuleScope[];
+}
+
+export interface EmployeePermissionRulesResponse {
+  employeeId: number;
+  rules: PermissionRule[];
+  accessControlVersion: number;
+}
+
+export interface UpdateEmployeePermissionRulesRequest {
+  rules: PermissionRule[];
+}
+
+export interface RolePermissionRulesResponse {
+  roleId: number;
+  roleName: string;
+  rules: PermissionRule[];
+}
+
+export interface UpdateRolePermissionRulesRequest {
+  rules: PermissionRule[];
+}
+
+export interface CreateRoleRequest {
+  name: string;
+}
+
+export interface EndpointPermissionCatalogItem {
+  permissionKey: string;
+  displayName?: string;
+  endpoint?: string;
+  method: string;
+  routeTemplate: string;
+  resourceType?: string;
+  resourceHint?: string;
 }
 
 export interface CreateEmployeeRequest {
@@ -432,6 +479,7 @@ export interface ExaminationRoom {
 export interface Hospital {
   id: number;
   name?: string;
+  countryScopeId?: number;
   address?: {
     street?: string;
     city?: string;

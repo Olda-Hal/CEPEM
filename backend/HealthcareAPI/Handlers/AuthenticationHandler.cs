@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Security.Claims;
 
 namespace HealthcareAPI.Handlers
 {
@@ -23,6 +24,20 @@ namespace HealthcareAPI.Handlers
                 if (!string.IsNullOrEmpty(authHeader))
                 {
                     request.Headers.Authorization = AuthenticationHeaderValue.Parse(authHeader);
+                }
+
+                var actorEmployeeId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrWhiteSpace(actorEmployeeId))
+                {
+                    request.Headers.Remove("X-Actor-Employee-Id");
+                    request.Headers.Add("X-Actor-Employee-Id", actorEmployeeId);
+                }
+
+                var actorCountryCode = httpContext.User.FindFirst("country_code")?.Value;
+                if (!string.IsNullOrWhiteSpace(actorCountryCode))
+                {
+                    request.Headers.Remove("X-Actor-Country-Code");
+                    request.Headers.Add("X-Actor-Country-Code", actorCountryCode);
                 }
             }
 

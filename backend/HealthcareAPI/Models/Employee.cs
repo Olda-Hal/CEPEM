@@ -8,6 +8,8 @@ namespace HealthcareAPI.Models
         public string Email { get; set; } = string.Empty;
         public string? TitleBefore { get; set; }
         public string? TitleAfter { get; set; }
+        public string CountryCode { get; set; } = "CZ";
+        public int CountryScopeId { get; set; } = 203;
         public string UID { get; set; } = string.Empty;
         public bool Active { get; set; } = true;
         public DateTime? LastLoginAt { get; set; }

@@ -16,17 +16,20 @@ namespace DatabaseAPI.Controllers
         private readonly ILogger<PatientsController> _logger;
         private readonly PatientPhotoService _photoService;
         private readonly PatientDocumentService _documentService;
+        private readonly IActorCountryContextService _actorCountryContextService;
 
         public PatientsController(
             DatabaseContext context, 
             ILogger<PatientsController> logger,
             PatientPhotoService photoService,
-            PatientDocumentService documentService)
+            PatientDocumentService documentService,
+            IActorCountryContextService actorCountryContextService)
         {
             _context = context;
             _logger = logger;
             _photoService = photoService;
             _documentService = documentService;
+            _actorCountryContextService = actorCountryContextService;
         }
 
         [HttpGet("search")]
@@ -124,6 +127,7 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
                 var uid = request.Uid;
                 if (string.IsNullOrWhiteSpace(uid) || !int.TryParse(uid, out _))
                 {
@@ -163,6 +167,7 @@ namespace DatabaseAPI.Controllers
                     UID = uid,
                     TitleBefore = request.TitleBefore,
                     TitleAfter = request.TitleAfter,
+                    CountryCode = actorCountryCode,
                     CreatedAt = DateTime.UtcNow,
                     Active = true
                 };
@@ -197,6 +202,7 @@ namespace DatabaseAPI.Controllers
                     PersonId = person.Id,
                     BirthDate = request.BirthDate,
                     InsuranceNumber = request.InsuranceNumber ?? 0,
+                    CountryCode = actorCountryCode,
                     Alive = true
                 };
 
