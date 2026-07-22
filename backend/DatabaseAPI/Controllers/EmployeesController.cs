@@ -37,13 +37,18 @@ namespace DatabaseAPI.Controllers
                 return NotFound("Employee not found");
             }
 
+            var email = await _context.ContactToObjects
+                .Where(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId == employee.PersonId)
+                .Join(_context.ContactEmails, cto => cto.ContactId, ce => ce.ContactId, (_, ce) => ce.Email)
+                .FirstOrDefaultAsync() ?? string.Empty;
+
             var employeeAuthInfo = new EmployeeAuthInfo
             {
                 EmployeeId = employee.Id,
                 PersonId = employee.PersonId,
                 FirstName = employee.Person.FirstName,
                 LastName = employee.Person.LastName,
-                Email = employee.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault() ?? string.Empty,
+                Email = email,
                 PasswordHash = "", // Don't return password hash
                 Salt = "", // Don't return salt
                 Active = employee.Person.Active,

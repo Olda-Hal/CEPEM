@@ -45,8 +45,14 @@ namespace DatabaseAPI.Services
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,
-                    Email = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(em => em.Email).FirstOrDefault(),
-                    PhoneNumber = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                    Email = _context.ContactToObjects
+                        .Where(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId == e.PersonId)
+                        .Join(_context.ContactEmails, cto => cto.ContactId, ce => ce.ContactId, (_, ce) => ce.Email)
+                        .FirstOrDefault() ?? string.Empty,
+                    PhoneNumber = _context.ContactToObjects
+                        .Where(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId == e.PersonId)
+                        .Join(_context.ContactPhoneNumbers, cto => cto.ContactId, cp => cp.ContactId, (_, cp) => cp.PhoneNumber)
+                        .FirstOrDefault() ?? string.Empty,
                     UID = e.Person.UID,
                     Gender = e.Person.Gender,
                     TitleBefore = e.Person.TitleBefore,
@@ -86,8 +92,14 @@ namespace DatabaseAPI.Services
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,
-                    Email = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(em => em.Email).FirstOrDefault(),
-                    PhoneNumber = e.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                    Email = _context.ContactToObjects
+                        .Where(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId == e.PersonId)
+                        .Join(_context.ContactEmails, cto => cto.ContactId, ce => ce.ContactId, (_, ce) => ce.Email)
+                        .FirstOrDefault() ?? string.Empty,
+                    PhoneNumber = _context.ContactToObjects
+                        .Where(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId == e.PersonId)
+                        .Join(_context.ContactPhoneNumbers, cto => cto.ContactId, cp => cp.ContactId, (_, cp) => cp.PhoneNumber)
+                        .FirstOrDefault() ?? string.Empty,
                     UID = e.Person.UID,
                     Gender = e.Person.Gender,
                     TitleBefore = e.Person.TitleBefore,
@@ -131,15 +143,22 @@ namespace DatabaseAPI.Services
                 }
 
                 // Check if UID already exists for other persons
-                var existingPerson = await _context.Persons
-                    .Include(p => p.ContactToObjects)
-                        .ThenInclude(cto => cto.Contact)
-                            .ThenInclude(c => c.Emails)
-                    .FirstOrDefaultAsync(p => p.Id != employee.PersonId &&
-                                           (p.UID == request.UID ||
-                                            p.ContactToObjects.Any(cto => cto.Contact.Emails.Any(e => e.Email == request.Email))));
+                var normalizedEmail = request.Email.Trim();
+                request.Email = normalizedEmail;
 
-                if (existingPerson != null)
+                var uidExists = await _context.Persons
+                    .AnyAsync(p => p.Id != employee.PersonId && p.UID == request.UID);
+
+                var emailExists = await _context.ContactToObjects
+                    .Where(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId != employee.PersonId)
+                    .Join(
+                        _context.ContactEmails,
+                        cto => cto.ContactId,
+                        ce => ce.ContactId,
+                        (_, ce) => ce.Email)
+                    .AnyAsync(email => email == normalizedEmail);
+
+                if (uidExists || emailExists)
                 {
                     return new UpdateEmployeeResponse
                     {
@@ -158,7 +177,13 @@ namespace DatabaseAPI.Services
                 employee.Person.Active = request.Active;
 
                 // Update Contact email and phone via ContactToObjects
-                var personContact = employee.Person.ContactToObjects.FirstOrDefault();
+                var personContact = employee.Person.ContactToObjects.FirstOrDefault()
+                    ?? await _context.ContactToObjects
+                        .Include(cto => cto.Contact)
+                            .ThenInclude(c => c.Emails)
+                        .Include(cto => cto.Contact)
+                            .ThenInclude(c => c.PhoneNumbers)
+                        .FirstOrDefaultAsync(cto => cto.ObjectType == ContactObjectType.Person && cto.ObjectId == employee.PersonId);
                 if (personContact == null)
                 {
                     var contact = new Contact();
@@ -168,7 +193,8 @@ namespace DatabaseAPI.Services
                     {
                         ContactId = contact.Id,
                         ObjectId = employee.PersonId,
-                        ObjectType = ContactObjectType.Person
+                        ObjectType = ContactObjectType.Person,
+                        PersonId = employee.PersonId
                     });
                     await _context.SaveChangesAsync();
 

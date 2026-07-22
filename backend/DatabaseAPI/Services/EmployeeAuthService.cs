@@ -225,14 +225,20 @@ namespace DatabaseAPI.Services
             try
             {
                 // Check if email or UID already exists
-                var existingPerson = await _context.Persons
-                    .Include(p => p.ContactToObjects)
-                        .ThenInclude(cto => cto.Contact)
-                            .ThenInclude(c => c.Emails)
-                    .FirstOrDefaultAsync(p => p.UID == request.UID ||
-                        p.ContactToObjects.Any(cto => cto.Contact.Emails.Any(e => e.Email == request.Email)));
+                var normalizedEmail = request.Email.Trim();
+                request.Email = normalizedEmail;
+
+                var uidExists = await _context.Persons.AnyAsync(p => p.UID == request.UID);
+                var emailExists = await _context.ContactToObjects
+                    .Where(cto => cto.ObjectType == ContactObjectType.Person)
+                    .Join(
+                        _context.ContactEmails,
+                        cto => cto.ContactId,
+                        ce => ce.ContactId,
+                        (_, ce) => ce.Email)
+                    .AnyAsync(email => email == normalizedEmail);
                 
-                if (existingPerson != null)
+                if (uidExists || emailExists)
                 {
                     return null;
                 }
@@ -268,7 +274,8 @@ namespace DatabaseAPI.Services
                 {
                     ContactId = contact.Id,
                     ObjectId = person.Id,
-                    ObjectType = ContactObjectType.Person
+                    ObjectType = ContactObjectType.Person,
+                    PersonId = person.Id
                 });
                 await _context.SaveChangesAsync();
 
