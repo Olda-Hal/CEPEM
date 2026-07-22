@@ -29,6 +29,7 @@ export interface Employee {
 
 export interface EmployeeListItem {
   employeeId: number;
+  createdByEmployeeId?: number;
   personId: number;
   firstName: string;
   lastName: string;

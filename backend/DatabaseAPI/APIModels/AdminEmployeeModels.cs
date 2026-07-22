@@ -3,6 +3,7 @@ namespace DatabaseAPI.APIModels
     public class EmployeeListItem
     {
         public int EmployeeId { get; set; }
+        public int? CreatedByEmployeeId { get; set; }
         public int PersonId { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;

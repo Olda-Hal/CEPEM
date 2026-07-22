@@ -4,6 +4,7 @@ using HealthcareAPI.Models;
 using HealthcareAPI.Services;
 using HealthcareAPI.Attributes;
 using HealthcareAPI.Middleware;
+using System.Security.Claims;
 
 namespace HealthcareAPI.Controllers
 {
@@ -65,6 +66,26 @@ namespace HealthcareAPI.Controllers
         {
             try
             {
+                if (User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin") && !User.IsInRole("Admin"))
+                {
+                    var actorEmployeeIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (!int.TryParse(actorEmployeeIdClaim, out var actorEmployeeId) || actorEmployeeId <= 0)
+                    {
+                        return Forbid();
+                    }
+
+                    var targetEmployee = await _adminService.GetEmployeeByIdAsync(employeeId);
+                    if (targetEmployee == null)
+                    {
+                        return NotFound("Employee not found");
+                    }
+
+                    if (targetEmployee.CreatedByEmployeeId != actorEmployeeId)
+                    {
+                        return StatusCode(403, "Country admin can edit only employees created by this account");
+                    }
+                }
+
                 var result = await _adminService.UpdateEmployeeAsync(employeeId, request);
                 if (!result.Success)
                 {
@@ -85,6 +106,26 @@ namespace HealthcareAPI.Controllers
         {
             try
             {
+                if (User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin") && !User.IsInRole("Admin"))
+                {
+                    var actorEmployeeIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (!int.TryParse(actorEmployeeIdClaim, out var actorEmployeeId) || actorEmployeeId <= 0)
+                    {
+                        return Forbid();
+                    }
+
+                    var targetEmployee = await _adminService.GetEmployeeByIdAsync(employeeId);
+                    if (targetEmployee == null)
+                    {
+                        return NotFound("Employee not found");
+                    }
+
+                    if (targetEmployee.CreatedByEmployeeId != actorEmployeeId)
+                    {
+                        return StatusCode(403, "Country admin can deactivate only employees created by this account");
+                    }
+                }
+
                 var success = await _adminService.DeactivateEmployeeAsync(employeeId);
                 if (!success)
                 {

@@ -8,6 +8,7 @@ public interface IActorCountryContextService
 {
     Task<string> GetActorCountryCodeAsync(CancellationToken cancellationToken = default);
     Task<int> GetActorCountryScopeIdAsync(CancellationToken cancellationToken = default);
+    int? GetActorEmployeeId();
 }
 
 public class ActorCountryContextService : IActorCountryContextService
@@ -47,5 +48,14 @@ public class ActorCountryContextService : IActorCountryContextService
     {
         var countryCode = await GetActorCountryCodeAsync(cancellationToken);
         return CountryScopeMapper.ToScopeId(countryCode);
+    }
+
+    public int? GetActorEmployeeId()
+    {
+        var employeeIdHeader = _httpContextAccessor.HttpContext?.Request.Headers["X-Actor-Employee-Id"].FirstOrDefault();
+        if (int.TryParse(employeeIdHeader, out var employeeId) && employeeId > 0)
+            return employeeId;
+
+        return null;
     }
 }

@@ -6,6 +6,7 @@ namespace DatabaseAPI.DatabaseModels;
 public class Employee
 {
     public int Id { get; set; }
+    public int? CreatedByEmployeeId { get; set; }
     
     [Required]
     public int PersonId { get; set; }

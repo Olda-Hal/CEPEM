@@ -23,19 +23,36 @@ public class ExaminationTypesController : ControllerBase
     {
         try
         {
-            var types = await _context.ExaminationTypes
+            var query = _context.ExaminationTypes
+                .AsNoTracking()
                 .Include(e => e.NameTranslation)
+                .AsQueryable();
+
+            var rawTypes = await query
                 .OrderBy(e => e.NameTranslation!.EN)
                 .Select(e => new
                 {
                     e.Id,
-                    Name = language == "cs"
-                        ? e.NameTranslation!.CS ?? e.NameTranslation.EN
-                        : language == "nl"
-                            ? e.NameTranslation!.NL ?? e.NameTranslation.EN
-                            : e.NameTranslation!.EN
+                    En = e.NameTranslation!.EN,
+                    Cs = e.NameTranslation.CS,
+                    Nl = e.NameTranslation.NL
                 })
                 .ToListAsync();
+
+            var types = rawTypes
+                .Select(e => new
+                {
+                    e.Id,
+                    Name = language == "cs"
+                        ? e.Cs ?? e.En
+                        : language == "nl"
+                            ? e.Nl ?? e.En
+                            : e.En
+                })
+                .Where(e => !string.IsNullOrWhiteSpace(e.Name))
+                .OrderBy(e => e.Name)
+                .ToList();
+
             return Ok(types);
         }
         catch (Exception ex)

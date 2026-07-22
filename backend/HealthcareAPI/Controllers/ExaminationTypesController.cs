@@ -18,12 +18,12 @@ public class ExaminationTypesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string? language = "cs")
     {
         try
         {
             var client = _httpClientFactory.CreateClient("DatabaseAPI");
-            var response = await client.GetAsync("/api/examinationtypes");
+            var response = await client.GetAsync($"/api/examinationtypes?language={Uri.EscapeDataString(language ?? "cs")}");
 
             if (!response.IsSuccessStatusCode)
                 return StatusCode((int)response.StatusCode, "Error retrieving examination types");

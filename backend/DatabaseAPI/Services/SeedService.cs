@@ -216,17 +216,35 @@ namespace DatabaseAPI.Services
             if (role == null)
                 return;
 
-            var hasAnyRules = await _context.RolePermissionRules.AnyAsync(r => r.RoleId == role.Id);
-            if (hasAnyRules)
-                return;
+            var existingRules = await _context.RolePermissionRules
+                .Where(r => r.RoleId == role.Id)
+                .Include(r => r.Scopes)
+                .ToListAsync();
+
+            static string BuildScopeSignature(IEnumerable<RolePermissionScope> scopes)
+            {
+                return string.Join("|", scopes
+                    .OrderBy(scope => scope.ResourceType)
+                    .ThenBy(scope => scope.ResourceId)
+                    .Select(scope => $"{scope.ResourceType}:{scope.ResourceId}"));
+            }
 
             foreach (var rule in rules)
             {
+                var incomingSignature = BuildScopeSignature(rule.Scopes);
+                var exists = existingRules.Any(existing =>
+                    string.Equals(existing.PermissionKey, rule.PermissionKey, StringComparison.OrdinalIgnoreCase) &&
+                    existing.Effect == rule.Effect &&
+                    BuildScopeSignature(existing.Scopes) == incomingSignature);
+
+                if (exists)
+                    continue;
+
                 rule.RoleId = role.Id;
+                _context.RolePermissionRules.Add(rule);
             }
 
-            _context.RolePermissionRules.AddRange(rules);
-            _logger.LogInformation("Seeded default ACL rules for role {RoleName}.", roleName);
+            _logger.LogInformation("Ensured default ACL rules for role {RoleName}.", roleName);
         }
 
         private async Task<Role?> GetRoleByNameAsync(string roleName)
@@ -276,6 +294,7 @@ namespace DatabaseAPI.Services
                 Allow("GET:/api/patients/{id}/documents"),
                 Allow("GET:/api/patients/{patientid}/documents/{documentid}"),
                 Allow("GET:/api/examinations/{examinationid}/documents/{documentid}"),
+                Allow("GET:/api/hospitals"),
                 Allow("GET:/api/examinations"),
                 Allow("GET:/api/examinations/export")
             };
@@ -314,31 +333,38 @@ namespace DatabaseAPI.Services
             return new List<RolePermissionRule>
             {
                 Allow("POST:/api/auth/change-password"),
+                Allow("POST:/api/auth/create-employee"),
+                Allow("GET:/api/auth/next-uid"),
                 Allow("GET:/api/employees/me"),
                 Allow("GET:/api/employees/dashboard-stats"),
                 Allow("GET:/api/hospitals"),
-                Allow("POST:/api/hospitals", Scope("Country", 203)),
-                Allow("GET:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 203)),
-                Allow("PUT:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 203)),
-                Allow("PUT:/api/hospitals/{hospitalid}", Scope("Country", 203)),
-                Allow("DELETE:/api/hospitals/{hospitalid}", Scope("Country", 203)),
-                Allow("GET:/api/examinationrooms/hospital/{hospitalid}", Scope("Country", 203)),
-                Allow("POST:/api/examinationrooms", Scope("Country", 203)),
-                Allow("PUT:/api/examinationrooms/{roomid}", Scope("Country", 203)),
-                Allow("DELETE:/api/examinationrooms/{roomid}", Scope("Country", 203)),
+                Allow("POST:/api/hospitals", Scope("Country", 0)),
+                Allow("GET:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 0)),
+                Allow("PUT:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 0)),
+                Allow("PUT:/api/hospitals/{hospitalid}", Scope("Country", 0)),
+                Allow("DELETE:/api/hospitals/{hospitalid}", Scope("Country", 0)),
+                Allow("GET:/api/examinationrooms/hospital/{hospitalid}", Scope("Country", 0)),
+                Allow("POST:/api/examinationrooms", Scope("Country", 0)),
+                Allow("PUT:/api/examinationrooms/{roomid}", Scope("Country", 0)),
+                Allow("DELETE:/api/examinationrooms/{roomid}", Scope("Country", 0)),
                 Allow("GET:/api/admin/employees"),
-                Allow("POST:/api/doctorexaminationrooms", Scope("Country", 203)),
-                Allow("DELETE:/api/doctorexaminationrooms/{assignmentid}", Scope("Country", 203)),
-                Allow("GET:/api/doctorexaminationrooms/doctor/{doctorid}", Scope("Country", 203)),
-                Allow("GET:/api/reservations/slots/hospital/{hospitalid}", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots/hospital/{hospitalid}/copy-day", Scope("Country", 203)),
-                Allow("PUT:/api/reservations/slots/{slotid}", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots/{slotid}/release", Scope("Country", 203)),
-                Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Country", 203)),
-                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Country", 203)),
+                Allow("GET:/api/admin/employees/{employeeid}"),
+                Allow("PUT:/api/admin/employees/{employeeid}"),
+                Allow("PATCH:/api/admin/employees/{employeeid}/deactivate"),
+                Allow("GET:/api/admin/roles"),
+                Allow("GET:/api/examinationtypes"),
+                Allow("POST:/api/doctorexaminationrooms", Scope("Country", 0)),
+                Allow("DELETE:/api/doctorexaminationrooms/{assignmentid}", Scope("Country", 0)),
+                Allow("GET:/api/doctorexaminationrooms/doctor/{doctorid}", Scope("Country", 0)),
+                Allow("GET:/api/reservations/slots/hospital/{hospitalid}", Scope("Country", 0)),
+                Allow("POST:/api/reservations/slots", Scope("Country", 0)),
+                Allow("POST:/api/reservations/slots/hospital/{hospitalid}/copy-day", Scope("Country", 0)),
+                Allow("PUT:/api/reservations/slots/{slotid}", Scope("Country", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/release", Scope("Country", 0)),
+                Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Country", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Country", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Country", 0)),
+                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Country", 0)),
                 Allow("GET:/api/examinations"),
                 Allow("GET:/api/examinations/export")
             };

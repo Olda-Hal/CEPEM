@@ -42,6 +42,7 @@ namespace DatabaseAPI.Services
                 .Select(e => new EmployeeListItem
                 {
                     EmployeeId = e.Id,
+                    CreatedByEmployeeId = e.CreatedByEmployeeId,
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,
@@ -89,6 +90,7 @@ namespace DatabaseAPI.Services
                 .Select(e => new EmployeeListItem
                 {
                     EmployeeId = e.Id,
+                    CreatedByEmployeeId = e.CreatedByEmployeeId,
                     PersonId = e.PersonId,
                     FirstName = e.Person.FirstName,
                     LastName = e.Person.LastName,

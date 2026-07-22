@@ -203,6 +203,6 @@ public class AccessControlService : IAccessControlService
 
         return scopes.Any(scope => contexts.Any(ctx =>
             scope.ResourceType.Equals(ctx.ResourceType, StringComparison.OrdinalIgnoreCase) &&
-            scope.ResourceId == ctx.ResourceId));
+            (scope.ResourceId == 0 || scope.ResourceId == ctx.ResourceId)));
     }
 }

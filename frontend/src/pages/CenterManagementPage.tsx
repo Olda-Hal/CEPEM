@@ -5,9 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../utils/api';
 import { hasRole } from '../utils/roles';
 import {
-  DoctorExaminationRoom,
-  EmployeeListItem,
-  ExaminationRoom,
   ExaminationType,
   Hospital
 } from '../types';
@@ -21,14 +18,6 @@ interface HospitalPayload {
   country?: string;
   countryScopeId?: number;
   active?: boolean;
-}
-
-interface AssignmentViewModel {
-  id: number;
-  doctorId: number;
-  doctorName: string;
-  examinationRoomId: number;
-  roomName: string;
 }
 
 const countryScopeByCode: Record<string, number> = {
@@ -78,15 +67,6 @@ const CenterManagementPage: React.FC = () => {
   const [createCenterCountryCode, setCreateCenterCountryCode] = useState(actorCountryCode);
   const [editCenterCountryCode, setEditCenterCountryCode] = useState(actorCountryCode);
 
-  const [rooms, setRooms] = useState<ExaminationRoom[]>([]);
-  const [personnel, setPersonnel] = useState<EmployeeListItem[]>([]);
-  const [assignments, setAssignments] = useState<AssignmentViewModel[]>([]);
-
-  const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomDescription, setNewRoomDescription] = useState('');
-  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
-
   const [allExaminationTypes, setAllExaminationTypes] = useState<ExaminationType[]>([]);
   const [allowedExaminationTypeIds, setAllowedExaminationTypeIds] = useState<number[]>([]);
   const [savingAllowedTypes, setSavingAllowedTypes] = useState(false);
@@ -95,14 +75,6 @@ const CenterManagementPage: React.FC = () => {
     () => hospitals.find((hospital) => hospital.id === selectedHospitalId) ?? null,
     [hospitals, selectedHospitalId]
   );
-
-  const personnelNameMap = useMemo(() => {
-    const map = new Map<number, string>();
-    personnel.forEach((person) => {
-      map.set(person.employeeId, person.fullName);
-    });
-    return map;
-  }, [personnel]);
 
   const getHospitalTitle = (hospital: Hospital) => {
     const name = hospital.name?.trim();
@@ -133,15 +105,12 @@ const CenterManagementPage: React.FC = () => {
       }
 
       try {
-        const employees = await apiClient.get<EmployeeListItem[]>('/api/admin/employees');
-        setPersonnel(employees.filter((employee) => employee.active));
-      } catch (personnelError) {
-        console.error('Error loading personnel for center management', personnelError);
-        setPersonnel([]);
+        const examinationTypes = await apiClient.get<ExaminationType[]>(`/api/examinationtypes?language=${i18n.language}`);
+        setAllExaminationTypes(examinationTypes);
+      } catch (examinationTypeError) {
+        console.error('Error loading examination types for center management', examinationTypeError);
+        setAllExaminationTypes([]);
       }
-
-      const examinationTypes = await apiClient.get<ExaminationType[]>(`/api/examinationtypes?language=${i18n.language}`);
-      setAllExaminationTypes(examinationTypes);
     } catch (loadError) {
       console.error('Error loading center management data', loadError);
       setError(t('centerManagement.errors.loadCenters'));
@@ -152,72 +121,19 @@ const CenterManagementPage: React.FC = () => {
 
   const loadSelectedCenterData = useCallback(async () => {
     if (!selectedHospitalId) {
-      setRooms([]);
-      setAssignments([]);
       setAllowedExaminationTypeIds([]);
       return;
     }
 
     try {
-      const [roomsResponse, allowedTypesResponse] = await Promise.all([
-        apiClient.get<ExaminationRoom[]>(`/api/examinationrooms/hospital/${selectedHospitalId}`),
-        apiClient.get<ExaminationType[]>(`/api/hospitals/${selectedHospitalId}/examination-types?language=${i18n.language}`)
-      ]);
-
-      setRooms(roomsResponse);
+      const allowedTypesResponse = await apiClient.get<ExaminationType[]>(`/api/hospitals/${selectedHospitalId}/examination-types?language=${i18n.language}`);
       setAllowedExaminationTypeIds(allowedTypesResponse.map((item) => item.id));
     } catch (loadError) {
       console.error('Error loading center detail data', loadError);
       setError(t('centerManagement.errors.loadCenterDetail'));
-      setRooms([]);
       setAllowedExaminationTypeIds([]);
     }
   }, [i18n.language, selectedHospitalId, t]);
-
-  const loadAssignments = useCallback(async () => {
-    if (!selectedHospitalId || personnel.length === 0) {
-      setAssignments([]);
-      return;
-    }
-
-    const settledResponses = await Promise.allSettled(
-      personnel.map((person) =>
-        apiClient.get<DoctorExaminationRoom[]>(`/api/doctorexaminationrooms/doctor/${person.employeeId}`)
-      )
-    );
-
-    const assignmentRows: AssignmentViewModel[] = [];
-
-    settledResponses.forEach((result, index) => {
-      if (result.status !== 'fulfilled') {
-        console.error('Error loading doctor assignments', result.reason);
-        return;
-      }
-
-      const person = personnel[index];
-      result.value
-        .filter((assignment) => assignment.hospitalId === selectedHospitalId)
-        .forEach((assignment) => {
-          assignmentRows.push({
-            id: assignment.id,
-            doctorId: assignment.doctorId,
-            doctorName: person?.fullName || personnelNameMap.get(assignment.doctorId) || t('centerManagement.unknownPersonnel'),
-            examinationRoomId: assignment.examinationRoomId,
-            roomName: assignment.roomName
-          });
-        });
-    });
-
-    assignmentRows.sort((left, right) => {
-      if (left.roomName === right.roomName) {
-        return left.doctorName.localeCompare(right.doctorName);
-      }
-
-      return left.roomName.localeCompare(right.roomName);
-    });
-
-    setAssignments(assignmentRows);
-  }, [personnelNameMap, personnel, selectedHospitalId, t]);
 
   useEffect(() => {
     if (!canManageCenters) {
@@ -259,18 +175,9 @@ const CenterManagementPage: React.FC = () => {
     void loadSelectedCenterData();
   }, [canManageCenters, loadSelectedCenterData]);
 
-  useEffect(() => {
-    if (!canManageCenters) {
-      return;
-    }
-
-    void loadAssignments();
-  }, [canManageCenters, loadAssignments]);
-
   const refreshAll = async () => {
     await loadHospitalsAndDoctors();
     await loadSelectedCenterData();
-    await loadAssignments();
   };
 
   const handleCreateCenter = async (event: React.FormEvent) => {
@@ -360,79 +267,6 @@ const CenterManagementPage: React.FC = () => {
     }
   };
 
-  const handleCreateRoom = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!selectedHospitalId) {
-      return;
-    }
-
-    if (!newRoomName.trim()) {
-      setError(t('centerManagement.errors.roomNameRequired'));
-      return;
-    }
-
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await apiClient.post('/api/examinationrooms', {
-        name: newRoomName.trim(),
-        description: newRoomDescription.trim() || undefined,
-        hospitalId: selectedHospitalId
-      });
-      setNewRoomName('');
-      setNewRoomDescription('');
-      setSuccess(t('centerManagement.messages.roomCreated'));
-      await loadSelectedCenterData();
-    } catch (createError) {
-      console.error('Error creating room', createError);
-      setError(t('centerManagement.errors.createRoom'));
-    }
-  };
-
-  const handleAssignDoctor = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!selectedDoctorId || !selectedRoomId) {
-      setError(t('centerManagement.errors.assignSelectionRequired'));
-      return;
-    }
-
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await apiClient.post('/api/doctorexaminationrooms', {
-        doctorId: selectedDoctorId,
-        examinationRoomId: selectedRoomId
-      });
-      setSelectedDoctorId(null);
-      setSelectedRoomId(null);
-      setSuccess(t('centerManagement.messages.doctorAssigned'));
-      await loadAssignments();
-    } catch (assignError) {
-      console.error('Error assigning doctor', assignError);
-      setError(t('centerManagement.errors.assignDoctor'));
-    }
-  };
-
-  const handleRemoveAssignment = async (assignmentId: number) => {
-    if (!window.confirm(t('centerManagement.confirmRemoveAssignment'))) {
-      return;
-    }
-
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await apiClient.delete(`/api/doctorexaminationrooms/${assignmentId}`);
-      setSuccess(t('centerManagement.messages.assignmentRemoved'));
-      await loadAssignments();
-    } catch (removeError) {
-      console.error('Error removing doctor assignment', removeError);
-      setError(t('centerManagement.errors.removeAssignment'));
-    }
-  };
 
   const toggleAllowedType = (typeId: number) => {
     setAllowedExaminationTypeIds((current) => {
@@ -635,87 +469,6 @@ const CenterManagementPage: React.FC = () => {
             ) : (
               <p>{t('centerManagement.selectCenterFirst')}</p>
             )}
-          </section>
-        </div>
-
-        <div className="grid two-columns">
-          <section className="panel">
-            <h3>{t('centerManagement.roomsTitle')}</h3>
-            <form className="form-grid" onSubmit={handleCreateRoom}>
-              <label>
-                <span>{t('centerManagement.roomName')}</span>
-                <input value={newRoomName} onChange={(event) => setNewRoomName(event.target.value)} />
-              </label>
-              <label>
-                <span>{t('centerManagement.roomDescription')}</span>
-                <input value={newRoomDescription} onChange={(event) => setNewRoomDescription(event.target.value)} />
-              </label>
-              <button type="submit" className="primary-button" disabled={!selectedHospitalId}>
-                {t('centerManagement.createRoomButton')}
-              </button>
-            </form>
-
-            <ul className="list">
-              {rooms.map((room) => (
-                <li key={room.id}>
-                  <strong>{room.name}</strong>
-                  <span>{room.description || t('centerManagement.noDescription')}</span>
-                </li>
-              ))}
-              {rooms.length === 0 && <li>{t('centerManagement.noRooms')}</li>}
-            </ul>
-          </section>
-
-          <section className="panel">
-            <h3>{t('centerManagement.assignPersonnelTitle')}</h3>
-            <form className="form-grid" onSubmit={handleAssignDoctor}>
-              <label>
-                <span>{t('centerManagement.selectPersonnel')}</span>
-                <select
-                  value={selectedDoctorId ?? ''}
-                  onChange={(event) => setSelectedDoctorId(event.target.value ? Number(event.target.value) : null)}
-                >
-                  <option value="">{t('centerManagement.selectPersonnelPlaceholder')}</option>
-                  {personnel.map((person) => (
-                    <option key={person.employeeId} value={person.employeeId}>
-                      {person.fullName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{t('centerManagement.selectRoom')}</span>
-                <select
-                  value={selectedRoomId ?? ''}
-                  onChange={(event) => setSelectedRoomId(event.target.value ? Number(event.target.value) : null)}
-                >
-                  <option value="">{t('centerManagement.selectRoomPlaceholder')}</option>
-                  {rooms.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit" className="primary-button" disabled={!selectedHospitalId || rooms.length === 0}>
-                {t('centerManagement.assignPersonnelButton')}
-              </button>
-            </form>
-
-            <div className="assignment-list">
-              {assignments.map((assignment) => (
-                <div key={assignment.id} className="assignment-item">
-                  <div>
-                    <strong>{assignment.roomName}</strong>
-                    <span>{assignment.doctorName}</span>
-                  </div>
-                  <button type="button" className="danger-button" onClick={() => handleRemoveAssignment(assignment.id)}>
-                    {t('centerManagement.removeAssignmentButton')}
-                  </button>
-                </div>
-              ))}
-              {assignments.length === 0 && <p>{t('centerManagement.noAssignments')}</p>}
-            </div>
           </section>
         </div>
 

@@ -89,13 +89,23 @@ public class HospitalsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Hospital>> Create([FromBody] CreateHospitalRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateHospitalRequest request)
     {
         try
         {
+            var trimmedName = request.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmedName))
+                return BadRequest("Hospital name is required");
+
+            var duplicateExists = await _context.Hospitals
+                .AnyAsync(h => h.Name != null && h.Name.ToLower() == trimmedName.ToLower());
+
+            if (duplicateExists)
+                return Conflict("Hospital with the same name already exists");
+
             var hospital = new Hospital
             {
-                Name = request.Name,
+                Name = trimmedName,
                 CountryScopeId = request.CountryScopeId ?? Hospital.CzechCountryScopeId,
                 Active = true
             };
@@ -117,7 +127,20 @@ public class HospitalsController : ControllerBase
             _context.Hospitals.Add(hospital);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = hospital.Id }, hospital);
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                hospital.Id,
+                hospital.Name,
+                hospital.CountryScopeId,
+                hospital.Active,
+                Address = hospital.AddressId == null ? null : new
+                {
+                    Street = request.Street ?? string.Empty,
+                    City = request.City ?? string.Empty,
+                    PostalCode = request.PostalCode ?? string.Empty,
+                    Country = request.Country ?? string.Empty
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -138,7 +161,19 @@ public class HospitalsController : ControllerBase
                 return NotFound("Hospital not found");
 
             if (request.Name != null)
-                hospital.Name = request.Name;
+            {
+                var trimmedName = request.Name.Trim();
+                if (string.IsNullOrWhiteSpace(trimmedName))
+                    return BadRequest("Hospital name is required");
+
+                var duplicateExists = await _context.Hospitals
+                    .AnyAsync(h => h.Id != id && h.Name != null && h.Name.ToLower() == trimmedName.ToLower());
+
+                if (duplicateExists)
+                    return Conflict("Hospital with the same name already exists");
+
+                hospital.Name = trimmedName;
+            }
 
             if (request.Active.HasValue)
                 hospital.Active = request.Active;
@@ -171,7 +206,20 @@ public class HospitalsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
-            return Ok(hospital);
+            return Ok(new
+            {
+                hospital.Id,
+                hospital.Name,
+                hospital.CountryScopeId,
+                hospital.Active,
+                Address = hospital.Address == null ? null : new
+                {
+                    hospital.Address.Street,
+                    hospital.Address.City,
+                    hospital.Address.PostalCode,
+                    hospital.Address.Country
+                }
+            });
         }
         catch (Exception ex)
         {

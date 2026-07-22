@@ -13,9 +13,12 @@ import {
 } from '../types';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
+import { useAuth } from '../contexts/AuthContext';
+import { hasRole } from '../utils/roles';
 
 const AdminEmployeesPage: React.FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +29,16 @@ const AdminEmployeesPage: React.FC = () => {
   const [permissionCatalog, setPermissionCatalog] = useState<EndpointPermissionCatalogItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const isRestrictedCountryAdmin = hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
+
+  const canManageEmployee = (employee: EmployeeListItem) => {
+    if (!isRestrictedCountryAdmin) {
+      return true;
+    }
+
+    return employee.createdByEmployeeId === user?.id;
+  };
 
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
@@ -192,19 +205,23 @@ const AdminEmployeesPage: React.FC = () => {
                     <button 
                       className="btn btn-primary btn-sm"
                       onClick={() => handleEdit(employee)}
+                      disabled={!canManageEmployee(employee)}
                     >
                       {t('admin.edit')}
                     </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleRules(employee)}
-                    >
-                      {t('admin.access')}
-                    </button>
+                    {!isRestrictedCountryAdmin && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleRules(employee)}
+                      >
+                        {t('admin.access')}
+                      </button>
+                    )}
                     {employee.active && (
                       <button 
                         className="btn btn-danger btn-sm"
                         onClick={() => handleDeactivate(employee.employeeId)}
+                        disabled={!canManageEmployee(employee)}
                       >
                         {t('admin.deactivate')}
                       </button>

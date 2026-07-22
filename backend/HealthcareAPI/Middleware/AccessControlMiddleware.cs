@@ -7,6 +7,29 @@ namespace HealthcareAPI.Middleware;
 
 public class AccessControlMiddleware
 {
+    private static readonly HashSet<string> CountryAdminAlwaysAllowedPermissions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "GET:/api/auth/next-uid",
+        "POST:/api/auth/create-employee",
+        "GET:/api/hospitals",
+        "POST:/api/hospitals",
+        "DELETE:/api/hospitals/{hospitalid}",
+        "GET:/api/examinationtypes",
+        "GET:/api/admin/employees",
+        "GET:/api/admin/roles",
+        "PUT:/api/admin/employees/{employeeid}",
+        "PATCH:/api/admin/employees/{employeeid}/deactivate",
+        "GET:/api/examinations",
+        "GET:/api/examinations/export"
+    };
+
+    private static readonly HashSet<string> DoctorAlwaysAllowedPermissions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "GET:/api/hospitals",
+        "GET:/api/examinations",
+        "GET:/api/examinations/export"
+    };
+
     private readonly RequestDelegate _next;
 
     public AccessControlMiddleware(RequestDelegate next)
@@ -49,6 +72,18 @@ public class AccessControlMiddleware
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new { error = "Forbidden", reason = "Permission key not resolved" });
+            return;
+        }
+
+        if (context.User.IsInRole("Country Admin") && CountryAdminAlwaysAllowedPermissions.Contains(permissionKey))
+        {
+            await _next(context);
+            return;
+        }
+
+        if (context.User.IsInRole("Doctor") && DoctorAlwaysAllowedPermissions.Contains(permissionKey))
+        {
+            await _next(context);
             return;
         }
 

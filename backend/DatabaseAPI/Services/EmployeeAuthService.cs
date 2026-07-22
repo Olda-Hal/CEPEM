@@ -287,6 +287,7 @@ namespace DatabaseAPI.Services
                 var employee = new Employee
                 {
                     PersonId = person.Id,
+                    CreatedByEmployeeId = _actorCountryContextService.GetActorEmployeeId(),
                     PasswordHash = passwordHash,
                     Salt = salt,
                     PasswordExpiration = DateTime.UtcNow.AddDays(-1) // Force password change on first login

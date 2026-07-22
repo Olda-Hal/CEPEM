@@ -23,6 +23,8 @@ export const DashboardPage: React.FC = () => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(true);
   const [buildNumber, setBuildNumber] = useState<string | null>(null);
   const canManageCenters = isAdmin(user) || hasRole(user, 'Country Admin');
+  const canCreateEmployees = isAdmin(user) || hasRole(user, 'Country Admin');
+  const canManageEmployees = isAdmin(user) || hasRole(user, 'Country Admin');
   useEffect(() => {
     // Fetch build number from static file
     fetch('/build_number.txt')
@@ -245,7 +247,7 @@ export const DashboardPage: React.FC = () => {
                     </button>
                   </div>
 
-                  {isAdmin(user) && (
+                  {canCreateEmployees && (
                     <div className="action-card admin-action">
                       <h4>{t('createEmployee.title')}</h4>
                       <p>{t('createEmployee.description')}</p>
@@ -258,7 +260,7 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   )}
 
-                  {isAdmin(user) && (
+                  {canManageEmployees && (
                     <div className="action-card admin-action">
                       <h4>{t('admin.employeeManagement')}</h4>
                       <p>{t('admin.employeeManagementDescription')}</p>
