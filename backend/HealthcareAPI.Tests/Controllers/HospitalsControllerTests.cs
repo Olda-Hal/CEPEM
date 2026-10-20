@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Protected;
 using System.Security.Claims;
 using Xunit;
 using HealthcareAPI.Controllers;
@@ -194,20 +195,3 @@ public class HospitalsControllerTests
     }
 }
 
-public class CreateHospitalRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Street { get; set; }
-    public string? City { get; set; }
-    public string? PostalCode { get; set; }
-    public string? Country { get; set; }
-}
-
-public class UpdateHospitalRequest
-{
-    public string? Name { get; set; }
-    public string? Street { get; set; }
-    public string? City { get; set; }
-    public string? PostalCode { get; set; }
-    public string? Country { get; set; }
-}

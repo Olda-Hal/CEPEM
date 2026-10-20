@@ -6,6 +6,7 @@ using DatabaseAPI.Data;
 using DatabaseAPI.APIModels;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using DatabaseAPI.Services;
 
 namespace DatabaseAPI.Tests.Controllers;
 
@@ -23,7 +24,7 @@ public class PatientsControllerTests : IAsyncLifetime
 
         _context = new DatabaseContext(options);
         _logger = new Mock<ILogger<PatientsController>>().Object;
-        _controller = new PatientsController(_context, _logger, null!, null!);
+        _controller = new PatientsController(_context, _logger, null!, null!, new Mock<IActorCountryContextService>().Object);
     }
 
     public async Task InitializeAsync()

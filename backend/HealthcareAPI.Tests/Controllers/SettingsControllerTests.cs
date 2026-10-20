@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Protected;
 using System.Text.Json;
 using Xunit;
 using HealthcareAPI.Controllers;

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -91,7 +92,7 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Create(request);
 
         // Assert
-        Assert.True(result.Result is CreatedAtActionResult or BadRequestObjectResult);
+        Assert.True(result is ObjectResult { StatusCode: StatusCodes.Status201Created });
     }
 
     [Fact]
@@ -136,7 +137,7 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Create(request);
 
         // Assert - Either success or validation error is acceptable
-        Assert.True(result.Result is CreatedAtActionResult or BadRequestObjectResult);
+        Assert.True(result is CreatedAtActionResult or BadRequestObjectResult);
     }
 
     [Fact]
@@ -149,7 +150,7 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Create(request);
 
         // Assert
-        Assert.True(result.Result is CreatedAtActionResult or BadRequestObjectResult);
+        Assert.True(result is ObjectResult { StatusCode: StatusCodes.Status201Created });
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Protected;
 using System.Security.Claims;
 using Xunit;
 using HealthcareAPI.Controllers;
@@ -227,15 +228,4 @@ public class ExaminationRoomsControllerTests
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(404, statusCodeResult.StatusCode);
     }
-}
-
-public class CreateExaminationRoomRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public int HospitalId { get; set; }
-}
-
-public class UpdateExaminationRoomRequest
-{
-    public string? Name { get; set; }
 }

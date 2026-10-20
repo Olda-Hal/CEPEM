@@ -23,7 +23,7 @@ public class AuthControllerTests
     {
         // Arrange
         var request = new LoginRequest { Email = "user@example.com", Password = "password123" };
-        var response = new LoginResponse { Token = "test-token", ExpiresIn = 3600 };
+        var response = new LoginResponse { Token = "test-token", Email = "user@example.com", FullName = "Test User" };
         
         _mockAuthService.Setup(s => s.LoginAsync(request))
             .ReturnsAsync(response);
@@ -168,7 +168,7 @@ public class AuthControllerTests
             Password = "password123"
         };
 
-        var response = new CreateEmployeeResponse { EmployeeId = 1, Message = "Employee created" };
+        var response = new CreateEmployeeResponse { EmployeeId = 1, PersonId = 1, Email = "john@example.com", FullName = "John Doe", UID = "12345678" };
         
         _mockAuthService.Setup(s => s.CreateEmployeeAsync(request))
             .ReturnsAsync(response);

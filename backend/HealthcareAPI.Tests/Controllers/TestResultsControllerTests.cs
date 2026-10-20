@@ -42,7 +42,7 @@ public class TestResultsControllerTests
         var result = await _controller.GetServiceDetails("healthcare-api");
 
         // Assert
-        Assert.IsType<OkObjectResult>(result) ?? Assert.IsType<NotFoundObjectResult>(result);
+        Assert.True(result is OkObjectResult or NotFoundObjectResult);
     }
 
     [Fact]

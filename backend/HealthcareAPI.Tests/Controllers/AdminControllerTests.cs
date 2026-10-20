@@ -11,14 +11,16 @@ namespace HealthcareAPI.Tests.Controllers;
 public class AdminControllerTests
 {
     private readonly Mock<IAdminService> _mockAdminService;
+    private readonly Mock<IPermissionCatalogService> _mockPermissionCatalogService;
     private readonly Mock<ILogger<AdminController>> _mockLogger;
     private readonly AdminController _controller;
 
     public AdminControllerTests()
     {
         _mockAdminService = new Mock<IAdminService>();
+        _mockPermissionCatalogService = new Mock<IPermissionCatalogService>();
         _mockLogger = new Mock<ILogger<AdminController>>();
-        _controller = new AdminController(_mockAdminService.Object, _mockLogger.Object);
+        _controller = new AdminController(_mockAdminService.Object, _mockPermissionCatalogService.Object, _mockLogger.Object);
     }
 
     [Fact]
@@ -27,8 +29,8 @@ public class AdminControllerTests
         // Arrange
         var employees = new List<EmployeeListItem>
         {
-            new EmployeeListItem { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" },
-            new EmployeeListItem { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
+            new EmployeeListItem { EmployeeId = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" },
+            new EmployeeListItem { EmployeeId = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
         _mockAdminService.Setup(s => s.GetAllEmployeesAsync())
@@ -66,7 +68,7 @@ public class AdminControllerTests
         var employeeId = 1;
         var employee = new EmployeeListItem 
         { 
-            Id = employeeId, 
+            EmployeeId = employeeId,
             FirstName = "John", 
             LastName = "Doe", 
             Email = "john@example.com" 
@@ -81,7 +83,7 @@ public class AdminControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedEmployee = Assert.IsType<EmployeeListItem>(okResult.Value);
-        Assert.Equal(employeeId, returnedEmployee.Id);
+        Assert.Equal(employeeId, returnedEmployee.EmployeeId);
     }
 
     [Fact]

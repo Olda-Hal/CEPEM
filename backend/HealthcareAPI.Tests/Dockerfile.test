@@ -12,7 +12,7 @@ COPY HealthcareAPI/ ./HealthcareAPI/
 
 # Run tests with coverage - continue on failure
 WORKDIR /app/HealthcareAPI.Tests
-RUN dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx || true
+RUN dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx
 
 # Generate coverage report - continue on failure
 RUN dotnet tool install -g dotnet-reportgenerator-globaltool || true
