@@ -85,7 +85,6 @@ services:
       dockerfile: ./frontend/Dockerfile
       args:
         REACT_APP_API_URL: https://${DOMAIN_NAME}/api
-        REACT_APP_DATABASE_API_URL: https://${DOMAIN_NAME}/api/database
         REACT_APP_AI_API_URL: https://${DOMAIN_NAME}/api/ai
     ports:
       - "127.0.0.1:3000:3000"
