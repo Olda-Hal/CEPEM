@@ -1,13 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
 
 namespace HealthcareAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TestResultsController : ControllerBase
 {
     private readonly string _testResultsPath = "/app/test-results";
+
+    /// <summary>
+    /// Returns the input as a file name if it is a plain file name (no path
+    /// separators, no parent traversal), otherwise null.
+    /// </summary>
+    private static string? SafeFileName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        return Path.GetFileName(name) == name && !name.Contains("..") ? name : null;
+    }
 
     [HttpGet("summary")]
     public async Task<IActionResult> GetTestSummary()
@@ -115,22 +131,29 @@ public class TestResultsController : ControllerBase
     {
         try
         {
+            var safeFileName = SafeFileName(fileName);
+            var safeServiceName = SafeFileName(serviceName);
+            if (safeFileName == null || safeServiceName == null)
+            {
+                return NotFound(new { message = "File not found" });
+            }
+
             // Try direct file path first
-            var directFilePath = Path.Combine(_testResultsPath, "reports", fileName);
-            
+            var directFilePath = Path.Combine(_testResultsPath, "reports", safeFileName);
+
             if (System.IO.File.Exists(directFilePath))
             {
-                var contentType = GetContentType(fileName);
+                var contentType = GetContentType(safeFileName);
                 var content = await System.IO.File.ReadAllTextAsync(directFilePath);
                 return Content(content, contentType);
             }
-            
+
             // Try with service prefix (legacy support)
-            var prefixedFilePath = Path.Combine(_testResultsPath, "reports", $"{serviceName}_{fileName}");
-            
+            var prefixedFilePath = Path.Combine(_testResultsPath, "reports", $"{safeServiceName}_{safeFileName}");
+
             if (System.IO.File.Exists(prefixedFilePath))
             {
-                var contentType = GetContentType(fileName);
+                var contentType = GetContentType(safeFileName);
                 var content = await System.IO.File.ReadAllTextAsync(prefixedFilePath);
                 return Content(content, contentType);
             }
@@ -160,7 +183,13 @@ public class TestResultsController : ControllerBase
     {
         try
         {
-            var coverageHtmlPath = Path.Combine(_testResultsPath, "reports", $"{serviceName}_coverage_html", "index.html");
+            var safeServiceName = SafeFileName(serviceName);
+            if (safeServiceName == null)
+            {
+                return NotFound(new { message = "No coverage report found for service" });
+            }
+
+            var coverageHtmlPath = Path.Combine(_testResultsPath, "reports", $"{safeServiceName}_coverage_html", "index.html");
             
             if (System.IO.File.Exists(coverageHtmlPath))
             {
@@ -169,7 +198,7 @@ public class TestResultsController : ControllerBase
             }
 
             // Try to find coverage JSON
-            var coverageJsonPath = Path.Combine(_testResultsPath, "reports", $"{serviceName}_coverage-final.json");
+            var coverageJsonPath = Path.Combine(_testResultsPath, "reports", $"{safeServiceName}_coverage-final.json");
             if (System.IO.File.Exists(coverageJsonPath))
             {
                 var content = await System.IO.File.ReadAllTextAsync(coverageJsonPath);

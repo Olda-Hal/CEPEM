@@ -240,7 +240,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [HttpGet("{id}/photo")]
-        [AllowAnonymous]
+        [Authorize]
         public async Task<IActionResult> GetPatientPhoto(int id)
         {
             try

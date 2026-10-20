@@ -901,7 +901,7 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var documentData = await _documentService.GetDocumentDataAsync(documentId);
+                var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
 
                 if (documentData == null)
                 {
@@ -922,7 +922,7 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var deleted = await _documentService.DeleteDocumentAsync(documentId);
+                var deleted = await _documentService.DeleteDocumentAsync(documentId, patientId);
 
                 if (!deleted)
                 {

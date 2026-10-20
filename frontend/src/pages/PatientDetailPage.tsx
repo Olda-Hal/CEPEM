@@ -190,6 +190,7 @@ export const PatientDetailPage: React.FC = () => {
   const [patient, setPatient] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [photoObjectUrl, setPhotoObjectUrl] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showAddIntakeFormModal, setShowAddIntakeFormModal] = useState(false);
@@ -236,6 +237,33 @@ export const PatientDetailPage: React.FC = () => {
       loadPatientDetail(parseInt(id));
     }
   }, [id]);
+
+  // Fetch the patient photo through the authenticated API client - the
+  // endpoint no longer allows anonymous access, so it cannot be loaded
+  // directly via an <img src> URL.
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    let cancelled = false;
+
+    const loadPhoto = async () => {
+      if (!patient?.photoUrl) return;
+      try {
+        const blob = await apiClient.getBlob(patient.photoUrl);
+        if (!cancelled) {
+          objectUrl = URL.createObjectURL(blob);
+          setPhotoObjectUrl(objectUrl);
+        }
+      } catch (error) {
+        console.error('Error loading patient photo:', error);
+      }
+    };
+
+    loadPhoto();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [patient?.photoUrl]);
 
   const loadPatientDetail = async (patientId: number) => {
     try {
@@ -516,9 +544,9 @@ export const PatientDetailPage: React.FC = () => {
           <div className="patient-header">
             <div className="patient-photo-container">
               <div className="patient-photo-placeholder">
-                {patient.photoUrl ? (
-                  <img 
-                    src={`${process.env.REACT_APP_API_URL || '/api'}${patient.photoUrl}`} 
+                {photoObjectUrl ? (
+                  <img
+                    src={photoObjectUrl}
                     alt={patient.fullName}
                     className="patient-photo"
                     onError={(e) => {
@@ -528,7 +556,7 @@ export const PatientDetailPage: React.FC = () => {
                     }}
                   />
                 ) : null}
-                <svg className="photo-icon" viewBox="0 0 24 24" style={{ display: patient.photoUrl ? 'none' : 'block' }}>
+                <svg className="photo-icon" viewBox="0 0 24 24" style={{ display: photoObjectUrl ? 'none' : 'block' }}>
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
               </div>
