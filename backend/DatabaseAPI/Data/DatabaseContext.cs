@@ -20,6 +20,9 @@ public class DatabaseContext : DbContext
     public DbSet<RolePermissionScope> RolePermissionScopes { get; set; }
     public DbSet<EmployeePermissionRule> EmployeePermissionRules { get; set; }
     public DbSet<EmployeePermissionScope> EmployeePermissionScopes { get; set; }
+    public DbSet<Permission> Permissions { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
+    public DbSet<EmployeePermission> EmployeePermissions { get; set; }
     
     // Event related entities
     public DbSet<Event> Events { get; set; }
@@ -107,6 +110,7 @@ public class DatabaseContext : DbContext
         ConfigureTranslationRelationships(modelBuilder);
         ConfigureFormSubmissionRelationships(modelBuilder);
         ConfigureAccessControlRelationships(modelBuilder);
+        ConfigurePermissionsRelationships(modelBuilder);
     }
     
     private void ConfigurePersonRelationships(ModelBuilder modelBuilder)
@@ -631,6 +635,68 @@ public class DatabaseContext : DbContext
 
         modelBuilder.Entity<EmployeePermissionScope>()
             .HasIndex(eps => new { eps.EmployeePermissionRuleId, eps.ResourceType, eps.ResourceId })
+            .IsUnique();
+    }
+
+    private void ConfigurePermissionsRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Permission>()
+            .Property(p => p.Code)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        modelBuilder.Entity<Permission>()
+            .HasIndex(p => p.Code)
+            .IsUnique();
+
+        modelBuilder.Entity<Permission>()
+            .Property(p => p.Description)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Role)
+            .WithMany()
+            .HasForeignKey(rp => rp.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Permission)
+            .WithMany(p => p.RolePermissions)
+            .HasForeignKey(rp => rp.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .Property(rp => rp.Effect)
+            .HasMaxLength(10)
+            .IsRequired();
+
+        modelBuilder.Entity<RolePermission>()
+            .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+            .IsUnique();
+
+        modelBuilder.Entity<EmployeePermission>()
+            .HasOne(ep => ep.User)
+            .WithMany()
+            .HasForeignKey(ep => ep.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EmployeePermission>()
+            .HasOne(ep => ep.Permission)
+            .WithMany(p => p.EmployeePermissions)
+            .HasForeignKey(ep => ep.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EmployeePermission>()
+            .Property(ep => ep.Effect)
+            .HasMaxLength(10)
+            .IsRequired();
+
+        modelBuilder.Entity<EmployeePermission>()
+            .Property(ep => ep.ScopeType)
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<EmployeePermission>()
+            .HasIndex(ep => new { ep.UserId, ep.PermissionId, ep.ScopeType, ep.ScopeId })
             .IsUnique();
     }
 }

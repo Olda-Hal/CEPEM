@@ -373,6 +373,40 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("Employees");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Effect")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ScopeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ScopeType")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("UserId", "PermissionId", "ScopeType", "ScopeId")
+                        .IsUnique();
+
+                    b.ToTable("EmployeePermissions");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionRule", b =>
                 {
                     b.Property<int>("Id")
@@ -1212,6 +1246,29 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("PatientSymptoms");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Permissions");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Person", b =>
                 {
                     b.Property<int>("Id")
@@ -1443,6 +1500,33 @@ namespace DatabaseAPI.Migrations
                     b.HasIndex("NameTranslationId");
 
                     b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Effect")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("RoleId", "PermissionId")
+                        .IsUnique();
+
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionRule", b =>
@@ -1799,6 +1883,25 @@ namespace DatabaseAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermission", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Permission", "Permission")
+                        .WithMany("EmployeePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Person", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionRule", b =>
@@ -2275,6 +2378,25 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("NameTranslation");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermission", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionRule", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Role", "Role")
@@ -2514,6 +2636,13 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Events");
 
                     b.Navigation("FormSubmissions");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Permission", b =>
+                {
+                    b.Navigation("EmployeePermissions");
+
+                    b.Navigation("RolePermissions");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Person", b =>
