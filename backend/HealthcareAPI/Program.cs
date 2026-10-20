@@ -17,8 +17,6 @@ builder.Services.AddHttpContextAccessor();
 // Register repositories and services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>();
-builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddSingleton<IPermissionCatalogService, PermissionCatalogService>();
@@ -27,27 +25,36 @@ builder.Services.AddSingleton<IPermissionCatalogService, PermissionCatalogServic
 builder.Services.AddTransient<HealthcareAPI.Handlers.AuthenticationHandler>();
 
 // Add HttpClient for DatabaseAPI communication
+var databaseApiUrl = builder.Configuration["DatabaseApiUrl"]
+    ?? Environment.GetEnvironmentVariable("DATABASE_API_URL")
+    ?? "http://database-api:5001";
+
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
-    var databaseApiUrl = builder.Configuration["DatabaseApiUrl"] 
-        ?? Environment.GetEnvironmentVariable("DATABASE_API_URL") 
-        ?? "http://database-api:5001";
     client.BaseAddress = new Uri(databaseApiUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
 .AddHttpMessageHandler<HealthcareAPI.Handlers.AuthenticationHandler>();
 
+// Activity log client (typed) - same base address as the named DatabaseAPI client
+builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>(client =>
+{
+    client.BaseAddress = new Uri(databaseApiUrl.TrimEnd('/') + "/");
+});
+
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
-var secretKey = jwtSettings["SecretKey"] 
-    ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
-    ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
-var issuer = jwtSettings["Issuer"] 
-    ?? Environment.GetEnvironmentVariable("JWT_ISSUER") 
-    ?? "test-issuer";
-var audience = jwtSettings["Audience"] 
-    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
-    ?? "test-audience";
+var secretKey = jwtSettings["SecretKey"]
+    ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+if (string.IsNullOrWhiteSpace(secretKey))
+{
+    throw new InvalidOperationException(
+        "JWT secret key is not configured. Set the JWT__SecretKey configuration value or the JWT_SECRET_KEY environment variable.");
+}
+var issuer = jwtSettings["Issuer"]
+    ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
+var audience = jwtSettings["Audience"]
+    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

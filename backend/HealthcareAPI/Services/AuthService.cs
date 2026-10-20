@@ -105,15 +105,17 @@ namespace HealthcareAPI.Services
         private string GenerateJwtToken(EmployeeAuthInfo employeeInfo)
         {
             var jwtSettings = _configuration.GetSection("JWT");
-            var secretKey = jwtSettings["SecretKey"] 
-                ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
-                ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
-            var issuer = jwtSettings["Issuer"] 
-                ?? Environment.GetEnvironmentVariable("JWT_ISSUER") 
-                ?? "test-issuer";
-            var audience = jwtSettings["Audience"] 
-                ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
-                ?? "test-audience";
+            var secretKey = jwtSettings["SecretKey"]
+                ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            if (string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new InvalidOperationException(
+                    "JWT secret key is not configured. Set the JWT__SecretKey configuration value or the JWT_SECRET_KEY environment variable.");
+            }
+            var issuer = jwtSettings["Issuer"]
+                ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
+            var audience = jwtSettings["Audience"]
+                ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

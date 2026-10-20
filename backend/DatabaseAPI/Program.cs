@@ -12,9 +12,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
 // Database Configuration
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? Environment.GetEnvironmentVariable("DATABASE_API_CONNECTION_STRING")
-    ?? "Server=mysql;Port=3306;Database=cepem_healthcare;User=cepem_user;Password=cepem_password;";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_API_CONNECTION_STRING");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Database connection string is not configured. Set ConnectionStrings:DefaultConnection or the DATABASE_API_CONNECTION_STRING environment variable.");
+}
 
 // Use a specific MySQL version to avoid auto-detection issues
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 33));
