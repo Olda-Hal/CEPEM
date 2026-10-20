@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Security.Claims;
 using Xunit;
 using HealthcareAPI.Controllers;
 using HealthcareAPI.Models;
@@ -16,6 +18,18 @@ public class AuthControllerTests
     {
         _mockAuthService = new Mock<IAuthService>();
         _controller = new AuthController(_mockAuthService.Object);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, "1"),
+                    new Claim(ClaimTypes.Role, "SysAdmin")
+                }, "TestAuthentication"))
+            }
+        };
+
     }
 
     [Fact]

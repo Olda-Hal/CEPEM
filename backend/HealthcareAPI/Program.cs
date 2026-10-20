@@ -1,8 +1,12 @@
+using HealthcareAPI.Authorization;
 using HealthcareAPI.Middleware;
+using HealthcareAPI.Proxy;
 using HealthcareAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Yarp.ReverseProxy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +91,24 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Permission-based authorization policies for YARP routes ("perm:{code}")
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
+foreach (var policyName in ProxyConfig.Routes.Select(r => r.AuthorizationPolicy).Where(p => p != null).Distinct()!)
+{
+    var code = policyName["perm:".Length..];
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy(policyName!, policy => policy.Requirements.Add(new PermissionRequirement(code)));
+    });
+}
+
+// YARP pass-through proxy for routes that used to be hand-written
+// copy-paste proxy controller actions
+var proxyBuilder = builder.Services.AddReverseProxy()
+    .LoadFromMemory(ProxyConfig.Routes, ProxyConfig.GetClusters(databaseApiUrl));
+ProxyConfig.AddClaimsTransform(proxyBuilder);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -103,6 +125,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapReverseProxy();
 
 app.Run();
 
