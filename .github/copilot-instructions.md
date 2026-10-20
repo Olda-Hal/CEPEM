@@ -7,7 +7,6 @@ This is a microservice-based medical platform with .NET APIs, React frontend, an
 **Three-tier microservice design:**
 - **HealthcareAPI** (port 5000): Main business logic, JWT auth, doctor management
 - **DatabaseAPI** (port 5001): Centralized data access layer (currently empty - clean slate)
-- **AIService** (port 8000): Python FastAPI for medical AI features
 - **Frontend** (port 3000): React 18 + TypeScript with i18n support
 - **MySQL** (port 3306): Shared database for all services
 

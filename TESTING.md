@@ -6,7 +6,6 @@ CEPEM platformě má implementované testy pro všechny mikroservisy:
 
 - **HealthcareAPI** - Unit testy pro controllers a services (C# + xUnit)
 - **DatabaseAPI** - Unit a integration testy (C# + xUnit)  
-- **AIService** - Unit testy pro FastAPI endpoints (Python + pytest)
 - **Frontend** - Component a unit testy (React + Jest + Testing Library)
 
 ## 🚀 Spuštění testů
@@ -40,13 +39,6 @@ cd backend/DatabaseAPI.Tests
 dotnet test --collect:"XPlat Code Coverage" --logger trx
 ```
 
-#### AIService Tests
-```bash
-cd backend/AIService
-pip install -r requirements-test.txt
-pytest --cov=. --cov-report=html --cov-report=xml
-```
-
 #### Frontend Tests
 ```bash
 cd frontend
@@ -57,7 +49,6 @@ npm test -- --coverage --watchAll=false
 
 ### Minimální požadavky coverage:
 - **Backend (.NET)**: 80% line coverage
-- **AIService (Python)**: 80% line coverage  
 - **Frontend (React)**: 80% line/function/branch coverage
 
 ### Generované reporty:
@@ -105,7 +96,6 @@ CEPEM Platform - Test Results Summary
    Failed: 0
    Line Coverage: 92.1%
 
-📊 AIService Results:
    Total Tests: 6
    Passed: 6
    Failed: 0

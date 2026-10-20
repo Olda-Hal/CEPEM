@@ -233,7 +233,7 @@ public class TestResultsController : ControllerBase
                 fileCount = Directory.GetFiles(reportsPath).Length;
             }
             
-            var services = new[] { "healthcare-api", "database-api", "ai-service", "frontend" };
+            var services = new[] { "healthcare-api", "database-api", "frontend" };
             var status = services.ToDictionary(service => service, service => new {
                 hasResults = fileCount > 0,
                 fileCount = fileCount,
