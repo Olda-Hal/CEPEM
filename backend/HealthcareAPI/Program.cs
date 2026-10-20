@@ -18,8 +18,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<IAccessControlService, AccessControlService>();
-builder.Services.AddSingleton<IPermissionCatalogService, PermissionCatalogService>();
 
 // Register the authentication handler
 builder.Services.AddTransient<HealthcareAPI.Handlers.AuthenticationHandler>();
@@ -102,7 +100,6 @@ app.UseMiddleware<ActivityLoggingMiddleware>();
 
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
-app.UseMiddleware<AccessControlMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

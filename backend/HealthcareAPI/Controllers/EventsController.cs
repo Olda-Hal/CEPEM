@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
@@ -16,6 +17,7 @@ public class EventsController : ControllerBase
         _httpClient = httpClientFactory.CreateClient("DatabaseAPI");
     }
 
+    [RequirePermission("events.read")]
     [HttpGet("options")]
     public async Task<IActionResult> GetEventOptions()
     {
@@ -37,6 +39,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost]
     public async Task<IActionResult> CreateEvent([FromBody] JsonElement eventData)
     {
@@ -61,6 +64,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("examination-types")]
     public async Task<IActionResult> CreateExaminationType([FromBody] JsonElement requestData)
     {
@@ -85,6 +89,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("symptoms")]
     public async Task<IActionResult> CreateSymptom([FromBody] JsonElement requestData)
     {
@@ -109,6 +114,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("injury-types")]
     public async Task<IActionResult> CreateInjuryType([FromBody] JsonElement requestData)
     {
@@ -133,6 +139,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("vaccine-types")]
     public async Task<IActionResult> CreateVaccineType([FromBody] JsonElement requestData)
     {
@@ -157,6 +164,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("group")]
     public async Task<IActionResult> CreateEventGroup([FromBody] JsonElement eventGroupData)
     {
@@ -181,6 +189,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("drugs")]
     public async Task<IActionResult> CreateDrug([FromBody] JsonElement requestData)
     {
@@ -205,6 +214,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("drug-categories")]
     public async Task<IActionResult> CreateDrugCategory([FromBody] JsonElement requestData)
     {
@@ -229,6 +239,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("intake-form")]
     public async Task<IActionResult> CreateIntakeForm([FromBody] JsonElement requestData)
     {
@@ -253,6 +264,7 @@ public class EventsController : ControllerBase
         }
     }
 
+    [RequirePermission("events.write")]
     [HttpPost("intake-form-links")]
     public async Task<IActionResult> CreateIntakeFormLink([FromBody] JsonElement requestData)
     {

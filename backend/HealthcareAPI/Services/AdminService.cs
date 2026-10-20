@@ -11,10 +11,6 @@ namespace HealthcareAPI.Services
         Task<bool> DeactivateEmployeeAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
-        Task<EmployeePermissionRulesResponse?> GetEmployeePermissionRulesAsync(int employeeId);
-        Task<bool> UpdateEmployeePermissionRulesAsync(int employeeId, UpdateEmployeePermissionRulesRequest request);
-        Task<RolePermissionRulesResponse?> GetRolePermissionRulesAsync(int roleId);
-        Task<bool> UpdateRolePermissionRulesAsync(int roleId, UpdateRolePermissionRulesRequest request);
     }
 
     public class AdminService : IAdminService
@@ -178,86 +174,8 @@ namespace HealthcareAPI.Services
             }
         }
 
-        public async Task<EmployeePermissionRulesResponse?> GetEmployeePermissionRulesAsync(int employeeId)
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync($"/api/access-control/employees/{employeeId}/rules");
-                if (!response.IsSuccessStatusCode)
-                    return null;
 
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<EmployeePermissionRulesResponse>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting employee permission rules");
-                return null;
-            }
-        }
 
-        public async Task<bool> UpdateEmployeePermissionRulesAsync(int employeeId, UpdateEmployeePermissionRulesRequest request)
-        {
-            try
-            {
-                var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync($"/api/access-control/employees/{employeeId}/rules", content);
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating employee permission rules");
-                return false;
-            }
-        }
-
-        public async Task<RolePermissionRulesResponse?> GetRolePermissionRulesAsync(int roleId)
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync($"/api/access-control/roles/{roleId}/rules");
-                if (!response.IsSuccessStatusCode)
-                    return null;
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<RolePermissionRulesResponse>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting role permission rules");
-                return null;
-            }
-        }
-
-        public async Task<bool> UpdateRolePermissionRulesAsync(int roleId, UpdateRolePermissionRulesRequest request)
-        {
-            try
-            {
-                var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PutAsync($"/api/access-control/roles/{roleId}/rules", content);
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating role permission rules");
-                return false;
-            }
-        }
     }
 }

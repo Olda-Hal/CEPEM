@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -17,6 +18,7 @@ public class ExaminationTypesController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("examinationtypes.read")]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? language = "cs")
     {
@@ -38,6 +40,7 @@ public class ExaminationTypesController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationtypes.read")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -59,6 +62,7 @@ public class ExaminationTypesController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationtypes.manage")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] object request)
     {
@@ -82,6 +86,7 @@ public class ExaminationTypesController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationtypes.manage")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] object request)
     {
@@ -105,6 +110,7 @@ public class ExaminationTypesController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationtypes.manage")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

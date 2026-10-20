@@ -72,6 +72,7 @@ namespace HealthcareAPI.Controllers
             return Ok(new { message = "Heslo bylo úspěšně změněno" });
         }
 
+        [RequirePermission("employees.create")]
         [HttpPost("create-employee")]
         [Authorize]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
@@ -102,6 +103,7 @@ namespace HealthcareAPI.Controllers
             return Ok(result);
         }
 
+        [RequirePermission("uid.read")]
         [HttpGet("next-uid")]
         [Authorize]
         public async Task<ActionResult<string>> GetNextAvailableUid()

@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,6 +19,7 @@ namespace HealthcareAPI.Controllers
             _employeeService = employeeService;
         }
 
+        [RequirePermission("dashboard.read")]
         [HttpGet("me")]
         public async Task<ActionResult<Employee>> GetCurrentEmployee()
         {
@@ -33,6 +35,7 @@ namespace HealthcareAPI.Controllers
             return Ok(employee);
         }
 
+        [RequirePermission("dashboard.read")]
         [HttpGet("dashboard-stats")]
         public async Task<ActionResult<object>> GetDashboardStats()
         {

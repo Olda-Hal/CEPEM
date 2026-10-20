@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
@@ -25,6 +26,7 @@ public class TestResultsController : ControllerBase
         return Path.GetFileName(name) == name && !name.Contains("..") ? name : null;
     }
 
+    [RequirePermission("tests.read")]
     [HttpGet("summary")]
     public async Task<IActionResult> GetTestSummary()
     {
@@ -52,6 +54,7 @@ public class TestResultsController : ControllerBase
         }
     }
 
+    [RequirePermission("tests.read")]
     [HttpGet("details/{serviceName}")]
     public async Task<IActionResult> GetServiceDetails(string serviceName)
     {
@@ -126,6 +129,7 @@ public class TestResultsController : ControllerBase
         };
     }
 
+    [RequirePermission("tests.read")]
     [HttpGet("file/{serviceName}/{fileName}")]
     public async Task<IActionResult> GetTestFile(string serviceName, string fileName)
     {
@@ -178,6 +182,7 @@ public class TestResultsController : ControllerBase
         };
     }
 
+    [RequirePermission("tests.read")]
     [HttpGet("coverage/{serviceName}")]
     public async Task<IActionResult> GetCoverageReport(string serviceName)
     {
@@ -213,6 +218,7 @@ public class TestResultsController : ControllerBase
         }
     }
 
+    [RequirePermission("tests.read")]
     [HttpGet("live-status")]
     public IActionResult GetLiveStatus()
     {

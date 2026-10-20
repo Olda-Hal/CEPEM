@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -17,6 +18,7 @@ public class DoctorExaminationRoomsController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("doctorexaminationrooms.read")]
     [HttpGet("doctor/{doctorId}")]
     public async Task<IActionResult> GetDoctorRooms(int doctorId)
     {
@@ -38,6 +40,7 @@ public class DoctorExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("doctorexaminationrooms.read")]
     [HttpGet("doctor/{doctorId}/hospitals")]
     public async Task<IActionResult> GetDoctorHospitals(int doctorId)
     {
@@ -59,6 +62,7 @@ public class DoctorExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("doctorexaminationrooms.read")]
     [HttpGet("doctor/{doctorId}/rooms")]
     public async Task<IActionResult> GetDoctorRoomsByHospital(int doctorId, [FromQuery] int? hospitalId)
     {
@@ -83,6 +87,7 @@ public class DoctorExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("doctorexaminationrooms.read")]
     [HttpGet("room/{roomId}/doctors")]
     public async Task<IActionResult> GetDoctorsByRoom(int roomId)
     {
@@ -104,6 +109,7 @@ public class DoctorExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("doctorexaminationrooms.write")]
     [HttpPost]
     public async Task<IActionResult> AssignRoom([FromBody] AssignExaminationRoomRequest request)
     {
@@ -133,6 +139,7 @@ public class DoctorExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("doctorexaminationrooms.write")]
     [HttpDelete("{assignmentId}")]
     public async Task<IActionResult> RemoveAssignment(int assignmentId)
     {

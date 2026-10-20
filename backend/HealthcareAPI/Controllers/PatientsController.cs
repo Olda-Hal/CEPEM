@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using HealthcareAPI.Services;
@@ -19,6 +20,7 @@ namespace HealthcareAPI.Controllers
             _logger = logger;
         }
 
+        [RequirePermission("patients.read")]
         [HttpGet("search")]
         public async Task<IActionResult> SearchPatients(
             [FromQuery] int page = 0,
@@ -61,6 +63,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+[RequirePermission("patients.write")]
 [HttpPost]
         public async Task<IActionResult> CreatePatient([FromBody] object createPatientRequest)
         {
@@ -99,6 +102,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.read")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPatient(int id)
         {
@@ -132,6 +136,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.read")]
         [HttpGet("{id}/detail")]
         public async Task<IActionResult> GetPatientDetail(int id)
         {
@@ -165,6 +170,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.write")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePatient(int id, [FromBody] object updatePatientRequest)
         {
@@ -204,6 +210,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.photo.write")]
         [HttpPost("{id}/photo")]
         public async Task<IActionResult> UploadPatientPhoto(int id, [FromForm] IFormFile photo)
         {
@@ -239,6 +246,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.read")]
         [HttpGet("{id}/photo")]
         [Authorize]
         public async Task<IActionResult> GetPatientPhoto(int id)
@@ -269,6 +277,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.photo.write")]
         [HttpDelete("{id}/photo")]
         public async Task<IActionResult> DeletePatientPhoto(int id)
         {
@@ -296,6 +305,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.documents.write")]
         [HttpPost("{id}/documents")]
         public async Task<IActionResult> UploadPatientDocument(int id, [FromForm] IFormFile document)
         {
@@ -326,6 +336,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.documents.read")]
         [HttpGet("{id}/documents")]
         public async Task<IActionResult> GetPatientDocuments(int id)
         {
@@ -349,6 +360,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.documents.read")]
         [HttpGet("{patientId}/documents/{documentId}")]
         public async Task<IActionResult> GetPatientDocument(int patientId, int documentId)
         {
@@ -377,6 +389,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.documents.write")]
         [HttpDelete("{patientId}/documents/{documentId}")]
         public async Task<IActionResult> DeletePatientDocument(int patientId, int documentId)
         {
@@ -404,6 +417,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("patients.write")]
         [HttpPatch("{id}/comment")]
         public async Task<IActionResult> UpdatePatientComment(int id, [FromBody] object commentRequest)
         {

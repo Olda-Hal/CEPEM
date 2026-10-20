@@ -5,6 +5,7 @@ using HealthcareAPI.Services;
 using HealthcareAPI.Attributes;
 using HealthcareAPI.Middleware;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace HealthcareAPI.Controllers
 {
@@ -14,16 +15,17 @@ namespace HealthcareAPI.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;
-        private readonly IPermissionCatalogService _permissionCatalogService;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(IAdminService adminService, IPermissionCatalogService permissionCatalogService, ILogger<AdminController> logger)
+        public AdminController(IAdminService adminService, IHttpClientFactory httpClientFactory, ILogger<AdminController> logger)
         {
             _adminService = adminService;
-            _permissionCatalogService = permissionCatalogService;
+            _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
 
+        [RequirePermission("employees.read")]
         [HttpGet("employees")]
         [PermissionDisplayName("List Employees")]
         public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees()
@@ -40,6 +42,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("employees.read")]
         [HttpGet("employees/{employeeId}")]
         [PermissionDisplayName("View Employee Detail")]
         public async Task<ActionResult<EmployeeListItem>> GetEmployee(int employeeId)
@@ -60,6 +63,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("employees.manage")]
         [HttpPut("employees/{employeeId}")]
         [PermissionDisplayName("Update Employee")]
         public async Task<ActionResult<UpdateEmployeeResponse>> UpdateEmployee(int employeeId, UpdateEmployeeRequest request)
@@ -100,6 +104,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("employees.manage")]
         [HttpPatch("employees/{employeeId}/deactivate")]
         [PermissionDisplayName("Deactivate Employee")]
         public async Task<ActionResult> DeactivateEmployee(int employeeId)
@@ -140,6 +145,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("employees.read")]
         [HttpGet("roles")]
         [PermissionDisplayName("List Roles")]
         public async Task<ActionResult<List<RoleDto>>> GetAllRoles()
@@ -156,6 +162,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("roles.manage")]
         [HttpPost("roles")]
         [PermissionDisplayName("Create Role")]
         [RequireRole("SysAdmin")]
@@ -176,93 +183,90 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("permissions.manage")]
         [HttpGet("access/permissions")]
-        [PermissionDisplayName("List Permission Catalog")]
-        [RequireRole("SysAdmin")]
-        public ActionResult<List<EndpointPermissionCatalogItem>> GetPermissionCatalog()
+        public async Task<IActionResult> GetPermissionCatalog()
         {
-            var catalog = _permissionCatalogService.GetCatalog();
-            return Ok(catalog);
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.GetAsync("/api/admin/permissions");
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error retrieving permission catalog");
+            var content = await response.Content.ReadAsStringAsync();
+            return Content(content, "application/json");
         }
 
+        [RequirePermission("permissions.manage")]
         [HttpGet("access/employees/{employeeId}/rules")]
-        [PermissionDisplayName("View Employee Access Rules")]
-        [RequireRole("SysAdmin")]
-        public async Task<ActionResult<EmployeePermissionRulesResponse>> GetEmployeePermissionRules(int employeeId)
+        public async Task<IActionResult> GetEmployeePermissionRules(int employeeId)
         {
-            try
-            {
-                var rules = await _adminService.GetEmployeePermissionRulesAsync(employeeId);
-                if (rules == null)
-                    return NotFound("Employee rules not found");
-
-                return Ok(rules);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting employee access rules");
-                return StatusCode(500, "Internal server error");
-            }
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.GetAsync($"/api/admin/employee-permissions?employeeId={employeeId}");
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return NotFound("Employee not found");
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error retrieving employee permissions");
+            var content = await response.Content.ReadAsStringAsync();
+            return Content(content, "application/json");
         }
 
-        [HttpPut("access/employees/{employeeId}/rules")]
-        [PermissionDisplayName("Update Employee Access Rules")]
-        [RequireRole("SysAdmin")]
-        public async Task<ActionResult> UpdateEmployeePermissionRules(int employeeId, [FromBody] UpdateEmployeePermissionRulesRequest request)
+        [RequirePermission("permissions.manage")]
+        [HttpPost("access/employees/{employeeId}/permissions")]
+        public async Task<IActionResult> AddEmployeePermission(int employeeId, [FromBody] JsonElement request)
         {
-            try
-            {
-                var success = await _adminService.UpdateEmployeePermissionRulesAsync(employeeId, request);
-                if (!success)
-                    return NotFound("Employee rules not found");
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var payload = JsonSerializer.Serialize(request);
+            var body = JsonDocument.Parse(payload).RootElement;
+            var permissionId = body.TryGetProperty("permissionId", out var pid) ? pid.GetInt32() : 0;
+            var effect = body.TryGetProperty("effect", out var eff) ? eff.GetString() : "Allow";
+            var scopeType = body.TryGetProperty("scopeType", out var st) ? st.GetString() : null;
+            var scopeId = body.TryGetProperty("scopeId", out var sid) && sid.ValueKind == JsonValueKind.Number ? sid.GetInt32() : (int?)null;
 
-                return Ok(new { message = "Employee access rules updated" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating employee access rules");
-                return StatusCode(500, "Internal server error");
-            }
+            var dbRequest = JsonSerializer.Serialize(new { employeeId, permissionId, effect, scopeType, scopeId });
+            var response = await client.PostAsync("/api/admin/employee-permissions",
+                new StringContent(dbRequest, System.Text.Encoding.UTF8, "application/json"));
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error adding employee permission");
+            var content = await response.Content.ReadAsStringAsync();
+            return Content(content, "application/json");
         }
 
+        [RequirePermission("permissions.manage")]
+        [HttpDelete("access/employee-permissions/{id}")]
+        public async Task<IActionResult> DeleteEmployeePermission(int id)
+        {
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.DeleteAsync($"/api/admin/employee-permissions/{id}");
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return NotFound("Employee permission not found");
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error deleting employee permission");
+            return Ok(new { message = "Employee permission deleted" });
+        }
+
+        [RequirePermission("permissions.manage")]
         [HttpGet("access/roles/{roleId}/rules")]
-        [PermissionDisplayName("View Role Access Rules")]
-        [RequireRole("SysAdmin")]
-        public async Task<ActionResult<RolePermissionRulesResponse>> GetRolePermissionRules(int roleId)
+        public async Task<IActionResult> GetRolePermissionRules(int roleId)
         {
-            try
-            {
-                var rules = await _adminService.GetRolePermissionRulesAsync(roleId);
-                if (rules == null)
-                    return NotFound("Role rules not found");
-
-                return Ok(rules);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting role access rules");
-                return StatusCode(500, "Internal server error");
-            }
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.GetAsync($"/api/admin/role-permissions?roleId={roleId}");
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return NotFound("Role not found");
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error retrieving role permissions");
+            var content = await response.Content.ReadAsStringAsync();
+            return Content(content, "application/json");
         }
 
+        [RequirePermission("permissions.manage")]
         [HttpPut("access/roles/{roleId}/rules")]
-        [PermissionDisplayName("Update Role Access Rules")]
-        [RequireRole("SysAdmin")]
-        public async Task<ActionResult> UpdateRolePermissionRules(int roleId, [FromBody] UpdateRolePermissionRulesRequest request)
+        public async Task<IActionResult> UpdateRolePermissionRules(int roleId, [FromBody] JsonElement request)
         {
-            try
-            {
-                var success = await _adminService.UpdateRolePermissionRulesAsync(roleId, request);
-                if (!success)
-                    return NotFound("Role rules not found");
-
-                return Ok(new { message = "Role access rules updated" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating role access rules");
-                return StatusCode(500, "Internal server error");
-            }
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.PutAsync($"/api/admin/role-permissions?roleId={roleId}",
+                new StringContent(JsonSerializer.Serialize(request), System.Text.Encoding.UTF8, "application/json"));
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error updating role permissions");
+            return Ok(new { message = "Role permissions updated" });
         }
     }
 }

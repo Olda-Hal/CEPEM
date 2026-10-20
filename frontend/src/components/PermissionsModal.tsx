@@ -1,92 +1,178 @@
 import React, { useEffect, useState } from 'react';
-import { Permission, EmployeePermission } from '../types';
+import { useTranslation } from 'react-i18next';
+import { EmployeePermission, EmployeeListItem, Permission } from '../types';
 import { apiClient } from '../utils/api';
 import './PermissionsModal.css';
 
 interface Props {
-  employeeId: number;
+  employee: EmployeeListItem;
+  getPermissionLabel: (permissionCode: string, fallback?: string) => string;
   onClose: () => void;
+  onSaved: () => void;
 }
 
-export const PermissionsModal: React.FC<Props> = ({ employeeId, onClose }) => {
+const PermissionsModal: React.FC<Props> = ({ employee, getPermissionLabel, onClose, onSaved }) => {
+  const { t } = useTranslation();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [employeePerms, setEmployeePerms] = useState<EmployeePermission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPermId, setSelectedPermId] = useState<number | null>(null);
-  const [effect, setEffect] = useState<'Allow'|'Deny'>('Allow');
-  const [scopeType, setScopeType] = useState<string>('');
-  const [scopeId, setScopeId] = useState<string>('');
+  const [effect, setEffect] = useState<'Allow' | 'Deny'>('Allow');
+  const [scopeType, setScopeType] = useState('');
+  const [scopeId, setScopeId] = useState('');
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employee.employeeId]);
 
   const load = async () => {
-    const [perms, empPerms] = await Promise.all([
-      apiClient.get<Permission[]>('/api/admin/permissions'),
-      apiClient.get<EmployeePermission[]>(`/api/admin/employee-permissions?employeeId=${employeeId}`)
-    ]);
-    setPermissions(perms);
-    setEmployeePerms(empPerms);
-    if (perms.length) setSelectedPermId(perms[0].id);
+    setLoading(true);
+    setError(null);
+    try {
+      const [perms, empPerms] = await Promise.all([
+        apiClient.get<Permission[]>('/api/admin/access/permissions'),
+        apiClient.get<EmployeePermission[]>(`/api/admin/access/employees/${employee.employeeId}/rules`)
+      ]);
+      setPermissions(perms);
+      setEmployeePerms(empPerms);
+      if (perms.length && !perms.some((p) => p.id === selectedPermId)) {
+        setSelectedPermId(perms[0].id);
+      }
+    } catch (err) {
+      console.error('Error loading permissions', err);
+      setError(t('admin.accessRules.loadFailed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAdd = async () => {
     if (!selectedPermId) return;
-    const body = {
-      employeeId: employeeId,
-      permissionId: selectedPermId,
-      effect,
-      scopeType: scopeType || null,
-      scopeId: scopeId ? parseInt(scopeId, 10) : null
-    };
-    await apiClient.post('/api/admin/employee-permissions', body);
-    await load();
+    setSaving(true);
+    setError(null);
+    try {
+      const scopeIdValue = parseInt(scopeId, 10);
+      await apiClient.post(`/api/admin/access/employees/${employee.employeeId}/permissions`, {
+        permissionId: selectedPermId,
+        effect,
+        scopeType: scopeType || null,
+        scopeId: Number.isNaN(scopeIdValue) ? null : scopeIdValue
+      });
+      await load();
+      onSaved();
+    } catch (err) {
+      console.error('Error adding employee permission', err);
+      setError(t('admin.accessRules.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
-    await apiClient.delete(`/api/admin/employee-permissions/${id}`);
-    await load();
+    setSaving(true);
+    setError(null);
+    try {
+      await apiClient.delete(`/api/admin/access/employee-permissions/${id}`);
+      await load();
+      onSaved();
+    } catch (err) {
+      console.error('Error deleting employee permission', err);
+      setError(t('admin.accessRules.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const codeFor = (permissionId: number) =>
+    permissions.find((p) => p.id === permissionId)?.code;
 
   return (
     <div className="modal-overlay">
       <div className="modal-content permissions-modal">
         <div className="modal-header">
-          <h3>Permissions for employee #{employeeId}</h3>
+          <h2>{t('admin.accessRules.title', { name: employee.fullName })}</h2>
           <button className="close-button" onClick={onClose}>&times;</button>
         </div>
 
-        <div className="modal-body">
-          <div className="perm-add">
-            <select value={selectedPermId ?? ''} onChange={e => setSelectedPermId(parseInt(e.target.value, 10))}>
-              {permissions.map(p => (
-                <option key={p.id} value={p.id}>{p.code}</option>
-              ))}
-            </select>
-            <select value={effect} onChange={e => setEffect(e.target.value as 'Allow'|'Deny')}>
-              <option value="Allow">Allow</option>
-              <option value="Deny">Deny</option>
-            </select>
-            <input placeholder="Scope type (e.g. Hospital)" value={scopeType} onChange={e=>setScopeType(e.target.value)} />
-            <input placeholder="Scope id" value={scopeId} onChange={e=>setScopeId(e.target.value)} />
-            <button className="btn" onClick={handleAdd}>Add</button>
-          </div>
+        {loading ? (
+          <div className="employee-form">{t('common.loading')}</div>
+        ) : (
+          <div className="modal-body">
+            {error && <div className="alert alert-error">{error}</div>}
+            <p className="access-rules-help">{t('admin.accessRules.employeeHelp')}</p>
 
-          <div className="perm-list">
-            <h4>Employee overrides</h4>
-            <table>
-              <thead><tr><th>Permission</th><th>Effect</th><th>Scope</th><th/></tr></thead>
-              <tbody>
-                {employeePerms.map(ep => (
-                  <tr key={ep.id}>
-                    <td>{permissions.find(p => p.id === ep.permissionId)?.code || ep.permissionId}</td>
-                    <td>{ep.effect}</td>
-                    <td>{ep.scopeType || 'Global'} {ep.scopeId ? `#${ep.scopeId}` : ''}</td>
-                    <td><button onClick={() => handleDelete(ep.id)}>Delete</button></td>
-                  </tr>
+            <div className="perm-add">
+              <select
+                value={selectedPermId ?? ''}
+                onChange={(e) => setSelectedPermId(parseInt(e.target.value, 10) || null)}
+              >
+                {permissions.map((p) => (
+                  <option key={p.id} value={p.id}>{getPermissionLabel(p.code, p.code)}</option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+              <select value={effect} onChange={(e) => setEffect(e.target.value as 'Allow' | 'Deny')}>
+                <option value="Allow">{t('admin.accessRules.allow')}</option>
+                <option value="Deny">{t('admin.accessRules.deny')}</option>
+              </select>
+              <input
+                placeholder={t('admin.accessRules.scopeTypePlaceholder')}
+                value={scopeType}
+                onChange={(e) => setScopeType(e.target.value)}
+              />
+              <input
+                placeholder={t('admin.accessRules.scopeIdPlaceholder')}
+                value={scopeId}
+                onChange={(e) => setScopeId(e.target.value)}
+              />
+              <button className="btn btn-primary" onClick={handleAdd} disabled={saving || !selectedPermId}>
+                {t('admin.accessRules.addPermission')}
+              </button>
+            </div>
+
+            <div className="perm-list">
+              <h4>{t('admin.accessRules.employeeOverrides')}</h4>
+              {employeePerms.length === 0 ? (
+                <p className="no-data">{t('admin.accessRules.noEmployeeOverrides')}</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t('admin.accessRules.permissionColumn')}</th>
+                      <th>{t('admin.accessRules.effectColumn')}</th>
+                      <th>{t('admin.accessRules.scope')}</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeePerms.map((ep) => (
+                      <tr key={ep.id}>
+                        <td>{getPermissionLabel(codeFor(ep.permissionId) || String(ep.permissionId))}</td>
+                        <td>{ep.effect === 'Deny' ? t('admin.accessRules.deny') : t('admin.accessRules.allow')}</td>
+                        <td>
+                          {ep.scopeType
+                            ? `${ep.scopeType}${ep.scopeId ? ` #${ep.scopeId}` : ''}`
+                            : t('admin.accessRules.globalScope')}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleDelete(ep.id)}
+                            disabled={saving}
+                          >
+                            {t('common.delete')}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

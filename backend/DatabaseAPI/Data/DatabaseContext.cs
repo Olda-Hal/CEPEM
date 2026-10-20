@@ -16,10 +16,6 @@ public class DatabaseContext : DbContext
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<RolePermissionRule> RolePermissionRules { get; set; }
-    public DbSet<RolePermissionScope> RolePermissionScopes { get; set; }
-    public DbSet<EmployeePermissionRule> EmployeePermissionRules { get; set; }
-    public DbSet<EmployeePermissionScope> EmployeePermissionScopes { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<EmployeePermission> EmployeePermissions { get; set; }
@@ -109,7 +105,6 @@ public class DatabaseContext : DbContext
         ConfigureAddressRelationships(modelBuilder);
         ConfigureTranslationRelationships(modelBuilder);
         ConfigureFormSubmissionRelationships(modelBuilder);
-        ConfigureAccessControlRelationships(modelBuilder);
         ConfigurePermissionsRelationships(modelBuilder);
     }
     
@@ -593,49 +588,6 @@ public class DatabaseContext : DbContext
             .WithMany(fs => fs.SicknessHistories)
             .HasForeignKey(sh => sh.FormSubmissionId)
             .OnDelete(DeleteBehavior.Cascade);
-    }
-
-    private void ConfigureAccessControlRelationships(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<RolePermissionRule>()
-            .HasOne(rpr => rpr.Role)
-            .WithMany(r => r.PermissionRules)
-            .HasForeignKey(rpr => rpr.RoleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<RolePermissionRule>()
-            .HasIndex(rpr => new { rpr.RoleId, rpr.PermissionKey })
-            .IsUnique();
-
-        modelBuilder.Entity<RolePermissionScope>()
-            .HasOne(rps => rps.RolePermissionRule)
-            .WithMany(rpr => rpr.Scopes)
-            .HasForeignKey(rps => rps.RolePermissionRuleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<RolePermissionScope>()
-            .HasIndex(rps => new { rps.RolePermissionRuleId, rps.ResourceType, rps.ResourceId })
-            .IsUnique();
-
-        modelBuilder.Entity<EmployeePermissionRule>()
-            .HasOne(epr => epr.Employee)
-            .WithMany(e => e.PermissionRules)
-            .HasForeignKey(epr => epr.EmployeeId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<EmployeePermissionRule>()
-            .HasIndex(epr => new { epr.EmployeeId, epr.PermissionKey })
-            .IsUnique();
-
-        modelBuilder.Entity<EmployeePermissionScope>()
-            .HasOne(eps => eps.EmployeePermissionRule)
-            .WithMany(epr => epr.Scopes)
-            .HasForeignKey(eps => eps.EmployeePermissionRuleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<EmployeePermissionScope>()
-            .HasIndex(eps => new { eps.EmployeePermissionRuleId, eps.ResourceType, eps.ResourceId })
-            .IsUnique();
     }
 
     private void ConfigurePermissionsRelationships(ModelBuilder modelBuilder)

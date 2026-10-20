@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,6 +19,7 @@ public class ReservationSlotsController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("reservations.read")]
     [HttpGet("hospital/{hospitalId}")]
     public async Task<IActionResult> GetByHospital(int hospitalId, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? status)
     {
@@ -52,6 +54,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPost]
     public async Task<IActionResult> CreateSlots([FromBody] CreateReservationSlotsRequest request)
     {
@@ -81,6 +84,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPost("hospital/{hospitalId}/copy-day")]
     public async Task<IActionResult> CopyDaySlots(int hospitalId, [FromBody] CopyReservationSlotsDayRequest request)
     {
@@ -110,6 +114,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPut("{slotId}")]
     public async Task<IActionResult> UpdateSlot(int slotId, [FromBody] UpdateReservationSlotRequest request)
     {
@@ -139,6 +144,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPost("{slotId}/release")]
     public async Task<IActionResult> ReleaseSlot(int slotId)
     {
@@ -163,6 +169,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpDelete("{slotId}")]
     public async Task<IActionResult> DeleteSlot(int slotId)
     {
@@ -186,6 +193,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPost("{slotId}/block")]
     public async Task<IActionResult> BlockSlot(int slotId, [FromBody] BlockReservationSlotRequest request)
     {
@@ -215,6 +223,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPost("{slotId}/confirm")]
     public async Task<IActionResult> ConfirmSlot(int slotId, [FromBody] ConfirmReservationSlotRequest? request)
     {
@@ -253,6 +262,7 @@ public class ReservationSlotsController : ControllerBase
         }
     }
 
+    [RequirePermission("reservations.write")]
     [HttpPost("{slotId}/reject")]
     public async Task<IActionResult> RejectSlot(int slotId)
     {

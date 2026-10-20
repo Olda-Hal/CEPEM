@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -17,6 +18,7 @@ public class ExaminationRoomsController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("examinationrooms.read")]
     [HttpGet("hospital/{hospitalId}")]
     public async Task<IActionResult> GetHospitalRooms(int hospitalId)
     {
@@ -38,6 +40,7 @@ public class ExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationrooms.write")]
     [HttpPost]
     public async Task<IActionResult> CreateRoom([FromBody] CreateExaminationRoomRequest request)
     {
@@ -67,6 +70,7 @@ public class ExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationrooms.write")]
     [HttpPut("{roomId}")]
     public async Task<IActionResult> UpdateRoom(int roomId, [FromBody] UpdateExaminationRoomRequest request)
     {
@@ -96,6 +100,7 @@ public class ExaminationRoomsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationrooms.write")]
     [HttpDelete("{roomId}")]
     public async Task<IActionResult> DeleteRoom(int roomId)
     {

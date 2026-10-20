@@ -40,6 +40,62 @@ namespace DatabaseAPI.Controllers
             return Ok(perms);
         }
 
+        public class RolePermissionDto
+        {
+            public int PermissionId { get; set; }
+            public string Code { get; set; } = string.Empty;
+            public string Effect { get; set; } = "Allow";
+        }
+
+        [HttpGet("/api/admin/role-permissions")]
+        public async Task<ActionResult<List<RolePermissionDto>>> GetRolePermissions([FromQuery] int roleId)
+        {
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null) return NotFound("Role not found");
+
+            var perms = await _context.RolePermissions
+                .Where(rp => rp.RoleId == roleId)
+                .Join(_context.Permissions,
+                    rp => rp.PermissionId,
+                    p => p.Id,
+                    (rp, p) => new RolePermissionDto { PermissionId = p.Id, Code = p.Code, Effect = rp.Effect })
+                .ToListAsync();
+            return Ok(perms);
+        }
+
+        public class UpdateRolePermissionsRequest
+        {
+            public List<RolePermissionDto> Permissions { get; set; } = new();
+        }
+
+        [HttpPut("/api/admin/role-permissions")]
+        public async Task<ActionResult> UpdateRolePermissions([FromQuery] int roleId, UpdateRolePermissionsRequest request)
+        {
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null) return NotFound("Role not found");
+
+            var existing = await _context.RolePermissions.Where(rp => rp.RoleId == roleId).ToListAsync();
+            _context.RolePermissions.RemoveRange(existing);
+
+            var validPermissionIds = await _context.Permissions.Select(p => p.Id).ToListAsync();
+            foreach (var perm in request.Permissions)
+            {
+                if (!validPermissionIds.Contains(perm.PermissionId))
+                {
+                    return BadRequest($"Unknown permission id: {perm.PermissionId}");
+                }
+                _context.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = roleId,
+                    PermissionId = perm.PermissionId,
+                    Effect = perm.Effect.Equals("Deny", StringComparison.OrdinalIgnoreCase) ? "Deny" : "Allow"
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Role permissions updated" });
+        }
+
         public class CreateEmployeePermissionRequest
         {
             public int EmployeeId { get; set; }

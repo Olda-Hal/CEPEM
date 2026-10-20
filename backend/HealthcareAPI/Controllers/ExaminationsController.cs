@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ public class ExaminationsController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("examinations.read")]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? language = "cs", [FromQuery] string? search = null,
         [FromQuery] int? hospitalId = null, [FromQuery] int? hospitalCountryScopeId = null,
@@ -45,6 +47,7 @@ public class ExaminationsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinations.export")]
     [HttpGet("export")]
     public async Task<IActionResult> Export([FromQuery] string? language = "cs", [FromQuery] string? search = null,
         [FromQuery] int? hospitalId = null, [FromQuery] int? hospitalCountryScopeId = null,

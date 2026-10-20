@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
@@ -18,6 +19,7 @@ namespace HealthcareAPI.Controllers
             _logger = logger;
         }
 
+        [RequirePermission("settings.read")]
         [HttpGet("quick-preview")]
         public async Task<IActionResult> GetQuickPreviewSettings()
         {
@@ -49,6 +51,7 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("settings.write")]
         [HttpPut("quick-preview")]
         public async Task<IActionResult> UpdateQuickPreviewSettings([FromBody] object request)
         {

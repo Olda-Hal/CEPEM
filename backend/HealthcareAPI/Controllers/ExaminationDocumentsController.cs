@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
@@ -18,6 +19,7 @@ public class ExaminationDocumentsController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("examinations.documents.read")]
     [HttpGet("{documentId}")]
     public async Task<IActionResult> Download(int examinationId, int documentId)
     {
@@ -46,6 +48,7 @@ public class ExaminationDocumentsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinations.documents.write")]
     [HttpPost]
     public async Task<IActionResult> Upload(int examinationId, [FromForm] IFormFile file)
     {

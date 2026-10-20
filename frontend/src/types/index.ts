@@ -70,49 +70,25 @@ export interface Role {
   name: string;
 }
 
-export interface PermissionRuleScope {
-  resourceType: string;
-  resourceId: number;
+export interface Permission {
+  id: number;
+  code: string;
+  description?: string | null;
 }
 
-export interface PermissionRule {
-  permissionKey: string;
-  effect: 'allow' | 'deny';
-  scopes: PermissionRuleScope[];
+export interface EmployeePermission {
+  id: number;
+  userId: number;
+  permissionId: number;
+  effect: string;
+  scopeType?: string | null;
+  scopeId?: number | null;
 }
 
-export interface EmployeePermissionRulesResponse {
-  employeeId: number;
-  rules: PermissionRule[];
-  accessControlVersion: number;
-}
-
-export interface UpdateEmployeePermissionRulesRequest {
-  rules: PermissionRule[];
-}
-
-export interface RolePermissionRulesResponse {
-  roleId: number;
-  roleName: string;
-  rules: PermissionRule[];
-}
-
-export interface UpdateRolePermissionRulesRequest {
-  rules: PermissionRule[];
-}
-
-export interface CreateRoleRequest {
-  name: string;
-}
-
-export interface EndpointPermissionCatalogItem {
-  permissionKey: string;
-  displayName?: string;
-  endpoint?: string;
-  method: string;
-  routeTemplate: string;
-  resourceType?: string;
-  resourceHint?: string;
+export interface RolePermissionAssignment {
+  permissionId: number;
+  code: string;
+  effect: string;
 }
 
 export interface CreateEmployeeRequest {

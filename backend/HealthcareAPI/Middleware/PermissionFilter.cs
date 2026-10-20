@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -10,13 +11,15 @@ public class PermissionFilter : IAsyncActionFilter
     private readonly string? _scopeType;
     private readonly string? _scopeParamName;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<PermissionFilter> _logger;
 
-    public PermissionFilter(string permissionCode, string? scopeType, string? scopeParamName, IHttpClientFactory httpClientFactory)
+    public PermissionFilter(string permissionCode, string? scopeType, string? scopeParamName, IHttpClientFactory httpClientFactory, ILogger<PermissionFilter> logger)
     {
         _permissionCode = permissionCode;
         _scopeType = scopeType;
         _scopeParamName = scopeParamName;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -24,20 +27,14 @@ public class PermissionFilter : IAsyncActionFilter
         var user = context.HttpContext.User;
         if (user?.Identity == null || !user.Identity.IsAuthenticated)
         {
-            context.HttpContext.Response.StatusCode = 401;
+            await WriteError(context, 401, "Unauthorized");
             return;
         }
 
         var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (employeeIdClaim == null)
+        if (employeeIdClaim == null || !int.TryParse(employeeIdClaim.Value, out var employeeId))
         {
-            context.HttpContext.Response.StatusCode = 403;
-            return;
-        }
-
-        if (!int.TryParse(employeeIdClaim.Value, out var employeeId))
-        {
-            context.HttpContext.Response.StatusCode = 403;
+            await WriteError(context, 403, "Forbidden", "Missing or invalid employee identity");
             return;
         }
 
@@ -55,37 +52,49 @@ public class PermissionFilter : IAsyncActionFilter
             }
         }
 
-        var client = _httpClientFactory.CreateClient("DatabaseAPI");
-        var url = $"/api/admin/permissions/effective?employeeId={employeeId}&permissionCode={_permissionCode}";
-        if (!string.IsNullOrEmpty(_scopeType)) url += $"&scopeType={_scopeType}";
-        if (scopeId.HasValue) url += $"&scopeId={scopeId.Value}";
+        var query = $"?employeeId={employeeId}&permissionCode={Uri.EscapeDataString(_permissionCode)}";
+        if (!string.IsNullOrEmpty(_scopeType)) query += $"&scopeType={Uri.EscapeDataString(_scopeType)}";
+        if (scopeId.HasValue) query += $"&scopeId={scopeId.Value}";
 
+        var client = _httpClientFactory.CreateClient("DatabaseAPI");
         try
         {
-            var resp = await client.GetAsync(url);
+            var resp = await client.GetAsync($"/api/admin/permissions/effective{query}", context.HttpContext.RequestAborted);
             if (!resp.IsSuccessStatusCode)
             {
-                context.HttpContext.Response.StatusCode = 403;
+                _logger.LogWarning("Permission evaluation failed for permission {PermissionCode}, employee {EmployeeId}: status {StatusCode}",
+                    _permissionCode, employeeId, resp.StatusCode);
+                await WriteError(context, 403, "Forbidden", "Permission evaluation failed");
                 return;
             }
 
-            var content = await resp.Content.ReadAsStringAsync();
+            var content = await resp.Content.ReadAsStringAsync(context.HttpContext.RequestAborted);
             var doc = JsonDocument.Parse(content);
             if (doc.RootElement.TryGetProperty("allowed", out var allowed) && allowed.GetBoolean())
             {
                 await next();
                 return;
             }
-            else
+
+            string? reason = null;
+            if (doc.RootElement.TryGetProperty("reason", out var reasonElement) && reasonElement.ValueKind == JsonValueKind.String)
             {
-                context.HttpContext.Response.StatusCode = 403;
-                return;
+                reason = reasonElement.GetString();
             }
+            await WriteError(context, 403, "Forbidden", reason ?? "Access denied", _permissionCode);
         }
-        catch
+        catch (Exception ex)
         {
-            context.HttpContext.Response.StatusCode = 500;
-            return;
+            _logger.LogError(ex, "Error evaluating permission {PermissionCode} for employee {EmployeeId}", _permissionCode, employeeId);
+            await WriteError(context, 500, "Internal server error", "Permission evaluation error");
         }
+    }
+
+    private static async Task WriteError(ActionExecutingContext context, int statusCode, string error, string? reason = null, string? permission = null)
+    {
+        context.HttpContext.Response.StatusCode = statusCode;
+        context.HttpContext.Response.ContentType = "application/json";
+        var payload = JsonSerializer.Serialize(new { error, reason, permission });
+        await context.HttpContext.Response.WriteAsync(payload);
     }
 }

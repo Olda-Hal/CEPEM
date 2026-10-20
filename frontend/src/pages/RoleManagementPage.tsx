@@ -4,25 +4,16 @@ import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
 import {
   CreateRoleRequest,
-  EndpointPermissionCatalogItem,
-  PermissionRule,
+  Permission,
   Role,
-  RolePermissionRulesResponse,
-  UpdateRolePermissionRulesRequest
+  RolePermissionAssignment
 } from '../types';
 import './RoleManagementPage.css';
-
-interface EditableRuleState {
-  effect: '' | 'allow' | 'deny';
-  scopesText: string;
-  resourceType?: string;
-  hasPlaceholderScope?: boolean;
-}
 
 const RoleManagementPage: React.FC = () => {
   const { t } = useTranslation();
   const [roles, setRoles] = useState<Role[]>([]);
-  const [catalog, setCatalog] = useState<EndpointPermissionCatalogItem[]>([]);
+  const [catalog, setCatalog] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -38,7 +29,7 @@ const RoleManagementPage: React.FC = () => {
       try {
         const [rolesResponse, catalogResponse] = await Promise.all([
           apiClient.get<Role[]>('/api/admin/roles'),
-          apiClient.get<EndpointPermissionCatalogItem[]>('/api/admin/access/permissions')
+          apiClient.get<Permission[]>('/api/admin/access/permissions')
         ]);
         setRoles(rolesResponse);
         setCatalog(catalogResponse);
@@ -98,13 +89,6 @@ const RoleManagementPage: React.FC = () => {
     return t(translationKey, { defaultValue: fallback || permissionKey });
   };
 
-  const getResourceTypeLabel = (resourceType?: string) => {
-    if (!resourceType) {
-      return '';
-    }
-
-    return t(`admin.accessRules.resourceTypes.${resourceType.toLowerCase()}`, { defaultValue: resourceType });
-  };
 
   const openRules = (role: Role) => {
     setSelectedRole(role);
@@ -187,7 +171,6 @@ const RoleManagementPage: React.FC = () => {
           onSaved={() => setSuccess(t('admin.roleEditor.rulesSaved', { name: translateRoleName(selectedRole.name) }))}
           translateRoleName={translateRoleName}
           getPermissionLabel={getPermissionLabel}
-          getResourceTypeLabel={getResourceTypeLabel}
         />
       )}
     </div>
@@ -196,74 +179,34 @@ const RoleManagementPage: React.FC = () => {
 
 interface RoleRulesModalProps {
   role: Role;
-  catalog: EndpointPermissionCatalogItem[];
+  catalog: Permission[];
   onClose: () => void;
   onSaved: () => void;
   translateRoleName: (roleName: string) => string;
   getPermissionLabel: (permissionKey: string, fallback?: string) => string;
-  getResourceTypeLabel: (resourceType?: string) => string;
 }
 
-const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose, onSaved, translateRoleName, getPermissionLabel, getResourceTypeLabel }) => {
+const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose, onSaved, translateRoleName, getPermissionLabel }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rules, setRules] = useState<Record<string, EditableRuleState>>({});
-
-  const catalogByKey = useMemo(() => {
-    return new Map(catalog.map((item) => [item.permissionKey, item]));
-  }, [catalog]);
-
-  const renderedPermissionKeys = useMemo(() => {
-    const keys = catalog.map((item) => item.permissionKey);
-    Object.keys(rules).forEach((permissionKey) => {
-      if (!catalogByKey.has(permissionKey)) {
-        keys.push(permissionKey);
-      }
-    });
-
-    return keys;
-  }, [catalog, rules, catalogByKey]);
+  // Assignment per permission code: 'Allow' | 'Deny' | undefined (unset)
+  const [assignments, setAssignments] = useState<Record<string, 'Allow' | 'Deny' | undefined>>({});
 
   useEffect(() => {
     const loadRules = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get<RolePermissionRulesResponse>(`/api/admin/access/roles/${role.id}/rules`);
-
-        const initialRules: Record<string, EditableRuleState> = {};
-        catalog.forEach((item) => {
-          initialRules[item.permissionKey] = {
-            effect: '',
-            scopesText: '',
-            resourceType: item.resourceType
-          };
+        const response = await apiClient.get<RolePermissionAssignment[]>(`/api/admin/access/roles/${role.id}/rules`);
+        const initial: Record<string, 'Allow' | 'Deny' | undefined> = {};
+        response.forEach((assignment) => {
+          initial[assignment.code] = assignment.effect === 'Deny' ? 'Deny' : 'Allow';
         });
-
-        response.rules.forEach((rule) => {
-          const positiveScopes = rule.scopes.filter((s) => s.resourceId > 0);
-          const hasPlaceholderScope = rule.scopes.some((s) => s.resourceId === 0);
-          const scopesText = positiveScopes.map((s) => s.resourceId).join(', ');
-          if (!initialRules[rule.permissionKey]) {
-            initialRules[rule.permissionKey] = {
-              effect: rule.effect,
-              scopesText,
-              resourceType: rule.scopes[0]?.resourceType,
-              hasPlaceholderScope
-            };
-          } else {
-            initialRules[rule.permissionKey].effect = rule.effect;
-            initialRules[rule.permissionKey].scopesText = scopesText;
-            initialRules[rule.permissionKey].resourceType = initialRules[rule.permissionKey].resourceType || rule.scopes[0]?.resourceType;
-            initialRules[rule.permissionKey].hasPlaceholderScope = hasPlaceholderScope;
-          }
-        });
-
-        setRules(initialRules);
+        setAssignments(initial);
       } catch (err) {
-        console.error('Error loading role rules', err);
+        console.error('Error loading role permissions', err);
         setError(t('admin.accessRules.loadFailed'));
       } finally {
         setLoading(false);
@@ -271,28 +214,10 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
     };
 
     void loadRules();
-  }, [catalog, role.id, t]);
+  }, [role.id, t]);
 
-  const updateRule = (permissionKey: string, patch: Partial<EditableRuleState>) => {
-    setRules((prev) => ({
-      ...prev,
-      [permissionKey]: {
-        ...(prev[permissionKey] || { effect: '', scopesText: '' }),
-        ...patch
-      }
-    }));
-  };
-
-  const parseScopes = (scopesText: string, resourceType?: string, hasPlaceholderScope?: boolean) => {
-    if (!resourceType || !scopesText.trim()) {
-      return hasPlaceholderScope ? [{ resourceType: resourceType || 'Hospital', resourceId: 0 }] : [];
-    }
-
-    return scopesText
-      .split(',')
-      .map((item) => Number(item.trim()))
-      .filter((value) => Number.isInteger(value) && value > 0)
-      .map((resourceId) => ({ resourceType, resourceId }));
+  const updateAssignment = (code: string, effect: 'Allow' | 'Deny' | undefined) => {
+    setAssignments((prev) => ({ ...prev, [code]: effect }));
   };
 
   const handleSave = async () => {
@@ -300,20 +225,18 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
     setError(null);
 
     try {
-      const compiledRules: PermissionRule[] = Object.entries(rules)
-        .filter(([, value]) => value.effect === 'allow' || value.effect === 'deny')
-        .map(([permissionKey, value]) => ({
-          permissionKey,
-          effect: value.effect as 'allow' | 'deny',
-          scopes: parseScopes(value.scopesText, value.resourceType, value.hasPlaceholderScope)
-        }));
+      const permissions = Object.entries(assignments)
+        .filter(([, effect]) => effect === 'Allow' || effect === 'Deny')
+        .map(([code, effect]) => {
+          const permission = catalog.find((p) => p.code === code);
+          return { permissionId: permission?.id ?? 0, effect };
+        });
 
-      const request: UpdateRolePermissionRulesRequest = { rules: compiledRules };
-      await apiClient.put(`/api/admin/access/roles/${role.id}/rules`, request);
+      await apiClient.put(`/api/admin/access/roles/${role.id}/rules`, { permissions });
       onSaved();
       onClose();
     } catch (err) {
-      console.error('Error saving role rules', err);
+      console.error('Error saving role permissions', err);
       setError(t('admin.accessRules.saveFailed'));
     } finally {
       setSaving(false);
@@ -335,47 +258,28 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
             {error && <div className="alert alert-error">{error}</div>}
             <p className="access-rules-help">{t('admin.accessRules.roleHelp')}</p>
             <div className="access-rules-grid">
-              {renderedPermissionKeys.map((permissionKey) => {
-                const catalogItem = catalogByKey.get(permissionKey);
-                const value = rules[permissionKey] || {
-                  effect: '',
-                  scopesText: '',
-                  resourceType: catalogItem?.resourceType,
-                  hasPlaceholderScope: false
-                };
-                const displayName = getPermissionLabel(permissionKey, catalogItem?.displayName || permissionKey);
-                const endpoint = catalogItem?.endpoint || permissionKey;
+              {catalog.map((permission) => {
+                const effect = assignments[permission.code];
+                const displayName = getPermissionLabel(permission.code, permission.code);
 
                 return (
-                <div className="access-rule-row" key={permissionKey}>
+                <div className="access-rule-row" key={permission.code}>
                   <div className="access-rule-key">
                     <div className="permission-title">
                       {displayName}
-                      <span className="permission-info" title={endpoint} aria-label={endpoint}>i</span>
+                      {permission.description && (
+                        <span className="permission-info" title={permission.description} aria-label={permission.description}>i</span>
+                      )}
                     </div>
-                    {value.resourceType && (
-                      <div className="permission-scope-hint">
-                        {t('admin.accessRules.scope')}: {getResourceTypeLabel(value.resourceType)}
-                        {catalogItem?.resourceHint ? ` (${catalogItem.resourceHint})` : ''}
-                        {value.hasPlaceholderScope && !value.scopesText.trim() ? ` - ${t('admin.accessRules.assignIdsHint')}` : ''}
-                      </div>
-                    )}
                   </div>
                   <select
-                    value={value.effect}
-                    onChange={(e) => updateRule(permissionKey, { effect: e.target.value as '' | 'allow' | 'deny' })}
+                    value={effect || ''}
+                    onChange={(e) => updateAssignment(permission.code, (e.target.value || undefined) as 'Allow' | 'Deny' | undefined)}
                   >
                     <option value="">{t('admin.accessRules.none')}</option>
-                    <option value="allow">{t('admin.accessRules.allow')}</option>
-                    <option value="deny">{t('admin.accessRules.deny')}</option>
+                    <option value="Allow">{t('admin.accessRules.allow')}</option>
+                    <option value="Deny">{t('admin.accessRules.deny')}</option>
                   </select>
-                  <input
-                    type="text"
-                    placeholder={value.resourceType ? `${getResourceTypeLabel(value.resourceType)} ID: 1,2,3` : t('admin.accessRules.none')}
-                    value={value.scopesText}
-                    onChange={(e) => updateRule(permissionKey, { scopesText: e.target.value })}
-                    disabled={!value.resourceType}
-                  />
                 </div>
                 );
               })}

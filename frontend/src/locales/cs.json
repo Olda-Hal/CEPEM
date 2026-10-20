@@ -77,8 +77,10 @@
     "creatingReservation": "Chyba při vytváření rezervace",
     "missingReservationFields": "Vyplňte prosím všechna povinná pole rezervace.",
     "userNotFound": "Uživatel nebyl nalezen. Přihlaste se prosím znovu.",
-    "loadingExaminationTypes": "Chyba při načítání typů vyšetření",    "loadingHospitals": "Chyba při načítání nemocnic",
-    "creatingHospital": "Chyba při vytváření nemocnice",    "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu.",
+    "loadingExaminationTypes": "Chyba při načítání typů vyšetření",
+    "loadingHospitals": "Chyba při načítání nemocnic",
+    "creatingHospital": "Chyba při vytváření nemocnice",
+    "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu.",
     "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
     "patientNotFound": "Pacient nebyl nalezen"
   },
@@ -607,7 +609,15 @@
         "employee": "Zaměstnanec",
         "reservationslot": "Rezervační slot",
         "examinationroom": "Vyšetřovací místnost"
-      }
+      },
+      "scopeTypePlaceholder": "Typ rozsahu (např. Hospital)",
+      "scopeIdPlaceholder": "ID rozsahu",
+      "addPermission": "Přidat oprávnění",
+      "employeeOverrides": "Nastavení oprávnění zaměstnance",
+      "noEmployeeOverrides": "Žádná individuální oprávnění.",
+      "globalScope": "Globální",
+      "permissionColumn": "Oprávnění",
+      "effectColumn": "Efekt"
     },
     "roleEditor": {
       "title": "Správa rolí",
@@ -830,10 +840,10 @@
   },
   "themes": {
     "lightThemes": "Světlé motivy",
-    "darkThemes": "Tmavé motivy", 
+    "darkThemes": "Tmavé motivy",
     "aurora": "Polární záře",
     "nebulaBlue": "Modrá mlhovina",
-    "emeraldDawn": "Smaragdový úsvit", 
+    "emeraldDawn": "Smaragdový úsvit",
     "mysticViolet": "Mystická fialová",
     "obsidian": "Obsidián",
     "cyberAzure": "Kybernet azur",

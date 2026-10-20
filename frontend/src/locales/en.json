@@ -1,4 +1,5 @@
-{  "login": {
+{
+  "login": {
     "title": "Center for Preventive Medicine",
     "subtitle": "Healthcare Administrative System",
     "description": "Login for doctors",
@@ -601,7 +602,15 @@
         "employee": "Employee",
         "reservationslot": "Reservation Slot",
         "examinationroom": "Examination Room"
-      }
+      },
+      "scopeTypePlaceholder": "Scope type (e.g. Hospital)",
+      "scopeIdPlaceholder": "Scope id",
+      "addPermission": "Add permission",
+      "employeeOverrides": "Employee permission overrides",
+      "noEmployeeOverrides": "No individual permission overrides.",
+      "globalScope": "Global",
+      "permissionColumn": "Permission",
+      "effectColumn": "Effect"
     },
     "roleEditor": {
       "title": "Role Management",

@@ -1,3 +1,4 @@
+using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using HealthcareAPI.Attributes;
@@ -20,6 +21,7 @@ public class HospitalsController : ControllerBase
         _logger = logger;
     }
 
+    [RequirePermission("hospitals.read")]
     [HttpGet]
     [PermissionDisplayName("List Hospitals")]
     public async Task<IActionResult> GetAll()
@@ -49,6 +51,7 @@ public class HospitalsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationtypes.read")]
     [HttpGet("{hospitalId}/examination-types")]
     [PermissionDisplayName("List Hospital Examination Types")]
     public async Task<IActionResult> GetHospitalExaminationTypes(int hospitalId, [FromQuery] string language = "en")
@@ -71,6 +74,7 @@ public class HospitalsController : ControllerBase
         }
     }
 
+    [RequirePermission("hospitals.write")]
     [HttpPost]
     [PermissionDisplayName("Create Hospital")]
     public async Task<IActionResult> Create([FromBody] CreateHospitalRequest request)
@@ -111,6 +115,7 @@ public class HospitalsController : ControllerBase
         }
     }
 
+    [RequirePermission("hospitals.write")]
     [HttpPut("{hospitalId}")]
     [PermissionDisplayName("Update Hospital")]
     public async Task<IActionResult> Update(int hospitalId, [FromBody] UpdateHospitalRequest request)
@@ -151,6 +156,7 @@ public class HospitalsController : ControllerBase
         }
     }
 
+    [RequirePermission("hospitals.write")]
     [HttpDelete("{hospitalId}")]
     [PermissionDisplayName("Deactivate Hospital")]
     public async Task<IActionResult> Delete(int hospitalId)
@@ -175,6 +181,7 @@ public class HospitalsController : ControllerBase
         }
     }
 
+    [RequirePermission("examinationtypes.write")]
     [HttpPut("{hospitalId}/examination-types")]
     [PermissionDisplayName("Set Hospital Examination Types")]
     public async Task<IActionResult> SetHospitalExaminationTypes(int hospitalId, [FromBody] int[] examinationTypeIds)

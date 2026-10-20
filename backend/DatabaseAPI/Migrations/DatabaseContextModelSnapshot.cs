@@ -407,56 +407,6 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("EmployeePermissions");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionRule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("Effect")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PermissionKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId", "PermissionKey")
-                        .IsUnique();
-
-                    b.ToTable("EmployeePermissionRules");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionScope", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("EmployeePermissionRuleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ResourceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeePermissionRuleId", "ResourceType", "ResourceId")
-                        .IsUnique();
-
-                    b.ToTable("EmployeePermissionScopes");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Equipment", b =>
                 {
                     b.Property<int>("Id")
@@ -1529,56 +1479,6 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("RolePermissions");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionRule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("Effect")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PermissionKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId", "PermissionKey")
-                        .IsUnique();
-
-                    b.ToTable("RolePermissionRules");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionScope", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("ResourceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
-
-                    b.Property<int>("RolePermissionRuleId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RolePermissionRuleId", "ResourceType", "ResourceId")
-                        .IsUnique();
-
-                    b.ToTable("RolePermissionScopes");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.SicknessHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -1902,28 +1802,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionRule", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "Employee")
-                        .WithMany("PermissionRules")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionScope", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.EmployeePermissionRule", "EmployeePermissionRule")
-                        .WithMany("Scopes")
-                        .HasForeignKey("EmployeePermissionRuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("EmployeePermissionRule");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>
@@ -2397,28 +2275,6 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionRule", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.Role", "Role")
-                        .WithMany("PermissionRules")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionScope", b =>
-                {
-                    b.HasOne("DatabaseAPI.DatabaseModels.RolePermissionRule", "RolePermissionRule")
-                        .WithMany("Scopes")
-                        .HasForeignKey("RolePermissionRuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RolePermissionRule");
-                });
-
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.SicknessHistory", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.FormSubmission", "FormSubmission")
@@ -2531,14 +2387,7 @@ namespace DatabaseAPI.Migrations
 
                     b.Navigation("HospitalEmployees");
 
-                    b.Navigation("PermissionRules");
-
                     b.Navigation("Reservations");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EmployeePermissionRule", b =>
-                {
-                    b.Navigation("Scopes");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Equipment", b =>
@@ -2670,14 +2519,7 @@ namespace DatabaseAPI.Migrations
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Role", b =>
                 {
-                    b.Navigation("PermissionRules");
-
                     b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("DatabaseAPI.DatabaseModels.RolePermissionRule", b =>
-                {
-                    b.Navigation("Scopes");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Symptom", b =>

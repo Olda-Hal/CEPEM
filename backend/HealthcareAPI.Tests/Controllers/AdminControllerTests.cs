@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Net.Http;
 using HealthcareAPI.Controllers;
 using HealthcareAPI.Models;
 using HealthcareAPI.Services;
@@ -11,16 +12,16 @@ namespace HealthcareAPI.Tests.Controllers;
 public class AdminControllerTests
 {
     private readonly Mock<IAdminService> _mockAdminService;
-    private readonly Mock<IPermissionCatalogService> _mockPermissionCatalogService;
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly Mock<ILogger<AdminController>> _mockLogger;
     private readonly AdminController _controller;
 
     public AdminControllerTests()
     {
         _mockAdminService = new Mock<IAdminService>();
-        _mockPermissionCatalogService = new Mock<IPermissionCatalogService>();
+        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockLogger = new Mock<ILogger<AdminController>>();
-        _controller = new AdminController(_mockAdminService.Object, _mockPermissionCatalogService.Object, _mockLogger.Object);
+        _controller = new AdminController(_mockAdminService.Object, _mockHttpClientFactory.Object, _mockLogger.Object);
     }
 
     [Fact]

@@ -38,8 +38,6 @@ builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
 builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
 
 // Register access control services
-builder.Services.AddScoped<IAccessControlRepository, AccessControlRepository>();
-builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddScoped<IActorCountryContextService, ActorCountryContextService>();
 builder.Services.AddScoped<IExaminationsRepository, ExaminationsRepository>();
 builder.Services.AddScoped<IExaminationsService, ExaminationsService>();
