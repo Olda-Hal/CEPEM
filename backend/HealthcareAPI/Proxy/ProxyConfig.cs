@@ -116,7 +116,7 @@ public static class ProxyConfig
     /// named "DatabaseAPI" HttpClient used by the remaining MVC controllers.
     /// Incoming X-Actor headers are always stripped to prevent spoofing.
     /// </summary>
-    public static void AddClaimsTransform(IReverseProxyBuilder builder)
+    public static void AddClaimsTransform(IReverseProxyBuilder builder, string serviceKey)
     {
         builder.AddTransforms(context =>
         {
@@ -125,6 +125,8 @@ public static class ProxyConfig
                 var request = requestContext.ProxyRequest;
                 request.Headers.Remove("X-Actor-Employee-Id");
                 request.Headers.Remove("X-Actor-Country-Code");
+                request.Headers.Remove("X-Service-Key");
+                request.Headers.Add("X-Service-Key", serviceKey);
 
                 var user = requestContext.HttpContext.User;
                 if (user.Identity?.IsAuthenticated != true)

@@ -8,6 +8,12 @@ namespace DatabaseAPI.Tests.Integration;
 
 public class TestWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
 {
+    public TestWebApplicationFactory()
+    {
+        // ServiceAuthMiddleware fails closed when SERVICE_AUTH_KEY is unset
+        Environment.SetEnvironmentVariable("SERVICE_AUTH_KEY", "test-service-key");
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>

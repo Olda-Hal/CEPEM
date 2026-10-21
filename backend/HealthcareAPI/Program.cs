@@ -31,6 +31,15 @@ var databaseApiUrl = builder.Configuration["DatabaseApiUrl"]
     ?? Environment.GetEnvironmentVariable("DATABASE_API_URL")
     ?? "http://database-api:5001";
 
+// Shared service key for authenticating calls to DatabaseAPI
+var databaseApiServiceKey = builder.Configuration["DatabaseApiServiceKey"]
+    ?? Environment.GetEnvironmentVariable("DATABASE_API_SERVICE_KEY");
+if (string.IsNullOrWhiteSpace(databaseApiServiceKey))
+{
+    throw new InvalidOperationException(
+        "DatabaseAPI service key is not configured. Set the DatabaseApiServiceKey configuration value or the DATABASE_API_SERVICE_KEY environment variable.");
+}
+
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
     client.BaseAddress = new Uri(databaseApiUrl);
@@ -107,7 +116,7 @@ foreach (var policyName in ProxyConfig.Routes.Select(r => r.AuthorizationPolicy)
 // copy-paste proxy controller actions
 var proxyBuilder = builder.Services.AddReverseProxy()
     .LoadFromMemory(ProxyConfig.Routes, ProxyConfig.GetClusters(databaseApiUrl));
-ProxyConfig.AddClaimsTransform(proxyBuilder);
+ProxyConfig.AddClaimsTransform(proxyBuilder, databaseApiServiceKey);
 
 var app = builder.Build();
 

@@ -10,6 +10,12 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     networks:
       - cepem_network
 
@@ -24,16 +30,21 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=${HEALTHCARE_API_CONNECTION_STRING}
       - JWT__SecretKey=${JWT_SECRET_KEY}
       - JWT__Issuer=${JWT_ISSUER}
       - JWT__Audience=${JWT_AUDIENCE}
       - DatabaseApiUrl=http://database-api:5001
+      - DatabaseApiServiceKey=${SERVICE_AUTH_KEY}
       - HEALTHCARE_CORS_ORIGINS=https://${DOMAIN_NAME}
-    volumes:
-      - ./test-results:/app/test-results:ro
     depends_on:
-      - database-api
+      database-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - cepem_network
 
@@ -56,6 +67,7 @@ services:
       - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
       - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}
+      - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents

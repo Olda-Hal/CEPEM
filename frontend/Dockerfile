@@ -1,10 +1,3 @@
-# Build number increment stage
-FROM alpine AS build-counter
-COPY BUILD_NUMBER /tmp/current_build
-RUN CURRENT=$(cat /tmp/current_build) && \
-    NEW_BUILD=$((CURRENT + 1)) && \
-    echo $NEW_BUILD > /tmp/new_build_number.txt
-
 # Multi-stage build for React frontend
 FROM node:18-alpine AS build
 
@@ -31,8 +24,9 @@ FROM nginx:alpine
 # Copy build files to nginx
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copy incremented build number as static file for frontend to fetch
-COPY --from=build-counter /tmp/new_build_number.txt /usr/share/nginx/html/build_number.txt
+# Record the image build version (CI can pass -build-arg BUILD_NUMBER=<n>)
+ARG BUILD_NUMBER=dev
+RUN echo "$BUILD_NUMBER" > /usr/share/nginx/html/build_number.txt
 
 # Copy nginx configuration
 COPY frontend/nginx.conf /etc/nginx/nginx.conf

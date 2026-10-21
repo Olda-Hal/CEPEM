@@ -14,6 +14,7 @@ public class TestWebApplicationFactory<TStartup> : WebApplicationFactory<TStartu
         Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-secret-key-for-jwt-testing-minimum-256-bits-long");
         Environment.SetEnvironmentVariable("JWT_ISSUER", "test-issuer");
         Environment.SetEnvironmentVariable("JWT_AUDIENCE", "test-audience");
+        Environment.SetEnvironmentVariable("DATABASE_API_SERVICE_KEY", "test-service-key");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

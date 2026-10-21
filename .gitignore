@@ -117,7 +117,8 @@ htmlcov/
 .nyc_output/
 */nyc_output/
 *.trx
-*.xml
+test-results/**/*.xml
+junit.xml
 *.lcov
 *.cobertura
 junit.xml
@@ -196,3 +197,7 @@ out/
 docs/build/
 site/
 data.zip
+
+# Build artifacts
+BUILD_NUMBER
+__pycache__/
