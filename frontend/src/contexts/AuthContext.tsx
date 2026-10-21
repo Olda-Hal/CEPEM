@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Employee, AuthContextType, LoginResponse, ChangePasswordRequest, CreateEmployeeRequest, CreateEmployeeResponse } from '../types';
-import { apiClient } from '../utils/api';
+import { apiClient, ApiError, UNAUTHORIZED_EVENT } from '../utils/api';
 import { useTranslation } from 'react-i18next';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +36,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Expired or invalid token mid-session: log out
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      if (localStorage.getItem('authToken')) {
+        logout();
+      }
+    };
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadCurrentUser = async () => {
     try {
       const employee = await apiClient.get<Employee>('/api/employees/me');
@@ -60,23 +72,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setRequiresPasswordChange(response.requiresPasswordChange);
       await loadCurrentUser();
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       console.error(t('errors.loginError'), error);
-      
-      // Extract error message from response
+
       let errorMessage = t('login.invalidCredentials');
-      if (error.response?.data) {
-        const serverMessage = error.response.data;
-        if (typeof serverMessage === 'string') {
-          // Check if it's the deactivated account message
-          if (serverMessage.includes('deaktivován') || serverMessage.includes('deactivated')) {
-            errorMessage = t('login.accountDeactivated');
-          } else {
-            errorMessage = serverMessage;
-          }
+      if (error instanceof ApiError) {
+        const serverMessage = error.message;
+        if (serverMessage.includes('deaktivován') || serverMessage.includes('deactivated')) {
+          errorMessage = t('login.accountDeactivated');
+        } else if (error.status !== 401) {
+          errorMessage = serverMessage;
         }
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -92,9 +100,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // After successful password change, no longer requires password change
       setRequiresPasswordChange(false);
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       console.error(t('errors.changePasswordError'), error);
-      const errorMessage = error.response?.data || t('passwordChange.currentPasswordIncorrect');
+      const errorMessage = error instanceof ApiError ? error.message : t('passwordChange.currentPasswordIncorrect');
       return { success: false, error: errorMessage };
     }
   };
