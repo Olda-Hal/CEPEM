@@ -17,12 +17,14 @@ public class EventsController : ControllerBase
     private readonly DatabaseContext _context;
     private readonly IActorCountryContextService _actorCountryContextService;
     private readonly IUidService _uidService;
+    private readonly ILogger<EventsController> _logger;
 
-    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService)
+    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService, ILogger<EventsController> logger)
     {
         _context = context;
         _actorCountryContextService = actorCountryContextService;
             _uidService = uidService;
+        _logger = logger;
     }
 
     [HttpGet("options")]
@@ -93,120 +95,20 @@ public class EventsController : ControllerBase
         try
         {
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
-            Comment? comment = null;
-            if (!string.IsNullOrEmpty(request.Comment))
-            {
-                comment = new Comment { Text = request.Comment };
-                _context.Comments.Add(comment);
-                await _context.SaveChangesAsync();
-            }
-
-            var eventEntity = new Event
-            {
-                PatientId = request.PatientId,
-                EventTypeId = request.EventTypeId,
-                HappenedAt = request.HappenedAt,
-                HappenedTo = request.HappenedTo,
-                CommentId = comment?.Id,
-                CountryCode = actorCountryCode,
-                EventGroupId = request.EventGroupId
-            };
-
-            _context.Events.Add(eventEntity);
-            await _context.SaveChangesAsync();
-
-            foreach (var drugUse in request.DrugUses)
-            {
-                var drugUseEntity = new DrugUse
-                {
-                    DrugId = drugUse.DrugId,
-                    EventId = eventEntity.Id
-                };
-                _context.DrugUses.Add(drugUseEntity);
-                await _context.SaveChangesAsync();
-
-                // Add drug categories for this drug use
-                foreach (var categoryId in drugUse.CategoryIds)
-                {
-                    var drugToDrugCategory = new DrugToDrugCategory
-                    {
-                        DrugId = drugUse.DrugId,
-                        CategoryId = categoryId
-                    };
-                    _context.DrugToDrugCategories.Add(drugToDrugCategory);
-                }
-            }
-
-            var examinationIds = new List<int>();
-
-            foreach (var examinationTypeId in request.ExaminationTypeIds)
-            {
-                var examination = new Examination
-                {
-                    ExaminationTypeId = examinationTypeId,
-                    EventId = eventEntity.Id,
-                    CountryCode = actorCountryCode
-                };
-                _context.Examinations.Add(examination);
-            }
-
-            foreach (var symptomId in request.SymptomIds)
-            {
-                var patientSymptom = new PatientSymptom
-                {
-                    SymptomId = symptomId,
-                    EventId = eventEntity.Id
-                };
-                _context.PatientSymptoms.Add(patientSymptom);
-            }
-
-            foreach (var injuryTypeId in request.InjuryTypeIds)
-            {
-                var injury = new Injury
-                {
-                    InjuryTypeId = injuryTypeId,
-                    EventId = eventEntity.Id
-                };
-                _context.Injuries.Add(injury);
-            }
-
-            foreach (var vaccineTypeId in request.VaccineTypeIds)
-            {
-                var vaccine = new Vaccine
-                {
-                    VaccineTypeId = vaccineTypeId,
-                    EventId = eventEntity.Id
-                };
-                _context.Vaccines.Add(vaccine);
-            }
-
-            if (request.IsPregnant == true)
-            {
-                var pregnancy = new Pregnancy
-                {
-                    EventId = eventEntity.Id,
-                    Result = request.PregnancyResult ?? false
-                };
-                _context.Pregnancies.Add(pregnancy);
-            }
-
-            await _context.SaveChangesAsync();
-            examinationIds = await _context.Examinations
-                .Where(ex => ex.EventId == eventEntity.Id)
-                .Select(ex => ex.Id)
-                .ToListAsync();
+            var (eventId, examinationIds) = await CreateEventRecordAsync(request, request.EventGroupId, actorCountryCode);
             await transaction.CommitAsync();
 
             return Ok(new CreateEventResponse
             {
-                EventId = eventEntity.Id,
+                EventId = eventId,
                 ExaminationIds = examinationIds
             });
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, $"Error creating event: {ex.Message}");
+            _logger.LogError(ex, "Error creating event");
+            return StatusCode(500, "Error creating event");
         }
     }
 
@@ -226,102 +128,8 @@ public class EventsController : ControllerBase
                 eventRequest.PatientId = request.PatientId;
                 eventRequest.EventGroupId = eventGroupId;
 
-                Comment? comment = null;
-                if (!string.IsNullOrEmpty(eventRequest.Comment))
-                {
-                    comment = new Comment { Text = eventRequest.Comment };
-                    _context.Comments.Add(comment);
-                    await _context.SaveChangesAsync();
-                }
-
-                var eventEntity = new Event
-                {
-                    PatientId = eventRequest.PatientId,
-                    EventTypeId = eventRequest.EventTypeId,
-                    HappenedAt = eventRequest.HappenedAt,
-                    HappenedTo = eventRequest.HappenedTo,
-                    CommentId = comment?.Id,
-                    CountryCode = actorCountryCode,
-                    EventGroupId = eventGroupId
-                };
-
-                _context.Events.Add(eventEntity);
-                await _context.SaveChangesAsync();
-
-                foreach (var drugUse in eventRequest.DrugUses)
-                {
-                    var drugUseEntity = new DrugUse
-                    {
-                        DrugId = drugUse.DrugId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.DrugUses.Add(drugUseEntity);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var categoryId in drugUse.CategoryIds)
-                    {
-                        var drugToDrugCategory = new DrugToDrugCategory
-                        {
-                            DrugId = drugUse.DrugId,
-                            CategoryId = categoryId
-                        };
-                        _context.DrugToDrugCategories.Add(drugToDrugCategory);
-                    }
-                }
-
-                foreach (var examinationTypeId in eventRequest.ExaminationTypeIds)
-                {
-                    var examination = new Examination
-                    {
-                        ExaminationTypeId = examinationTypeId,
-                        EventId = eventEntity.Id,
-                        CountryCode = actorCountryCode
-                    };
-                    _context.Examinations.Add(examination);
-                }
-
-                foreach (var symptomId in eventRequest.SymptomIds)
-                {
-                    var patientSymptom = new PatientSymptom
-                    {
-                        SymptomId = symptomId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.PatientSymptoms.Add(patientSymptom);
-                }
-
-                foreach (var injuryTypeId in eventRequest.InjuryTypeIds)
-                {
-                    var injury = new Injury
-                    {
-                        InjuryTypeId = injuryTypeId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.Injuries.Add(injury);
-                }
-
-                foreach (var vaccineTypeId in eventRequest.VaccineTypeIds)
-                {
-                    var vaccine = new Vaccine
-                    {
-                        VaccineTypeId = vaccineTypeId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.Vaccines.Add(vaccine);
-                }
-
-                if (eventRequest.IsPregnant == true)
-                {
-                    var pregnancy = new Pregnancy
-                    {
-                        EventId = eventEntity.Id,
-                        Result = eventRequest.PregnancyResult ?? false
-                    };
-                    _context.Pregnancies.Add(pregnancy);
-                }
-
-                await _context.SaveChangesAsync();
-                eventIds.Add(eventEntity.Id);
+                var (eventId, _) = await CreateEventRecordAsync(eventRequest, eventGroupId, actorCountryCode);
+                eventIds.Add(eventId);
             }
 
             await transaction.CommitAsync();
@@ -335,8 +143,111 @@ public class EventsController : ControllerBase
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, $"Error creating event group: {ex.Message}");
+            _logger.LogError(ex, "Error creating event group");
+            return StatusCode(500, "Error creating event group");
         }
+    }
+
+    /// <summary>
+    /// Persists a single event (comment, drug uses, examinations, symptoms,
+    /// injuries, vaccines, pregnancy) inside the caller's transaction and
+    /// returns the new event id plus the created examination ids.
+    /// </summary>
+    private async Task<(int EventId, List<int> ExaminationIds)> CreateEventRecordAsync(
+        CreateEventRequest request, Guid? eventGroupId, string actorCountryCode)
+    {
+        Comment? comment = null;
+        if (!string.IsNullOrEmpty(request.Comment))
+        {
+            comment = new Comment { Text = request.Comment };
+            _context.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+        }
+
+        var eventEntity = new Event
+        {
+            PatientId = request.PatientId,
+            EventTypeId = request.EventTypeId,
+            HappenedAt = request.HappenedAt,
+            HappenedTo = request.HappenedTo,
+            CommentId = comment?.Id,
+            CountryCode = actorCountryCode,
+            EventGroupId = eventGroupId
+        };
+
+        _context.Events.Add(eventEntity);
+        await _context.SaveChangesAsync();
+
+        var examinations = new List<Examination>();
+        foreach (var examinationTypeId in request.ExaminationTypeIds)
+        {
+            var examination = new Examination
+            {
+                ExaminationTypeId = examinationTypeId,
+                EventId = eventEntity.Id,
+                CountryCode = actorCountryCode
+            };
+            _context.Examinations.Add(examination);
+            examinations.Add(examination);
+        }
+
+        foreach (var drugUse in request.DrugUses)
+        {
+            _context.DrugUses.Add(new DrugUse
+            {
+                DrugId = drugUse.DrugId,
+                EventId = eventEntity.Id
+            });
+            await _context.SaveChangesAsync();
+
+            foreach (var categoryId in drugUse.CategoryIds)
+            {
+                _context.DrugToDrugCategories.Add(new DrugToDrugCategory
+                {
+                    DrugId = drugUse.DrugId,
+                    CategoryId = categoryId
+                });
+            }
+        }
+
+        foreach (var symptomId in request.SymptomIds)
+        {
+            _context.PatientSymptoms.Add(new PatientSymptom
+            {
+                SymptomId = symptomId,
+                EventId = eventEntity.Id
+            });
+        }
+
+        foreach (var injuryTypeId in request.InjuryTypeIds)
+        {
+            _context.Injuries.Add(new Injury
+            {
+                InjuryTypeId = injuryTypeId,
+                EventId = eventEntity.Id
+            });
+        }
+
+        foreach (var vaccineTypeId in request.VaccineTypeIds)
+        {
+            _context.Vaccines.Add(new Vaccine
+            {
+                VaccineTypeId = vaccineTypeId,
+                EventId = eventEntity.Id
+            });
+        }
+
+        if (request.IsPregnant == true)
+        {
+            _context.Pregnancies.Add(new Pregnancy
+            {
+                EventId = eventEntity.Id,
+                Result = request.PregnancyResult ?? false
+            });
+        }
+
+        await _context.SaveChangesAsync();
+        return (eventEntity.Id, examinations.Select(examination => examination.Id).ToList());
     }
 
     [HttpPost("examination-types")]
