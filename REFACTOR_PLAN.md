@@ -6,7 +6,10 @@ Work is done on the `refactor` branch.
 
 - **Tier 0** — ✅ Complete (commits `7352c62`, `d723646`, `64a67f9`, `7f52c74`, `3be1d51`)
 - **Tier 1** — ✅ Complete (commits `274223a`, `ad818fe`, `6b4f716`)
-- **Tiers 2–5** — Pending
+- **Tier 2** — ✅ Complete (commits `b0d41e5`, plus `c1a0b7f`)
+- **Tier 3** — 🔶 Started: global exception handling + permission cache done (`c1a0b7f`); controller splitting, query hygiene and schema work remain
+- **Tier 4** — 🔶 Mostly done (`2ed1282`, `1b8e304`, `816f3da`): Vite/TS5/vitest, API-layer fixes, toasts, BaseModal, route guards; component surgery (4.5) and the UX pass (4.6) remain
+- **Tier 5** — Pending
 
 ---
 
@@ -112,4 +115,4 @@ Three decisions were made (recommended options chosen):
 
 **Close exposure → make it compile → make tests able to fail → rotate keys → pick auth model → then everything else.**
 
-Tiers 0 and 1 removed roughly 5,000 lines while fixing every security hole found in the audit. Tiers 2–5 remain.
+Tiers 0–2 removed roughly 5,700 lines while fixing every security hole found in the audit. Tier 3 internals, Tier 4 component surgery and Tier 5 remain.
