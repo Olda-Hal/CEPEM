@@ -7,9 +7,9 @@ Work is done on the `refactor` branch.
 - **Tier 0** — ✅ Complete (commits `7352c62`, `d723646`, `64a67f9`, `7f52c74`, `3be1d51`)
 - **Tier 1** — ✅ Complete (commits `274223a`, `ad818fe`, `6b4f716`)
 - **Tier 2** — ✅ Complete (commits `b0d41e5`, plus `c1a0b7f`)
-- **Tier 3** — 🔶 Mostly done: global exception handling + permission cache (`c1a0b7f`), UID-allocation/PatientDto/Include-chain/event-creation dedup, AsNoTracking reads, race-safe slot creation (`02b06d4`, `bfa7d55`); remaining: full service-layer split of EventsController/PatientsController, the 24-Include patient-detail query, enum statuses + soft-delete/timestamp conventions, and the Persons.UID unique index (needs a data audit for existing duplicates)
-- **Tier 4** — 🔶 Mostly done (`2ed1282`, `1b8e304`, `816f3da`, `906e5b1`): Vite/TS5/vitest, API-layer fixes, toasts, BaseModal, route guards, PatientDetailPage decomposed (1,114 → 703 lines, parsing engine extracted + tested); remaining: ReservationSlotsPage split, consolidating the patient-form implementations, migrating the remaining modals to BaseModal, skeletons/empty states/a11y, React.lazy code-splitting
-- **Tier 5** — Pending
+- **Tier 3** — 🔶 Mostly done: global exception handling + permission cache (`c1a0b7f`), UID-allocation/PatientDto/Include-chain/event-creation dedup, AsNoTracking reads, race-safe slot creation (`02b06d4`, `bfa7d55`), the 24-Include patient-detail query split with live verification (`951a134`), and the Persons.UID unique index with legacy backfill (`2947659`); remaining: enum statuses + soft-delete/timestamp conventions, and an optional EventsController/PatientsController service-layer split (low value now that the duplication is gone)
+- **Tier 4** — ✅ Mostly done: Vite/TS5/vitest (`2ed1282`), API-layer fixes (`1b8e304`), toasts, BaseModal, route guards (`816f3da`), PatientDetailPage decomposed (`906e5b1`), React.lazy code-splitting + login rate limiting (`ebeef4b`), all modals on BaseModal (`e703156`), dynamic document language (`d164d17`); deliberately not done: consolidating the patient-record vs intake-questionnaire forms (different domains, needs a UX decision) and content skeletons
+- **Tier 5** — 🔶 Partially absorbed: login rate limiting done, docs truth pass done (`2947659`); remaining: TanStack Query for data fetching, deeper test coverage of the risky paths
 
 ---
 
