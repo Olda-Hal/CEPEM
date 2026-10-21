@@ -11,7 +11,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:5001/api/health"]
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5001/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
