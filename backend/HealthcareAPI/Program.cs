@@ -101,6 +101,7 @@ builder.Services.AddCors(options =>
 });
 
 // Permission-based authorization policies for YARP routes ("perm:{code}")
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
 foreach (var policyName in ProxyConfig.Routes.Select(r => r.AuthorizationPolicy).Where(p => p != null).Distinct()!)
@@ -127,6 +128,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<ActivityLoggingMiddleware>();
 
 app.UseCors("AllowFrontend");

@@ -83,6 +83,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<DatabaseAPI.Middleware.GlobalExceptionMiddleware>();
 app.UseMiddleware<DatabaseAPI.Middleware.ServiceAuthMiddleware>();
 app.UseCors("AllowHealthcareAPI");
 app.MapControllers();

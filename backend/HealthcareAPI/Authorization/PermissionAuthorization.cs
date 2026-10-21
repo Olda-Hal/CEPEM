@@ -1,5 +1,6 @@
 using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -32,16 +33,39 @@ public interface IPermissionEvaluator
 
 public class PermissionEvaluator : IPermissionEvaluator
 {
+    // Short-lived cache so repeated actions by the same employee don't pay
+    // a DatabaseAPI round-trip per request. Permission changes (role or
+    // employee permission edits) take effect within this window.
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
+
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<PermissionEvaluator> _logger;
 
-    public PermissionEvaluator(IHttpClientFactory httpClientFactory, ILogger<PermissionEvaluator> logger)
+    public PermissionEvaluator(IHttpClientFactory httpClientFactory, IMemoryCache cache, ILogger<PermissionEvaluator> logger)
     {
         _httpClientFactory = httpClientFactory;
+        _cache = cache;
         _logger = logger;
     }
 
     public async Task<bool?> IsAllowedAsync(int employeeId, string permissionCode, CancellationToken cancellationToken)
+    {
+        var cacheKey = $"perm:{employeeId}:{permissionCode}";
+        if (_cache.TryGetValue(cacheKey, out bool cached))
+        {
+            return cached;
+        }
+
+        var allowed = await EvaluateAsync(employeeId, permissionCode, cancellationToken);
+        if (allowed.HasValue)
+        {
+            _cache.Set(cacheKey, allowed.Value, CacheDuration);
+        }
+        return allowed;
+    }
+
+    private async Task<bool?> EvaluateAsync(int employeeId, string permissionCode, CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient("DatabaseAPI");
         var url = $"/api/admin/permissions/effective?employeeId={employeeId}&permissionCode={Uri.EscapeDataString(permissionCode)}";
