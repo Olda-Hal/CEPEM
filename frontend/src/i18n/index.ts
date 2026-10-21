@@ -61,4 +61,12 @@ i18n
     },
   });
 
+// Keep the document language in sync with the selected i18n language
+// (the app is bilingual cs/en; the hardcoded lang="cs" broke screen
+// readers and translation tools for English users)
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng.split('-')[0];
+});
+document.documentElement.lang = (i18n.language || 'cs').split('-')[0];
+
 export default i18n;
