@@ -538,7 +538,8 @@
       "phoneNumber": "Telefon"
     },
     "updateSuccess": "Informace o pacientovi byly úspěšně upraveny",
-    "updateFailed": "Nepodařilo se upravit informace o pacientovi"
+    "updateFailed": "Nepodařilo se upravit informace o pacientovi",
+    "capturePhoto": "Vyfotit"
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

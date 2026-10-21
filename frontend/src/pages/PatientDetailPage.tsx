@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PatientDetail, QuickPreviewSettings } from '../types';
+import { IntakeSummary, parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
@@ -10,179 +11,11 @@ import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
 import { DocumentUpload } from '../components/DocumentUpload';
 import './PatientDetailPage.css';
 
-interface IntakeSummary {
-  weight: string | null;
-  height: string | null;
-  medications: string[];
-  healthStatus: string[];
-  covid: string[];
-  gynecology: string[];
-  notes: string | null;
-  rawLines: string[];
-}
-
-const parseIntakeSummary = (comment?: string | null): IntakeSummary => {
-  const summary: IntakeSummary = {
-    weight: null,
-    height: null,
-    medications: [],
-    healthStatus: [],
-    covid: [],
-    gynecology: [],
-    notes: null,
-    rawLines: []
-  };
-
-  if (!comment) {
-    return summary;
-  }
-
-  const lines = comment.split('\n').map(line => line.trim()).filter(Boolean);
-  summary.rawLines = lines;
-
-  lines.forEach(line => {
-    if (line.startsWith('Váha:')) {
-      summary.weight = line.replace('Váha:', '').trim();
-      return;
-    }
-
-    if (line.startsWith('Výška:')) {
-      summary.height = line.replace('Výška:', '').trim();
-      return;
-    }
-
-    if (line.startsWith('Léky:')) {
-      summary.medications.push(line.replace('Léky:', '').trim());
-      return;
-    }
-
-    if (line.startsWith('Zdravotní stav:')) {
-      summary.healthStatus.push(line.replace('Zdravotní stav:', '').trim());
-      return;
-    }
-
-    if (line.startsWith('COVID:') || line.startsWith('Vakcinace')) {
-      summary.covid.push(line);
-      return;
-    }
-
-    if (
-      line.startsWith('Poslední menzes:') ||
-      line.startsWith('Cyklus opakování:') ||
-      line.startsWith('Roky od poslední menzes:') ||
-      line.startsWith('Rodila:') ||
-      line.startsWith('Kojila:') ||
-      line.startsWith('Záněty při kojení:') ||
-      line.startsWith('Končilo kojení zánětem:') ||
-      line.startsWith('Antikoncepce:') ||
-      line.startsWith('Estrogen:') ||
-      line.startsWith('Interrupce:') ||
-      line.startsWith('Potrat:') ||
-      line.startsWith('Úraz prsu:') ||
-      line.startsWith('RTG mamograf:') ||
-      line.startsWith('Biopsie prsu:') ||
-      line.startsWith('Implantáty:') ||
-      line.startsWith('Operace prsu:') ||
-      line.startsWith('Nádory v rodině:')
-    ) {
-      summary.gynecology.push(line);
-      return;
-    }
-
-    if (line.startsWith('Poznámky:')) {
-      summary.notes = line.replace('Poznámky:', '').trim();
-      return;
-    }
-
-  });
-
-  return summary;
-};
-
-const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmission'] | null): IntakeSummary => {
-  const summary: IntakeSummary = {
-    weight: null,
-    height: null,
-    medications: [],
-    healthStatus: [],
-    covid: [],
-    gynecology: [],
-    notes: null,
-    rawLines: []
-  };
-
-  if (!formSubmission) {
-    return summary;
-  }
-
-  const medicationList: string[] = [];
-  
-  if (formSubmission.medication?.medBloodPressure) medicationList.push('Léky na krevní tlak');
-  if (formSubmission.medication?.medHeart) medicationList.push('Léky na srdce');
-  if (formSubmission.medication?.medCholesterol) medicationList.push('Léky na cholesterol');
-  if (formSubmission.medication?.medBloodThinners) medicationList.push('Antikoagulancia');
-  if (formSubmission.medication?.medDiabetes) medicationList.push('Léky na cukrovku');
-  if (formSubmission.medication?.medThyroid) medicationList.push('Léky na štítnou žlázu');
-  if (formSubmission.medication?.medNerves) medicationList.push('Léky na nervy');
-  if (formSubmission.medication?.medPsych) medicationList.push('Psychofarmaká');
-  if (formSubmission.medication?.medDigestion) medicationList.push('Léky na trávení');
-  if (formSubmission.medication?.medPain) medicationList.push('Bolest léky');
-  if (formSubmission.medication?.medDehydration) medicationList.push('Hydratace léky');
-  if (formSubmission.medication?.medBreathing) medicationList.push('Léky na dýchání');
-  if (formSubmission.medication?.medAntibiotics) medicationList.push('Antibiotika');
-  if (formSubmission.medication?.medSupplements) medicationList.push('Doplňky stravy');
-  if (formSubmission.medication?.medAllergies) medicationList.push('Léky na alergie');
-
-  summary.medications = medicationList;
-
-  const healthStatusList: string[] = [];
-  
-  if (formSubmission.lifestyle?.poorSleep) healthStatusList.push('Špatný spánek');
-  if (formSubmission.lifestyle?.digestiveIssues) healthStatusList.push('Zažívací problémy');
-  if (formSubmission.lifestyle?.physicalStress) healthStatusList.push('Fyzický stres');
-  if (formSubmission.lifestyle?.mentalStress) healthStatusList.push('Duševní stres');
-  if (formSubmission.lifestyle?.smoking) healthStatusList.push('Kouření');
-  if (formSubmission.lifestyle?.fatigue) healthStatusList.push('Únava');
-
-  summary.healthStatus = healthStatusList;
-  summary.notes = formSubmission.lifestyle?.additionalHealthInfo || null;
-
-  const covidList: string[] = [];
-  formSubmission.sicknessHistories?.forEach(history => {
-    if (history.hadSickness) {
-      covidList.push(`${history.sicknessName}: ano`);
-    }
-    if (history.vaccinated) {
-      covidList.push(`Vakcinace (${history.sicknessName}): ${history.vaccinationWhen || 'ano'}`);
-    }
-  });
-  summary.covid = covidList;
-
-  const gynecologyList: string[] = [];
-
-  if (formSubmission.reproductiveHealth?.lastMenstruationDate) gynecologyList.push(`Poslední menzes: ${formSubmission.reproductiveHealth.lastMenstruationDate}`);
-  if (formSubmission.reproductiveHealth?.menstruationCycleDays) gynecologyList.push(`Cyklus opakování: ${formSubmission.reproductiveHealth.menstruationCycleDays} dní`);
-  if (formSubmission.reproductiveHealth?.yearsSinceLastMenstruation) gynecologyList.push(`Roky od poslední menzes: ${formSubmission.reproductiveHealth.yearsSinceLastMenstruation}`);
-  if (formSubmission.reproductiveHealth?.gaveBirth) gynecologyList.push(`Rodila: ano${formSubmission.reproductiveHealth.birthCount ? ` (${formSubmission.reproductiveHealth.birthCount}x)` : ''}`);
-  if (formSubmission.reproductiveHealth?.breastfed) gynecologyList.push(`Kojila: ano${formSubmission.reproductiveHealth.breastfeedingMonths ? ` (${formSubmission.reproductiveHealth.breastfeedingMonths} měsíců)` : ''}`);
-  if (formSubmission.reproductiveHealth?.breastfeedingInflammation) gynecologyList.push('Záněty při kojení: ano');
-  if (formSubmission.reproductiveHealth?.endedWithInflammation) gynecologyList.push('Končilo kojení zánětem: ano');
-  if (formSubmission.reproductiveHealth?.contraception) gynecologyList.push(`Antikoncepce: ano${formSubmission.reproductiveHealth.contraceptionDuration ? ` (${formSubmission.reproductiveHealth.contraceptionDuration})` : ''}`);
-  if (formSubmission.reproductiveHealth?.estrogen) gynecologyList.push(`Estrogen: ano${formSubmission.reproductiveHealth.estrogenType ? ` (${formSubmission.reproductiveHealth.estrogenType})` : ''}`);
-  if (formSubmission.reproductiveHealth?.interruption) gynecologyList.push(`Interrupce: ano${formSubmission.reproductiveHealth.interruptionCount ? ` (${formSubmission.reproductiveHealth.interruptionCount}x)` : ''}`);
-  if (formSubmission.reproductiveHealth?.miscarriage) gynecologyList.push(`Potrat: ano${formSubmission.reproductiveHealth.miscarriageCount ? ` (${formSubmission.reproductiveHealth.miscarriageCount}x)` : ''}`);
-  if (formSubmission.reproductiveHealth?.breastInjury) gynecologyList.push('Úraz prsu: ano');
-  if (formSubmission.reproductiveHealth?.mammogram) gynecologyList.push(`RTG mamograf: ano${formSubmission.reproductiveHealth.mammogramCount ? ` (${formSubmission.reproductiveHealth.mammogramCount}x)` : ''}`);
-  if (formSubmission.reproductiveHealth?.breastBiopsy) gynecologyList.push('Biopsie prsu: ano');
-  if (formSubmission.reproductiveHealth?.breastImplants) gynecologyList.push('Implantáty: ano');
-  if (formSubmission.reproductiveHealth?.breastSurgery) gynecologyList.push(`Operace prsu: ano${formSubmission.reproductiveHealth.breastSurgeryType ? ` (${formSubmission.reproductiveHealth.breastSurgeryType})` : ''}`);
-  if (formSubmission.reproductiveHealth?.familyTumors) gynecologyList.push(`Nádory v rodině: ano${formSubmission.reproductiveHealth.familyTumorType ? ` (${formSubmission.reproductiveHealth.familyTumorType})` : ''}`);
-
-  summary.gynecology = gynecologyList;
-
-  return summary;
-};
 import { useToast } from '../contexts/ToastContext';
+import PatientEventsSection from '../components/patient/PatientEventsSection';
+import PatientDocumentsSection from '../components/patient/PatientDocumentsSection';
+import CameraCaptureModal from '../components/patient/CameraCaptureModal';
+import { formatDateTime, formatFileSize } from '../utils/format';
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -201,7 +34,6 @@ export const PatientDetailPage: React.FC = () => {
   const [editingComment, setEditingComment] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showCamera, setShowCamera] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
@@ -406,82 +238,32 @@ export const PatientDetailPage: React.FC = () => {
     }
   };
 
+  const handleCapturePhoto = async (blob: Blob) => {
+    if (!patient) return;
+
+    const formData = new FormData();
+    formData.append('photo', blob, 'patient-photo.jpg');
+
+    try {
+      await apiClient.postFormData(`/api/patients/${patient.id}/photo`, formData);
+      setShowCamera(false);
+      if (id) {
+        loadPatientDetail(parseInt(id));
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Nepodařilo se nahrát fotografii');
+    }
+  };
+
   const handleCancelEditComment = () => {
     setCommentText(patient?.comment || '');
     setEditingComment(false);
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user', width: 640, height: 480 } 
-      });
-      setCameraStream(stream);
-      setShowCamera(true);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      toast.info('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
-    }
-  };
 
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-      setCameraStream(null);
-    }
-    setShowCamera(false);
-  };
 
-  const capturePhoto = async () => {
-    if (!videoRef.current || !patient) return;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    
-    if (ctx) {
-      ctx.drawImage(videoRef.current, 0, 0);
-      
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        
-        const formData = new FormData();
-        formData.append('photo', blob, 'patient-photo.jpg');
-        
-        try {
-          await apiClient.postFormData(`/api/patients/${patient.id}/photo`, formData);
-          
-          stopCamera();
-          
-          if (id) {
-            loadPatientDetail(parseInt(id));
-          }
-        } catch (error) {
-          console.error('Error uploading photo:', error);
-          toast.info('Nepodařilo se nahrát fotografii');
-        }
-      }, 'image/jpeg', 0.9);
-    }
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-      }
-    };
-  }, [cameraStream]);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -489,17 +271,6 @@ export const PatientDetailPage: React.FC = () => {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(i18n.language, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -564,7 +335,7 @@ export const PatientDetailPage: React.FC = () => {
               </div>
               <button 
                 className="photo-button"
-                onClick={startCamera}
+                onClick={() => setShowCamera(true)}
                 title="Vyfotit pacienta"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
@@ -831,167 +602,15 @@ export const PatientDetailPage: React.FC = () => {
         </div>
 
         {/* Patient Events */}
-        <div className="patient-events-card">
-          <div className="card-header">
-            <h2>{t('patients.events')} ({patient.events.length})</h2>
-            <div className="button-group">
-              <button className="add-event-btn" onClick={() => setShowAddIntakeFormModal(true)}>
-                📋 Vstupní Formulář
-              </button>
-              <button className="add-event-btn" onClick={handleGenerateIntakeLink}>
-                {t('patients.generateIntakeLink')}
-              </button>
-              <button className="add-event-btn" onClick={() => setShowAddEventModal(true)}>
-                {t('patients.addEvent')}
-              </button>
-            </div>
-          </div>
-          
-          {patient.events.length === 0 ? (
-            <div className="no-data">
-              <p>{t('patients.noEvents')}</p>
-            </div>
-          ) : (
-            <div className="events-list">
-              {patient.events.map((event) => {
-                const eventDocuments = event.examinations.flatMap(exam =>
-                  exam.documents.map(doc => ({
-                    examId: exam.id,
-                    examName: exam.name,
-                    ...doc,
-                  }))
-                );
-
-                return (
-                <div key={event.id} className="event-item">
-                  <button className="event-header event-toggle" onClick={() => toggleEvent(event.id)}>
-                    <div className="event-title-wrap">
-                      <svg className={`event-chevron ${expandedEvents.has(event.id) ? 'expanded' : ''}`} viewBox="0 0 24 24" width="16" height="16">
-                        <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                      </svg>
-                      <h3 className="event-type">{event.eventTypeName}</h3>
-                    </div>
-                    <span className="event-date">{formatDateTime(event.happenedAt)}</span>
-                  </button>
-
-                  {expandedEvents.has(event.id) && (
-                    <div className="event-expanded-content">
-                    {event.happenedTo && (
-                      <div className="event-duration">
-                        {t('patients.eventUntil')}: {formatDateTime(event.happenedTo)}
-                      </div>
-                    )}
-
-                    {event.comment && (
-                      <div className="event-comment">
-                        <p>{event.comment}</p>
-                      </div>
-                    )}
-
-                    <div className="event-details">
-                    {event.drugUses.length > 0 && (
-                      <div className="detail-section">
-                        <h4>{t('patients.drugUses')}:</h4>
-                        <ul>
-                          {event.drugUses.map((drug, index) => (
-                            <li key={index}>{drug}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {event.symptoms.length > 0 && (
-                      <div className="detail-section">
-                        <h4>{t('patients.symptoms')}:</h4>
-                        <ul>
-                          {event.symptoms.map((symptom, index) => (
-                            <li key={index}>{symptom}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {event.injuries.length > 0 && (
-                      <div className="detail-section">
-                        <h4>{t('patients.injuries')}:</h4>
-                        <ul>
-                          {event.injuries.map((injury, index) => (
-                            <li key={index}>{injury}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {event.vaccines.length > 0 && (
-                      <div className="detail-section">
-                        <h4>{t('patients.vaccines')}:</h4>
-                        <ul>
-                          {event.vaccines.map((vaccine, index) => (
-                            <li key={index}>{vaccine}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {event.hasPregnancy && (
-                      <div className="detail-section">
-                        <h4>{t('patients.pregnancy')}</h4>
-                      </div>
-                    )}
-                  </div>
-
-                  {event.examinations.length > 0 && (
-                    <div className="examinations-full-section">
-                      <h4>{t('patients.examinations')}:</h4>
-                      <ul className="examination-list">
-                        {event.examinations.map((exam) => (
-                          <li key={exam.id} className="examination-list-item">
-                            <span className="examination-name">{exam.name}</span>
-                            {exam.documents.length > 0 && (
-                              <span className="examination-doc-badge">{exam.documents.length}</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <div className="event-documents-section">
-                    <h4>{t('patients.documents.title')}:</h4>
-                    {eventDocuments.length === 0 ? (
-                      <p className="no-exam-documents">{t('patients.documents.noDocuments')}</p>
-                    ) : (
-                      <ul className="event-document-list">
-                        {eventDocuments.map((doc) => (
-                          <li key={`${doc.examId}-${doc.id}`} className="event-document-item">
-                            <button
-                              className="event-document-btn"
-                              onClick={() => handleExaminationDocumentView(doc.examId, doc.id)}
-                              title={doc.fileName}
-                            >
-                              <svg viewBox="0 0 24 24" width="18" height="18" className="event-doc-icon">
-                                <path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
-                              </svg>
-                              <div className="event-doc-main">
-                                <span className="event-doc-file">{doc.fileName}</span>
-                                <span className="event-doc-exam">{doc.examName}</span>
-                              </div>
-                              <span className="event-doc-meta">
-                                {formatDateTime(doc.uploadedAt)} · {formatFileSize(doc.fileSize)}
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  </div>
-                  )}
-                </div>
-              )})}
-            </div>
-          )}
-        </div>
+        <PatientEventsSection
+          events={patient.events}
+          expandedEvents={expandedEvents}
+          onToggleEvent={toggleEvent}
+          onAddEvent={() => setShowAddEventModal(true)}
+          onAddIntakeForm={() => setShowAddIntakeFormModal(true)}
+          onGenerateIntakeLink={handleGenerateIntakeLink}
+          onExaminationDocumentView={handleExaminationDocumentView}
+        />
 
         {/* Patient Appointments */}
         <div className="patient-appointments-card">
@@ -1011,8 +630,8 @@ export const PatientDetailPage: React.FC = () => {
               {patient.appointments.map((appointment) => (
                 <div key={appointment.id} className="appointment-item">
                   <div className="appointment-time">
-                    <div className="start-time">{formatDateTime(appointment.startTime)}</div>
-                    <div className="end-time">{formatDateTime(appointment.endTime)}</div>
+                    <div className="start-time">{formatDateTime(appointment.startTime, i18n.language)}</div>
+                    <div className="end-time">{formatDateTime(appointment.endTime, i18n.language)}</div>
                   </div>
                   
                   <div className="appointment-details">
@@ -1029,55 +648,13 @@ export const PatientDetailPage: React.FC = () => {
         </div>
 
         {/* Patient Documents */}
-        <div className="patient-documents-card">
-          <div className="card-header">
-            <h2>{t('patients.documents.title')} ({patient.documents.length})</h2>
-            <button 
-              className="add-document-btn" 
-              onClick={() => setShowDocumentUpload(true)}
-              disabled={uploadingDocument}
-            >
-              {t('patients.documents.addDocument')}
-            </button>
-          </div>
-          
-          {patient.documents.length === 0 ? (
-            <div className="no-data">
-              <p>{t('patients.documents.noDocuments')}</p>
-            </div>
-          ) : (
-            <div className="documents-list">
-              {patient.documents.map((document) => (
-                <div key={document.id} className="document-item">
-                  <div 
-                    className="document-info" 
-                    onClick={() => handleDocumentView(document.id)}
-                  >
-                    <svg viewBox="0 0 24 24" width="24" height="24" className="document-icon">
-                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
-                    </svg>
-                    <div className="document-details">
-                      <div className="document-name">{document.fileName}</div>
-                      <div className="document-meta">
-                        <span className="document-date">{formatDateTime(document.uploadedAt)}</span>
-                        <span className="document-size">{formatFileSize(document.fileSize)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button 
-                    className="delete-document-btn"
-                    onClick={() => handleDocumentDelete(document.id)}
-                    title={t('patients.documents.deleteDocument')}
-                  >
-                    <svg viewBox="0 0 24 24" width="20" height="20">
-                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <PatientDocumentsSection
+          documents={patient.documents}
+          uploading={uploadingDocument}
+          onAdd={() => setShowDocumentUpload(true)}
+          onDocumentView={handleDocumentView}
+          onDocumentDelete={handleDocumentDelete}
+        />
       </div>
 
       {/* Quick Preview Settings Modal */}
@@ -1116,28 +693,10 @@ export const PatientDetailPage: React.FC = () => {
 
       {/* Camera Modal */}
       {showCamera && (
-        <div className="camera-modal">
-          <div className="camera-content">
-            <div className="camera-header">
-              <h3>Vyfotit pacienta</h3>
-              <button className="close-btn" onClick={stopCamera}>×</button>
-            </div>
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline
-              className="camera-video"
-            />
-            <div className="camera-actions">
-              <button onClick={stopCamera} className="btn-cancel">
-                Zrušit
-              </button>
-              <button onClick={capturePhoto} className="btn-capture">
-                📷 Vyfotit
-              </button>
-            </div>
-          </div>
-        </div>
+        <CameraCaptureModal
+          onClose={() => setShowCamera(false)}
+          onCapture={handleCapturePhoto}
+        />
       )}
     </div>
   );

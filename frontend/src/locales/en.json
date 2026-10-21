@@ -531,7 +531,8 @@
       "phoneNumber": "Phone"
     },
     "updateSuccess": "Patient information was updated successfully",
-    "updateFailed": "Failed to update patient information"
+    "updateFailed": "Failed to update patient information",
+    "capturePhoto": "Capture"
   },
   "admin": {
     "employeeManagement": "Employee Management",
