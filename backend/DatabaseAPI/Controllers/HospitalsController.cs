@@ -155,6 +155,7 @@ public class HospitalsController : ControllerBase
         try
         {
             var hospital = await _context.Hospitals
+                .AsNoTracking()
                 .Include(h => h.Address)
                 .FirstOrDefaultAsync(h => h.Id == id);
             if (hospital == null)

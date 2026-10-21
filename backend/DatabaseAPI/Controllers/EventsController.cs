@@ -16,11 +16,13 @@ public class EventsController : ControllerBase
 {
     private readonly DatabaseContext _context;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IUidService _uidService;
 
-    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService)
+    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService)
     {
         _context = context;
         _actorCountryContextService = actorCountryContextService;
+            _uidService = uidService;
     }
 
     [HttpGet("options")]
@@ -624,31 +626,7 @@ public class EventsController : ControllerBase
 
                 if (!int.TryParse(uid, out _))
                 {
-                    var existingUids = await _context.Persons
-                        .Select(p => p.UID)
-                        .Where(existingUid => !string.IsNullOrWhiteSpace(existingUid))
-                        .ToListAsync();
-
-                    var numericUids = existingUids
-                        .Where(existingUid => int.TryParse(existingUid, out _))
-                        .Select(int.Parse)
-                        .OrderBy(existingUid => existingUid)
-                        .ToList();
-
-                    var nextUid = 1;
-                    foreach (var existingUid in numericUids)
-                    {
-                        if (existingUid == nextUid)
-                        {
-                            nextUid++;
-                        }
-                        else if (existingUid > nextUid)
-                        {
-                            break;
-                        }
-                    }
-
-                    uid = nextUid.ToString();
+                    uid = await _uidService.GetNextAvailableUidAsync();
                     link.Person.UID = uid;
                 }
 

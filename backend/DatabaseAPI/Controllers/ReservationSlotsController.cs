@@ -31,13 +31,9 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             IQueryable<ReservationSlot> query = _context.ReservationSlots
+                .AsNoTracking()
                 .Where(slot => slot.HospitalId == hospitalId)
-                .Include(slot => slot.Hospital)
-                .Include(slot => slot.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(slot => slot.Person)
-                .Include(slot => slot.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation);
+                .IncludeSlotDetails();
 
             if (from.HasValue)
                 query = query.Where(slot => slot.StartDateTime >= from.Value);
@@ -80,6 +76,13 @@ public class ReservationSlotsController : ControllerBase
             var createdSlots = new List<ReservationSlot>();
             var pendingSlots = new List<(DateTime StartDateTime, DateTime EndDateTime)>();
 
+            // Serializable transaction: the overlap checks below use plain
+            // SELECTs, which only lock under SERIALIZABLE isolation. Without
+            // this, two concurrent requests could both pass the check and
+            // double-book the same time range.
+            await using var transaction = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
             foreach (var slotRequest in request.Slots)
             {
                 if (slotRequest.StartDateTime >= slotRequest.EndDateTime)
@@ -115,8 +118,15 @@ public class ReservationSlotsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return Ok(createdSlots.Select(MapToDto).ToList());
+        }
+        catch (MySqlConnector.MySqlException ex) when (ex.ErrorCode == MySqlConnector.MySqlErrorCode.LockDeadlock || ex.ErrorCode == MySqlConnector.MySqlErrorCode.LockWaitTimeout)
+        {
+            // Concurrent slot creation - the other transaction won the race
+            _logger.LogWarning("Slot creation conflict (deadlock/timeout): {Message}", ex.Message);
+            return Conflict(new { Error = "Time slot overlaps with an existing slot" });
         }
         catch (Exception ex)
         {
@@ -187,12 +197,7 @@ public class ReservationSlotsController : ControllerBase
             var copiedSlotIds = copiedSlots.Select(slot => slot.Id).ToList();
             var createdSlots = await _context.ReservationSlots
                 .Where(slot => copiedSlotIds.Contains(slot.Id))
-                .Include(slot => slot.Hospital)
-                .Include(slot => slot.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(slot => slot.Person)
-                .Include(slot => slot.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .OrderBy(slot => slot.StartDateTime)
                 .ToListAsync();
 
@@ -211,12 +216,7 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
@@ -256,12 +256,7 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
@@ -318,12 +313,7 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
@@ -429,12 +419,7 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
@@ -468,12 +453,7 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
@@ -613,4 +593,22 @@ public class ReservationSlotDto
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+public static class ReservationSlotQueryExtensions
+{
+    /// <summary>
+    /// The standard Include set for reservation slots: hospital, doctor (with
+    /// person), person and examination type (with translation).
+    /// </summary>
+    public static IQueryable<ReservationSlot> IncludeSlotDetails(this IQueryable<ReservationSlot> query)
+    {
+        return query
+            .Include(slot => slot.Hospital)
+            .Include(slot => slot.Doctor)
+            .ThenInclude(doctor => doctor!.Person)
+            .Include(slot => slot.Person)
+            .Include(slot => slot.ExaminationType)
+            .ThenInclude(type => type!.NameTranslation);
+    }
 }

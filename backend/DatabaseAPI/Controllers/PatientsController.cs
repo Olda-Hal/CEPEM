@@ -17,19 +17,22 @@ namespace DatabaseAPI.Controllers
         private readonly PatientPhotoService _photoService;
         private readonly PatientDocumentService _documentService;
         private readonly IActorCountryContextService _actorCountryContextService;
+        private readonly IUidService _uidService;
 
         public PatientsController(
             DatabaseContext context, 
             ILogger<PatientsController> logger,
             PatientPhotoService photoService,
             PatientDocumentService documentService,
-            IActorCountryContextService actorCountryContextService)
+            IActorCountryContextService actorCountryContextService,
+            IUidService uidService)
         {
             _context = context;
             _logger = logger;
             _photoService = photoService;
             _documentService = documentService;
             _actorCountryContextService = actorCountryContextService;
+            _uidService = uidService;
         }
 
         [HttpGet("search")]
@@ -43,6 +46,7 @@ namespace DatabaseAPI.Controllers
             try
             {
                 var query = _context.Patients
+                .AsNoTracking()
                     .Include(p => p.Person)
                     .AsQueryable();
 
@@ -131,32 +135,8 @@ namespace DatabaseAPI.Controllers
                 var uid = request.Uid;
                 if (string.IsNullOrWhiteSpace(uid) || !int.TryParse(uid, out _))
                 {
-                    var existingUids = await _context.Persons
-                        .Select(p => p.UID)
-                        .Where(existingUid => !string.IsNullOrWhiteSpace(existingUid))
-                        .ToListAsync();
-
-                    var numericUids = existingUids
-                        .Where(existingUid => int.TryParse(existingUid, out _))
-                        .Select(int.Parse)
-                        .OrderBy(existingUid => existingUid)
-                        .ToList();
-
-                    var nextUid = 1;
-                    foreach (var existingUid in numericUids)
-                    {
-                        if (existingUid == nextUid)
-                        {
-                            nextUid++;
-                        }
-                        else if (existingUid > nextUid)
-                        {
-                            break;
-                        }
-                    }
-
-                    uid = nextUid.ToString();
-                }
+                uid = await _uidService.GetNextAvailableUidAsync();
+            }
 
                 // First create the Person
                 var person = new Person
@@ -220,25 +200,7 @@ namespace DatabaseAPI.Controllers
                                 .ThenInclude(c => c.PhoneNumbers)
                     .FirstAsync(p => p.Id == patient.Id);
 
-                var patientDto = new PatientDto
-                {
-                    Id = createdPatient.Id,
-                    PersonId = createdPatient.PersonId,
-                    FirstName = createdPatient.Person.FirstName,
-                    LastName = createdPatient.Person.LastName,
-                    BirthDate = createdPatient.BirthDate,
-                    PhoneNumber = createdPatient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                    Email = createdPatient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                    InsuranceNumber = createdPatient.InsuranceNumber,
-                    Gender = createdPatient.Person.Gender,
-                    CreatedAt = createdPatient.Person.CreatedAt,
-                    UID = createdPatient.Person.UID,
-                    TitleBefore = createdPatient.Person.TitleBefore,
-                    TitleAfter = createdPatient.Person.TitleAfter,
-                    Alive = createdPatient.Alive,
-                    FullName = $"{createdPatient.Person.LastName}, {createdPatient.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(createdPatient.Id, createdPatient)
-                };
+                var patientDto = MapToDto(patient);
 
                 return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patientDto);
             }
@@ -255,6 +217,7 @@ namespace DatabaseAPI.Controllers
             try
             {
                 var patient = await _context.Patients
+                .AsNoTracking()
                     .Include(p => p.Person)
                         .ThenInclude(per => per.ContactToObjects)
                             .ThenInclude(cto => cto.Contact)
@@ -270,25 +233,7 @@ namespace DatabaseAPI.Controllers
                     return NotFound($"Patient with id {id} not found");
                 }
 
-                var patientDto = new PatientDto
-                {
-                    Id = patient.Id,
-                    PersonId = patient.PersonId,
-                    FirstName = patient.Person.FirstName,
-                    LastName = patient.Person.LastName,
-                    BirthDate = patient.BirthDate,
-                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                    InsuranceNumber = patient.InsuranceNumber,
-                    Gender = patient.Person.Gender,
-                    CreatedAt = patient.Person.CreatedAt,
-                    UID = patient.Person.UID,
-                    TitleBefore = patient.Person.TitleBefore,
-                    TitleAfter = patient.Person.TitleAfter,
-                    Alive = patient.Alive,
-                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
-                };
+                var patientDto = MapToDto(patient);
 
                 return Ok(patientDto);
             }
@@ -423,25 +368,7 @@ namespace DatabaseAPI.Controllers
 
                 await _context.SaveChangesAsync();
 
-                var updatedPatientDto = new PatientDto
-                {
-                    Id = patient.Id,
-                    PersonId = patient.PersonId,
-                    FirstName = patient.Person.FirstName,
-                    LastName = patient.Person.LastName,
-                    BirthDate = patient.BirthDate,
-                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                    InsuranceNumber = patient.InsuranceNumber,
-                    Gender = patient.Person.Gender,
-                    CreatedAt = patient.Person.CreatedAt,
-                    UID = patient.Person.UID,
-                    TitleBefore = patient.Person.TitleBefore,
-                    TitleAfter = patient.Person.TitleAfter,
-                    Alive = patient.Alive,
-                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
-                };
+                var updatedPatientDto = MapToDto(patient);
 
                 return Ok(updatedPatientDto);
             }
@@ -944,6 +871,7 @@ namespace DatabaseAPI.Controllers
             try
             {
                 var patient = await _context.Patients
+                .AsNoTracking()
                     .Include(p => p.Person)
                     .Include(p => p.Comment)
                     .FirstOrDefaultAsync(p => p.Id == id);
@@ -976,5 +904,25 @@ namespace DatabaseAPI.Controllers
                 return StatusCode(500, "An error occurred while updating comment");
             }
         }
+
+        private PatientDto MapToDto(Patient patient) => new PatientDto
+        {
+            Id = patient.Id,
+            PersonId = patient.PersonId,
+            FirstName = patient.Person.FirstName,
+            LastName = patient.Person.LastName,
+            BirthDate = patient.BirthDate,
+            PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+            Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
+            InsuranceNumber = patient.InsuranceNumber,
+            Gender = patient.Person.Gender,
+            CreatedAt = patient.Person.CreatedAt,
+            UID = patient.Person.UID,
+            TitleBefore = patient.Person.TitleBefore,
+            TitleAfter = patient.Person.TitleAfter,
+            Alive = patient.Alive,
+            FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
+            PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
+        };
     }
 }

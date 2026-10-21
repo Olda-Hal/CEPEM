@@ -39,6 +39,7 @@ builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService
 
 // Register access control services
 builder.Services.AddScoped<IActorCountryContextService, ActorCountryContextService>();
+builder.Services.AddScoped<IUidService, UidService>();
 builder.Services.AddScoped<IExaminationsRepository, ExaminationsRepository>();
 builder.Services.AddScoped<IExaminationsService, ExaminationsService>();
 

@@ -21,11 +21,13 @@ namespace DatabaseAPI.Services
     {
         private readonly DatabaseContext _context;
         private readonly IActorCountryContextService _actorCountryContextService;
+        private readonly IUidService _uidService;
 
-        public EmployeeAuthService(DatabaseContext context, IActorCountryContextService actorCountryContextService)
+        public EmployeeAuthService(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService)
         {
             _context = context;
             _actorCountryContextService = actorCountryContextService;
+            _uidService = uidService;
         }
 
         public async Task<EmployeeAuthInfo?> AuthenticateAsync(string email, string password)
@@ -314,45 +316,9 @@ namespace DatabaseAPI.Services
                 return null;
             }
         }
-
         public async Task<string> GetNextAvailableUidAsync()
         {
-            try
-            {
-                // Get all existing UIDs from the database
-                var existingUids = await _context.Persons
-                    .Select(p => p.UID)
-                    .Where(uid => !string.IsNullOrEmpty(uid))
-                    .ToListAsync();
-
-                // Convert to integers (assuming UIDs are numeric)
-                var numericUids = existingUids
-                    .Where(uid => int.TryParse(uid, out _))
-                    .Select(int.Parse)
-                    .OrderBy(x => x)
-                    .ToList();
-
-                // Find the first gap or return next sequential number
-                int nextUid = 1;
-                foreach (var uid in numericUids)
-                {
-                    if (uid == nextUid)
-                    {
-                        nextUid++;
-                    }
-                    else if (uid > nextUid)
-                    {
-                        break;
-                    }
-                }
-
-                return nextUid.ToString();
-            }
-            catch (Exception)
-            {
-                // Fallback: return a timestamp-based UID
-                return DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-            }
+            return await _uidService.GetNextAvailableUidAsync();
         }
     }
 }
