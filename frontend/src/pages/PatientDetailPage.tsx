@@ -182,11 +182,13 @@ const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmi
 
   return summary;
 };
+import { useToast } from '../contexts/ToastContext';
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const toast = useToast();
   const [patient, setPatient] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -318,12 +320,12 @@ export const PatientDetailPage: React.FC = () => {
 
       try {
         await navigator.clipboard.writeText(absoluteLink);
-        alert(t('patients.intakeLinkCopied', { link: absoluteLink }));
+        toast.info(t('patients.intakeLinkCopied', { link: absoluteLink }));
       } catch {
-        alert(t('patients.intakeLinkGenerated', { link: absoluteLink }));
+        toast.info(t('patients.intakeLinkGenerated', { link: absoluteLink }));
       }
     } catch (err: any) {
-      alert(err.message || t('patients.intakeLinkGenerationFailed'));
+      toast.info(err.message || t('patients.intakeLinkGenerationFailed'));
     }
   };
 
@@ -343,7 +345,7 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error uploading document:', error);
-      alert(t('patients.documents.errors.uploadFailed'));
+      toast.error(t('patients.documents.errors.uploadFailed'));
     } finally {
       setUploadingDocument(false);
     }
@@ -356,7 +358,7 @@ export const PatientDetailPage: React.FC = () => {
       window.open(url, '_blank');
     } catch (error) {
       console.error('Error viewing document:', error);
-      alert(t('patients.documents.errors.viewFailed'));
+      toast.error(t('patients.documents.errors.viewFailed'));
     }
   };
 
@@ -367,7 +369,7 @@ export const PatientDetailPage: React.FC = () => {
       window.open(url, '_blank');
     } catch (error) {
       console.error('Error viewing examination document:', error);
-      alert(t('patients.documents.errors.viewFailed'));
+      toast.error(t('patients.documents.errors.viewFailed'));
     }
   };
 
@@ -384,7 +386,7 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error deleting document:', error);
-      alert(t('patients.documents.errors.deleteFailed'));
+      toast.error(t('patients.documents.errors.deleteFailed'));
     }
   };
 
@@ -400,7 +402,7 @@ export const PatientDetailPage: React.FC = () => {
       setEditingComment(false);
     } catch (error) {
       console.error('Error updating comment:', error);
-      alert('Nepodařilo se uložit komentář');
+      toast.info('Nepodařilo se uložit komentář');
     }
   };
 
@@ -422,7 +424,7 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      alert('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
+      toast.info('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
     }
   };
 
@@ -461,7 +463,7 @@ export const PatientDetailPage: React.FC = () => {
           }
         } catch (error) {
           console.error('Error uploading photo:', error);
-          alert('Nepodařilo se nahrát fotografii');
+          toast.info('Nepodařilo se nahrát fotografii');
         }
       }, 'image/jpeg', 0.9);
     }

@@ -29,10 +29,12 @@ const formatTime = (value: string) =>
   new Intl.DateTimeFormat('cs-CZ', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 
 const createLocalDateTime = (dateValue: string, timeValue: string) => new Date(`${dateValue}T${timeValue}:00`);
+import { useToast } from '../contexts/ToastContext';
 
 export const ReservationSlotsPage: React.FC = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const toast = useToast();
 
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
@@ -176,12 +178,12 @@ export const ReservationSlotsPage: React.FC = () => {
 
   const handleCreateDailySlots = async () => {
     if (!selectedHospitalId) {
-      alert(t('reservationSlots.errors.selectHospitalFirst'));
+      toast.error(t('reservationSlots.errors.selectHospitalFirst'));
       return;
     }
 
     if (!slotDate || !slotStartTime || !slotEndTime || Number(slotDurationMinutes) <= 0) {
-      alert(t('reservationSlots.errors.fillSchedule'));
+      toast.error(t('reservationSlots.errors.fillSchedule'));
       return;
     }
 
@@ -189,7 +191,7 @@ export const ReservationSlotsPage: React.FC = () => {
     const end = createLocalDateTime(slotDate, slotEndTime);
 
     if (start >= end) {
-      alert(t('reservationSlots.errors.startBeforeEnd'));
+      toast.error(t('reservationSlots.errors.startBeforeEnd'));
       return;
     }
 
@@ -217,7 +219,7 @@ export const ReservationSlotsPage: React.FC = () => {
     }
 
     if (slotItems.length === 0) {
-      alert(t('reservationSlots.errors.noGeneratedSlots'));
+      toast.error(t('reservationSlots.errors.noGeneratedSlots'));
       return;
     }
 
@@ -231,22 +233,22 @@ export const ReservationSlotsPage: React.FC = () => {
       setSelectedDate(slotDate);
       setSelectedSlotId(null);
       await refreshSlots();
-      alert(t('reservationSlots.messages.generatedSuccess'));
+      toast.success(t('reservationSlots.messages.generatedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.creatingSlots');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.creatingSlots'), error);
     }
   };
 
   const handleCopyDaySlots = async () => {
     if (!selectedHospitalId) {
-      alert(t('reservationSlots.errors.selectHospitalFirst'));
+      toast.error(t('reservationSlots.errors.selectHospitalFirst'));
       return;
     }
 
     if (!copySourceDate || !selectedDate) {
-      alert(t('reservationSlots.errors.selectCopyDates'));
+      toast.error(t('reservationSlots.errors.selectCopyDates'));
       return;
     }
 
@@ -259,10 +261,10 @@ export const ReservationSlotsPage: React.FC = () => {
     try {
       await apiClient.post(`/api/reservations/slots/hospital/${selectedHospitalId}/copy-day`, request);
       await refreshSlots();
-      alert(t('reservationSlots.messages.copySuccess'));
+      toast.success(t('reservationSlots.messages.copySuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.copyFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.copyFailed'), error);
     }
   };
@@ -290,10 +292,10 @@ export const ReservationSlotsPage: React.FC = () => {
     try {
       await apiClient.put(`/api/reservations/slots/${selectedSlotId}`, request);
       await refreshSlots();
-      alert(t('reservationSlots.messages.updatedSuccess'));
+      toast.success(t('reservationSlots.messages.updatedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.updateFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.updateFailed'), error);
     }
   };
@@ -306,10 +308,10 @@ export const ReservationSlotsPage: React.FC = () => {
     try {
       await apiClient.post(`/api/reservations/slots/${selectedSlotId}/release`);
       await refreshSlots();
-      alert(t('reservationSlots.messages.releasedSuccess'));
+      toast.success(t('reservationSlots.messages.releasedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.releaseFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.releaseFailed'), error);
     }
   };
@@ -328,22 +330,22 @@ export const ReservationSlotsPage: React.FC = () => {
       setSelectedSlotId(null);
       setBookingExaminationTypeId('');
       await refreshSlots();
-      alert(t('reservationSlots.messages.deletedSuccess'));
+      toast.success(t('reservationSlots.messages.deletedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.deleteFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.deleteFailed'), error);
     }
   };
 
   const handleBlockSelectedSlot = async () => {
     if (!selectedSlotId) {
-      alert(t('reservationSlots.errors.selectAvailableSlot'));
+      toast.error(t('reservationSlots.errors.selectAvailableSlot'));
       return;
     }
 
     if (!bookingFirstName.trim() || !bookingLastName.trim() || !bookingExaminationTypeId) {
-      alert(t('reservationSlots.errors.fillBookingData'));
+      toast.error(t('reservationSlots.errors.fillBookingData'));
       return;
     }
 
@@ -366,17 +368,17 @@ export const ReservationSlotsPage: React.FC = () => {
       setBookingExaminationTypeId('');
       setSelectedSlotId(null);
       await refreshSlots();
-      alert(t('reservationSlots.messages.blockedSuccess'));
+      toast.success(t('reservationSlots.messages.blockedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.blockFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.blockFailed'), error);
     }
   };
 
   const handleConfirmSlot = async (slotId: number) => {
     if (!user?.id) {
-      alert(t('errors.userNotFound'));
+      toast.error(t('errors.userNotFound'));
       return;
     }
 
@@ -387,10 +389,10 @@ export const ReservationSlotsPage: React.FC = () => {
     try {
       await apiClient.post(`/api/reservations/slots/${slotId}/confirm`, request);
       await refreshSlots();
-      alert(t('reservationSlots.messages.confirmedSuccess'));
+      toast.success(t('reservationSlots.messages.confirmedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.confirmFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.confirmFailed'), error);
     }
   };
@@ -399,10 +401,10 @@ export const ReservationSlotsPage: React.FC = () => {
     try {
       await apiClient.post(`/api/reservations/slots/${slotId}/reject`);
       await refreshSlots();
-      alert(t('reservationSlots.messages.rejectedSuccess'));
+      toast.success(t('reservationSlots.messages.rejectedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.rejectFailed');
-      alert(errorMessage);
+      toast.error(errorMessage);
       console.error(t('reservationSlots.errors.rejectFailed'), error);
     }
   };

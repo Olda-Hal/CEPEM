@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RoleRoute } from './components/RoleRoute';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import TestDashboard from './pages/TestDashboard';
@@ -28,8 +30,9 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <Router>
+    <ToastProvider>
+      <AuthProvider>
+        <Router>
         <div className="App">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -45,33 +48,33 @@ function App() {
             <Route 
               path="/tests" 
               element={
-                <ProtectedRoute>
+                <RoleRoute roles={[]}>
                   <TestDashboard />
-                </ProtectedRoute>
+                </RoleRoute>
               } 
             />
             <Route 
               path="/admin/employees" 
               element={
-                <ProtectedRoute>
+                <RoleRoute roles={['Country Admin']}>
                   <AdminEmployeesPage />
-                </ProtectedRoute>
+                </RoleRoute>
               } 
             />
             <Route 
               path="/admin/roles" 
               element={
-                <ProtectedRoute>
+                <RoleRoute roles={[]}>
                   <RoleManagementPage />
-                </ProtectedRoute>
+                </RoleRoute>
               } 
             />
             <Route 
               path="/admin/centers" 
               element={
-                <ProtectedRoute>
+                <RoleRoute roles={['Center Admin', 'Country Admin']}>
                   <CenterManagementPage />
-                </ProtectedRoute>
+                </RoleRoute>
               } 
             />
             <Route 
@@ -125,8 +128,9 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
-      </Router>
-    </AuthProvider>
+        </Router>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
+import BaseModal from '../components/BaseModal';
 import {
   CreateRoleRequest,
   Permission,
@@ -244,13 +245,11 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content role-access-modal-content">
-        <div className="modal-header">
-          <h2>{t('admin.accessRules.roleTitle', { name: translateRoleName(role.name) })}</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
-        </div>
-
+    <BaseModal
+      title={t('admin.accessRules.roleTitle', { name: translateRoleName(role.name) })}
+      onClose={onClose}
+      contentClassName="role-access-modal-content"
+    >
         {loading ? (
           <div className="employee-form">{t('common.loading')}</div>
         ) : (
@@ -295,8 +294,7 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </BaseModal>
   );
 };
 

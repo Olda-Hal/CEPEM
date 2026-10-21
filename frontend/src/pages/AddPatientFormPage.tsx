@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import { PatientFormFields, PatientFormData } from '../components/PatientFormFields';
 import './AddPatientFormPage.css';
+import { useToast } from '../contexts/ToastContext';
 
 export const AddPatientFormPage: React.FC = () => {
   const { t } = useTranslation();
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +114,7 @@ export const AddPatientFormPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      alert('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
+      toast.info('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
     }
   };
 

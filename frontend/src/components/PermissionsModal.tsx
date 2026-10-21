@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmployeePermission, EmployeeListItem, Permission } from '../types';
 import { apiClient } from '../utils/api';
+import BaseModal from './BaseModal';
 import './PermissionsModal.css';
 
 interface Props {
@@ -90,13 +91,11 @@ const PermissionsModal: React.FC<Props> = ({ employee, getPermissionLabel, onClo
     permissions.find((p) => p.id === permissionId)?.code;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content permissions-modal">
-        <div className="modal-header">
-          <h2>{t('admin.accessRules.title', { name: employee.fullName })}</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
-        </div>
-
+    <BaseModal
+      title={t('admin.accessRules.title', { name: employee.fullName })}
+      onClose={onClose}
+      contentClassName="permissions-modal"
+    >
         {loading ? (
           <div className="employee-form">{t('common.loading')}</div>
         ) : (
@@ -173,8 +172,7 @@ const PermissionsModal: React.FC<Props> = ({ employee, getPermissionLabel, onClo
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </BaseModal>
   );
 };
 

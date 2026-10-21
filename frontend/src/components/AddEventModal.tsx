@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from 'react-i18next';
 import { EventOptions, CreateEventRequest, DrugUseRequest } from '../types';
 import { apiClient } from '../utils/api';
@@ -35,6 +36,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   onEventAdded
 }) => {
   const { t } = useTranslation();
+  const toast = useToast();
   const examinationFileInputRef = React.useRef<HTMLInputElement>(null);
   const [eventOptions, setEventOptions] = useState<EventOptions | null>(null);
   const [loading, setLoading] = useState(false);
@@ -153,7 +155,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     e.preventDefault();
     
     if (isGroupMode && events.length === 0) {
-      alert(t('events.pleaseAddAtLeastOneEvent') || 'Please add at least one event to the group');
+      toast.info(t('events.pleaseAddAtLeastOneEvent') || 'Please add at least one event to the group');
       return;
     }
 
@@ -162,7 +164,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     }
 
     if (isGroupMode && selectedExaminationFiles.length > 0) {
-      alert(t('events.groupUploadNotSupported'));
+      toast.info(t('events.groupUploadNotSupported'));
       return;
     }
 
