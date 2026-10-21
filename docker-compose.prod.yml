@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        REACT_APP_API_URL: https://${DOMAIN_NAME}/api
+        VITE_API_URL: https://${DOMAIN_NAME}/api
     ports:
       - "127.0.0.1:3000:3000"
     container_name: cepem_frontend

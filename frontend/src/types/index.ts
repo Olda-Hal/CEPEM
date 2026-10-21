@@ -70,6 +70,10 @@ export interface Role {
   name: string;
 }
 
+export interface CreateRoleRequest {
+  name: string;
+}
+
 export interface Permission {
   id: number;
   code: string;

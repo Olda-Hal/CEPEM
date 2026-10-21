@@ -45,17 +45,17 @@ i18n
     contextSeparator: '_',
     
     // Development options
-    debug: process.env.NODE_ENV === 'development',
+    debug: import.meta.env.DEV,
     
     // Namespace and key separator
     keySeparator: '.',
     nsSeparator: ':',
     
     // Enable key extraction in development
-    saveMissing: process.env.NODE_ENV === 'development',
+    saveMissing: import.meta.env.DEV,
     saveMissingTo: 'current',
     missingKeyHandler: (lng, ns, key, fallbackValue) => {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.warn(`Missing translation key: ${key} for language: ${lng}`);
       }
     },

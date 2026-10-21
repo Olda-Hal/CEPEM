@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { ProtectedRoute } from '../ProtectedRoute';
@@ -6,8 +7,8 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../../i18n';
 
 // Mock the AuthContext
-const mockUseAuth = jest.fn();
-jest.mock('../../contexts/AuthContext', () => ({
+const mockUseAuth = vi.fn();
+vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth()
 }));
 
@@ -25,8 +26,8 @@ describe('ProtectedRoute', () => {
   test('redirects to login when user is not authenticated', () => {
     mockUseAuth.mockReturnValue({
       user: null,
-      login: jest.fn(),
-      logout: jest.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
       loading: false,
       isAuthenticated: false,
       token: null
@@ -53,8 +54,8 @@ describe('ProtectedRoute', () => {
 
     mockUseAuth.mockReturnValue({
       user: authenticatedUser,
-      login: jest.fn(),
-      logout: jest.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
       loading: false,
       isAuthenticated: true,
       token: 'test-token'
@@ -74,8 +75,8 @@ describe('ProtectedRoute', () => {
   test('shows loading state when loading is true', () => {
     mockUseAuth.mockReturnValue({
       user: null,
-      login: jest.fn(),
-      logout: jest.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
       loading: true,
       isAuthenticated: false,
       token: null

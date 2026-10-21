@@ -63,11 +63,6 @@ const AdminEmployeesPage: React.FC = () => {
       ]);
       setEmployees(employeesResponse);
       setRoles(rolesResponse);
-
-      try {
-      } catch {
-        setPermissionCatalog([]);
-      }
     } catch (error) {
       console.error('Error loading data:', error);
       setError(t('admin.dataLoadFailed'));

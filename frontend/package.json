@@ -3,61 +3,42 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.6.4",
-    "@testing-library/react": "^14.3.1",
-    "@testing-library/user-event": "^14.5.2",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/react-router-dom": "^5.3.3",
     "i18next": "^23.15.1",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^2.6.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^15.0.1",
-    "react-router-dom": "^6.30.1",
-    "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
-    "web-vitals": "^4.2.1"
+    "react-router-dom": "^6.30.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:coverage": "react-scripts test --coverage --watchAll=false --reporters=default --reporters=jest-junit",
-    "test:coverage:tolerant": "react-scripts test --coverage --watchAll=false --reporters=default --reporters=jest-junit --coverageThreshold='{}'",
-    "eject": "react-scripts eject",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "i18n:extract": "i18next-scanner --config i18next-scanner.config.js",
     "i18n:extract:watch": "i18next-scanner --config i18next-scanner.config.js --watch",
     "i18n:missing": "node scripts/i18n-migrator.js",
-    "i18n:analyze": "node scripts/i18n-migrator.js",
-    "i18n:migrate": "npm run i18n:analyze && npm run i18n:extract"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "i18n:analyze": "node scripts/i18n-migrator.js"
   },
   "devDependencies": {
-    "@types/i18next": "^12.1.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.10",
+    "@vitejs/plugin-react": "^4.7.0",
     "i18next-scanner": "^4.6.0",
-    "jest-junit": "^16.0.0"
+    "jest-junit": "^16.0.0",
+    "jsdom": "^30.1.3",
+    "typescript": "5.6",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
   },
   "jest": {
     "collectCoverageFrom": [

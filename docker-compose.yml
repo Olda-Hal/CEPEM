@@ -96,7 +96,7 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        VITE_API_URL: ${VITE_API_URL}
     container_name: cepem_frontend
     restart: unless-stopped
     ports:

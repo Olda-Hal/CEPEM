@@ -13,7 +13,7 @@ RUN npm install --legacy-peer-deps
 COPY frontend/ .
 
 # Build args for API URLs (passed from docker-compose.yml)
-ARG REACT_APP_API_URL
+ARG VITE_API_URL
 
 # Build the application
 RUN npm run build
@@ -22,7 +22,7 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy build files to nginx
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 
 # Record the image build version (CI can pass -build-arg BUILD_NUMBER=<n>)
 ARG BUILD_NUMBER=dev
