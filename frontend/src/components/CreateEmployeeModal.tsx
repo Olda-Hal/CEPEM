@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CreateEmployeeRequest } from '../types';
 import { apiClient } from '../utils/api';
+import BaseModal from './BaseModal';
 import './CreateEmployeeModal.css';
 
 interface CreateEmployeeModalProps {
@@ -102,14 +103,10 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{t('createEmployee.title')}</h2>
-          <button className="modal-close" onClick={handleClose}>
-            ×
-          </button>
-        </div>
+<BaseModal
+      title={t('createEmployee.title')}
+      onClose={handleClose}
+    >
 
         <form onSubmit={handleSubmit} className="create-employee-form">
           {error && <div className="error-message">{error}</div>}
@@ -274,7 +271,6 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </BaseModal>
   );
 };

@@ -1,3 +1,4 @@
+import BaseModal from './BaseModal';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -81,22 +82,12 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
   };
 
   return (
-    <div className="password-modal-overlay">
-      <div className="password-modal">
-        <div className="password-modal-header">
-          <h2>
-            {isForced ? t('passwordChange.requiredTitle') : t('passwordChange.title')}
-          </h2>
-          {!isForced && (
-            <button 
-              className="password-modal-close"
-              onClick={handleClose}
-              type="button"
-            >
-              ×
-            </button>
-          )}
-        </div>
+    <BaseModal
+      title={isForced ? t('passwordChange.requiredTitle') : t('passwordChange.title')}
+      onClose={handleClose}
+      closeOnOverlayClick={!isForced}
+      contentClassName="password-modal"
+    >
         
         <div className="password-modal-body">
           {isForced && (
@@ -168,7 +159,6 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
             </div>
           </form>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 };

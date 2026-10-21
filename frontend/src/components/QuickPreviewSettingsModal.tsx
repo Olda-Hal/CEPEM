@@ -1,3 +1,4 @@
+import BaseModal from './BaseModal';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QuickPreviewSettings } from '../types';
@@ -39,17 +40,11 @@ const QuickPreviewSettingsModal: React.FC<QuickPreviewSettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="settings-modal">
-        <div className="modal-header">
-          <h3>{t('patients.quickPreviewSettings')}</h3>
-          <button className="close-button" onClick={handleCancel}>
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
-        </div>
-        
+    <BaseModal
+      title={t('patients.quickPreviewSettings')}
+      onClose={handleCancel}
+      contentClassName="settings-modal"
+    >
         <div className="modal-content">
           <p className="settings-description">
             {t('patients.quickPreviewSettingsDescription')}
@@ -174,8 +169,7 @@ const QuickPreviewSettingsModal: React.FC<QuickPreviewSettingsModalProps> = ({
             {t('common.save')}
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 };
 

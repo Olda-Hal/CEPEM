@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
+import BaseModal from './BaseModal';
 import { PatientFormFields, PatientFormData } from './PatientFormFields';
 import './AddIntakeFormEventModal.css';
 
@@ -295,13 +296,11 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content intake-form-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Nový Vstupní Formulář</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
-        </div>
-
+    <BaseModal
+      title="Nový Vstupní Formulář"
+      onClose={onClose}
+      contentClassName="intake-form-modal"
+    >
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="modal-form">
@@ -330,7 +329,6 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </BaseModal>
   );
 };
