@@ -7,8 +7,8 @@ Work is done on the `refactor` branch.
 - **Tier 0** — ✅ Complete (commits `7352c62`, `d723646`, `64a67f9`, `7f52c74`, `3be1d51`)
 - **Tier 1** — ✅ Complete (commits `274223a`, `ad818fe`, `6b4f716`)
 - **Tier 2** — ✅ Complete (commits `b0d41e5`, plus `c1a0b7f`)
-- **Tier 3** — 🔶 Started: global exception handling + permission cache done (`c1a0b7f`); controller splitting, query hygiene and schema work remain
-- **Tier 4** — 🔶 Mostly done (`2ed1282`, `1b8e304`, `816f3da`): Vite/TS5/vitest, API-layer fixes, toasts, BaseModal, route guards; component surgery (4.5) and the UX pass (4.6) remain
+- **Tier 3** — 🔶 Mostly done: global exception handling + permission cache (`c1a0b7f`), UID-allocation/PatientDto/Include-chain/event-creation dedup, AsNoTracking reads, race-safe slot creation (`02b06d4`, `bfa7d55`); remaining: full service-layer split of EventsController/PatientsController, the 24-Include patient-detail query, enum statuses + soft-delete/timestamp conventions, and the Persons.UID unique index (needs a data audit for existing duplicates)
+- **Tier 4** — 🔶 Mostly done (`2ed1282`, `1b8e304`, `816f3da`, `906e5b1`): Vite/TS5/vitest, API-layer fixes, toasts, BaseModal, route guards, PatientDetailPage decomposed (1,114 → 703 lines, parsing engine extracted + tested); remaining: ReservationSlotsPage split, consolidating the patient-form implementations, migrating the remaining modals to BaseModal, skeletons/empty states/a11y, React.lazy code-splitting
 - **Tier 5** — Pending
 
 ---
