@@ -40,7 +40,7 @@ sudo apt install certbot python3-certbot-nginx -y
 
 ```bash
 cd /home/olda/programovani/CEPEM
-cp .env.production .env
+cp .env.example .env  # then fill in real values
 nano .env
 ```
 
@@ -134,7 +134,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ### Backup Database
 ```bash
-docker exec cepem_mysql mysqldump -u root -p cepem_db > backup_$(date +%Y%m%d).sql
+# Prefer scripts/backup_daily.sh (retention, .env-aware). Manual one-off:
+docker exec cepem_mysql mysqldump -u root -p cepem_healthcare > backup_$(date +%Y%m%d).sql
 ```
 
 ### Renew SSL (automatic via certbot timer)

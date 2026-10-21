@@ -115,6 +115,12 @@ public class DatabaseContext : DbContext
             .HasMaxLength(2)
             .HasDefaultValue(Person.DefaultCountryCode);
 
+        // UID must be unique across all persons; the migration backfills
+        // legacy empty-string values before creating the index
+        modelBuilder.Entity<Person>()
+            .HasIndex(person => person.UID)
+            .IsUnique();
+
         // Person -> Patient (1:0..1)
         modelBuilder.Entity<Patient>()
             .HasOne(p => p.Person)

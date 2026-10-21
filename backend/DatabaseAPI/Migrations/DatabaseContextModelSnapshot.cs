@@ -1264,7 +1264,7 @@ namespace DatabaseAPI.Migrations
 
                     b.Property<string>("UID")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -1272,6 +1272,9 @@ namespace DatabaseAPI.Migrations
                         .IsUnique();
 
                     b.HasIndex("CommentId");
+
+                    b.HasIndex("UID")
+                        .IsUnique();
 
                     b.ToTable("Persons");
                 });
