@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 using Yarp.ReverseProxy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -100,6 +101,20 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Rate limiting: brute-force protection on the login endpoint
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 // Permission-based authorization policies for YARP routes ("perm:{code}")
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
@@ -131,6 +146,7 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<ActivityLoggingMiddleware>();
 
+app.UseRateLimiter();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

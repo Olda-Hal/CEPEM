@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using HealthcareAPI.Models;
@@ -19,6 +20,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
             try

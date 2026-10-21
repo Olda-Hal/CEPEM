@@ -4,22 +4,22 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
-import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import TestDashboard from './pages/TestDashboard';
-import AdminEmployeesPage from './pages/AdminEmployeesPage';
-import RoleManagementPage from './pages/RoleManagementPage';
-import CenterManagementPage from './pages/CenterManagementPage';
-import { PatientsPage } from './pages/PatientsPage';
-import { PatientDetailPage } from './pages/PatientDetailPage';
-import { AddPatientFormPage } from './pages/AddPatientFormPage';
-import { EditPatientPage } from './pages/EditPatientPage';
-import { ReservationSlotsPage } from './pages/ReservationSlotsPage';
-import { ExaminationsPage } from './pages/ExaminationsPage';
-import { IntakeFormByLinkPage } from './pages/IntakeFormByLinkPage';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
+const LoginPage = React.lazy(() => import('./pages/LoginPage').then(m => { return { default: m.LoginPage }; }));
+const DashboardPage = React.lazy(() => import('./pages/DashboardPage').then(m => { return { default: m.DashboardPage }; }));
+const TestDashboard = React.lazy(() => import('./pages/TestDashboard'));
+const AdminEmployeesPage = React.lazy(() => import('./pages/AdminEmployeesPage'));
+const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage'));
+const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
+const PatientsPage = React.lazy(() => import('./pages/PatientsPage').then(m => { return { default: m.PatientsPage }; }));
+const PatientDetailPage = React.lazy(() => import('./pages/PatientDetailPage').then(m => { return { default: m.PatientDetailPage }; }));
+const AddPatientFormPage = React.lazy(() => import('./pages/AddPatientFormPage').then(m => { return { default: m.AddPatientFormPage }; }));
+const EditPatientPage = React.lazy(() => import('./pages/EditPatientPage').then(m => { return { default: m.EditPatientPage }; }));
+const ReservationSlotsPage = React.lazy(() => import('./pages/ReservationSlotsPage'));
+const ExaminationsPage = React.lazy(() => import('./pages/ExaminationsPage').then(m => { return { default: m.ExaminationsPage }; }));
+const IntakeFormByLinkPage = React.lazy(() => import('./pages/IntakeFormByLinkPage').then(m => { return { default: m.IntakeFormByLinkPage }; }));
 import './App.css';
 
 function App() {
@@ -34,7 +34,8 @@ function App() {
       <AuthProvider>
         <Router>
         <div className="App">
-          <Routes>
+          <React.Suspense fallback={<div className="loading-container"><div className="loading-spinner">...</div></div>}>
+        <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/intake/:token" element={<IntakeFormByLinkPage />} />
             <Route 
@@ -127,6 +128,7 @@ function App() {
             />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+        </React.Suspense>
         </div>
         </Router>
       </AuthProvider>
