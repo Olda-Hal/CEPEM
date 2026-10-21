@@ -401,31 +401,6 @@ namespace DatabaseAPI.Controllers
                             .ThenInclude(et => et.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Comment)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.DrugUses)
-                            .ThenInclude(du => du.Drug)
-                                .ThenInclude(d => d.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Examinations)
-                            .ThenInclude(ex => ex.ExaminationType)
-                                .ThenInclude(et => et.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Examinations)
-                            .ThenInclude(ex => ex.Documents)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.PatientSymptoms)
-                            .ThenInclude(ps => ps.Symptom)
-                                .ThenInclude(s => s.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Injuries)
-                            .ThenInclude(i => i.InjuryType)
-                                .ThenInclude(it => it.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Vaccines)
-                            .ThenInclude(v => v.VaccineType)
-                                .ThenInclude(vt => vt.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Pregnancies)
                     .Include(p => p.FormSubmissions)
                         .ThenInclude(fs => fs.Medication)
                     .Include(p => p.FormSubmissions)
@@ -437,6 +412,64 @@ namespace DatabaseAPI.Controllers
                     .Include(p => p.FormSubmissions)
                         .ThenInclude(fs => fs.SicknessHistories)
                     .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (patient == null)
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
+                // Load the event child collections with separate queries instead of
+                // one giant Include chain: the single-query form multiplies the
+                // independent child rows per event (drugUses x examinations x
+                // symptoms x injuries x vaccines) and explodes on data-heavy
+                // patients. EF relationship fixup attaches these to the tracked
+                // event entities, so the mapping below is unchanged.
+                var eventIds = patient.Events.Select(e => e.Id).ToList();
+
+                if (eventIds.Count > 0)
+                {
+                    await _context.DrugUses
+                        .Include(du => du.Drug)
+                            .ThenInclude(d => d.NameTranslation)
+                        .Where(du => eventIds.Contains(du.EventId))
+                        .ToListAsync();
+
+                    var examinations = await _context.Examinations
+                        .Include(ex => ex.ExaminationType)
+                            .ThenInclude(et => et.NameTranslation)
+                        .Where(ex => eventIds.Contains(ex.EventId))
+                        .ToListAsync();
+
+                    var examinationIds = examinations.Select(ex => ex.Id).ToList();
+                    if (examinationIds.Count > 0)
+                    {
+                        await _context.ExaminationDocuments
+                            .Where(d => examinationIds.Contains(d.ExaminationId))
+                            .ToListAsync();
+                    }
+
+                    await _context.PatientSymptoms
+                        .Include(ps => ps.Symptom)
+                            .ThenInclude(s => s.NameTranslation)
+                        .Where(ps => eventIds.Contains(ps.EventId))
+                        .ToListAsync();
+
+                    await _context.Injuries
+                        .Include(i => i.InjuryType)
+                            .ThenInclude(it => it.NameTranslation)
+                        .Where(i => eventIds.Contains(i.EventId))
+                        .ToListAsync();
+
+                    await _context.Vaccines
+                        .Include(v => v.VaccineType)
+                            .ThenInclude(vt => vt.NameTranslation)
+                        .Where(v => eventIds.Contains(v.EventId))
+                        .ToListAsync();
+
+                    await _context.Pregnancies
+                        .Where(pregnancy => eventIds.Contains(pregnancy.EventId))
+                        .ToListAsync();
+                }
 
                 if (patient == null)
                 {
@@ -870,8 +903,8 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                // Tracked on purpose: the comment entity is mutated below
                 var patient = await _context.Patients
-                .AsNoTracking()
                     .Include(p => p.Person)
                     .Include(p => p.Comment)
                     .FirstOrDefaultAsync(p => p.Id == id);
