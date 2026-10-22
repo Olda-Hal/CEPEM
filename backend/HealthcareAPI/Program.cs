@@ -118,7 +118,7 @@ builder.Services.AddRateLimiter(options =>
 // Permission-based authorization policies for YARP routes ("perm:{code}")
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
-builder.Services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
+builder.Services.AddSingleton<IPermissionEvaluator, PermissionEvaluator>();
 foreach (var policyName in ProxyConfig.Routes.Select(r => r.AuthorizationPolicy).Where(p => p != null).Distinct()!)
 {
     var code = policyName["perm:".Length..];
