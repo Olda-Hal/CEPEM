@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -15,39 +16,32 @@ import './DashboardPage.css';
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
   const { t, i18n } = useTranslation();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCreateEmployeeModal, setShowCreateEmployeeModal] = useState(false);
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
   const [isActionsExpanded, setIsActionsExpanded] = useState(true);
-  const [buildNumber, setBuildNumber] = useState<string | null>(null);
+
   const canManageCenters = isAdmin(user) || hasRole(user, 'Country Admin');
   const canCreateEmployees = isAdmin(user) || hasRole(user, 'Country Admin');
   const canManageEmployees = isAdmin(user) || hasRole(user, 'Country Admin');
-  useEffect(() => {
-    // Fetch build number from static file
-    fetch('/build_number.txt')
-      .then((res) => res.text())
-      .then((text) => setBuildNumber(text.trim()))
-      .catch(() => setBuildNumber(null));
-  }, []);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadDashboardStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { data: stats, isLoading: loading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => apiClient.get<DashboardStats>('/api/employees/dashboard-stats'),
+  });
 
-  const loadDashboardStats = async () => {
-    try {
-      const dashboardStats = await apiClient.get<DashboardStats>('/api/employees/dashboard-stats');
-      setStats(dashboardStats);
-    } catch (error) {
-      console.error(t('errors.loadingStats'), error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: buildNumber } = useQuery({
+    queryKey: ['build-number'],
+    queryFn: async () => {
+      const response = await fetch('/build_number.txt');
+      return (await response.text()).trim();
+    },
+    staleTime: Infinity,
+  });
+
+  const loadDashboardStats = () => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return t('dashboard.never');

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
 import { themeManager } from './themes/ThemeManager';
@@ -23,6 +24,16 @@ const ExaminationsPage = React.lazy(() => import('./pages/ExaminationsPage').the
 const IntakeFormByLinkPage = React.lazy(() => import('./pages/IntakeFormByLinkPage').then(m => { return { default: m.IntakeFormByLinkPage }; }));
 import './App.css';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 function App() {
   // Initialize theme system
   useEffect(() => {
@@ -31,6 +42,7 @@ function App() {
   }, []);
 
   return (
+    <QueryClientProvider client={queryClient}>
     <ToastProvider>
       <AuthProvider>
         <Router>
@@ -142,6 +154,7 @@ function App() {
         </Router>
       </AuthProvider>
     </ToastProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -1,4 +1,5 @@
 import { vi, type Mocked } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -31,7 +32,9 @@ const mockStats = {
 };
 
 const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <I18nextProvider i18n={i18n}>
         <AuthProvider>
@@ -39,6 +42,7 @@ const renderWithProviders = (component: React.ReactElement) => {
         </AuthProvider>
       </I18nextProvider>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 
@@ -76,15 +80,17 @@ describe('DashboardPage', () => {
 
   test('handles API error gracefully', async () => {
     mockApiClient.get.mockRejectedValue(new Error('API Error'));
-    
+
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     renderWithProviders(<DashboardPage />);
-    
+
+    // With useQuery the error is handled internally; the page must
+    // still render without crashing
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(document.querySelector('.dashboard-container')).toBeTruthy();
     });
-    
+
     consoleSpy.mockRestore();
   });
 
