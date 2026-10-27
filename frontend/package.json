@@ -23,9 +23,12 @@
     "i18n:extract": "i18next-scanner --config i18next-scanner.config.js",
     "i18n:extract:watch": "i18next-scanner --config i18next-scanner.config.js --watch",
     "i18n:missing": "node scripts/i18n-migrator.js",
-    "i18n:analyze": "node scripts/i18n-migrator.js"
+    "i18n:analyze": "node scripts/i18n-migrator.js",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^14.3.1",

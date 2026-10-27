@@ -201,3 +201,7 @@ data.zip
 # Build artifacts
 BUILD_NUMBER
 __pycache__/
+
+# Playwright
+playwright-report/
+frontend/test-results/
