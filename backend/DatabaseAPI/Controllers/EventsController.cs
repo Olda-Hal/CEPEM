@@ -17,13 +17,15 @@ public class EventsController : ControllerBase
     private readonly DatabaseContext _context;
     private readonly IActorCountryContextService _actorCountryContextService;
     private readonly IUidService _uidService;
+    private readonly IEventService _eventService;
     private readonly ILogger<EventsController> _logger;
 
-    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService, ILogger<EventsController> logger)
+    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService, IEventService eventService, ILogger<EventsController> logger)
     {
         _context = context;
         _actorCountryContextService = actorCountryContextService;
             _uidService = uidService;
+        _eventService = eventService;
         _logger = logger;
     }
 
@@ -95,7 +97,7 @@ public class EventsController : ControllerBase
         try
         {
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
-            var (eventId, examinationIds) = await CreateEventRecordAsync(request, request.EventGroupId, actorCountryCode);
+            var (eventId, examinationIds) = await _eventService.CreateEventRecordAsync(request, request.EventGroupId, actorCountryCode);
             await transaction.CommitAsync();
 
             return Ok(new CreateEventResponse
@@ -128,7 +130,7 @@ public class EventsController : ControllerBase
                 eventRequest.PatientId = request.PatientId;
                 eventRequest.EventGroupId = eventGroupId;
 
-                var (eventId, _) = await CreateEventRecordAsync(eventRequest, eventGroupId, actorCountryCode);
+                var (eventId, _) = await _eventService.CreateEventRecordAsync(eventRequest, eventGroupId, actorCountryCode);
                 eventIds.Add(eventId);
             }
 
@@ -146,108 +148,6 @@ public class EventsController : ControllerBase
             _logger.LogError(ex, "Error creating event group");
             return StatusCode(500, "Error creating event group");
         }
-    }
-
-    /// <summary>
-    /// Persists a single event (comment, drug uses, examinations, symptoms,
-    /// injuries, vaccines, pregnancy) inside the caller's transaction and
-    /// returns the new event id plus the created examination ids.
-    /// </summary>
-    private async Task<(int EventId, List<int> ExaminationIds)> CreateEventRecordAsync(
-        CreateEventRequest request, Guid? eventGroupId, string actorCountryCode)
-    {
-        Comment? comment = null;
-        if (!string.IsNullOrEmpty(request.Comment))
-        {
-            comment = new Comment { Text = request.Comment };
-            _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
-        }
-
-        var eventEntity = new Event
-        {
-            PatientId = request.PatientId,
-            EventTypeId = request.EventTypeId,
-            HappenedAt = request.HappenedAt,
-            HappenedTo = request.HappenedTo,
-            CommentId = comment?.Id,
-            CountryCode = actorCountryCode,
-            EventGroupId = eventGroupId
-        };
-
-        _context.Events.Add(eventEntity);
-        await _context.SaveChangesAsync();
-
-        var examinations = new List<Examination>();
-        foreach (var examinationTypeId in request.ExaminationTypeIds)
-        {
-            var examination = new Examination
-            {
-                ExaminationTypeId = examinationTypeId,
-                EventId = eventEntity.Id,
-                CountryCode = actorCountryCode
-            };
-            _context.Examinations.Add(examination);
-            examinations.Add(examination);
-        }
-
-        foreach (var drugUse in request.DrugUses)
-        {
-            _context.DrugUses.Add(new DrugUse
-            {
-                DrugId = drugUse.DrugId,
-                EventId = eventEntity.Id
-            });
-            await _context.SaveChangesAsync();
-
-            foreach (var categoryId in drugUse.CategoryIds)
-            {
-                _context.DrugToDrugCategories.Add(new DrugToDrugCategory
-                {
-                    DrugId = drugUse.DrugId,
-                    CategoryId = categoryId
-                });
-            }
-        }
-
-        foreach (var symptomId in request.SymptomIds)
-        {
-            _context.PatientSymptoms.Add(new PatientSymptom
-            {
-                SymptomId = symptomId,
-                EventId = eventEntity.Id
-            });
-        }
-
-        foreach (var injuryTypeId in request.InjuryTypeIds)
-        {
-            _context.Injuries.Add(new Injury
-            {
-                InjuryTypeId = injuryTypeId,
-                EventId = eventEntity.Id
-            });
-        }
-
-        foreach (var vaccineTypeId in request.VaccineTypeIds)
-        {
-            _context.Vaccines.Add(new Vaccine
-            {
-                VaccineTypeId = vaccineTypeId,
-                EventId = eventEntity.Id
-            });
-        }
-
-        if (request.IsPregnant == true)
-        {
-            _context.Pregnancies.Add(new Pregnancy
-            {
-                EventId = eventEntity.Id,
-                Result = request.PregnancyResult ?? false
-            });
-        }
-
-        await _context.SaveChangesAsync();
-        return (eventEntity.Id, examinations.Select(examination => examination.Id).ToList());
     }
 
     [HttpPost("examination-types")]
