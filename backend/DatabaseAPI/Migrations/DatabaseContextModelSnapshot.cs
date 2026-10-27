@@ -444,6 +444,9 @@ namespace DatabaseAPI.Migrations
                         .HasColumnType("varchar(2)")
                         .HasDefaultValue("CZ");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<Guid?>("EventGroupId")
                         .HasColumnType("char(36)");
 
@@ -498,6 +501,9 @@ namespace DatabaseAPI.Migrations
                         .HasMaxLength(2)
                         .HasColumnType("varchar(2)")
                         .HasDefaultValue("CZ");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("EventId")
                         .HasColumnType("int");
@@ -1122,6 +1128,9 @@ namespace DatabaseAPI.Migrations
                         .HasColumnType("varchar(2)")
                         .HasDefaultValue("CZ");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("InsuranceNumber")
                         .HasColumnType("int");
 
@@ -1363,8 +1372,8 @@ namespace DatabaseAPI.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1426,8 +1435,8 @@ namespace DatabaseAPI.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");

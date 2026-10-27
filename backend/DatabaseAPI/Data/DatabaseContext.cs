@@ -386,6 +386,11 @@ public class DatabaseContext : DbContext
             .HasDefaultValue(Patient.DefaultCountryCode);
 
         modelBuilder.Entity<ReservationSlot>()
+            .Property(slot => slot.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        modelBuilder.Entity<ReservationSlot>()
             .Property(slot => slot.CountryCode)
             .HasMaxLength(2)
             .HasDefaultValue(ReservationSlot.DefaultCountryCode);
@@ -408,6 +413,11 @@ public class DatabaseContext : DbContext
             .HasForeignKey(der => der.DoctorId);
             
         // Reservation relationships
+        modelBuilder.Entity<Reservation>()
+            .Property(reservation => reservation.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         modelBuilder.Entity<Reservation>()
             .HasOne(r => r.Doctor)
             .WithMany(e => e.Reservations)

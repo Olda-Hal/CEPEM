@@ -493,7 +493,7 @@ namespace DatabaseAPI.Controllers
                             .ThenInclude(h => h!.Address)
                     .Include(r => r.ExaminationType)
                         .ThenInclude(et => et!.NameTranslation)
-                    .Where(r => r.PersonId == patient.PersonId && r.Status != "Cancelled")
+                    .Where(r => r.PersonId == patient.PersonId && r.Status != ReservationStatus.Cancelled)
                     .ToListAsync();
 
                 var mergedAppointments = appointments.Select(a => new PatientAppointmentDto
