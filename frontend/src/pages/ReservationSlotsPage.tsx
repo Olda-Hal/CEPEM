@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient } from '../utils/api';
+import { apiClient, ApiError } from '../utils/api';
 import { hasRole } from '../utils/roles';
 import {
   BlockReservationSlotRequest,
@@ -186,8 +186,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await apiClient.put(`/api/reservations/slots/${selectedSlotId}`, request);
       await refreshSlots();
       toast.success(t('reservationSlots.messages.updatedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.updateFailed');
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.updateFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.updateFailed'), error);
     }
@@ -202,8 +202,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await apiClient.post(`/api/reservations/slots/${selectedSlotId}/release`);
       await refreshSlots();
       toast.success(t('reservationSlots.messages.releasedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.releaseFailed');
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.releaseFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.releaseFailed'), error);
     }
@@ -223,8 +223,8 @@ export const ReservationSlotsPage: React.FC = () => {
       setSelectedSlotId(null);
       await refreshSlots();
       toast.success(t('reservationSlots.messages.deletedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.deleteFailed');
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.deleteFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.deleteFailed'), error);
     }
@@ -244,8 +244,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await apiClient.post(`/api/reservations/slots/${slotId}/confirm`, request);
       await refreshSlots();
       toast.success(t('reservationSlots.messages.confirmedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.confirmFailed');
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.confirmFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.confirmFailed'), error);
     }
@@ -256,8 +256,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await apiClient.post(`/api/reservations/slots/${slotId}/reject`);
       await refreshSlots();
       toast.success(t('reservationSlots.messages.rejectedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.rejectFailed');
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.rejectFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.rejectFailed'), error);
     }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiClient } from '../utils/api';
+import { apiClient, ApiError } from '../utils/api';
 import { CameraCapture } from './CameraCapture';
 import './CreatePatientModal.css';
 
@@ -202,9 +202,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
       
       onPatientCreated(response?.id);
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating patient:', error);
-      setError(error.response?.data?.message || t('patients.errors.createFailed'));
+      setError(error instanceof ApiError ? error.message : t('patients.errors.createFailed'));
     } finally {
       setLoading(false);
     }
