@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
+import PatientRecordFields from '../components/patient/PatientRecordFields';
+import '../components/patient/PatientRecordFields.css';
 import { PatientDetail, UpdatePatientRequest } from '../types';
 import './EditPatientPage.css';
 
@@ -386,105 +388,24 @@ export const EditPatientPage: React.FC = () => {
         {successMessage && <div className="edit-patient-alert success">{successMessage}</div>}
 
         <form className="edit-patient-form" onSubmit={handleSubmit}>
-          <div className="edit-grid">
-            <label>
-              {t('patients.titleBefore')}
-              <input
-                type="text"
-                value={form.titleBefore}
-                onChange={(e) => handleFormChange('titleBefore', e.target.value)}
-              />
-            </label>
+          <PatientRecordFields
+            values={{
+              titleBefore: form.titleBefore,
+              firstName: form.firstName,
+              lastName: form.lastName,
+              titleAfter: form.titleAfter,
+              uid: form.uid,
+              birthDate: form.birthDate,
+              gender: form.gender,
+              insuranceNumber: form.insuranceNumber,
+              email: form.email,
+              phoneNumber: form.phoneNumber
+            }}
+            onChange={(field, value) => handleFormChange(field, value)}
+            disabled={saving}
+          />
 
-            <label>
-              {t('patients.titleAfter')}
-              <input
-                type="text"
-                value={form.titleAfter}
-                onChange={(e) => handleFormChange('titleAfter', e.target.value)}
-              />
-            </label>
-
-            <label>
-              {t('patients.firstName')}
-              <input
-                type="text"
-                value={form.firstName}
-                onChange={(e) => handleFormChange('firstName', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.lastName')}
-              <input
-                type="text"
-                value={form.lastName}
-                onChange={(e) => handleFormChange('lastName', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.uid')}
-              <input
-                type="text"
-                value={form.uid}
-                onChange={(e) => handleFormChange('uid', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.birthDate')}
-              <input
-                type="date"
-                value={form.birthDate}
-                onChange={(e) => handleFormChange('birthDate', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.gender')}
-              <select
-                value={form.gender}
-                onChange={(e) => handleFormChange('gender', e.target.value)}
-              >
-                <option value="M">{t('patients.male')}</option>
-                <option value="F">{t('patients.female')}</option>
-              </select>
-            </label>
-
-            <label>
-              {t('patients.insuranceNumber')}
-              <input
-                type="number"
-                value={form.insuranceNumber}
-                onChange={(e) => handleFormChange('insuranceNumber', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.email')}
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => handleFormChange('email', e.target.value)}
-              />
-            </label>
-
-            <label>
-              {t('patients.phone')}
-              <input
-                type="tel"
-                value={form.phoneNumber}
-                onChange={(e) => handleFormChange('phoneNumber', e.target.value)}
-              />
-            </label>
-
-            <label className="alive-toggle">
+          <label className="alive-toggle">
               <input
                 type="checkbox"
                 checked={form.alive}
@@ -492,7 +413,6 @@ export const EditPatientPage: React.FC = () => {
               />
               {t('patients.alive')}
             </label>
-          </div>
 
           <label className="comment-field">
             {t('patients.comment')}
