@@ -11,7 +11,8 @@ namespace DatabaseAPI.APIModels
         Success,
         InvalidCredentials,
         AccountDeactivated,
-        UserNotFound
+        UserNotFound,
+        AccountLocked
     }
 
     public class AuthenticationResponse

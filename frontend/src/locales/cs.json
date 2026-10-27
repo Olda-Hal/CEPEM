@@ -363,10 +363,11 @@
     "changeButton": "Změnit heslo",
     "changing": "Měním heslo...",
     "cancel": "Zrušit",
-    "passwordTooShort": "Heslo musí mít alespoň 6 znaků",
     "passwordsDoNotMatch": "Hesla se neshodují",
     "currentPasswordIncorrect": "Současné heslo je nesprávné",
-    "samePassword": "Nové heslo nemůže být stejné jako současné heslo"
+    "samePassword": "Nové heslo nemůže být stejné jako současné heslo",
+    "passwordMinLength": "Heslo musí mít alespoň 8 znaků",
+    "passwordComplexity": "Heslo musí obsahovat alespoň jedno písmeno a jednu číslici"
   },
   "createEmployee": {
     "title": "Vytvořit nového zaměstnance",

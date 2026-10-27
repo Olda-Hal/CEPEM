@@ -21,6 +21,10 @@ public class Employee
     
     public DateTime? LastLoginAt { get; set; }
     public int AccessControlVersion { get; set; } = 1;
+
+    // Brute-force lockout: 5 failed attempts lock the account for 15 minutes
+    public int FailedLoginAttempts { get; set; } = 0;
+    public DateTime? LockedUntil { get; set; }
     
     // Navigation properties
     public ICollection<HospitalEmployee> HospitalEmployees { get; set; } = new List<HospitalEmployee>();

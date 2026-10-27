@@ -32,8 +32,8 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
     setLoading(true);
 
     // Validation
-    if (newPassword.length < 6) {
-      setError(t('passwordChange.passwordTooShort'));
+    if (newPassword.length < 8) {
+      setError(t('passwordChange.passwordMinLength'));
       setLoading(false);
       return;
     }

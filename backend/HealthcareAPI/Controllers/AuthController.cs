@@ -59,9 +59,14 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Neplatné údaje pro změnu hesla");
             }
 
-            if (request.NewPassword.Length < 6)
+            if (request.NewPassword.Length < 8)
             {
-                return BadRequest("Nové heslo musí mít alespoň 6 znaků");
+                return BadRequest("Nové heslo musí mít alespoň 8 znaků");
+            }
+
+            if (!request.NewPassword.Any(char.IsDigit) || !request.NewPassword.Any(char.IsLetter))
+            {
+                return BadRequest("Nové heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
             }
 
             var success = await _authService.ChangePasswordAsync(employeeId, request);
@@ -90,9 +95,14 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Všechna povinná pole musí být vyplněna");
             }
 
-            if (request.Password.Length < 6)
+            if (request.Password.Length < 8)
             {
-                return BadRequest("Heslo musí mít alespoň 6 znaků");
+                return BadRequest("Heslo musí mít alespoň 8 znaků");
+            }
+
+            if (!request.Password.Any(char.IsDigit) || !request.Password.Any(char.IsLetter))
+            {
+                return BadRequest("Heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
             }
 
             var result = await _authService.CreateEmployeeAsync(request);

@@ -31,6 +31,8 @@ namespace DatabaseAPI.Controllers
                 case AuthenticationResult.AccountDeactivated:
                     return Unauthorized("Váš účet byl deaktivován. Kontaktujte administrátora.");
 
+                case AuthenticationResult.AccountLocked:
+                    return Unauthorized(new { message = result.Message });
                 case AuthenticationResult.UserNotFound:
                 case AuthenticationResult.InvalidCredentials:
                 default:

@@ -89,15 +89,44 @@ namespace DatabaseAPI.Services
                 };
             }
 
+            // Account lockout: 5 failed attempts lock for 15 minutes
+            var employeeEntity = await _context.Employees.FindAsync(employeeInfo.EmployeeId);
+            if (employeeEntity != null && employeeEntity.LockedUntil > DateTime.UtcNow)
+            {
+                return new AuthenticationResponse
+                {
+                    Result = AuthenticationResult.AccountLocked,
+                    Message = "Účet je dočasně uzamčen po opakovaných neúspěšných pokusech o přihlášení. Zkuste to prosím později."
+                };
+            }
+
             // Ověř heslo
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, employeeInfo.PasswordHash);
             if (!isPasswordValid)
             {
+                if (employeeEntity != null)
+                {
+                    employeeEntity.FailedLoginAttempts++;
+                    if (employeeEntity.FailedLoginAttempts >= 5)
+                    {
+                        employeeEntity.LockedUntil = DateTime.UtcNow.AddMinutes(15);
+                        employeeEntity.FailedLoginAttempts = 0;
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
                 return new AuthenticationResponse
                 {
                     Result = AuthenticationResult.InvalidCredentials,
                     Message = "Invalid credentials"
                 };
+            }
+
+            if (employeeEntity != null && (employeeEntity.FailedLoginAttempts > 0 || employeeEntity.LockedUntil != null))
+            {
+                employeeEntity.FailedLoginAttempts = 0;
+                employeeEntity.LockedUntil = null;
+                await _context.SaveChangesAsync();
             }
 
             // Zkontroluj, jestli je účet aktivní

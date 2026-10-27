@@ -358,10 +358,11 @@
     "changeButton": "Change Password",
     "changing": "Changing Password...",
     "cancel": "Cancel",
-    "passwordTooShort": "Password must be at least 6 characters long",
     "passwordsDoNotMatch": "Passwords do not match",
     "currentPasswordIncorrect": "Current password is incorrect",
-    "samePassword": "New password cannot be the same as current password"
+    "samePassword": "New password cannot be the same as current password",
+    "passwordMinLength": "Password must be at least 8 characters long",
+    "passwordComplexity": "Password must contain at least one letter and one digit"
   },
   "createEmployee": {
     "title": "Create New Employee",

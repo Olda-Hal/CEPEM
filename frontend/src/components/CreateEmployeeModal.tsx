@@ -236,7 +236,7 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
               value={formData.password}
               onChange={handleInputChange}
               required
-              minLength={6}
+              minLength={8}
             />
             <small className="form-hint">{t('createEmployee.passwordHint')}</small>
           </div>

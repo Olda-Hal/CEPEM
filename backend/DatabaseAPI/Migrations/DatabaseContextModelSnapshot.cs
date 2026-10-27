@@ -348,7 +348,13 @@ namespace DatabaseAPI.Migrations
                     b.Property<int?>("CreatedByEmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LockedUntil")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("PasswordExpiration")
