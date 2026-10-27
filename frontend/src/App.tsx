@@ -11,6 +11,7 @@ const LoginPage = React.lazy(() => import('./pages/LoginPage').then(m => { retur
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage').then(m => { return { default: m.DashboardPage }; }));
 const TestDashboard = React.lazy(() => import('./pages/TestDashboard'));
 const AdminEmployeesPage = React.lazy(() => import('./pages/AdminEmployeesPage'));
+const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'));
 const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage'));
 const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
 const PatientsPage = React.lazy(() => import('./pages/PatientsPage').then(m => { return { default: m.PatientsPage }; }));
@@ -59,6 +60,14 @@ function App() {
               element={
                 <RoleRoute roles={['Country Admin']}>
                   <AdminEmployeesPage />
+                </RoleRoute>
+              } 
+            />
+            <Route 
+              path="/admin/activity-log" 
+              element={
+                <RoleRoute roles={[]}>
+                  <ActivityLogPage />
                 </RoleRoute>
               } 
             />

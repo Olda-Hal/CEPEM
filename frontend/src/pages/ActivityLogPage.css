@@ -1,0 +1,115 @@
+.activity-log-page {
+  min-height: 100vh;
+}
+
+.activity-log-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.activity-log-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.activity-log-filters input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.activity-log-meta {
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+  margin-bottom: 12px;
+}
+
+.activity-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface, #fff);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  font-size: 13px;
+}
+
+.activity-log-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--color-surface-alt, #f5f6f8);
+  border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.activity-log-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.05));
+  vertical-align: top;
+}
+
+.log-row-error td {
+  background: rgba(214, 69, 69, 0.05);
+}
+
+.log-time {
+  white-space: nowrap;
+  color: var(--color-text-secondary, #666);
+}
+
+.log-user {
+  white-space: nowrap;
+}
+
+.log-method {
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.log-action {
+  word-break: break-all;
+  max-width: 420px;
+}
+
+.log-status {
+  text-align: center;
+  font-weight: 600;
+}
+
+.status-ok {
+  color: #2e9e5b;
+}
+
+.status-error {
+  color: #d64545;
+}
+
+.activity-log-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: var(--color-text-secondary, #666);
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-secondary, #666);
+}
+
+@media (max-width: 800px) {
+  .log-action {
+    max-width: 200px;
+  }
+}

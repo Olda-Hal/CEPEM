@@ -90,6 +90,10 @@ public static class ProxyConfig
         yield return Route("slots-reject", "/api/reservations/slots/{slotId}/reject", "POST", "reservations.write");
         yield return Route("slots-delete", "/api/reservations/slots/{**rest}", "DELETE", "reservations.write");
 
+        // Activity logs (audit trail) - GET only; the middleware's POST goes
+        // through the internal typed client, not the proxy
+        yield return Route("activity-logs-get", "/api/activitylogs/{**rest}", "GET", "audit.read");
+
         // Settings
         yield return Route("settings-get", "/api/settings/{**rest}", "GET", "settings.read");
         yield return Route("settings-put", "/api/settings/{**rest}", "PUT", "settings.write");

@@ -311,7 +311,10 @@
     "yes": "Yes",
     "save": "Save",
     "delete": "Delete",
-    "confirmDelete": "Are you sure?"
+    "confirmDelete": "Are you sure?",
+    "search": "Search",
+    "previous": "Previous",
+    "next": "Next"
   },
   "intakeLink": {
     "pageTitle": "Intake Form",
@@ -708,7 +711,10 @@
       "post_api_reservations_slots_slotid_reject": "Reject Reservation Slot",
       "get_api_settings_quick_preview": "View Quick Preview Settings",
       "put_api_settings_quick_preview": "Update Quick Preview Settings"
-    }
+    },
+    "activityLog": "Audit log",
+    "activityLogDescription": "Overview of all system activity",
+    "activityLogButton": "Open audit log"
   },
   "centerManagement": {
     "title": "Center Management",
@@ -841,5 +847,17 @@
     "uploadingDocuments": "Uploading documents...",
     "groupUploadNotSupported": "Examination document upload is available only outside group mode.",
     "addToList": "Add \"{{name}}\" to list"
+  },
+  "activityLog": {
+    "title": "Audit log",
+    "loadFailed": "Failed to load the audit log",
+    "searchPlaceholder": "Search (action, email, details...)",
+    "noEntries": "No entries",
+    "totalEntries": "Total entries: {{count}}",
+    "time": "Time",
+    "user": "User",
+    "method": "Method",
+    "action": "Action",
+    "status": "Status"
   }
 }

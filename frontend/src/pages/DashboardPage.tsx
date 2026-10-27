@@ -284,6 +284,18 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   )}
 
+                  {isAdmin(user) && (
+                    <div className="action-card admin-action">
+                      <h4>{t('admin.activityLog')}</h4>
+                      <p>{t('admin.activityLogDescription')}</p>
+                      <Link to="/admin/activity-log">
+                        <button className="action-button admin-button">
+                          {t('admin.activityLogButton')}
+                        </button>
+                      </Link>
+                    </div>
+                  )}
+
                   {canManageCenters && (
                     <div className="action-card admin-action">
                       <h4>{t('admin.centerManagement')}</h4>

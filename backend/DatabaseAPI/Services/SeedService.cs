@@ -235,7 +235,8 @@ namespace DatabaseAPI.Services
             ("permissions.manage", "Manage permissions and per-employee permission overrides"),
             ("settings.read", "View application settings"),
             ("settings.write", "Change application settings"),
-            ("tests.read", "View the test results dashboard")
+            ("tests.read", "View the test results dashboard"),
+            ("audit.read", "View the activity audit log")
         };
 
         private async Task SeedPermissionsAsync()

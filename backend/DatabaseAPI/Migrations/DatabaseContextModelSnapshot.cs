@@ -32,9 +32,21 @@ namespace DatabaseAPI.Migrations
                     b.Property<string>("Details")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("EmployeeEmail")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Method")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Service")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("StatusCode")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime(6)");

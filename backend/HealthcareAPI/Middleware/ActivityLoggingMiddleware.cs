@@ -34,12 +34,21 @@ namespace HealthcareAPI.Middleware
                 Timestamp = DateTime.UtcNow,
                 Service = service,
                 Action = action,
-                Details = $"Request from {context.Connection.RemoteIpAddress}"
+                Details = $"Request from {context.Connection.RemoteIpAddress}",
+                EmployeeId = int.TryParse(context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var employeeId) ? employeeId : null,
+                EmployeeEmail = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
+                Method = context.Request.Method
             };
 
-            await activityLogService.LogActivityAsync(log);
-
-            await _next(context);
+            try
+            {
+                await _next(context);
+            }
+            finally
+            {
+                log.StatusCode = context.Response.StatusCode;
+                await activityLogService.LogActivityAsync(log);
+            }
         }
     }
 }

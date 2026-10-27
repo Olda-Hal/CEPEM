@@ -316,7 +316,10 @@
     "yes": "Ano",
     "save": "Uložit",
     "delete": "Smazat",
-    "confirmDelete": "Jste si jisti?"
+    "confirmDelete": "Jste si jisti?",
+    "search": "Hledat",
+    "previous": "Předchozí",
+    "next": "Další"
   },
   "intakeLink": {
     "pageTitle": "Vstupní formulář",
@@ -715,7 +718,10 @@
       "post_api_reservations_slots_slotid_reject": "Zamítnout rezervační slot",
       "get_api_settings_quick_preview": "Zobrazit nastavení rychlého přehledu",
       "put_api_settings_quick_preview": "Upravit nastavení rychlého přehledu"
-    }
+    },
+    "activityLog": "Audit log",
+    "activityLogDescription": "Přehled všech akcí v systému",
+    "activityLogButton": "Otevřít audit log"
   },
   "centerManagement": {
     "title": "Správa center",
@@ -852,5 +858,17 @@
     "forestShadow": "Lesní stín",
     "cosmicPurple": "Kosmická purpur",
     "crimsonNight": "Karmínová noc"
+  },
+  "activityLog": {
+    "title": "Audit log",
+    "loadFailed": "Nepodařilo se načíst audit log",
+    "searchPlaceholder": "Hledat (akce, email, detail…)",
+    "noEntries": "Žádné záznamy",
+    "totalEntries": "Celkem záznamů: {{count}}",
+    "time": "Čas",
+    "user": "Uživatel",
+    "method": "Metoda",
+    "action": "Akce",
+    "status": "Stav"
   }
 }
