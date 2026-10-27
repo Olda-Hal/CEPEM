@@ -18,7 +18,6 @@ import {
 } from '../types';
 import './ReservationSlotsPage.css';
 
-const DEFAULT_DURATION_MINUTES = 20;
 
 const formatDateInput = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -30,6 +29,8 @@ const formatTime = (value: string) =>
 
 const createLocalDateTime = (dateValue: string, timeValue: string) => new Date(`${dateValue}T${timeValue}:00`);
 import { useToast } from '../contexts/ToastContext';
+import SlotCreationPanel from '../components/reservations/SlotCreationPanel';
+import BookingPanel from '../components/reservations/BookingPanel';
 
 export const ReservationSlotsPage: React.FC = () => {
   const { user } = useAuth();
@@ -44,22 +45,8 @@ export const ReservationSlotsPage: React.FC = () => {
   const [examinationTypes, setExaminationTypes] = useState<ExaminationType[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
 
-  const [slotDate, setSlotDate] = useState(formatDateInput(new Date()));
-  const [slotStartTime, setSlotStartTime] = useState('08:00');
-  const [slotEndTime, setSlotEndTime] = useState('16:00');
-  const [slotDurationMinutes, setSlotDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
-  const [slotPublicNote, setSlotPublicNote] = useState('');
-  const [slotInternalNote, setSlotInternalNote] = useState('');
-  const [slotInitialStatus, setSlotInitialStatus] = useState<ReservationSlotStatus>('AVAILABLE');
 
-  const [copySourceDate, setCopySourceDate] = useState(formatDateInput(new Date()));
-  const [copyPreserveStatus, setCopyPreserveStatus] = useState(false);
 
-  const [bookingFirstName, setBookingFirstName] = useState('');
-  const [bookingLastName, setBookingLastName] = useState('');
-  const [bookingPhoneNumber, setBookingPhoneNumber] = useState('');
-  const [bookingEmail, setBookingEmail] = useState('');
-  const [bookingExaminationTypeId, setBookingExaminationTypeId] = useState('');
 
   const [editPublicNote, setEditPublicNote] = useState('');
   const [editInternalNote, setEditInternalNote] = useState('');
@@ -176,102 +163,8 @@ export const ReservationSlotsPage: React.FC = () => {
     await loadSlots(selectedHospitalId, selectedDate);
   };
 
-  const handleCreateDailySlots = async () => {
-    if (!selectedHospitalId) {
-      toast.error(t('reservationSlots.errors.selectHospitalFirst'));
-      return;
-    }
-
-    if (!slotDate || !slotStartTime || !slotEndTime || Number(slotDurationMinutes) <= 0) {
-      toast.error(t('reservationSlots.errors.fillSchedule'));
-      return;
-    }
-
-    const start = createLocalDateTime(slotDate, slotStartTime);
-    const end = createLocalDateTime(slotDate, slotEndTime);
-
-    if (start >= end) {
-      toast.error(t('reservationSlots.errors.startBeforeEnd'));
-      return;
-    }
-
-    const durationMinutes = Number(slotDurationMinutes);
-    const slotItems: CreateReservationSlotItemRequest[] = [];
-    let currentStart = new Date(start);
-
-    while (currentStart < end) {
-      const currentEnd = new Date(currentStart.getTime() + durationMinutes * 60000);
-      const boundedEnd = currentEnd > end ? new Date(end) : currentEnd;
-
-      if (boundedEnd <= currentStart) {
-        break;
-      }
-
-      slotItems.push({
-        startDateTime: currentStart.toISOString(),
-        endDateTime: boundedEnd.toISOString(),
-        publicNote: slotPublicNote.trim() || undefined,
-        internalNote: slotInternalNote.trim() || undefined,
-        status: slotInitialStatus
-      });
-
-      currentStart = boundedEnd;
-    }
-
-    if (slotItems.length === 0) {
-      toast.error(t('reservationSlots.errors.noGeneratedSlots'));
-      return;
-    }
-
-    const request: CreateReservationSlotsRequest = {
-      hospitalId: Number(selectedHospitalId),
-      slots: slotItems
-    };
-
-    try {
-      await apiClient.post('/api/reservations/slots', request);
-      setSelectedDate(slotDate);
-      setSelectedSlotId(null);
-      await refreshSlots();
-      toast.success(t('reservationSlots.messages.generatedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.creatingSlots');
-      toast.error(errorMessage);
-      console.error(t('reservationSlots.errors.creatingSlots'), error);
-    }
-  };
-
-  const handleCopyDaySlots = async () => {
-    if (!selectedHospitalId) {
-      toast.error(t('reservationSlots.errors.selectHospitalFirst'));
-      return;
-    }
-
-    if (!copySourceDate || !selectedDate) {
-      toast.error(t('reservationSlots.errors.selectCopyDates'));
-      return;
-    }
-
-    const request: CopyReservationSlotsDayRequest = {
-      sourceDate: copySourceDate,
-      targetDate: selectedDate,
-      preserveStatus: copyPreserveStatus
-    };
-
-    try {
-      await apiClient.post(`/api/reservations/slots/hospital/${selectedHospitalId}/copy-day`, request);
-      await refreshSlots();
-      toast.success(t('reservationSlots.messages.copySuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.copyFailed');
-      toast.error(errorMessage);
-      console.error(t('reservationSlots.errors.copyFailed'), error);
-    }
-  };
-
   const handleSelectSlot = (slot: ReservationSlot) => {
     setSelectedSlotId(slot.id);
-    setBookingExaminationTypeId(slot.examinationTypeId ? String(slot.examinationTypeId) : '');
   };
 
   const handleEditSlot = (slot: ReservationSlot) => {
@@ -328,51 +221,12 @@ export const ReservationSlotsPage: React.FC = () => {
     try {
       await apiClient.delete(`/api/reservations/slots/${selectedSlotId}`);
       setSelectedSlotId(null);
-      setBookingExaminationTypeId('');
       await refreshSlots();
       toast.success(t('reservationSlots.messages.deletedSuccess'));
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.deleteFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.deleteFailed'), error);
-    }
-  };
-
-  const handleBlockSelectedSlot = async () => {
-    if (!selectedSlotId) {
-      toast.error(t('reservationSlots.errors.selectAvailableSlot'));
-      return;
-    }
-
-    if (!bookingFirstName.trim() || !bookingLastName.trim() || !bookingExaminationTypeId) {
-      toast.error(t('reservationSlots.errors.fillBookingData'));
-      return;
-    }
-
-    const request: BlockReservationSlotRequest = {
-      examinationTypeId: Number(bookingExaminationTypeId),
-      newPerson: {
-        firstName: bookingFirstName.trim(),
-        lastName: bookingLastName.trim(),
-        phoneNumber: bookingPhoneNumber.trim() || undefined,
-        email: bookingEmail.trim() || undefined
-      }
-    };
-
-    try {
-      await apiClient.post(`/api/reservations/slots/${selectedSlotId}/block`, request);
-      setBookingFirstName('');
-      setBookingLastName('');
-      setBookingPhoneNumber('');
-      setBookingEmail('');
-      setBookingExaminationTypeId('');
-      setSelectedSlotId(null);
-      await refreshSlots();
-      toast.success(t('reservationSlots.messages.blockedSuccess'));
-    } catch (error: any) {
-      const errorMessage = error.response?.data || error.message || t('reservationSlots.errors.blockFailed');
-      toast.error(errorMessage);
-      console.error(t('reservationSlots.errors.blockFailed'), error);
     }
   };
 
@@ -462,140 +316,25 @@ export const ReservationSlotsPage: React.FC = () => {
 
         <section className="content-grid">
           {canCreateSlots && (
-            <article className="panel form-panel">
-              <div className="panel-header">
-                <h3>{t('reservationSlots.create.title')}</h3>
-                <p>{t('reservationSlots.create.description')}</p>
-              </div>
-
-              <div className="form-grid">
-                <label>
-                  <span>{t('reservationSlots.create.date')}</span>
-                  <input type="date" value={slotDate} onChange={(event) => setSlotDate(event.target.value)} />
-                </label>
-                <label>
-                  <span>{t('reservationSlots.create.startTime')}</span>
-                  <input type="time" value={slotStartTime} onChange={(event) => setSlotStartTime(event.target.value)} />
-                </label>
-                <label>
-                  <span>{t('reservationSlots.create.endTime')}</span>
-                  <input type="time" value={slotEndTime} onChange={(event) => setSlotEndTime(event.target.value)} />
-                </label>
-                <label>
-                  <span>{t('reservationSlots.create.duration')}</span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={slotDurationMinutes}
-                    onChange={(event) => setSlotDurationMinutes(Number(event.target.value))}
-                  />
-                </label>
-                <label className="full-width">
-                  <span>{t('reservationSlots.create.publicNote')}</span>
-                  <textarea value={slotPublicNote} onChange={(event) => setSlotPublicNote(event.target.value)} rows={3} />
-                </label>
-                <label className="full-width">
-                  <span>{t('reservationSlots.create.internalNote')}</span>
-                  <textarea value={slotInternalNote} onChange={(event) => setSlotInternalNote(event.target.value)} rows={3} />
-                </label>
-                <label>
-                  <span>{t('reservationSlots.create.initialStatus')}</span>
-                  <select value={slotInitialStatus} onChange={(event) => setSlotInitialStatus(event.target.value as ReservationSlotStatus)}>
-                    <option value="AVAILABLE">{t('reservationSlots.status.available')}</option>
-                    <option value="UNAVAILABLE">{t('reservationSlots.status.unavailable')}</option>
-                  </select>
-                </label>
-              </div>
-
-              <button className="primary-button" onClick={handleCreateDailySlots} disabled={!selectedHospitalId}>
-                {t('reservationSlots.create.generateButton')}
-              </button>
-
-              <div className="panel-header" style={{ marginTop: 24 }}>
-                <h3>{t('reservationSlots.copy.title')}</h3>
-                <p>{t('reservationSlots.copy.description')}</p>
-              </div>
-
-              <div className="form-grid">
-                <label>
-                  <span>{t('reservationSlots.copy.sourceDate')}</span>
-                  <input type="date" value={copySourceDate} onChange={(event) => setCopySourceDate(event.target.value)} />
-                </label>
-                <label>
-                  <span>{t('reservationSlots.copy.targetDate')}</span>
-                  <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
-                </label>
-                <label className="full-width" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input
-                    type="checkbox"
-                    checked={copyPreserveStatus}
-                    onChange={(event) => setCopyPreserveStatus(event.target.checked)}
-                  />
-                  <span>{t('reservationSlots.copy.preserveStatus')}</span>
-                </label>
-              </div>
-
-              <button className="primary-button" onClick={handleCopyDaySlots} disabled={!selectedHospitalId}>
-                {t('reservationSlots.copy.button')}
-              </button>
-            </article>
+            <SlotCreationPanel
+              hospitalId={selectedHospitalId}
+              targetDate={selectedDate}
+              onDateChange={setSelectedDate}
+              onSlotsChanged={async () => {
+                setSelectedSlotId(null);
+                await refreshSlots();
+              }}
+            />
           )}
 
-          <article className="panel form-panel">
-            <div className="panel-header">
-              <h3>{t('reservationSlots.request.title')}</h3>
-              <p>{t('reservationSlots.request.description')}</p>
-            </div>
-
-            <div className="selected-slot-banner">
-              {selectedSlot ? (
-                <>
-                  <strong>{formatDate(selectedSlot.startDateTime)} · {formatTime(selectedSlot.startDateTime)} - {formatTime(selectedSlot.endDateTime)}</strong>
-                  <span>{selectedSlot.publicNote || t('reservationSlots.noPublicNote')}</span>
-                </>
-              ) : (
-                <span>{t('reservationSlots.request.selectHint')}</span>
-              )}
-            </div>
-
-            <div className="form-grid">
-              <label>
-                <span>{t('reservationSlots.request.firstName')}</span>
-                <input value={bookingFirstName} onChange={(event) => setBookingFirstName(event.target.value)} />
-              </label>
-              <label>
-                <span>{t('reservationSlots.request.lastName')}</span>
-                <input value={bookingLastName} onChange={(event) => setBookingLastName(event.target.value)} />
-              </label>
-              <label>
-                <span>{t('reservationSlots.request.phone')}</span>
-                <input value={bookingPhoneNumber} onChange={(event) => setBookingPhoneNumber(event.target.value)} />
-              </label>
-              <label>
-                <span>{t('reservationSlots.request.email')}</span>
-                <input type="email" value={bookingEmail} onChange={(event) => setBookingEmail(event.target.value)} />
-              </label>
-              <label className="full-width">
-                <span>{t('reservationSlots.request.examinationType')}</span>
-                <select value={bookingExaminationTypeId} onChange={(event) => setBookingExaminationTypeId(event.target.value)}>
-                  <option value="">{t('reservationSlots.request.selectExaminationType')}</option>
-                  {examinationTypes.map(type => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <button
-              className="primary-button"
-              onClick={handleBlockSelectedSlot}
-              disabled={!selectedSlotId || !availableSlots.some(slot => slot.id === selectedSlotId)}
-            >
-              {t('reservationSlots.request.blockButton')}
-            </button>
-          </article>
+          <BookingPanel
+            selectedSlot={selectedSlot}
+            selectedSlotId={selectedSlotId}
+            isSlotAvailable={!!selectedSlotId && availableSlots.some(slot => slot.id === selectedSlotId)}
+            examinationTypes={examinationTypes}
+            onBookingCleared={() => setSelectedSlotId(null)}
+            onSlotsChanged={refreshSlots}
+          />
         </section>
 
         <section className="panel table-panel">
