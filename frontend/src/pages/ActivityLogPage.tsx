@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
-import { apiClient } from '../utils/api';
+import { BaseModal } from '../components/BaseModal';
+import { apiClient, getAuthToken } from '../utils/api';
 import { useToast } from '../contexts/ToastContext';
 import './ActivityLogPage.css';
 
@@ -24,6 +25,7 @@ interface ActivityLogListResponse {
 }
 
 const PAGE_SIZE = 50;
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 const ActivityLogPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -33,16 +35,29 @@ const ActivityLogPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const [methodFilter, setMethodFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedLog, setSelectedLog] = useState<ActivityLogEntry | null>(null);
 
-  const loadLogs = useCallback(async (pageToLoad: number, searchTerm: string) => {
+  const buildParams = useCallback((pageToLoad: number) => {
+    const params = new URLSearchParams({ page: String(pageToLoad), limit: String(PAGE_SIZE) });
+    if (search.trim()) {
+      params.set('search', search.trim());
+    }
+    if (methodFilter) {
+      params.set('method', methodFilter);
+    }
+    if (statusFilter) {
+      params.set('statusCode', statusFilter);
+    }
+    return params;
+  }, [search, methodFilter, statusFilter]);
+
+  const loadLogs = useCallback(async (pageToLoad: number) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(pageToLoad), limit: String(PAGE_SIZE) });
-      if (searchTerm.trim()) {
-        params.set('search', searchTerm.trim());
-      }
-      const response = await apiClient.get<ActivityLogListResponse>(`/api/activitylogs?${params.toString()}`);
+      const response = await apiClient.get<ActivityLogListResponse>(`/api/activitylogs?${buildParams(pageToLoad).toString()}`);
       setLogs(response.logs);
       setTotalCount(response.totalCount);
       setHasMore(response.hasMore);
@@ -52,17 +67,39 @@ const ActivityLogPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [t, toast]);
+  }, [buildParams, t, toast]);
 
   useEffect(() => {
-    void loadLogs(page, search);
+    void loadLogs(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, methodFilter, statusFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(0);
-    void loadLogs(0, search);
+    void loadLogs(0);
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`/api/activitylogs/export?${buildParams(0).toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!response.ok) {
+        throw new Error(`Export failed with status ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'activity-log.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed', error);
+      toast.error(t('activityLog.exportFailed'));
+    }
   };
 
   const formatTime = (timestamp: string) =>
@@ -87,8 +124,36 @@ const ActivityLogPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <select
+            aria-label={t('activityLog.actionFilter')}
+            value={methodFilter}
+            onChange={(e) => { setMethodFilter(e.target.value); setPage(0); }}
+          >
+            <option value="">{t('activityLog.actionFilter')}: {t('activityLog.all')}</option>
+            {HTTP_METHODS.map((method) => (
+              <option key={method} value={method}>{method}</option>
+            ))}
+          </select>
+          <select
+            aria-label={t('activityLog.statusFilter')}
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+          >
+            <option value="">{t('activityLog.statusFilter')}: {t('activityLog.all')}</option>
+            <option value="200">200</option>
+            <option value="201">201</option>
+            <option value="400">400</option>
+            <option value="401">401</option>
+            <option value="403">403</option>
+            <option value="404">404</option>
+            <option value="409">409</option>
+            <option value="500">500</option>
+          </select>
           <button className="btn btn-primary" type="submit" disabled={loading}>
             {t('common.search')}
+          </button>
+          <button className="btn btn-secondary" type="button" onClick={handleExport}>
+            {t('activityLog.exportCsv')}
           </button>
         </form>
 
@@ -115,7 +180,13 @@ const ActivityLogPage: React.FC = () => {
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.id} className={log.statusCode && log.statusCode >= 400 ? 'log-row-error' : undefined}>
+                <tr
+                  key={log.id}
+                  className={`log-row-clickable${log.statusCode && log.statusCode >= 400 ? ' log-row-error' : ''}`}
+                  onClick={() => setSelectedLog(log)}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedLog(log); } }}
+                >
                   <td className="log-time">{formatTime(log.timestamp)}</td>
                   <td className="log-user">{log.employeeEmail ?? '—'}</td>
                   <td className="log-method">{log.method ?? '—'}</td>
@@ -149,6 +220,25 @@ const ActivityLogPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {selectedLog && (
+        <BaseModal title={t('activityLog.details')} onClose={() => setSelectedLog(null)}>
+          <dl className="activity-log-detail">
+            <dt>{t('activityLog.time')}</dt>
+            <dd>{formatTime(selectedLog.timestamp)}</dd>
+            <dt>{t('activityLog.user')}</dt>
+            <dd>{selectedLog.employeeEmail ?? '—'}{selectedLog.employeeId != null ? ` (#${selectedLog.employeeId})` : ''}</dd>
+            <dt>{t('activityLog.method')}</dt>
+            <dd>{selectedLog.method ?? '—'}</dd>
+            <dt>{t('activityLog.action')}</dt>
+            <dd>{selectedLog.action}</dd>
+            <dt>{t('activityLog.status')}</dt>
+            <dd>{selectedLog.statusCode ?? '—'}</dd>
+            <dt>{t('activityLog.details')}</dt>
+            <dd className="detail-value-multiline">{selectedLog.details ?? '—'}</dd>
+          </dl>
+        </BaseModal>
+      )}
     </div>
   );
 };

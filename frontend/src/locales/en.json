@@ -858,6 +858,12 @@
     "user": "User",
     "method": "Method",
     "action": "Action",
-    "status": "Status"
+    "status": "Status",
+    "actionFilter": "Method",
+    "statusFilter": "Status",
+    "all": "All",
+    "exportCsv": "Export CSV",
+    "details": "Entry details",
+    "exportFailed": "Export failed"
   }
 }

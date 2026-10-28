@@ -113,3 +113,41 @@
     max-width: 200px;
   }
 }
+
+.activity-log-filters select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.25));
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #222);
+}
+
+.log-row-clickable {
+  cursor: pointer;
+}
+
+.log-row-clickable:focus-visible {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: -2px;
+}
+
+.activity-log-detail {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.activity-log-detail dt {
+  font-weight: 600;
+  color: var(--color-text-secondary, #666);
+}
+
+.activity-log-detail dd {
+  margin: 0;
+}
+
+.detail-value-multiline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

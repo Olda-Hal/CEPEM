@@ -377,6 +377,74 @@ public class ActivityLogsControllerTests : IDisposable
         var saved = await _context.ActivityLogs.SingleAsync();
         Assert.True(saved.Timestamp > DateTime.UtcNow.AddMinutes(-1));
     }
+
+    [Fact]
+    public async Task GetLogs_FiltersByMethod()
+    {
+        _context.ActivityLogs.AddRange(
+            new ActivityLog { Service = "S", Action = "/a", Method = "GET", StatusCode = 200, Timestamp = DateTime.UtcNow },
+            new ActivityLog { Service = "S", Action = "/b", Method = "POST", StatusCode = 201, Timestamp = DateTime.UtcNow },
+            new ActivityLog { Service = "S", Action = "/c", Method = "DELETE", StatusCode = 404, Timestamp = DateTime.UtcNow });
+        await _context.SaveChangesAsync();
+
+        var response = Unwrap(await _controller.GetLogs(method: "post"));
+
+        Assert.Single(response.Logs);
+        Assert.Equal("/b", response.Logs[0].Action);
+    }
+
+    [Fact]
+    public async Task GetLogs_FiltersByStatusCode()
+    {
+        _context.ActivityLogs.AddRange(
+            new ActivityLog { Service = "S", Action = "/a", Method = "GET", StatusCode = 200, Timestamp = DateTime.UtcNow },
+            new ActivityLog { Service = "S", Action = "/b", Method = "GET", StatusCode = 500, Timestamp = DateTime.UtcNow });
+        await _context.SaveChangesAsync();
+
+        var response = Unwrap(await _controller.GetLogs(statusCode: 500));
+
+        Assert.Single(response.Logs);
+        Assert.Equal(500, response.Logs[0].StatusCode);
+    }
+
+    [Fact]
+    public async Task ExportCsv_RendersAllMatchingRows_WithHeader()
+    {
+        _context.ActivityLogs.AddRange(
+            new ActivityLog { Service = "HealthcareAPI", Action = "/api/patients", Method = "GET", StatusCode = 200, EmployeeEmail = "a@example.com", Details = "plain", Timestamp = DateTime.UtcNow },
+            new ActivityLog { Service = "HealthcareAPI", Action = "/api/events", Method = "POST", StatusCode = 500, Details = "tricky;\"quoted\"\nvalue", Timestamp = DateTime.UtcNow });
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.ExportCsv();
+
+        var file = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("text/csv", file.ContentType);
+        var text = System.Text.Encoding.UTF8.GetString(file.FileContents).TrimStart('﻿');
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(3, lines.Length); // header + 2 rows
+        Assert.StartsWith("Timestamp;Service;Employee;Method;Action;Status;Details", lines[0]);
+        Assert.Contains("a@example.com", text);
+        // the detail with special characters is quoted and its newlines flattened
+        Assert.Contains("\"tricky;\"\"quoted\"\" value\"", text);
+        var actionLine = lines.First(line => line.Contains("/api/events"));
+        Assert.DoesNotContain('\n', actionLine.TrimEnd('\r'));
+    }
+
+    [Fact]
+    public async Task ExportCsv_AppliesFilters()
+    {
+        _context.ActivityLogs.AddRange(
+            new ActivityLog { Service = "S", Action = "/a", Method = "GET", StatusCode = 200, Timestamp = DateTime.UtcNow },
+            new ActivityLog { Service = "S", Action = "/b", Method = "POST", StatusCode = 500, Timestamp = DateTime.UtcNow });
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.ExportCsv(method: "POST");
+
+        var file = Assert.IsType<FileContentResult>(result);
+        var text = System.Text.Encoding.UTF8.GetString(file.FileContents);
+        Assert.Contains("/b", text);
+        Assert.DoesNotContain("/a", text);
+    }
 }
 
 public class EmployeesControllerTests : IDisposable

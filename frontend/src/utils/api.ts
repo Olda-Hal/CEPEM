@@ -24,6 +24,9 @@ export const UNAUTHORIZED_EVENT = 'cepem:unauthorized';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
+/** Single source of truth for the stored auth token. */
+export const getAuthToken = (): string | null => localStorage.getItem('authToken');
+
 class ApiClient {
   private baseUrl: string;
 
@@ -32,7 +35,7 @@ class ApiClient {
   }
 
   private getAuthHeaders(isFormData = false): HeadersInit {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     return {
       ...(token && { Authorization: `Bearer ${token}` }),
       ...(!isFormData && { 'Content-Type': 'application/json' }),

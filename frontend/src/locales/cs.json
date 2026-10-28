@@ -869,6 +869,12 @@
     "user": "Uživatel",
     "method": "Metoda",
     "action": "Akce",
-    "status": "Stav"
+    "status": "Stav",
+    "actionFilter": "Metoda",
+    "statusFilter": "Status",
+    "all": "Vše",
+    "exportCsv": "Export CSV",
+    "details": "Detail záznamu",
+    "exportFailed": "Export se nezdařil"
   }
 }
