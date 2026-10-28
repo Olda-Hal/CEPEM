@@ -131,13 +131,13 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .filter-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .examinations-content {
     padding: 16px;
   }

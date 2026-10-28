@@ -1,10 +1,7 @@
 .camera-capture-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  inset: 0;
+  background-color: rgb(0 0 0 / 90%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,7 +18,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 6px rgb(0 0 0 / 30%);
 }
 
 .camera-header {
@@ -59,8 +56,8 @@
 
 .crop-frame {
   position: absolute;
-  border: 3px solid #00ff00;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  border: 3px solid #0f0;
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 50%);
   pointer-events: none;
   z-index: 10;
 }
@@ -72,7 +69,7 @@
   left: -3px;
   right: -3px;
   height: 1px;
-  background: #00ff00;
+  background: #0f0;
   opacity: 0.5;
 }
 
@@ -83,7 +80,7 @@
   top: -3px;
   bottom: -3px;
   width: 1px;
-  background: #00ff00;
+  background: #0f0;
   opacity: 0.5;
 }
 
@@ -108,7 +105,7 @@
   padding: 12px 30px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .camera-capture-content {
     width: 100%;
     max-width: 100%;

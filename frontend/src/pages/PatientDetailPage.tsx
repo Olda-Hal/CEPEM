@@ -2,10 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PatientDetail, QuickPreviewSettings } from '../types';
-import {
-  parseIntakeSummary,
-  formSubmissionToIntakeSummary
-} from '../utils/intakeSummary';
+import { parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';

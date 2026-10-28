@@ -34,7 +34,7 @@
   width: 48px;
   height: 48px;
   margin-right: 16px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(255 255 255 / 20%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -97,8 +97,8 @@
 }
 
 .refresh-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgb(255 255 255 / 20%);
+  border: 1px solid rgb(255 255 255 / 30%);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -107,7 +107,7 @@
 }
 
 .refresh-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(255 255 255 / 30%);
   transform: translateY(-1px);
 }
 
@@ -122,9 +122,9 @@
 }
 
 .logout-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(255 255 255 / 20%);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgb(255 255 255 / 30%);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
@@ -133,10 +133,10 @@
 }
 
 .logout-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(255 255 255 / 30%);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .app-header {
     padding: 20px 15px;
   }

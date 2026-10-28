@@ -6,9 +6,9 @@
 }
 
 .add-patient-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(255 255 255 / 20%);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgb(255 255 255 / 30%);
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 1rem;
@@ -19,10 +19,10 @@
 }
 
 .add-patient-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgb(255 255 255 / 30%);
+  border-color: rgb(255 255 255 / 50%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgb(0 0 0 / 20%);
 }
 
 .search-section {
@@ -114,6 +114,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -289,7 +290,7 @@
   background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-secondary) 100%);
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 15%);
 }
 
 .action-button.secondary {
@@ -350,7 +351,7 @@
   font-size: 1.1rem;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .patients-container {
     padding: 10px;
   }
@@ -421,6 +422,7 @@
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.45;
   }
@@ -434,7 +436,7 @@
   height: 14px;
   border-radius: 6px;
   margin: 6px 12px;
-  background: var(--color-surface-muted, rgba(128, 128, 128, 0.25));
+  background: var(--color-surface-muted, rgb(128 128 128 / 25%));
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }
 

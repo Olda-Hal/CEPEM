@@ -18,7 +18,7 @@
   border-radius: 8px;
   background: var(--color-surface, #fff);
   color: var(--color-text, #222);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
   cursor: pointer;
   pointer-events: auto;
   animation: toast-slide-in 0.2s ease-out;
@@ -57,7 +57,7 @@
 }
 
 .toast-message {
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 @keyframes toast-slide-in {
@@ -65,13 +65,14 @@
     transform: translateX(30px);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .toast-container {
     left: 16px;
     right: 16px;

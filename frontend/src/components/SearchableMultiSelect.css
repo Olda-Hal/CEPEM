@@ -64,7 +64,7 @@
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 4px;
   font-size: 1rem;
-  background-color: var(--color-background, #ffffff);
+  background-color: var(--color-background, #fff);
   color: var(--color-text-primary, #2d3748);
   transition: border-color 0.2s;
 }
@@ -105,10 +105,10 @@
   right: 0;
   max-height: 300px;
   overflow-y: auto;
-  background-color: var(--color-background, #ffffff);
+  background-color: var(--color-background, #fff);
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 4px;
-  box-shadow: 0 4px 6px var(--color-shadow-heavy, rgba(0, 0, 0, 0.15));
+  box-shadow: 0 4px 6px var(--color-shadow-heavy, rgb(0 0 0 / 15%));
   z-index: 1000;
   margin-top: 0.25rem;
 }

@@ -14,7 +14,7 @@ button {
 /* Override any remaining hardcoded colors in components */
 .modal-overlay,
 [data-overlay] {
-  background-color: rgba(0, 0, 0, 0.5) !important;
+  background-color: rgb(0 0 0 / 50%) !important;
 }
 
 .modal,
@@ -25,7 +25,7 @@ button {
 }
 
 /* Ensure all text inputs use theme colors */
-input:not([type='checkbox']):not([type='radio']),
+input:not([type='checkbox'], [type='radio']),
 select,
 textarea {
   background-color: var(--color-background) !important;
@@ -33,7 +33,7 @@ textarea {
   border-color: var(--color-border) !important;
 }
 
-input:not([type='checkbox']):not([type='radio']):focus,
+input:not([type='checkbox'], [type='radio']):focus,
 select:focus,
 textarea:focus {
   border-color: var(--color-border-focus) !important;
@@ -42,7 +42,7 @@ textarea:focus {
 
 /* Theme all buttons */
 .btn,
-button:not([class*='close']):not([class*='collapse']) {
+button:not([class*='close'], [class*='collapse']) {
   transition: all 0.2s ease !important;
 }
 

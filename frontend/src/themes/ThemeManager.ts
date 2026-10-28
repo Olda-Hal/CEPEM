@@ -73,7 +73,8 @@ export class ThemeManager {
     if (themesInCategory.length > 0) {
       // Try to find a similar theme in the opposite category
       const variant = currentThemeInfo.id.split('-')[1] ?? currentThemeInfo.id;
-      const similarTheme = themesInCategory.find((t) => t.id.includes(variant)) || themesInCategory[0]; // Fallback to first theme in category
+      const similarTheme =
+        themesInCategory.find((t) => t.id.includes(variant)) || themesInCategory[0]; // Fallback to first theme in category
 
       if (similarTheme) {
         this.setTheme(similarTheme.id);

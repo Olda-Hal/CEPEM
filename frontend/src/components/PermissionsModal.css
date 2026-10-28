@@ -5,15 +5,18 @@
   align-items: center;
   margin-bottom: 12px;
 }
+
 .permissions-modal table {
   width: 100%;
   border-collapse: collapse;
 }
+
 .permissions-modal th,
 .permissions-modal td {
   border: 1px solid #ddd;
   padding: 6px;
 }
+
 .permissions-modal .modal-body {
   max-height: 60vh;
   overflow: auto;

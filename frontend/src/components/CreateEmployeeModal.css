@@ -1,9 +1,6 @@
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: var(--color-shadow-heavy);
   display: flex;
   justify-content: center;
@@ -204,7 +201,7 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .form-row {
     grid-template-columns: 1fr;
   }

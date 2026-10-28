@@ -16,8 +16,8 @@
   padding: 20px;
   border-radius: 10px;
   background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
 }
 
 .service-card h3 {
@@ -44,6 +44,6 @@
 }
 
 .health-badge.loading {
-  background: rgba(128, 128, 128, 0.15);
+  background: rgb(128 128 128 / 15%);
   color: var(--color-text-secondary, #666);
 }

@@ -1,8 +1,8 @@
 .reservation-slots-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(12, 115, 123, 0.18), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(244, 174, 28, 0.12), transparent 28%),
+    radial-gradient(circle at top left, rgb(12 115 123 / 18%), transparent 34%),
+    radial-gradient(circle at bottom right, rgb(244 174 28 / 12%), transparent 28%),
     linear-gradient(180deg, #f7faf9 0%, #eef4f2 100%);
 }
 
@@ -17,10 +17,10 @@
 .hero-panel,
 .panel,
 .stat-card {
-  background: rgba(255, 255, 255, 0.86);
+  background: rgb(255 255 255 / 86%);
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(13, 42, 51, 0.08);
-  box-shadow: 0 18px 48px rgba(20, 39, 43, 0.08);
+  border: 1px solid rgb(13 42 51 / 8%);
+  box-shadow: 0 18px 48px rgb(20 39 43 / 8%);
 }
 
 .hero-panel {
@@ -78,10 +78,10 @@
 .form-grid input,
 .form-grid textarea {
   width: 100%;
-  border: 1px solid rgba(16, 41, 47, 0.16);
+  border: 1px solid rgb(16 41 47 / 16%);
   border-radius: 14px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgb(255 255 255 / 95%);
   color: #10292f;
   font: inherit;
 }
@@ -93,7 +93,7 @@
 .form-grid textarea:focus {
   outline: none;
   border-color: #0e6a71;
-  box-shadow: 0 0 0 3px rgba(14, 106, 113, 0.12);
+  box-shadow: 0 0 0 3px rgb(14 106 113 / 12%);
 }
 
 .stats-grid {
@@ -183,21 +183,21 @@
   margin-top: 18px;
   background: linear-gradient(135deg, #0e6a71 0%, #134e5a 100%);
   color: white;
-  box-shadow: 0 14px 28px rgba(14, 106, 113, 0.24);
+  box-shadow: 0 14px 28px rgb(14 106 113 / 24%);
 }
 
 .ghost-button {
-  background: rgba(15, 122, 88, 0.08);
+  background: rgb(15 122 88 / 8%);
   color: #0f7a58;
 }
 
 .success-button {
-  background: rgba(15, 122, 88, 0.14);
+  background: rgb(15 122 88 / 14%);
   color: #0f7a58;
 }
 
 .danger-button {
-  background: rgba(180, 86, 22, 0.14);
+  background: rgb(180 86 22 / 14%);
   color: #9d5511;
 }
 
@@ -221,7 +221,7 @@
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 18px;
-  background: linear-gradient(135deg, rgba(14, 106, 113, 0.08), rgba(244, 174, 28, 0.08));
+  background: linear-gradient(135deg, rgb(14 106 113 / 8%), rgb(244 174 28 / 8%));
   color: #18353c;
   display: grid;
   gap: 4px;
@@ -243,7 +243,7 @@
 .slots-table th,
 .slots-table td {
   padding: 14px 12px;
-  border-bottom: 1px solid rgba(16, 41, 47, 0.08);
+  border-bottom: 1px solid rgb(16 41 47 / 8%);
   vertical-align: top;
   text-align: left;
 }
@@ -256,11 +256,11 @@
 }
 
 .selected-row {
-  background: rgba(14, 106, 113, 0.05);
+  background: rgb(14 106 113 / 5%);
 }
 
 .slot-editor-row {
-  background: rgba(14, 106, 113, 0.04);
+  background: rgb(14 106 113 / 4%);
 }
 
 .slot-editor-cell {
@@ -269,10 +269,10 @@
 
 .slot-editor {
   border-radius: 20px;
-  border: 1px solid rgba(14, 106, 113, 0.12);
-  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgb(14 106 113 / 12%);
+  background: rgb(255 255 255 / 96%);
   padding: 18px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
 }
 
 .slot-editor .panel-header {
@@ -281,8 +281,7 @@
 
 .slot-editor-actions {
   margin-top: 18px;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
 }
 
 .status-badge {
@@ -296,22 +295,22 @@
 }
 
 .status-available {
-  background: rgba(15, 122, 88, 0.12);
+  background: rgb(15 122 88 / 12%);
   color: #0f7a58;
 }
 
 .status-blocked {
-  background: rgba(173, 101, 17, 0.14);
+  background: rgb(173 101 17 / 14%);
   color: #ad6511;
 }
 
 .status-reserved {
-  background: rgba(9, 85, 106, 0.12);
+  background: rgb(9 85 106 / 12%);
   color: #09556a;
 }
 
 .status-unavailable {
-  background: rgba(77, 92, 96, 0.14);
+  background: rgb(77 92 96 / 14%);
   color: #4d5c60;
 }
 
@@ -337,7 +336,7 @@
   padding: 28px 12px;
 }
 
-@media (max-width: 1100px) {
+@media (width <= 1100px) {
   .hero-panel,
   .content-grid {
     grid-template-columns: 1fr;
@@ -348,7 +347,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .reservation-slots-layout {
     padding: 18px 14px 42px;
   }
@@ -369,12 +368,14 @@
     padding: 12px 10px;
   }
 }
+
 /* Skeleton placeholder rows while slots load */
 @keyframes slots-skeleton-pulse {
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.45;
   }
@@ -384,7 +385,7 @@
   height: 16px;
   border-radius: 6px;
   margin: 6px 4px;
-  background: var(--color-surface-muted, rgba(128, 128, 128, 0.25));
+  background: var(--color-surface-muted, rgb(128 128 128 / 25%));
   animation: slots-skeleton-pulse 1.4s ease-in-out infinite;
 }
 

@@ -128,7 +128,9 @@ describe('PatientsPage', () => {
 
     const firstButton = buttons[0];
     expect(firstButton).toBeTruthy();
-    firstButton && fireEvent.click(firstButton);
+    if (firstButton) {
+      fireEvent.click(firstButton);
+    }
 
     expect(mockNavigate).toHaveBeenCalledWith('/patients/1');
   });
