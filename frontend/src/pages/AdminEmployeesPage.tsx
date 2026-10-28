@@ -6,6 +6,7 @@ import { EmployeeListItem, Role, UpdateEmployeeRequest, UpdateEmployeeResponse }
 import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
 import { AppHeader } from '../components/AppHeader';
+import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
 import { hasRole } from '../utils/roles';
 
@@ -171,82 +172,85 @@ const AdminEmployeesPage: React.FC = () => {
       {success && <div className="alert alert-success">{success}</div>}
 
       <div className="employees-table-container">
-        <table className="employees-table">
-          <thead>
-            <tr>
-              <th>{t('admin.fullName')}</th>
-              <th>{t('admin.email')}</th>
-              <th>{t('admin.uid')}</th>
-              <th>{t('admin.phone')}</th>
-              <th>{t('admin.roles')}</th>
-              <th>{t('admin.status')}</th>
-              <th>{t('admin.lastLogin')}</th>
-              <th>{t('admin.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedEmployees.map((employee) => (
-              <tr key={employee.employeeId} className={!employee.active ? 'inactive' : ''}>
-                <td>
-                  <div className="employee-name">
-                    <strong>{employee.fullName}</strong>
-                    <small>{employee.gender}</small>
-                  </div>
-                </td>
-                <td>{employee.email}</td>
-                <td>{employee.uid}</td>
-                <td>{employee.phoneNumber}</td>
-                <td>
-                  <div className="roles">
-                    {employee.roles.map((role, index) => (
-                      <span key={index} className="role-badge">
-                        {translateRoleName(role)}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td>
-                  <span className={`status-badge ${employee.active ? 'active' : 'inactive'}`}>
-                    {employee.active ? t('admin.active') : t('admin.inactive')}
-                  </span>
-                </td>
-                <td>
-                  {employee.lastLoginAt
-                    ? new Date(employee.lastLoginAt).toLocaleString()
-                    : t('admin.never')}
-                </td>
-                <td>
-                  <div className="action-buttons">
+        <DataTable
+          columns={[
+            {
+              key: 'name',
+              header: t('admin.fullName'),
+              render: (employee) => (
+                <div className="employee-name">
+                  <strong>{employee.fullName}</strong>
+                  <small>{employee.gender}</small>
+                </div>
+              )
+            },
+            { key: 'email', header: t('admin.email'), render: (employee) => employee.email },
+            { key: 'uid', header: t('admin.uid'), render: (employee) => employee.uid },
+            { key: 'phone', header: t('admin.phone'), render: (employee) => employee.phoneNumber },
+            {
+              key: 'roles',
+              header: t('admin.roles'),
+              render: (employee) => (
+                <div className="roles">
+                  {employee.roles.map((role, index) => (
+                    <span key={index} className="role-badge">
+                      {translateRoleName(role)}
+                    </span>
+                  ))}
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              header: t('admin.status'),
+              render: (employee) => (
+                <span className={`status-badge status-${employee.active ? 'active' : 'unavailable'}`}>
+                  {employee.active ? t('admin.active') : t('admin.inactive')}
+                </span>
+              )
+            },
+            {
+              key: 'lastLogin',
+              header: t('admin.lastLogin'),
+              render: (employee) =>
+                employee.lastLoginAt ? new Date(employee.lastLoginAt).toLocaleString() : t('admin.never')
+            },
+            {
+              key: 'actions',
+              header: t('admin.actions'),
+              render: (employee) => (
+                <div className="action-buttons">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleEdit(employee)}
+                    disabled={!canManageEmployee(employee)}
+                  >
+                    {t('admin.edit')}
+                  </button>
+                  {!isRestrictedCountryAdmin && (
                     <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleEdit(employee)}
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleRules(employee)}
+                    >
+                      {t('admin.access')}
+                    </button>
+                  )}
+                  {employee.active && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeactivate(employee.employeeId)}
                       disabled={!canManageEmployee(employee)}
                     >
-                      {t('admin.edit')}
+                      {t('admin.deactivate')}
                     </button>
-                    {!isRestrictedCountryAdmin && (
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleRules(employee)}
-                      >
-                        {t('admin.access')}
-                      </button>
-                    )}
-                    {employee.active && (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDeactivate(employee.employeeId)}
-                        disabled={!canManageEmployee(employee)}
-                      >
-                        {t('admin.deactivate')}
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  )}
+                </div>
+              )
+            }
+          ]}
+          data={pagedEmployees}
+          rowKey={(employee) => employee.employeeId}
+        />
         {totalPages > 1 && (
           <div className="employees-pagination">
             <button
