@@ -1,6 +1,20 @@
+import React, { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { BaseModal } from '../BaseModal';
+
+const Harness: React.FC = () => {
+  const [value, setValue] = useState('');
+  return (
+    <BaseModal title="Harness" onClose={() => {}}>
+      <input
+        data-testid="typed-input"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+    </BaseModal>
+  );
+};
 
 describe('BaseModal', () => {
   test('renders children inside a dialog', () => {
@@ -85,6 +99,23 @@ describe('BaseModal', () => {
 
     fireEvent.click(screen.getByText('inside'));
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test('does NOT steal focus back when the parent re-renders after typing', () => {
+    render(<Harness />);
+
+    const input = screen.getByTestId('typed-input');
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    // Each keystroke re-renders the parent with a fresh onClose identity;
+    // previously the mount effect re-fired and yanked focus back to the
+    // first focusable element (the close button).
+    fireEvent.change(input, { target: { value: 'abc' } });
+    fireEvent.change(input, { target: { value: 'abcd' } });
+
+    expect(document.activeElement).toBe(input);
+    expect(input).toHaveValue('abcd');
   });
 
   test('locks body scroll while open', () => {

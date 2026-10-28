@@ -29,6 +29,15 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Keep the latest onClose in a ref so the mount-time effect below never
+  // re-fires when the parent re-renders with a fresh arrow function
+  // (previously: every keystroke inside the modal's controlled inputs
+  // re-ran the effect and yanked focus to the first focusable element).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
@@ -37,7 +46,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key === 'Tab' && contentRef.current) {
@@ -73,15 +82,17 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       document.body.style.overflow = overflow;
       previouslyFocused?.focus();
     };
-  }, [onClose]);
+    // Mount-only: initial focus move + body scroll lock. onClose comes via
+    // onCloseRef so a fresh parent arrow function won't re-trigger this effect.
+  }, []);
 
   const handleOverlayClick = useCallback(
     (event: React.MouseEvent) => {
       if (closeOnOverlayClick && event.target === event.currentTarget) {
-        onClose();
+        onCloseRef.current();
       }
     },
-    [closeOnOverlayClick, onClose]
+    [closeOnOverlayClick]
   );
 
   return createPortal(
