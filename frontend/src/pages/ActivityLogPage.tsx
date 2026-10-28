@@ -185,11 +185,31 @@ const ActivityLogPage: React.FC = () => {
 
         <DataTable
           columns={[
-            { key: 'time', header: t('activityLog.time'), render: (log) => formatTime(log.timestamp), width: '18%' },
-            { key: 'user', header: t('activityLog.user'), render: (log) => log.employeeEmail ?? '—' },
-            { key: 'method', header: t('activityLog.method'), render: (log) => log.method ?? '—', width: '8%' },
+            {
+              key: 'time',
+              header: t('activityLog.time'),
+              render: (log) => formatTime(log.timestamp),
+              width: '18%'
+            },
+            {
+              key: 'user',
+              header: t('activityLog.user'),
+              render: (log) => log.employeeEmail ?? '—'
+            },
+            {
+              key: 'method',
+              header: t('activityLog.method'),
+              render: (log) => log.method ?? '—',
+              width: '8%'
+            },
             { key: 'action', header: t('activityLog.action'), render: (log) => log.action },
-            { key: 'status', header: t('activityLog.status'), render: (log) => log.statusCode ?? '—', align: 'center', width: '8%' }
+            {
+              key: 'status',
+              header: t('activityLog.status'),
+              render: (log) => log.statusCode ?? '—',
+              align: 'center',
+              width: '8%'
+            }
           ]}
           data={logs}
           rowKey={(log) => log.id}

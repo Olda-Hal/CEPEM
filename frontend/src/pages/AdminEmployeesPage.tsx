@@ -204,7 +204,9 @@ const AdminEmployeesPage: React.FC = () => {
               key: 'status',
               header: t('admin.status'),
               render: (employee) => (
-                <span className={`status-badge status-${employee.active ? 'active' : 'unavailable'}`}>
+                <span
+                  className={`status-badge status-${employee.active ? 'active' : 'unavailable'}`}
+                >
                   {employee.active ? t('admin.active') : t('admin.inactive')}
                 </span>
               )
@@ -213,7 +215,9 @@ const AdminEmployeesPage: React.FC = () => {
               key: 'lastLogin',
               header: t('admin.lastLogin'),
               render: (employee) =>
-                employee.lastLoginAt ? new Date(employee.lastLoginAt).toLocaleString() : t('admin.never')
+                employee.lastLoginAt
+                  ? new Date(employee.lastLoginAt).toLocaleString()
+                  : t('admin.never')
             },
             {
               key: 'actions',
