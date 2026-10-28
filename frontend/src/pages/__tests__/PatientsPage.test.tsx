@@ -101,8 +101,26 @@ describe('PatientsPage', () => {
 
     await screen.findByText('John');
 
-    expect(screen.getByText('00000001')).toBeInTheDocument();
+    expect(screen.getByText(/UID: 00000001/)).toBeInTheDocument();
     expect(screen.getByText('123456789')).toBeInTheDocument();
+  });
+
+  test('shows UID as the single identifier and hides internal ID', async () => {
+    renderPage();
+
+    await screen.findByText('John');
+
+    expect(screen.getByText(/UID: 00000001/)).toBeInTheDocument();
+    expect(screen.queryByText(/^ID: /)).not.toBeInTheDocument();
+  });
+
+  test('does not show patient emails in the listing (privacy)', async () => {
+    renderPage();
+
+    await screen.findByText('John');
+
+    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('jane@example.com')).not.toBeInTheDocument();
   });
 
   test('opens the detail page from view button', async () => {

@@ -165,7 +165,7 @@ export const PatientsPage: React.FC = () => {
                   ref={index === patients.length - 1 ? lastPatientElementCallback : null}
                 >
                   <div className="patient-header">
-                    <h3 
+                    <h3
                       className="patient-name"
                       title={`${patient.titleBefore ? `${patient.titleBefore} ` : ''}${patient.lastName}, ${patient.firstName}${patient.titleAfter ? `, ${patient.titleAfter}` : ''}`}
                     >
@@ -180,39 +180,27 @@ export const PatientsPage: React.FC = () => {
                         <div className="name-title-after">{patient.titleAfter}</div>
                       )}
                     </h3>
-                    <span className="patient-id">ID: {patient.id}</span>
+                    <span className="patient-id">UID: {patient.uid}</span>
                   </div>
-                  
+
                   <div className="patient-details">
                     <div className="detail-row">
                       <span className="detail-label">{t('patients.birthDate')}:</span>
                       <span className="detail-value">{formatDate(patient.birthDate)}</span>
                     </div>
-                    
-                    <div className="detail-row">
-                      <span className="detail-label">{t('patients.uid')}:</span>
-                      <span className="detail-value">{patient.uid}</span>
-                    </div>
-                    
+
                     <div className="detail-row">
                       <span className="detail-label">{t('patients.insuranceNumber')}:</span>
                       <span className="detail-value">{patient.insuranceNumber}</span>
                     </div>
-                    
+
                     {patient.phoneNumber && (
                       <div className="detail-row">
                         <span className="detail-label">{t('patients.phone')}:</span>
                         <span className="detail-value">{patient.phoneNumber}</span>
                       </div>
                     )}
-                    
-                    {patient.email && (
-                      <div className="detail-row">
-                        <span className="detail-label">{t('patients.email')}:</span>
-                        <span className="detail-value">{patient.email}</span>
-                      </div>
-                    )}
-                    
+
                     <div className="detail-row">
                       <span className="detail-label">{t('patients.gender')}:</span>
                       <span className="detail-value">
