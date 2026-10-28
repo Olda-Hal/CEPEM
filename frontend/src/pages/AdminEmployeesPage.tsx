@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './AdminEmployeesPage.css';
 import {
   EmployeeListItem,
@@ -16,15 +17,31 @@ import { hasRole } from '../utils/roles';
 const AdminEmployeesPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeListItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [selectedRulesEmployee, setSelectedRulesEmployee] = useState<EmployeeListItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['admin', 'employees-and-roles'],
+    queryFn: async () => {
+      const [employees, roles] = await Promise.all([
+        apiClient.get<EmployeeListItem[]>('/api/admin/employees'),
+        apiClient.get<Role[]>('/api/admin/roles')
+      ]);
+      return { employees, roles };
+    }
+  });
+
+  const employees = data?.employees ?? [];
+  const roles = data?.roles ?? [];
+
+  const loadData = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'employees-and-roles'] });
+  }, [queryClient]);
 
   const isRestrictedCountryAdmin = hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
 
@@ -53,27 +70,6 @@ const AdminEmployeesPage: React.FC = () => {
     const translationKey = `admin.permissionLabels.${permissionKey.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
     return t(translationKey, { defaultValue: fallback || permissionKey });
   };
-
-
-  const loadData = useCallback(async () => {
-    try {
-      const [employeesResponse, rolesResponse] = await Promise.all([
-        apiClient.get<EmployeeListItem[]>('/api/admin/employees'),
-        apiClient.get<Role[]>('/api/admin/roles')
-      ]);
-      setEmployees(employeesResponse);
-      setRoles(rolesResponse);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setError(t('admin.dataLoadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
 
   const handleRules = (employee: EmployeeListItem) => {
     setSelectedRulesEmployee(employee);
