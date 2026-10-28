@@ -11,6 +11,13 @@ namespace DatabaseAPI.Services
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
         Task<bool> DeactivateEmployeeAsync(int employeeId);
+
+        /// <summary>
+        /// Reset an employee's password to a generated one-time value,
+        /// forcing a change on next login. Returns the plaintext once (or
+        /// null when the employee doesn't exist).
+        /// </summary>
+        Task<string?> ResetPasswordAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
     }
@@ -255,6 +262,37 @@ namespace DatabaseAPI.Services
                     Message = $"Error updating employee: {ex.Message}"
                 };
             }
+        }
+
+        public async Task<string?> ResetPasswordAsync(int employeeId)
+        {
+            var employee = await _context.Employees
+                .Include(e => e.Person)
+                .FirstOrDefaultAsync(e => e.Id == employeeId);
+
+            if (employee == null)
+                return null;
+
+            // One-time password: random 12 mixed chars, stored only as a hash,
+            // and the user is forced to change it on first login.
+            const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+            var temporaryPassword = string.Create(12, alphabet, (chars, source) =>
+            {
+                for (var i = 0; i < chars.Length; i++)
+                {
+                    chars[i] = source[System.Security.Cryptography.RandomNumberGenerator.GetInt32(source.Length)];
+                }
+            });
+
+            var salt = BCrypt.Net.BCrypt.GenerateSalt();
+            employee.PasswordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword, salt);
+            employee.Salt = salt;
+            employee.PasswordExpiration = DateTime.UtcNow.AddDays(-1);
+            employee.FailedLoginAttempts = 0;
+            employee.LockedUntil = null;
+
+            await _context.SaveChangesAsync();
+            return temporaryPassword;
         }
 
         public async Task<bool> DeactivateEmployeeAsync(int employeeId)

@@ -41,6 +41,38 @@ public class EmployeeAuthServiceTests : IDisposable
         _service = new EmployeeAuthService(_context, actorCountryMock.Object, uidMock.Object);
     }
 
+    [Fact]
+    public async Task ResetPassword_ForMissingEmployee_ReturnsNull()
+    {
+        var management = new EmployeeManagementService(_context);
+
+        var result = await management.ResetPasswordAsync(99999);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ResetPassword_GeneratesUsablePassword_AndForcesChange()
+    {
+        var employee = SeedEmployee("jan@example.com", password: "OldPassword1");
+        var management = new EmployeeManagementService(_context);
+
+        var temporary = await management.ResetPasswordAsync(employee.Id);
+
+        Assert.NotNull(temporary);
+        Assert.Equal(12, temporary!.Length);
+        await _context.Entry(employee).ReloadAsync();
+        Assert.True(BCrypt.Net.BCrypt.Verify(temporary, employee.PasswordHash));
+        Assert.True(employee.PasswordExpiration < DateTime.UtcNow, "user must be forced to change the password");
+        Assert.Equal(0, employee.FailedLoginAttempts);
+
+        // Old password no longer works, the temporary one does
+        var oldAuth = await _service.AuthenticateDetailedAsync("jan@example.com", "OldPassword1");
+        Assert.NotEqual(AuthenticationResult.Success, oldAuth.Result);
+        var newAuth = await _service.AuthenticateDetailedAsync("jan@example.com", temporary);
+        Assert.Equal(AuthenticationResult.Success, newAuth.Result);
+    }
+
     public void Dispose()
     {
         _context.Database.EnsureDeleted();

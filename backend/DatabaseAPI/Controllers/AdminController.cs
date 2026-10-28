@@ -49,6 +49,22 @@ namespace DatabaseAPI.Controllers
             return File(bytes, "text/csv", $"employees-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
         }
 
+        /// <summary>
+        /// Generates a one-time password for the employee, forcing a change on
+        /// the next login. The plaintext is returned once to the admin and is
+        /// never stored anywhere.
+        /// </summary>
+        [HttpPost("employees/{employeeId}/reset-password")]
+        public async Task<ActionResult> ResetEmployeePassword(int employeeId)
+        {
+            var temporary = await _employeeManagementService.ResetPasswordAsync(employeeId);
+            if (temporary == null)
+            {
+                return NotFound("Employee not found");
+            }
+            return Ok(new { temporaryPassword = temporary });
+        }
+
         private static string CsvEscape(string value)
         {
             return value.Contains(';') || value.Contains('"') || value.Contains('\n')
