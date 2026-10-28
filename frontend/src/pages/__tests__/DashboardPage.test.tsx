@@ -1,7 +1,7 @@
 import { vi, type Mocked } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
 import { AuthProvider } from '../../contexts/AuthContext';
@@ -12,17 +12,6 @@ import { apiClient } from '../../utils/api';
 // Mock API client
 vi.mock('../../utils/api');
 const mockApiClient = apiClient as Mocked<typeof apiClient>;
-
-// Mock user data
-const mockUser = {
-  id: 1,
-  firstName: 'John',
-  lastName: 'Doe',
-  email: 'john.doe@example.com',
-  uid: 'EMP001',
-  active: true,
-  fullName: 'John Doe'
-};
 
 // Mock dashboard stats
 const mockStats = {

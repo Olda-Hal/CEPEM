@@ -43,7 +43,7 @@ const getDefaultFormData = (firstName = '', lastName = ''): PatientFormData => (
   confirmAccuracy: false,
   termsAccepted: false,
   signaturePlace: '',
-  signatureDate: new Date().toISOString().split('T')[0],
+  signatureDate: new Date().toISOString().slice(0, 10),
   signatureVector: '',
   additionalHealthInfo: '',
   hadCovid: false,

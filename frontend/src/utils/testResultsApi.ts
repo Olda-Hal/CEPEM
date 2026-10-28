@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { TestSummary, ServiceDetails, TestFileInfo, LiveStatus } from '../types/testResults';
+import { TestSummary, ServiceDetails, LiveStatus } from '../types/testResults';
 
 export const testResultsApi = {
   getTestSummary: async (): Promise<TestSummary> => {

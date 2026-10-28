@@ -41,8 +41,9 @@ const PermissionsModal: React.FC<Props> = ({ employee, getPermissionLabel, onClo
       ]);
       setPermissions(perms);
       setEmployeePerms(empPerms);
-      if (perms.length && !perms.some((p) => p.id === selectedPermId)) {
-        setSelectedPermId(perms[0].id);
+      const firstPermission = perms[0];
+      if (firstPermission && !perms.some((p) => p.id === selectedPermId)) {
+        setSelectedPermId(firstPermission.id);
       }
     } catch (err) {
       console.error('Error loading permissions', err);

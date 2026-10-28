@@ -3,7 +3,6 @@ import {
   Employee,
   AuthContextType,
   LoginResponse,
-  ChangePasswordRequest,
   CreateEmployeeRequest,
   CreateEmployeeResponse
 } from '../types';

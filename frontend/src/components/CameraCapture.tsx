@@ -20,7 +20,6 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
   const updateCropFrame = useCallback(() => {
     if (videoRef.current && viewportRef.current) {
       const video = videoRef.current;
-      const viewport = viewportRef.current;
 
       const videoRect = video.getBoundingClientRect();
       const minDimension = Math.min(videoRect.width, videoRect.height);

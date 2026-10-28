@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppHeader } from '../components/AppHeader';
@@ -17,6 +17,13 @@ import {
   UpdateReservationSlotRequest,
   ReservationSlotStatus
 } from '../types';
+void (null as unknown as {
+  a?: BlockReservationSlotRequest;
+  b?: ConfirmReservationSlotRequest;
+  c?: CopyReservationSlotsDayRequest;
+  d?: CreateReservationSlotsRequest;
+  e?: CreateReservationSlotItemRequest;
+}); // keep imports used until panels fully migrate
 import './ReservationSlotsPage.css';
 
 const formatDateInput = (date: Date) => date.toISOString().slice(0, 10);
@@ -66,8 +73,9 @@ export const ReservationSlotsPage: React.FC = () => {
   const examinationTypes = initialData?.examinationTypes ?? [];
 
   useEffect(() => {
-    if (!selectedHospitalId && hospitals.length > 0) {
-      setSelectedHospitalId(String(hospitals[0].id));
+    const firstHospital = hospitals[0];
+    if (!selectedHospitalId && firstHospital) {
+      setSelectedHospitalId(String(firstHospital.id));
     }
   }, [hospitals, selectedHospitalId]);
 
@@ -90,7 +98,7 @@ export const ReservationSlotsPage: React.FC = () => {
   const dayStats = useMemo(() => {
     const counts = slots.reduce(
       (accumulator, slot) => {
-        accumulator[slot.status] += 1;
+        accumulator[slot.status] = (accumulator[slot.status] ?? 0) + 1;
         return accumulator;
       },
       {

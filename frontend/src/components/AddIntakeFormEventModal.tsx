@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import BaseModal from './BaseModal';
 import { PatientFormFields, PatientFormData } from './PatientFormFields';
@@ -54,7 +53,7 @@ const getDefaultFormData = (firstName: string, lastName: string): PatientFormDat
   confirmAccuracy: false,
   termsAccepted: false,
   signaturePlace: '',
-  signatureDate: new Date().toISOString().split('T')[0],
+  signatureDate: new Date().toISOString().slice(0, 10),
   signatureVector: '',
 
   additionalHealthInfo: '',
@@ -101,7 +100,6 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
   onClose,
   onEventCreated
 }) => {
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<PatientFormData>(
@@ -120,65 +118,6 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
 
   const handleChange = (field: keyof PatientFormData, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const buildComment = (): string => {
-    const parts: string[] = [];
-
-    if (form.medBloodPressure) parts.push('Léky: Tlak');
-    if (form.medHeart) parts.push('Léky: Srdce');
-    if (form.medCholesterol) parts.push('Léky: Cholesterol');
-    if (form.medBloodThinners) parts.push('Léky: Srážlivost');
-    if (form.medDiabetes) parts.push('Léky: Cukrovka');
-    if (form.medThyroid) parts.push('Léky: Štítná žláza');
-    if (form.medNerves) parts.push('Léky: Nervy');
-    if (form.medPsych) parts.push('Léky: Psychika');
-    if (form.medDigestion) parts.push('Léky: Zažívání');
-    if (form.medPain) parts.push('Léky: Bolest');
-    if (form.medDehydration) parts.push('Léky: Odvodnění');
-    if (form.medBreathing) parts.push('Léky: Dýchání');
-    if (form.medAntibiotics) parts.push('Léky: Antibiotika');
-    if (form.medSupplements) parts.push('Léky: Doplňky stravy');
-    if (form.medAllergies) parts.push('Léky: Alergie');
-
-    if (form.poorSleep) parts.push('Zdravotní stav: Špatný spánek');
-    if (form.digestiveIssues) parts.push('Zdravotní stav: Zažívání');
-    if (form.physicalStress) parts.push('Zdravotní stav: Fyzická zátěž');
-    if (form.mentalStress) parts.push('Zdravotní stav: Psychická zátěž');
-    if (form.smoking) parts.push('Zdravotní stav: Kouření');
-    if (form.fatigue) parts.push('Zdravotní stav: Pocity únavy');
-    if (form.lastMealHours)
-      parts.push(`Zdravotní stav: Poslední jídlo před ${form.lastMealHours} hod`);
-
-    if (form.hadCovid) {
-      parts.push(`COVID: Prodělal/a (${form.covidWhen || 'neuvedeno kdy'})`);
-    }
-    if (form.covidVaccine) parts.push('Vakcinace proti COVID: Ano');
-    if (form.vaccinesAfter2023) parts.push('Vakcinace po r. 2023: Ano');
-
-    if (form.lastMenstruationDate) parts.push(`Poslední menzes: ${form.lastMenstruationDate}`);
-    if (form.menstruationCycleDays)
-      parts.push(`Cyklus opakování: ${form.menstruationCycleDays} dnů`);
-    if (form.yearsSinceLastMenstruation)
-      parts.push(`Roky od poslední menzes: ${form.yearsSinceLastMenstruation}`);
-    if (form.gaveBirth) parts.push(`Rodila: ${form.birthCount || '?'}x (${form.birthWhen || '?'})`);
-    if (form.breastfed) parts.push(`Kojila: ${form.breastfeedingMonths || '?'} měsíců`);
-    if (form.breastfeedingInflammation) parts.push('Záněty při kojení: Ano');
-    if (form.endedWithInflammation) parts.push('Končilo kojení zánětem: Ano');
-    if (form.contraception) parts.push(`Antikoncepce: ${form.contraceptionDuration || 'Ano'}`);
-    if (form.estrogen) parts.push(`Estrogen: ${form.estrogenType || 'Ano'}`);
-    if (form.interruption) parts.push(`Interrupce: ${form.interruptionCount || '?'}x`);
-    if (form.miscarriage) parts.push(`Potrat: ${form.miscarriageCount || '?'}x`);
-    if (form.breastInjury) parts.push('Úraz prsu: Ano');
-    if (form.mammogram) parts.push(`RTG mamograf: ${form.mammogramCount || '?'}x`);
-    if (form.breastBiopsy) parts.push('Biopsie prsu: Ano');
-    if (form.breastImplants) parts.push('Implantáty: Ano');
-    if (form.breastSurgery) parts.push(`Operace prsu: ${form.breastSurgeryType || 'Ano'}`);
-    if (form.familyTumors) parts.push(`Nádory v rodině: ${form.familyTumorType || 'Ano'}`);
-
-    if (form.additionalHealthInfo) parts.push(`Poznámky: ${form.additionalHealthInfo}`);
-
-    return parts.join('\n');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

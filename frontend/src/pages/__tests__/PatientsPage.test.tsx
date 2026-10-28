@@ -1,5 +1,4 @@
 import { vi, type Mocked } from 'vitest';
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
@@ -127,7 +126,9 @@ describe('PatientsPage', () => {
     renderPage();
     const buttons = await screen.findAllByRole('button', { name: /view details/i });
 
-    fireEvent.click(buttons[0]);
+    const firstButton = buttons[0];
+    expect(firstButton).toBeTruthy();
+    firstButton && fireEvent.click(firstButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('/patients/1');
   });

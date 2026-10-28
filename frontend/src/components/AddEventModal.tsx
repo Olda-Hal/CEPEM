@@ -353,45 +353,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const handleDrugToggle = (drugId: number, checked: boolean) => {
-    const newSelectedDrugs = new Map(selectedDrugs);
-    if (checked) {
-      newSelectedDrugs.set(drugId, []);
-    } else {
-      newSelectedDrugs.delete(drugId);
-    }
-    setSelectedDrugs(newSelectedDrugs);
-  };
-
-  const handleDrugCategoryToggle = (drugId: number, categoryId: number, checked: boolean) => {
-    const newSelectedDrugs = new Map(selectedDrugs);
-    const currentCategories = newSelectedDrugs.get(drugId) || [];
-
-    if (checked) {
-      newSelectedDrugs.set(drugId, [...currentCategories, categoryId]);
-    } else {
-      newSelectedDrugs.set(
-        drugId,
-        currentCategories.filter((id) => id !== categoryId)
-      );
-    }
-
-    setSelectedDrugs(newSelectedDrugs);
-  };
-
-  const handleCheckboxChange = (
-    field: 'examinationTypeIds' | 'symptomIds' | 'injuryTypeIds' | 'vaccineTypeIds',
-    id: number,
-    checked: boolean
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: checked
-        ? [...prev[field], id]
-        : prev[field].filter((existingId) => existingId !== id)
-    }));
-  };
-
   const renderEventTypeSpecificForm = () => {
     if (!formData.eventTypeId || !eventOptions) return null;
 

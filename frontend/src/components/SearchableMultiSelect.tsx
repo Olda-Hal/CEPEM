@@ -67,8 +67,9 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
 
-      if (filteredOptions.length === 1) {
-        handleToggle(filteredOptions[0].id);
+      const onlyOption = filteredOptions[0];
+      if (filteredOptions.length === 1 && onlyOption) {
+        handleToggle(onlyOption.id);
       } else if (showAddButton) {
         handleAddNew();
       }

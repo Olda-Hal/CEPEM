@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PatientDetail, QuickPreviewSettings } from '../types';
 import {
-  IntakeSummary,
   parseIntakeSummary,
   formSubmissionToIntakeSummary
 } from '../utils/intakeSummary';
@@ -19,7 +18,7 @@ import { useToast } from '../contexts/ToastContext';
 import PatientEventsSection from '../components/patient/PatientEventsSection';
 import PatientDocumentsSection from '../components/patient/PatientDocumentsSection';
 import CameraCaptureModal from '../components/patient/CameraCaptureModal';
-import { formatDateTime, formatFileSize } from '../utils/format';
+import { formatDateTime } from '../utils/format';
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +38,6 @@ export const PatientDetailPage: React.FC = () => {
   const [commentText, setCommentText] = useState('');
   const [showCamera, setShowCamera] = useState(false);
   const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
-  const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const intakeSummary = useMemo(() => {
     if (!patient) {

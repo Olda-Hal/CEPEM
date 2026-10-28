@@ -13,8 +13,8 @@ const DEFAULT_DURATION_MINUTES = 30;
 
 /** Builds a UTC ISO string from local date + HH:mm inputs. */
 const createLocalDateTime = (dateInput: string, timeInput: string) => {
-  const [year, month, day] = dateInput.split('-').map(Number);
-  const [hours, minutes] = timeInput.split(':').map(Number);
+  const [year = 0, month = 0, day = 0] = dateInput.split('-').map(Number);
+  const [hours = 0, minutes = 0] = timeInput.split(':').map(Number);
   return new Date(year, month - 1, day, hours, minutes);
 };
 

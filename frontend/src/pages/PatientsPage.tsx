@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { Patient, PatientSearchResponse } from '../types';
+import { PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
 import { AppHeader } from '../components/AppHeader';
@@ -52,7 +52,7 @@ export const PatientsPage: React.FC = () => {
       if (observer.current) observer.current.disconnect();
 
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isLoading) {
+        if (entries[0]?.isIntersecting && hasNextPage && !isLoading) {
           fetchNextPage();
         }
       });

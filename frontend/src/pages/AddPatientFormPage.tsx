@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import { PatientFormFields, PatientFormData } from '../components/PatientFormFields';
 import './AddPatientFormPage.css';
 import { useToast } from '../contexts/ToastContext';
 
 export const AddPatientFormPage: React.FC = () => {
-  const { t } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -58,7 +56,7 @@ export const AddPatientFormPage: React.FC = () => {
     confirmAccuracy: false,
     termsAccepted: false,
     signaturePlace: '',
-    signatureDate: new Date().toISOString().split('T')[0],
+    signatureDate: new Date().toISOString().slice(0, 10),
     signatureVector: '',
 
     additionalHealthInfo: '',

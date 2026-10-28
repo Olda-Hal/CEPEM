@@ -4,7 +4,6 @@ import { apiClient, ApiError } from '../utils/api';
 import PatientRecordFields from './patient/PatientRecordFields';
 import BaseModal from './BaseModal';
 import './patient/PatientRecordFields.css';
-import { CameraCapture } from './CameraCapture';
 import './CreatePatientModal.css';
 
 interface CreatePatientData {
@@ -218,16 +217,6 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePhotoCapture = (imageData: Blob) => {
-    setCapturedPhoto(imageData);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(imageData);
-    setShowCamera(false);
   };
 
   const handleRemovePhoto = () => {

@@ -54,7 +54,7 @@ i18n
     // Enable key extraction in development
     saveMissing: import.meta.env.DEV,
     saveMissingTo: 'current',
-    missingKeyHandler: (lng, ns, key, fallbackValue) => {
+    missingKeyHandler: (lng, _ns, key, _fallbackValue) => {
       if (import.meta.env.DEV) {
         console.warn(`Missing translation key: ${key} for language: ${lng}`);
       }
@@ -65,8 +65,8 @@ i18n
 // (the app is bilingual cs/en; the hardcoded lang="cs" broke screen
 // readers and translation tools for English users)
 i18n.on('languageChanged', (lng) => {
-  document.documentElement.lang = lng.split('-')[0];
+  document.documentElement.lang = lng.split('-')[0] ?? lng;
 });
-document.documentElement.lang = (i18n.language || 'cs').split('-')[0];
+document.documentElement.lang = (i18n.language || 'cs').split('-')[0] ?? 'cs';
 
 export default i18n;

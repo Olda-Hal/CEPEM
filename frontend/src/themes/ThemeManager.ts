@@ -60,7 +60,7 @@ export class ThemeManager {
   public getNextTheme(): Theme {
     const currentIndex = availableThemes.findIndex((t) => t.id === this.currentTheme);
     const nextIndex = (currentIndex + 1) % availableThemes.length;
-    return availableThemes[nextIndex].id;
+    return availableThemes[nextIndex]?.id ?? availableThemes[0]?.id ?? this.currentTheme;
   }
 
   public toggleThemeCategory(): void {
@@ -72,12 +72,12 @@ export class ThemeManager {
 
     if (themesInCategory.length > 0) {
       // Try to find a similar theme in the opposite category
-      const similarTheme =
-        themesInCategory.find(
-          (t) => t.id.includes(currentThemeInfo.id.split('-')[1]) // Match color variant
-        ) || themesInCategory[0]; // Fallback to first theme in category
+      const variant = currentThemeInfo.id.split('-')[1] ?? currentThemeInfo.id;
+      const similarTheme = themesInCategory.find((t) => t.id.includes(variant)) || themesInCategory[0]; // Fallback to first theme in category
 
-      this.setTheme(similarTheme.id);
+      if (similarTheme) {
+        this.setTheme(similarTheme.id);
+      }
     }
   }
 

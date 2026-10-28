@@ -101,8 +101,9 @@ const CenterManagementPage: React.FC = () => {
       const hospitalsResponse = await apiClient.get<Hospital[]>('/api/hospitals');
       setHospitals(hospitalsResponse);
 
-      if (!selectedHospitalId && hospitalsResponse.length > 0) {
-        setSelectedHospitalId(hospitalsResponse[0].id);
+      const firstHospital = hospitalsResponse[0];
+      if (!selectedHospitalId && firstHospital) {
+        setSelectedHospitalId(firstHospital.id);
       }
 
       try {

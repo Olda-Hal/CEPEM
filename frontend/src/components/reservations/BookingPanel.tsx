@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { apiClient, ApiError } from '../../utils/api';
 import { useToast } from '../../contexts/ToastContext';
 import { BlockReservationSlotRequest, ExaminationType, ReservationSlot } from '../../types';
-import { formatDateTime } from '../../utils/format';
 
 interface BookingPanelProps {
   selectedSlot: ReservationSlot | null;

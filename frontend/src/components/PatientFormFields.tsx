@@ -140,11 +140,16 @@ const SignaturePad: React.FC<{
   const drawStroke = React.useCallback((ctx: CanvasRenderingContext2D, stroke: SignatureStroke) => {
     if (stroke.length === 0) return;
 
+    const firstPoint = stroke[0];
+    if (!firstPoint) return;
+
     ctx.beginPath();
-    ctx.moveTo(stroke[0].x, stroke[0].y);
+    ctx.moveTo(firstPoint.x, firstPoint.y);
 
     for (let i = 1; i < stroke.length; i += 1) {
-      ctx.lineTo(stroke[i].x, stroke[i].y);
+      const point = stroke[i];
+      if (!point) continue;
+      ctx.lineTo(point.x, point.y);
     }
 
     ctx.stroke();

@@ -13,7 +13,6 @@ const TestDashboard: React.FC = () => {
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
-  const [coverageContent, setCoverageContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -52,7 +51,7 @@ const TestDashboard: React.FC = () => {
       setServiceDetails(null);
       setSelectedFile(null);
       setFileContent(null);
-      setCoverageContent(null);
+      // coverageContent removed with the refactor; reset detail view only
       return;
     }
 
@@ -62,7 +61,7 @@ const TestDashboard: React.FC = () => {
       setServiceDetails(details);
       setSelectedFile(null);
       setFileContent(null);
-      setCoverageContent(null);
+      // coverageContent removed with the refactor; reset detail view only
     } catch (error) {
       console.error('Error fetching service details:', error);
     }
@@ -80,17 +79,6 @@ const TestDashboard: React.FC = () => {
     }
   };
 
-  const handleCoverageClick = async () => {
-    if (!selectedService) return;
-
-    try {
-      const content = await testResultsApi.getCoverageReport(selectedService);
-      setCoverageContent(content);
-    } catch (error) {
-      console.error('Error fetching coverage report:', error);
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -102,11 +90,6 @@ const TestDashboard: React.FC = () => {
       default:
         return 'status-unknown';
     }
-  };
-
-  const formatDuration = (duration?: number) => {
-    if (!duration) return 'N/A';
-    return `${(duration / 1000).toFixed(2)}s`;
   };
 
   const formatPercentage = (value?: number) => {
