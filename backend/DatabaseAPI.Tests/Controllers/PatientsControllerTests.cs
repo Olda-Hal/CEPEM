@@ -24,7 +24,7 @@ public class PatientsControllerTests : IAsyncLifetime
 
         _context = new DatabaseContext(options);
         _logger = new Mock<ILogger<PatientsController>>().Object;
-        _controller = new PatientsController(_context, _logger, null!, null!, new Mock<IActorCountryContextService>().Object, new Mock<IUidService>().Object);
+        _controller = new PatientsController(_context, _logger, null!, null!, new Mock<IActorCountryContextService>().Object, new Mock<IUidService>().Object, new Mock<IPatientService>().Object);
     }
 
     public async Task InitializeAsync()
