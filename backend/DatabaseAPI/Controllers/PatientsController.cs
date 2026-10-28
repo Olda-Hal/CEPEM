@@ -18,14 +18,16 @@ namespace DatabaseAPI.Controllers
         private readonly PatientDocumentService _documentService;
         private readonly IActorCountryContextService _actorCountryContextService;
         private readonly IUidService _uidService;
+        private readonly IPatientService _patientService;
 
         public PatientsController(
-            DatabaseContext context, 
+            DatabaseContext context,
             ILogger<PatientsController> logger,
             PatientPhotoService photoService,
             PatientDocumentService documentService,
             IActorCountryContextService actorCountryContextService,
-            IUidService uidService)
+            IUidService uidService,
+            IPatientService patientService)
         {
             _context = context;
             _logger = logger;
@@ -33,6 +35,7 @@ namespace DatabaseAPI.Controllers
             _documentService = documentService;
             _actorCountryContextService = actorCountryContextService;
             _uidService = uidService;
+            _patientService = patientService;
         }
 
         [HttpGet("search")]
@@ -132,62 +135,8 @@ namespace DatabaseAPI.Controllers
             try
             {
                 var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
-                var uid = request.Uid;
-                if (string.IsNullOrWhiteSpace(uid) || !int.TryParse(uid, out _))
-                {
-                uid = await _uidService.GetNextAvailableUidAsync();
-            }
 
-                // First create the Person
-                var person = new Person
-                {
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Gender = request.Gender,
-                    UID = uid,
-                    TitleBefore = request.TitleBefore,
-                    TitleAfter = request.TitleAfter,
-                    CountryCode = actorCountryCode,
-                    CreatedAt = DateTime.UtcNow,
-                    Active = true
-                };
-
-                _context.Persons.Add(person);
-                await _context.SaveChangesAsync();
-
-                // Create Contact with email and phone if provided
-                if (!string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.PhoneNumber))
-                {
-                    var contact = new Contact();
-                    _context.Contacts.Add(contact);
-                    await _context.SaveChangesAsync();
-
-                    if (!string.IsNullOrEmpty(request.Email))
-                        _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = request.Email });
-                    if (!string.IsNullOrEmpty(request.PhoneNumber))
-                        _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = request.PhoneNumber });
-
-                    _context.ContactToObjects.Add(new ContactToObject
-                    {
-                        ContactId = contact.Id,
-                        ObjectId = person.Id,
-                        ObjectType = ContactObjectType.Person
-                    });
-                    await _context.SaveChangesAsync();
-                }
-
-                // Then create the Patient
-                var patient = new Patient
-                {
-                    PersonId = person.Id,
-                    BirthDate = request.BirthDate,
-                    InsuranceNumber = request.InsuranceNumber ?? 0,
-                    CountryCode = actorCountryCode,
-                    Alive = true
-                };
-
-                _context.Patients.Add(patient);
-                await _context.SaveChangesAsync();
+                var patient = await _patientService.CreatePatientAsync(request, actorCountryCode);
 
                 var createdPatient = await _context.Patients
                     .Include(p => p.Person)

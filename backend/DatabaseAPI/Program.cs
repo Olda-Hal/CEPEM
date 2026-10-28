@@ -63,6 +63,7 @@ builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService
 builder.Services.AddScoped<IActorCountryContextService, ActorCountryContextService>();
 builder.Services.AddScoped<IUidService, UidService>();
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IEventOptionsService, EventOptionsService>();
 builder.Services.AddScoped<IIntakeFormLinkService, IntakeFormLinkService>();
 builder.Services.AddScoped<IExaminationsRepository, ExaminationsRepository>();
