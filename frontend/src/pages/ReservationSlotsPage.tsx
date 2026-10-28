@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient, ApiError } from '../utils/api';
@@ -36,13 +37,10 @@ export const ReservationSlotsPage: React.FC = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const queryClient = useQueryClient();
 
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [selectedDate, setSelectedDate] = useState(formatDateInput(new Date()));
-  const [slots, setSlots] = useState<ReservationSlot[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [examinationTypes, setExaminationTypes] = useState<ExaminationType[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
 
 
@@ -55,31 +53,41 @@ export const ReservationSlotsPage: React.FC = () => {
   const canReviewSlots = hasRole(user, 'Doctor') || hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
   const canCreateSlots = hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        const hospitalsResponse = await apiClient.get<Hospital[]>('/api/hospitals');
-        setHospitals(hospitalsResponse);
-      } catch (error) {
-        console.error(t('errors.loadingHospitals'), error);
-      }
+  const { data: initialData } = useQuery({
+    queryKey: ['reservation-slots-lookup', i18n.language],
+    queryFn: async () => {
+      const [hospitals, examinationTypes] = await Promise.all([
+        apiClient.get<Hospital[]>('/api/hospitals'),
+        apiClient.get<ExaminationType[]>(`/api/examinationtypes?language=${i18n.language}`)
+      ]);
+      return { hospitals, examinationTypes };
+    }
+  });
 
-      try {
-        const examinationTypesResponse = await apiClient.get<ExaminationType[]>(`/api/examinationtypes?language=${i18n.language}`);
-        setExaminationTypes(examinationTypesResponse);
-      } catch (error) {
-        console.error(t('errors.loadingExaminationTypes'), error);
-      }
-    };
-
-    loadInitialData();
-  }, [i18n.language, t]);
+  const hospitals = initialData?.hospitals ?? [];
+  const examinationTypes = initialData?.examinationTypes ?? [];
 
   useEffect(() => {
     if (!selectedHospitalId && hospitals.length > 0) {
       setSelectedHospitalId(String(hospitals[0].id));
     }
   }, [hospitals, selectedHospitalId]);
+
+  const slotsQuery = useQuery({
+    queryKey: ['reservation-slots', selectedHospitalId, selectedDate],
+    queryFn: async () => {
+      const from = createLocalDateTime(selectedDate, '00:00');
+      const to = new Date(from);
+      to.setDate(to.getDate() + 1);
+      return apiClient.get<ReservationSlot[]>(
+        `/api/reservations/slots/hospital/${selectedHospitalId}?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`
+      );
+    },
+    enabled: !!selectedHospitalId
+  });
+
+  const slots = slotsQuery.data ?? [];
+  const loadingSlots = slotsQuery.isLoading || slotsQuery.isFetching;
 
   const dayStats = useMemo(() => {
     const counts = slots.reduce(
@@ -129,38 +137,15 @@ export const ReservationSlotsPage: React.FC = () => {
     [sortedSlots]
   );
 
-  const loadSlots = useCallback(async (hospitalId: string, day: string) => {
-    try {
-      setLoadingSlots(true);
-      const from = createLocalDateTime(day, '00:00');
-      const to = new Date(from);
-      to.setDate(to.getDate() + 1);
-
-      const response = await apiClient.get<ReservationSlot[]>(
-        `/api/reservations/slots/hospital/${hospitalId}?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`
-      );
-      setSlots(response);
-      setSelectedSlotId(current => (current && response.some(slot => slot.id === current) ? current : null));
-    } catch (error) {
-      console.error(t('reservationSlots.errors.loadingSlots'), error);
-      setSlots([]);
-    } finally {
-      setLoadingSlots(false);
-    }
-  }, [t]);
-
+  // The selection must not survive the deletion of the selected slot.
   useEffect(() => {
-    if (!selectedHospitalId) {
-      setSlots([]);
-      return;
+    if (selectedSlotId && !slots.some(slot => slot.id === selectedSlotId)) {
+      setSelectedSlotId(null);
     }
-
-    void loadSlots(selectedHospitalId, selectedDate);
-  }, [loadSlots, selectedHospitalId, selectedDate]);
+  }, [slots, selectedSlotId]);
 
   const refreshSlots = async () => {
-    if (!selectedHospitalId) return;
-    await loadSlots(selectedHospitalId, selectedDate);
+    await queryClient.invalidateQueries({ queryKey: ['reservation-slots', selectedHospitalId, selectedDate] });
   };
 
   const handleSelectSlot = (slot: ReservationSlot) => {
