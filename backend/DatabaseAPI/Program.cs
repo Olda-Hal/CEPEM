@@ -53,6 +53,9 @@ builder.Services.AddScoped<DocumentEncryptionService>();
 builder.Services.AddScoped<PatientDocumentService>();
 builder.Services.AddScoped<ExaminationDocumentService>();
 
+// Periodic cleanup of old activity logs (the table grows without bound)
+builder.Services.AddHostedService<ActivityLogRetentionService>();
+
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
