@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Patient, PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
@@ -12,80 +13,58 @@ const ITEMS_PER_PAGE = 20;
 export const PatientsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
+
   const observer = useRef<IntersectionObserver | null>(null);
   const lastPatientElementRef = useRef<HTMLDivElement | null>(null);
 
-  const loadPatients = useCallback(async (pageNum: number, query: string = '', reset: boolean = false) => {
-    try {
-      if (pageNum === 0) setLoading(true);
-      else setLoadingMore(true);
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
+  const {
+    data,
+    error,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage
+  } = useInfiniteQuery({
+    queryKey: ['patients', debouncedQuery],
+    queryFn: async ({ pageParam = 0 }) => {
       const queryParams = new URLSearchParams({
-        page: pageNum.toString(),
+        page: pageParam.toString(),
         limit: ITEMS_PER_PAGE.toString(),
-        search: query,
+        search: debouncedQuery,
         sortBy: 'lastName',
         sortOrder: 'asc'
       });
+      return apiClient.get<PatientSearchResponse>(`/api/patients/search?${queryParams}`);
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined)
+  });
 
-      const response = await apiClient.get<PatientSearchResponse>(`/api/patients/search?${queryParams}`);
-
-      if (reset || pageNum === 0) {
-        setPatients(response.patients);
-      } else {
-        setPatients(prev => [...prev, ...response.patients]);
-      }
-
-      setTotalCount(response.totalCount);
-      setHasMore(response.hasMore);
-      setError(null);
-    } catch (error) {
-      console.error('Error loading patients:', error);
-      setError(t('errors.loadingPatients'));
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [t]);
+  const patients = data?.pages.flatMap(page => page.patients) ?? [];
+  const totalCount = data?.pages[0]?.totalCount ?? 0;
 
   const lastPatientElementCallback = useCallback((node: HTMLDivElement | null) => {
-    if (loadingMore) return;
+    if (isFetchingNextPage) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loading) {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        loadPatients(nextPage, searchQuery);
+      if (entries[0].isIntersecting && hasNextPage && !isLoading) {
+        fetchNextPage();
       }
     });
-    
+
     if (node) observer.current.observe(node);
     lastPatientElementRef.current = node;
-  }, [loadingMore, hasMore, loading, page, searchQuery, loadPatients]);
-
-  useEffect(() => {
-    loadPatients(0, searchQuery);
-  }, []);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setPage(0);
-      loadPatients(0, searchQuery, true);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, loadPatients]);
+  }, [hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]);
 
   const formatDate = (dateString: string) => {
     const locale = i18n.language === 'cs' ? 'cs-CZ' : 'en-US';
@@ -94,12 +73,9 @@ export const PatientsPage: React.FC = () => {
 
   const handlePatientCreated = (patientId?: number) => {
     if (patientId) {
-      // Navigate to patient detail page
       navigate(`/patients/${patientId}`);
     } else {
-      // Fallback: refresh the patients list
-      setPage(0);
-      loadPatients(0, searchQuery, true);
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
     }
   };
 
@@ -140,11 +116,11 @@ export const PatientsPage: React.FC = () => {
       <div className="patients-content">
         {error && (
           <div className="error-message">
-            {error}
+            {t('errors.loadingPatients')}
           </div>
         )}
 
-        {loading && patients.length === 0 ? (
+        {isLoading && patients.length === 0 ? (
           <div className="patients-grid" data-testid="patients-skeleton" aria-busy="true">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="patient-card skeleton-card">
@@ -233,20 +209,20 @@ export const PatientsPage: React.FC = () => {
               ))}
             </div>
 
-            {loadingMore && (
+            {isFetchingNextPage && (
               <div className="loading-more">
                 <div className="loading-spinner small"></div>
                 <p>{t('patients.loadingMore')}</p>
               </div>
             )}
 
-            {!hasMore && patients.length > 0 && (
+            {!hasNextPage && patients.length > 0 && (
               <div className="end-message">
                 {t('patients.allLoaded')}
               </div>
             )}
 
-            {!loading && patients.length === 0 && (
+            {!isLoading && patients.length === 0 && (
               <div className="no-results">
                 <div className="no-results-icon">👥</div>
                 <h3>{t('patients.noResults')}</h3>
