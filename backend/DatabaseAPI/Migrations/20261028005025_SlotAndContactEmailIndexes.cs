@@ -10,9 +10,10 @@ namespace DatabaseAPI.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_ReservationSlots_HospitalId",
-                table: "ReservationSlots");
+            // Do NOT drop IX_ReservationSlots_HospitalId: on production/dev
+            // databases it is the implicit index backing the FK to Hospitals,
+            // and MySQL refuses to drop it. The new composite index
+            // (HospitalId, StartDateTime) supplements it without conflict.
 
             migrationBuilder.AlterColumn<string>(
                 name: "Email",
@@ -57,11 +58,6 @@ namespace DatabaseAPI.Migrations
                 oldMaxLength: 320)
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ReservationSlots_HospitalId",
-                table: "ReservationSlots",
-                column: "HospitalId");
         }
     }
 }
