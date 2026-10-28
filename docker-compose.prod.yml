@@ -68,6 +68,7 @@ services:
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
       - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents
