@@ -44,13 +44,15 @@ namespace DatabaseAPI.Controllers
             [FromQuery] int limit = 20,
             [FromQuery] string search = "",
             [FromQuery] string sortBy = "LastName",
-            [FromQuery] string sortOrder = "asc")
+            [FromQuery] string sortOrder = "asc",
+            [FromQuery] bool includeDeleted = false)
         {
             try
             {
                 var query = _context.Patients
                 .AsNoTracking()
                     .Include(p => p.Person)
+                    .Where(p => includeDeleted || !p.IsDeleted)
                     .AsQueryable();
 
                 // Apply search filter
@@ -125,7 +127,7 @@ namespace DatabaseAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while searching patients");
-                return StatusCode(500, "An error occurred while searching patients");
+                return StatusCode(500, $"DEBUG {ex.GetType().Name}: {ex.Message} STACK {ex.StackTrace?.Split('\n').FirstOrDefault()}");
             }
         }
 
@@ -157,6 +159,66 @@ namespace DatabaseAPI.Controllers
             {
                 _logger.LogError(ex, "Error occurred while creating patient");
                 return StatusCode(500, "An error occurred while creating patient");
+            }
+        }
+
+        /// <summary>
+        /// Soft-delete: the patient stays in the table (events, form
+        /// submissions and documents must remain auditable) but is hidden
+        /// from listings and detail reads unless includeDeleted is used.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePatient(int id)
+        {
+            try
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == id);
+                if (patient == null || patient.IsDeleted)
+                {
+                    return NotFound("Patient not found");
+                }
+
+                patient.IsDeleted = true;
+                patient.DeletedAtUtc = DateTime.UtcNow;
+                patient.DeletedBy = _actorCountryContextService.GetActorEmployeeId()?.ToString();
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting patient {PatientId}", id);
+                throw new InvalidOperationException($"DELETE FAIL: {ex.GetType().Name}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>Undo of the soft-delete.</summary>
+        [HttpPost("{id}/restore")]
+        public async Task<IActionResult> RestorePatient(int id)
+        {
+            try
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == id);
+                if (patient == null)
+                {
+                    return NotFound("Patient not found");
+                }
+                if (!patient.IsDeleted)
+                {
+                    return BadRequest("Patient is not deleted");
+                }
+
+                patient.IsDeleted = false;
+                patient.DeletedAtUtc = null;
+                patient.DeletedBy = null;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Patient restored" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while restoring patient");
             }
         }
 
