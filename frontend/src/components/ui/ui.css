@@ -35,11 +35,11 @@
 .btn.btn-secondary {
   background: var(--color-surface, #fff);
   color: var(--color-text, #222);
-  border-color: var(--color-border, rgba(0, 0, 0, 0.18));
+  border-color: var(--color-border, rgb(0 0 0 / 18%));
 }
 
 .btn.btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-hover, rgba(0, 0, 0, 0.04));
+  background: var(--color-surface-hover, rgb(0 0 0 / 4%));
 }
 
 .btn.btn-danger {
@@ -54,10 +54,10 @@
 
 .card {
   background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--color-border, rgb(0 0 0 / 10%));
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 6%);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -66,7 +66,7 @@
 .data-table-wrapper {
   overflow-x: auto;
   border-radius: 10px;
-  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--color-border, rgb(0 0 0 / 10%));
   background: var(--color-surface, #fff);
 }
 
@@ -79,7 +79,7 @@
 .data-table thead th {
   text-align: left;
   padding: 12px 16px;
-  background: var(--color-surface-alt, rgba(0, 0, 0, 0.03));
+  background: var(--color-surface-alt, rgb(0 0 0 / 3%));
   color: var(--color-text-secondary, #555);
   font-size: 12px;
   font-weight: 600;
@@ -90,13 +90,13 @@
 
 .data-table tbody td {
   padding: 12px 16px;
-  border-top: 1px solid var(--color-border, rgba(0, 0, 0, 0.06));
+  border-top: 1px solid var(--color-border, rgb(0 0 0 / 6%));
   color: var(--color-text, #222);
   vertical-align: middle;
 }
 
 .data-table tbody tr.striped:nth-child(even) td {
-  background: var(--color-surface-alt, rgba(0, 0, 0, 0.02));
+  background: var(--color-surface-alt, rgb(0 0 0 / 2%));
 }
 
 .data-table tbody tr.clickable-row {
@@ -104,7 +104,7 @@
 }
 
 .data-table tbody tr.clickable-row:hover td {
-  background: var(--color-primary-tint, rgba(59, 130, 246, 0.08));
+  background: var(--color-primary-tint, rgb(59 130 246 / 8%));
 }
 
 .data-table td.align-center,
@@ -128,6 +128,7 @@
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.45;
   }
@@ -136,7 +137,7 @@
 .skeleton-row .skeleton-line {
   height: 14px;
   border-radius: 6px;
-  background: var(--color-surface-muted, rgba(128, 128, 128, 0.25));
+  background: var(--color-surface-muted, rgb(128 128 128 / 25%));
   animation: ui-skeleton-pulse 1.4s ease-in-out infinite;
 }
 
@@ -175,7 +176,7 @@
 }
 
 .status-badge.status-unavailable {
-  background: rgba(128, 128, 128, 0.18);
+  background: rgb(128 128 128 / 18%);
   color: #555;
 }
 
@@ -208,7 +209,7 @@
 .form-field textarea {
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--color-border, rgb(0 0 0 / 20%));
   background: var(--color-background, #fff);
   color: var(--color-text, #222);
   font-size: 14px;
@@ -222,7 +223,7 @@
   border-color: transparent;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .form-grid {
     grid-template-columns: 1fr;
   }
