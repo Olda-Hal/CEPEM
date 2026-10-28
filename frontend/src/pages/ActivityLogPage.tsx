@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
 import { BaseModal } from '../components/BaseModal';
+import { DataTable } from '../components/ui/DataTable';
 import { apiClient, getAuthToken } from '../utils/api';
 import { useToast } from '../contexts/ToastContext';
 import './ActivityLogPage.css';
@@ -182,49 +183,20 @@ const ActivityLogPage: React.FC = () => {
           {loading ? t('common.loading') : t('activityLog.totalEntries', { count: totalCount })}
         </div>
 
-        {!loading && logs.length === 0 ? (
-          <div className="no-data">{t('activityLog.noEntries')}</div>
-        ) : (
-          <table className="activity-log-table">
-            <thead>
-              <tr>
-                <th>{t('activityLog.time')}</th>
-                <th>{t('activityLog.user')}</th>
-                <th>{t('activityLog.method')}</th>
-                <th>{t('activityLog.action')}</th>
-                <th>{t('activityLog.status')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr
-                  key={log.id}
-                  className={`log-row-clickable${log.statusCode && log.statusCode >= 400 ? ' log-row-error' : ''}`}
-                  onClick={() => setSelectedLog(log)}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSelectedLog(log);
-                    }
-                  }}
-                >
-                  <td className="log-time">{formatTime(log.timestamp)}</td>
-                  <td className="log-user">{log.employeeEmail ?? '—'}</td>
-                  <td className="log-method">{log.method ?? '—'}</td>
-                  <td className="log-action" title={log.details ?? undefined}>
-                    {log.action}
-                  </td>
-                  <td
-                    className={`log-status ${log.statusCode && log.statusCode >= 400 ? 'status-error' : 'status-ok'}`}
-                  >
-                    {log.statusCode ?? '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <DataTable
+          columns={[
+            { key: 'time', header: t('activityLog.time'), render: (log) => formatTime(log.timestamp), width: '18%' },
+            { key: 'user', header: t('activityLog.user'), render: (log) => log.employeeEmail ?? '—' },
+            { key: 'method', header: t('activityLog.method'), render: (log) => log.method ?? '—', width: '8%' },
+            { key: 'action', header: t('activityLog.action'), render: (log) => log.action },
+            { key: 'status', header: t('activityLog.status'), render: (log) => log.statusCode ?? '—', align: 'center', width: '8%' }
+          ]}
+          data={logs}
+          rowKey={(log) => log.id}
+          onRowClick={(log) => setSelectedLog(log)}
+          loading={loading}
+          emptyMessage={t('activityLog.noEntries')}
+        />
 
         <div className="activity-log-pagination">
           <button
