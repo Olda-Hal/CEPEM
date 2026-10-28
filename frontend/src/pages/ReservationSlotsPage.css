@@ -366,3 +366,22 @@
     padding: 12px 10px;
   }
 }
+/* Skeleton placeholder rows while slots load */
+@keyframes slots-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.skeleton-row .skeleton-line {
+  height: 16px;
+  border-radius: 6px;
+  margin: 6px 4px;
+  background: var(--color-surface-muted, rgba(128, 128, 128, 0.25));
+  animation: slots-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-row .skeleton-line {
+    animation: none;
+  }
+}

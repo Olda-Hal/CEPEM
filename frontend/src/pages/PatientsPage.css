@@ -410,3 +410,36 @@
     text-align: left;
   }
 }
+
+/* Skeleton loading placeholders (rendered while the first page loads) */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  margin: 6px 12px;
+  background: var(--color-surface-muted, rgba(128, 128, 128, 0.25));
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 20px;
+  margin: 16px 12px 10px;
+}
+
+.skeleton-short {
+  width: 55%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
+  }
+}

@@ -145,9 +145,15 @@ export const PatientsPage: React.FC = () => {
         )}
 
         {loading && patients.length === 0 ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>{t('patients.loading')}</p>
+          <div className="patients-grid" data-testid="patients-skeleton" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="patient-card skeleton-card">
+                <div className="skeleton-line skeleton-title" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line skeleton-short" />
+              </div>
+            ))}
           </div>
         ) : (
           <>

@@ -361,7 +361,15 @@ export const ReservationSlotsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedSlots.length === 0 ? (
+                {loadingSlots && sortedSlots.length === 0 ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={`skel-${index}`} className="skeleton-row" data-testid="slots-skeleton-row">
+                      <td colSpan={canReviewSlots ? 7 : 6}>
+                        <div className="skeleton-line" />
+                      </td>
+                    </tr>
+                  ))
+                ) : sortedSlots.length === 0 ? (
                   <tr>
                     <td colSpan={canReviewSlots ? 7 : 6} className="empty-row">
                       {t('reservationSlots.table.noSlots')}
