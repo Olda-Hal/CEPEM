@@ -30,6 +30,7 @@ namespace DatabaseAPI.Services
                 await SeedRolesAsync();
                 await SeedAdminUserAsync();
                 await SeedPermissionsAsync();
+                await BackfillEmployeeRolesAsync();
                 await SeedIntakeFormEventTypeAsync();
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Database seeded successfully.");
@@ -238,6 +239,44 @@ namespace DatabaseAPI.Services
             ("tests.read", "View the test results dashboard"),
             ("audit.read", "View the activity audit log")
         };
+
+        /// <summary>
+        /// Assigns the baseline "Examiner" role to any employee whose person
+        /// has no role at all. Employees created before the role model (or
+        /// through creation paths that forgot UserRole rows) ended up unable
+        /// to call any permission-gated endpoint — most visibly /api/employees/me
+        /// right after login (403).
+        /// </summary>
+        private async Task BackfillEmployeeRolesAsync()
+        {
+            var baselineRole = await GetRoleByNameAsync("Examiner");
+            if (baselineRole == null)
+            {
+                return;
+            }
+
+            var orphanedEmployees = await _context.Employees
+                .Include(e => e.Person)
+                .Where(e => !e.Person.UserRoles.Any())
+                .ToListAsync();
+
+            foreach (var employee in orphanedEmployees)
+            {
+                _context.UserRoles.Add(new UserRole
+                {
+                    UserId = employee.PersonId,
+                    RoleId = baselineRole.Id
+                });
+                _logger.LogWarning(
+                    "Employee {EmployeeId} ({FirstName} {LastName}) had no role - assigned baseline role Examiner.",
+                    employee.Id, employee.Person.FirstName, employee.Person.LastName);
+            }
+
+            if (orphanedEmployees.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+        }
 
         private async Task SeedPermissionsAsync()
         {

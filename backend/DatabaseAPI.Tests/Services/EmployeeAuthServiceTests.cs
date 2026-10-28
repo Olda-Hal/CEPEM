@@ -310,6 +310,60 @@ public class EmployeeAuthServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateEmployee_WithoutRoles_AssignsBaselineExaminerRole()
+    {
+        var examinerRole = new Role { NameTranslation = new Translation { EN = "Examiner" } };
+        _context.Roles.Add(examinerRole);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.CreateEmployeeAsync(new CreateEmployeeRequest
+        {
+            FirstName = "Nina",
+            LastName = "Modra",
+            Email = "nina@example.com",
+            PhoneNumber = "777",
+            UID = "00000050",
+            Gender = "F",
+            Password = "Password1"
+        });
+
+        Assert.NotNull(result);
+        var personWithRolesCount = await _context.UserRoles
+            .Where(ur => ur.UserId == result!.PersonId)
+            .ToListAsync();
+        Assert.Single(personWithRolesCount);
+        Assert.Equal(examinerRole.Id, personWithRolesCount[0].RoleId);
+    }
+
+    [Fact]
+    public async Task CreateEmployee_WithExplicitRoles_AssignsThoseRoles()
+    {
+        var doctorRole = new Role { NameTranslation = new Translation { EN = "Doctor" } };
+        var examinerRole = new Role { NameTranslation = new Translation { EN = "Examiner" } };
+        _context.Roles.AddRange(doctorRole, examinerRole);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.CreateEmployeeAsync(new CreateEmployeeRequest
+        {
+            FirstName = "Nina",
+            LastName = "Modra",
+            Email = "nina@example.com",
+            PhoneNumber = "777",
+            UID = "00000051",
+            Gender = "F",
+            Password = "Password1",
+            RoleIds = new List<int> { doctorRole.Id }
+        });
+
+        Assert.NotNull(result);
+        var assignedRoleId = await _context.UserRoles
+            .Where(ur => ur.UserId == result!.PersonId)
+            .Select(ur => ur.RoleId)
+            .SingleAsync();
+        Assert.Equal(doctorRole.Id, assignedRoleId);
+    }
+
+    [Fact]
     public async Task CreateEmployee_WithDuplicateEmail_ReturnsNull()
     {
         SeedEmployee("jan@example.com", uid: "00000001");

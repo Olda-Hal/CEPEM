@@ -327,6 +327,22 @@ namespace DatabaseAPI.Services
                 _context.Employees.Add(employee);
                 await _context.SaveChangesAsync();
 
+                // Role assignment: explicit RoleIds win; otherwise default to the
+                // baseline "Examiner" role so the account isn't default-denied
+                // on every permission-gated endpoint (/me included).
+                var roleIds = request.RoleIds.Count > 0
+                    ? request.RoleIds
+                    : await DefaultBaselineRoleIdsAsync();
+
+                foreach (var roleId in roleIds.Distinct())
+                {
+                    if (await _context.Roles.AnyAsync(r => r.Id == roleId))
+                    {
+                        _context.UserRoles.Add(new UserRole { UserId = person.Id, RoleId = roleId });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return new CreateEmployeeResponse
@@ -348,6 +364,21 @@ namespace DatabaseAPI.Services
         public async Task<string> GetNextAvailableUidAsync()
         {
             return await _uidService.GetNextAvailableUidAsync();
+        }
+
+        /// <summary>
+        /// Baseline role for employees created with no explicit role list.
+        /// Resolved fresh per call (roles are seeded early in startup; an
+        /// employee may be created after migrations run but before the seed
+        /// cache would be warm).
+        /// </summary>
+        private async Task<List<int>> DefaultBaselineRoleIdsAsync()
+        {
+            var baseline = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == "Examiner");
+
+            return baseline != null ? new List<int> { baseline.Id } : new List<int>();
         }
     }
 }

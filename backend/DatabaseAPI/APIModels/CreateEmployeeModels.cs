@@ -12,6 +12,13 @@ namespace DatabaseAPI.APIModels
         public string? TitleBefore { get; set; }
         public string? TitleAfter { get; set; }
         public bool Active { get; set; } = true;
+
+        /// <summary>
+        /// Roles granted to the new account. When empty, the service assigns
+        /// the baseline "Examiner" role so the account isn't permanently
+        /// default-denied on every permission-gated endpoint (/me included).
+        /// </summary>
+        public List<int> RoleIds { get; set; } = new List<int>();
     }
 
     public class CreateEmployeeResponse
