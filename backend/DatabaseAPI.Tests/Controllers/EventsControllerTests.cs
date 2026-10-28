@@ -43,6 +43,8 @@ public class EventsControllerTests : IDisposable
             actorCountryMock.Object,
             uidMock.Object,
             new EventService(_context),
+            new EventOptionsService(_context),
+            new IntakeFormLinkService(_context),
             NullLogger<EventsController>.Instance);
     }
 

@@ -3,7 +3,28 @@ using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 using DatabaseAPI.Repositories;
 
+using Serilog;
+using Serilog.Formatting.Json;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Structured JSON logs in production, readable rendered text in Development.
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Service", "DatabaseAPI");
+    if (context.HostingEnvironment.IsDevelopment())
+    {
+        configuration.WriteTo.Console();
+    }
+    else
+    {
+        configuration.WriteTo.Console(new JsonFormatter());
+    }
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -89,6 +110,10 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty;
     });
 }
+
+// Correlation ID first: the auth handler and request logging both see it.
+app.UseMiddleware<DatabaseAPI.Middleware.CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<DatabaseAPI.Middleware.GlobalExceptionMiddleware>();
 app.UseMiddleware<DatabaseAPI.Middleware.ServiceAuthMiddleware>();

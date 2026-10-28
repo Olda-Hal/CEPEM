@@ -26,6 +26,15 @@ namespace HealthcareAPI.Handlers
                 request.Headers.Add("X-Service-Key", _serviceKey);
             }
 
+            // Forward the request's correlation ID so DatabaseAPI logs join
+            // to the same trace.
+            var correlationId = _httpContextAccessor.HttpContext?.Request.Headers[Middleware.CorrelationIdMiddleware.HeaderName].FirstOrDefault();
+            if (!string.IsNullOrEmpty(correlationId))
+            {
+                request.Headers.Remove(Middleware.CorrelationIdMiddleware.HeaderName);
+                request.Headers.Add(Middleware.CorrelationIdMiddleware.HeaderName, correlationId);
+            }
+
             var httpContext = _httpContextAccessor.HttpContext;
 
             if (httpContext?.Request?.Headers != null)

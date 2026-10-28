@@ -9,7 +9,28 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Yarp.ReverseProxy;
 
+using Serilog;
+using Serilog.Formatting.Json;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Structured JSON logs in production, readable rendered text in Development.
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Service", "HealthcareAPI");
+    if (context.HostingEnvironment.IsDevelopment())
+    {
+        configuration.WriteTo.Console();
+    }
+    else
+    {
+        configuration.WriteTo.Console(new JsonFormatter());
+    }
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -142,6 +163,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Correlation ID before request logging so every entry carries it;
+// downstream DatabaseAPI calls propagate the same header.
+app.UseMiddleware<HealthcareAPI.Middleware.CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+    };
+});
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<ActivityLoggingMiddleware>();
