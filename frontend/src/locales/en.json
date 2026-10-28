@@ -865,5 +865,10 @@
     "exportCsv": "Export CSV",
     "details": "Entry details",
     "exportFailed": "Export failed"
+  },
+  "health": {
+    "title": "Service health",
+    "healthy": "Healthy",
+    "unreachable": "Unreachable"
   }
 }

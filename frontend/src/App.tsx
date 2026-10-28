@@ -15,6 +15,7 @@ const AdminEmployeesPage = React.lazy(() => import('./pages/AdminEmployeesPage')
 const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'));
 const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage'));
 const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
+const HealthDashboardPage = React.lazy(() => import('./pages/HealthDashboardPage'));
 const PatientsPage = React.lazy(() => import('./pages/PatientsPage').then(m => { return { default: m.PatientsPage }; }));
 const PatientDetailPage = React.lazy(() => import('./pages/PatientDetailPage').then(m => { return { default: m.PatientDetailPage }; }));
 const AddPatientFormPage = React.lazy(() => import('./pages/AddPatientFormPage').then(m => { return { default: m.AddPatientFormPage }; }));
@@ -83,13 +84,21 @@ function App() {
                 </RoleRoute>
               } 
             />
-            <Route 
-              path="/admin/roles" 
+            <Route
+              path="/admin/roles"
               element={
                 <RoleRoute roles={[]}>
                   <RoleManagementPage />
                 </RoleRoute>
-              } 
+              }
+            />
+            <Route
+              path="/admin/health"
+              element={
+                <RoleRoute roles={[]}>
+                  <HealthDashboardPage />
+                </RoleRoute>
+              }
             />
             <Route 
               path="/admin/centers" 

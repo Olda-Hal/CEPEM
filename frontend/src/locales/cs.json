@@ -876,5 +876,10 @@
     "exportCsv": "Export CSV",
     "details": "Detail záznamu",
     "exportFailed": "Export se nezdařil"
+  },
+  "health": {
+    "title": "Stav služeb",
+    "healthy": "Zdravé",
+    "unreachable": "Nedostupné"
   }
 }
