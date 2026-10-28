@@ -8,6 +8,7 @@ import { RoleRoute } from './components/RoleRoute';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
+import './components/ui/ui.css';
 const LoginPage = React.lazy(() =>
   import('./pages/LoginPage').then((m) => {
     return { default: m.LoginPage };
