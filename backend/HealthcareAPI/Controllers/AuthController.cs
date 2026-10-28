@@ -80,6 +80,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [RequirePermission("employees.create")]
+        [EnableRateLimiting("api-write")]
         [HttpPost("create-employee")]
         [Authorize]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
