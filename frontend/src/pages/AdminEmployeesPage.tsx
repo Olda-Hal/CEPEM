@@ -8,11 +8,13 @@ import {
   UpdateEmployeeRequest,
   UpdateEmployeeResponse,
 } from '../types';
-import { apiClient } from '../utils/api';
+import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
 import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { hasRole } from '../utils/roles';
+
+const EMPLOYEES_PER_PAGE = 25;
 
 const AdminEmployeesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -24,6 +26,27 @@ const AdminEmployeesPage: React.FC = () => {
   const [selectedRulesEmployee, setSelectedRulesEmployee] = useState<EmployeeListItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+
+  const handleExport = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch('/api/admin/employees/export', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'employees.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (exportError) {
+      console.error(exportError);
+      setError(t('admin.dataLoadFailed'));
+    }
+  }, [t]);
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['admin', 'employees-and-roles'],
@@ -35,9 +58,6 @@ const AdminEmployeesPage: React.FC = () => {
       return { employees, roles };
     }
   });
-
-  const employees = data?.employees ?? [];
-  const roles = data?.roles ?? [];
 
   const loadData = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['admin', 'employees-and-roles'] });
@@ -127,9 +147,19 @@ const AdminEmployeesPage: React.FC = () => {
     );
   }
 
+  const employees = data?.employees ?? [];
+  const roles = data?.roles ?? [];
+
+  const totalPages = Math.max(1, Math.ceil(employees.length / EMPLOYEES_PER_PAGE));
+  const pagedEmployees = employees.slice(page * EMPLOYEES_PER_PAGE, (page + 1) * EMPLOYEES_PER_PAGE);
+
   return (
     <div className="admin-employees-page">
-      <AppHeader sectionTitle={t('admin.employeeManagement')} />
+      <AppHeader sectionTitle={t('admin.employeeManagement')}>
+        <button className="btn btn-secondary" onClick={handleExport}>
+          {t('activityLog.exportCsv')}
+        </button>
+      </AppHeader>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
@@ -149,7 +179,7 @@ const AdminEmployeesPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {employees.map((employee) => (
+            {pagedEmployees.map((employee) => (
               <tr key={employee.employeeId} className={!employee.active ? 'inactive' : ''}>
                 <td>
                   <div className="employee-name">
@@ -210,6 +240,25 @@ const AdminEmployeesPage: React.FC = () => {
             ))}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="employees-pagination">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              {t('common.previous')}
+            </button>
+            <span className="pagination-info">{page + 1} / {totalPages}</span>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+            >
+              {t('common.next')}
+            </button>
+          </div>
+        )}
       </div>
 
       {showEditModal && selectedEmployee && (

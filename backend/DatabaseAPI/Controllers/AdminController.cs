@@ -22,6 +22,40 @@ namespace DatabaseAPI.Controllers
             return Ok(employees);
         }
 
+        /// <summary>All employees as CSV (semicolon-separated, BOM for Excel).</summary>
+        [HttpGet("employees/export")]
+        public async Task<IActionResult> ExportEmployeesCsv()
+        {
+            var employees = await _employeeManagementService.GetAllEmployeesAsync();
+
+            var builder = new System.Text.StringBuilder();
+            builder.AppendLine("UID;FullName;Email;Phone;Roles;Active;LastLogin");
+            foreach (var employee in employees)
+            {
+                builder.AppendLine(string.Join(';',
+                    CsvEscape(employee.UID),
+                    CsvEscape(employee.FullName),
+                    CsvEscape(employee.Email),
+                    CsvEscape(employee.PhoneNumber),
+                    CsvEscape(string.Join('|', employee.Roles)),
+                    employee.Active ? "1" : "0",
+                    employee.LastLoginAt?.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty));
+            }
+
+            var bytes = new byte[] { 0xEF, 0xBB, 0xBF }
+                .Concat(System.Text.Encoding.UTF8.GetBytes(builder.ToString()))
+                .ToArray();
+
+            return File(bytes, "text/csv", $"employees-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
+        }
+
+        private static string CsvEscape(string value)
+        {
+            return value.Contains(';') || value.Contains('"') || value.Contains('\n')
+                ? $"\"{value.Replace("\"", "\"\"")}\""
+                : value;
+        }
+
         [HttpGet("employees/{employeeId}")]
         public async Task<ActionResult<EmployeeListItem>> GetEmployee(int employeeId)
         {
