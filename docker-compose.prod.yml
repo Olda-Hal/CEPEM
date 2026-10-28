@@ -87,9 +87,49 @@ services:
     networks:
       - cepem_network
 
+  # Observability: /metrics on both APIs, scraped by Prometheus, rendered
+  # by Grafana. Both read credentials purely from env — no secrets in the
+  # repo. Access Grafana at http://127.0.0.1:${GRAFANA_PORT}.
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: cepem_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - cepem_network
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: cepem_grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:?}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - cepem_network
+
 volumes:
   mysql_data:
     name: cepem_mysql_data
+  prometheus_data:
+    name: cepem_prometheus_data
+  grafana_data:
+    name: cepem_grafana_data
 
 networks:
   cepem_network:

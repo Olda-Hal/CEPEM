@@ -1,3 +1,4 @@
+using Prometheus;
 using HealthcareAPI.Authorization;
 using HealthcareAPI.Middleware;
 using HealthcareAPI.Proxy;
@@ -207,6 +208,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapReverseProxy();
+app.UseMetricServer(); // /metrics for Prometheus
+app.UseHttpMetrics();
 
 app.Run();
 

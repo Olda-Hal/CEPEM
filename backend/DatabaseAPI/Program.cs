@@ -1,3 +1,4 @@
+using Prometheus;
 using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
 using DatabaseAPI.Services;
@@ -119,6 +120,8 @@ app.UseMiddleware<DatabaseAPI.Middleware.GlobalExceptionMiddleware>();
 app.UseMiddleware<DatabaseAPI.Middleware.ServiceAuthMiddleware>();
 app.UseCors("AllowHealthcareAPI");
 app.MapControllers();
+app.UseMetricServer(); // /metrics for Prometheus
+app.UseHttpMetrics();
 
 // Apply database migrations and seed data
 using (var scope = app.Services.CreateScope())
