@@ -6,6 +6,7 @@ import { PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
 import { AppHeader } from '../components/AppHeader';
+import { BaseModal } from '../components/BaseModal';
 import './PatientsPage.css';
 
 const ITEMS_PER_PAGE = 20;
@@ -17,6 +18,9 @@ export const PatientsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastPatientElementRef = useRef<HTMLDivElement | null>(null);
@@ -28,20 +32,43 @@ export const PatientsPage: React.FC = () => {
 
   const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteQuery({
-      queryKey: ['patients', debouncedQuery],
+      queryKey: ['patients', debouncedQuery, showDeleted],
       queryFn: async ({ pageParam = 0 }) => {
         const queryParams = new URLSearchParams({
           page: pageParam.toString(),
           limit: ITEMS_PER_PAGE.toString(),
           search: debouncedQuery,
           sortBy: 'lastName',
-          sortOrder: 'asc'
+          sortOrder: 'asc',
+          includeDeleted: showDeleted ? 'true' : 'false'
         });
         return apiClient.get<PatientSearchResponse>(`/api/patients/search?${queryParams}`);
       },
       initialPageParam: 0,
       getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined)
     });
+
+  const handleDelete = async () => {
+    if (confirmDeleteId == null) return;
+    try {
+      await apiClient.delete(`/api/patients/${confirmDeleteId}`);
+      setConfirmDeleteId(null);
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    } catch (deleteError) {
+      console.error('Failed to delete patient', deleteError);
+      setActionError(t('patients.deleteFailed'));
+    }
+  };
+
+  const handleRestore = async (patientId: number) => {
+    try {
+      await apiClient.post(`/api/patients/${patientId}/restore`, {});
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    } catch (restoreError) {
+      console.error('Failed to restore patient', restoreError);
+      setActionError(t('patients.restoreFailed'));
+    }
+  };
 
   const patients = data?.pages.flatMap((page) => page.patients) ?? [];
   const totalCount = data?.pages[0]?.totalCount ?? 0;
@@ -103,10 +130,19 @@ export const PatientsPage: React.FC = () => {
           />
           <div className="search-icon">🔍</div>
         </div>
+        <label className="show-deleted-toggle">
+          <input
+            type="checkbox"
+            checked={showDeleted}
+            onChange={(e) => setShowDeleted(e.target.checked)}
+          />
+          {t('patients.showDeleted')}
+        </label>
       </div>
 
       <div className="patients-content">
         {error && <div className="error-message">{t('errors.loadingPatients')}</div>}
+        {actionError && <div className="error-message">{actionError}</div>}
 
         {isLoading && patients.length === 0 ? (
           <div className="patients-grid" data-testid="patients-skeleton" aria-busy="true">
@@ -190,6 +226,21 @@ export const PatientsPage: React.FC = () => {
                     >
                       {t('patients.editPatient')}
                     </button>
+                    {(patient as any).isDeleted ? (
+                      <button
+                        className="action-button secondary restore"
+                        onClick={() => handleRestore(patient.id)}
+                      >
+                        {t('patients.restore')}
+                      </button>
+                    ) : (
+                      <button
+                        className="action-button danger"
+                        onClick={() => setConfirmDeleteId(patient.id)}
+                      >
+                        {t('patients.delete')}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -222,6 +273,20 @@ export const PatientsPage: React.FC = () => {
         onClose={() => setShowCreateModal(false)}
         onPatientCreated={handlePatientCreated}
       />
+
+      {confirmDeleteId != null && (
+        <BaseModal title={t('patients.deleteTitle')} onClose={() => setConfirmDeleteId(null)}>
+          <p>{t('patients.deleteConfirm')}</p>
+          <div className="modal-actions">
+            <button className="btn btn-secondary" onClick={() => setConfirmDeleteId(null)}>
+              {t('common.cancel')}
+            </button>
+            <button className="btn btn-danger" onClick={handleDelete}>
+              {t('patients.deleteAction')}
+            </button>
+          </div>
+        </BaseModal>
+      )}
     </div>
   );
 };

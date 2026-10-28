@@ -543,7 +543,15 @@
     },
     "updateSuccess": "Informace o pacientovi byly úspěšně upraveny",
     "updateFailed": "Nepodařilo se upravit informace o pacientovi",
-    "capturePhoto": "Vyfotit"
+    "capturePhoto": "Vyfotit",
+    "showDeleted": "Zobrazit smazané",
+    "delete": "Skrýt",
+    "restore": "Obnovit",
+    "deleteTitle": "Skrýt pacienta",
+    "deleteConfirm": "Pacient bude skrytý ze seznamů, ale jeho údaje (události, dokumenty, formuláře) zůstanou zachovány v databázi. Chcete pokračovat?",
+    "deleteAction": "Skrýt pacienta",
+    "deleteFailed": "Skrytí pacienta se nezdařilo",
+    "restoreFailed": "Obnovení pacienta se nezdařilo"
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

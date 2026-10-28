@@ -536,7 +536,15 @@
     },
     "updateSuccess": "Patient information was updated successfully",
     "updateFailed": "Failed to update patient information",
-    "capturePhoto": "Capture"
+    "capturePhoto": "Capture",
+    "showDeleted": "Show deleted",
+    "delete": "Hide",
+    "restore": "Restore",
+    "deleteTitle": "Hide patient",
+    "deleteConfirm": "The patient will be hidden from lists, but their data (events, documents, forms) stays in the database. Continue?",
+    "deleteAction": "Hide patient",
+    "deleteFailed": "Failed to hide patient",
+    "restoreFailed": "Failed to restore patient"
   },
   "admin": {
     "employeeManagement": "Employee Management",
