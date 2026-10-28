@@ -24,7 +24,25 @@ public class PatientsControllerTests : IAsyncLifetime
 
         _context = new DatabaseContext(options);
         _logger = new Mock<ILogger<PatientsController>>().Object;
-        _controller = new PatientsController(_context, _logger, null!, null!, new Mock<IActorCountryContextService>().Object, new Mock<IUidService>().Object, new Mock<IPatientService>().Object);
+        var storageDir = Path.Combine(Path.GetTempPath(), $"cepem-photo-{Guid.NewGuid():N}");
+        var configStub = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
+        configStub.Setup(c => c["PhotoStorage:Path"]).Returns(storageDir);
+        configStub.Setup(c => c["PhotoEncryption:Key"]).Returns("patient-photo-test-key-32chars-long!");
+        var photoService = new PatientPhotoService(
+            _context,
+            new PhotoEncryptionService(configStub.Object, new Mock<ILogger<PhotoEncryptionService>>().Object),
+            configStub.Object,
+            new Mock<ILogger<PatientPhotoService>>().Object);
+        _ = photoService;
+        Directory.CreateDirectory(storageDir);
+        _controller = new PatientsController(
+            _context,
+            _logger,
+            photoService,
+            null!,
+            new Mock<IActorCountryContextService>().Object,
+            new Mock<IUidService>().Object,
+            new Mock<IPatientService>().Object);
     }
 
     public async Task InitializeAsync()
@@ -36,6 +54,96 @@ public class PatientsControllerTests : IAsyncLifetime
     {
         await _context.Database.EnsureDeletedAsync();
         await _context.DisposeAsync();
+    }
+
+    private async Task<DatabaseAPI.DatabaseModels.Patient> SeedPatientWithContact()
+    {
+        var person = new DatabaseAPI.DatabaseModels.Person
+        {
+            FirstName = "Eva",
+            LastName = "Novakova",
+            UID = "00000001",
+            Gender = "F",
+            CountryCode = "CZ",
+            Active = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        var patient = new DatabaseAPI.DatabaseModels.Patient
+        {
+            Person = person,
+            BirthDate = new DateTime(1985, 4, 12, 0, 0, 0, DateTimeKind.Utc),
+            InsuranceNumber = 123,
+            Alive = true,
+            CountryCode = "CZ"
+        };
+        _context.Patients.Add(patient);
+        _context.SaveChanges();
+        return patient;
+    }
+
+    [Fact]
+    public async Task DeletePatient_HidesItFromSearch_AndKeepsRecord()
+    {
+        var patient = await SeedPatientWithContact();
+
+        var deleteResult = await _controller.DeletePatient(patient.Id);
+        if (deleteResult is ObjectResult objResult)
+        {
+            Assert.Fail($"DeletePatient returned {objResult.StatusCode}: {objResult.Value}");
+        }
+        Assert.IsType<NoContentResult>(deleteResult);
+
+        var persisted = await _context.Patients.SingleAsync(p => p.Id == patient.Id);
+        Assert.True(persisted.IsDeleted);
+        Assert.NotNull(persisted.DeletedAtUtc);
+
+        var search = await _controller.SearchPatients(page: 0, limit: 20, search: "Novakova", sortBy: "LastName", sortOrder: "asc");
+        if (search.Result is not OkObjectResult)
+        {
+            var errDump = search.Result as ObjectResult;
+            Assert.Fail($"Search did not return Ok; actual={search.Result?.GetType().Name}; value={errDump?.Value}");
+        }
+        var response = Assert.IsType<PatientSearchResponse>(Assert.IsType<OkObjectResult>(search.Result).Value);
+        Assert.DoesNotContain(response.Patients, p => p.Id == patient.Id);
+
+        var searchWithDeleted = await _controller.SearchPatients(page: 0, limit: 20, search: "Novakova", sortBy: "LastName", sortOrder: "asc", includeDeleted: true);
+        Assert.Contains(Assert.IsType<PatientSearchResponse>(Assert.IsType<OkObjectResult>(searchWithDeleted.Result).Value).Patients, p => p.Id == patient.Id);
+    }
+
+    [Fact]
+    public async Task DeletePatient_Twice_ReturnsNotFound()
+    {
+        var patient = await SeedPatientWithContact();
+        Assert.IsType<NoContentResult>(await _controller.DeletePatient(patient.Id));
+
+        var secondDelete = await _controller.DeletePatient(patient.Id);
+        Assert.IsType<NotFoundObjectResult>(secondDelete);
+    }
+
+    [Fact]
+    public async Task RestorePatient_BringsItBackToListing()
+    {
+        var patient = await SeedPatientWithContact();
+        Assert.IsType<NoContentResult>(await _controller.DeletePatient(patient.Id));
+
+        var restoreResult = await _controller.RestorePatient(patient.Id);
+        Assert.IsType<OkObjectResult>(restoreResult);
+
+        var persisted = await _context.Patients.SingleAsync(p => p.Id == patient.Id);
+        Assert.False(persisted.IsDeleted);
+        Assert.Null(persisted.DeletedAtUtc);
+
+        var search = await _controller.SearchPatients(page: 0, limit: 20, search: "Novakova", sortBy: "LastName", sortOrder: "asc");
+        Assert.Contains(Assert.IsType<PatientSearchResponse>(Assert.IsType<OkObjectResult>(search.Result).Value).Patients, p => p.Id == patient.Id);
+    }
+
+    [Fact]
+    public async Task RestorePatient_WhenNotDeleted_ReturnsBadRequest()
+    {
+        var patient = await SeedPatientWithContact();
+
+        var result = await _controller.RestorePatient(patient.Id);
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 
     [Fact]

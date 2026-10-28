@@ -127,7 +127,7 @@ namespace DatabaseAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while searching patients");
-                return StatusCode(500, $"DEBUG {ex.GetType().Name}: {ex.Message} STACK {ex.StackTrace?.Split('\n').FirstOrDefault()}");
+                return StatusCode(500, "An error occurred while searching patients");
             }
         }
 

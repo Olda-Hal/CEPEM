@@ -26,9 +26,15 @@ public class Patient
     [Required]
     [StringLength(2)]
     public string CountryCode { get; set; } = DefaultCountryCode;
-    
+
     public string? PhotoPath { get; set; }
-    
+
+    // Soft-delete ("hide from the listing") — records stay in the table for
+    // history/legal trail; queries filter them out by default.
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+    public string? DeletedBy { get; set; }
+
     // Navigation properties
     public ICollection<Event> Events { get; set; } = new List<Event>();
     public ICollection<FormSubmission> FormSubmissions { get; set; } = [];

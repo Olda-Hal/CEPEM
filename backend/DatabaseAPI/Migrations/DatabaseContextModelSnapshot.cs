@@ -1146,8 +1146,17 @@ namespace DatabaseAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("longtext");
+
                     b.Property<int>("InsuranceNumber")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("PersonId")
                         .HasColumnType("int");
