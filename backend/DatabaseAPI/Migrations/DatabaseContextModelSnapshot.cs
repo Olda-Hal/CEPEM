@@ -157,11 +157,14 @@ namespace DatabaseAPI.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(320)
+                        .HasColumnType("varchar(320)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ContactId");
+
+                    b.HasIndex("Email");
 
                     b.ToTable("ContactEmails");
                 });
@@ -1459,9 +1462,9 @@ namespace DatabaseAPI.Migrations
 
                     b.HasIndex("ExaminationTypeId");
 
-                    b.HasIndex("HospitalId");
-
                     b.HasIndex("PersonId");
+
+                    b.HasIndex("HospitalId", "StartDateTime");
 
                     b.ToTable("ReservationSlots");
                 });

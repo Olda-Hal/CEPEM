@@ -395,6 +395,10 @@ public class DatabaseContext : DbContext
             .HasMaxLength(2)
             .HasDefaultValue(ReservationSlot.DefaultCountryCode);
 
+        // Slot queries always filter by hospital + time range
+        modelBuilder.Entity<ReservationSlot>()
+            .HasIndex(slot => new { slot.HospitalId, slot.StartDateTime });
+
         // ExaminationRoom relationships
         modelBuilder.Entity<ExaminationRoom>()
             .HasMany(er => er.DoctorExaminationRooms)
@@ -485,6 +489,15 @@ public class DatabaseContext : DbContext
             .WithMany(c => c.Emails)
             .HasForeignKey(ce => ce.ContactId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Login lookups filter by email; varchar (not longtext) is required
+        // for a MySQL index. RFC 3696 caps email addresses at 320 characters.
+        modelBuilder.Entity<ContactEmail>()
+            .Property(ce => ce.Email)
+            .HasMaxLength(320);
+
+        modelBuilder.Entity<ContactEmail>()
+            .HasIndex(ce => ce.Email);
 
         modelBuilder.Entity<ContactToObject>()
             .HasOne(cto => cto.Contact)
