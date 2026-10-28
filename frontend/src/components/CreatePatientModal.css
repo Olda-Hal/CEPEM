@@ -32,7 +32,7 @@
 }
 
 .form-group.required label::after {
-  content: " *";
+  content: ' *';
   color: var(--color-error);
 }
 
@@ -260,16 +260,16 @@
     max-width: 95%;
     margin: 1rem;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .modal-actions {
     flex-direction: column-reverse;
   }
-  
+
   .button {
     width: 100%;
   }

@@ -78,9 +78,7 @@ describe('ActivityLogPage', () => {
     fireEvent.change(screen.getByLabelText(/method/i), { target: { value: 'POST' } });
 
     await waitFor(() => {
-      expect(mockApiClient.get).toHaveBeenCalledWith(
-        expect.stringContaining('method=POST')
-      );
+      expect(mockApiClient.get).toHaveBeenCalledWith(expect.stringContaining('method=POST'));
     });
   });
 
@@ -114,9 +112,7 @@ describe('ActivityLogPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /^search$/i }));
 
     await waitFor(() => {
-      expect(mockApiClient.get).toHaveBeenCalledWith(
-        expect.stringContaining('search=patients')
-      );
+      expect(mockApiClient.get).toHaveBeenCalledWith(expect.stringContaining('search=patients'));
     });
   });
 });

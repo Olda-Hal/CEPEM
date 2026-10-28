@@ -41,7 +41,7 @@ const TestDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    
+
     const interval = setInterval(refreshData, 5000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
@@ -93,10 +93,14 @@ const TestDashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'status-completed';
-      case 'failed': return 'status-failed';
-      case 'running': return 'status-running';
-      default: return 'status-unknown';
+      case 'completed':
+        return 'status-completed';
+      case 'failed':
+        return 'status-failed';
+      case 'running':
+        return 'status-running';
+      default:
+        return 'status-unknown';
     }
   };
 
@@ -137,106 +141,116 @@ const TestDashboard: React.FC = () => {
         </button>
       </AppHeader>
 
-      <div className="test-dashboard-content">{liveStatus && (
-        <div className="live-status-section">
-          <h2>{t('testDashboard.liveStatus')}</h2>
-          <div className="status-info">
-            <p>
-              {t('testDashboard.lastUpdated')}: {new Date(liveStatus.timestamp).toLocaleString()}
-            </p>
-            <p>
-              {t('testDashboard.testResultsPath')}: <span className="status-indicator">{liveStatus.testResultsPath ? '✅' : '❌'}</span>
-            </p>
+      <div className="test-dashboard-content">
+        {liveStatus && (
+          <div className="live-status-section">
+            <h2>{t('testDashboard.liveStatus')}</h2>
+            <div className="status-info">
+              <p>
+                {t('testDashboard.lastUpdated')}: {new Date(liveStatus.timestamp).toLocaleString()}
+              </p>
+              <p>
+                {t('testDashboard.testResultsPath')}:{' '}
+                <span className="status-indicator">{liveStatus.testResultsPath ? '✅' : '❌'}</span>
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {testSummary && (
-        <div className="test-summary-section">
-          <div className="test-summary-header">
-            <h2>{t('testDashboard.testSummary')}</h2>
-            <span className="summary-timestamp">
-              {new Date(testSummary.timestamp).toLocaleString()}
-            </span>
-          </div>
+        {testSummary && (
+          <div className="test-summary-section">
+            <div className="test-summary-header">
+              <h2>{t('testDashboard.testSummary')}</h2>
+              <span className="summary-timestamp">
+                {new Date(testSummary.timestamp).toLocaleString()}
+              </span>
+            </div>
 
-          <div className="services-grid">
-            {Object.entries(testSummary.services).map(([serviceName, service]) => (
-              <div
-                key={serviceName}
-                className={`service-card ${selectedService === serviceName ? 'selected' : ''}`}
-                onClick={() => handleServiceClick(serviceName)}
-              >
-                <div className="service-header">
-                  <h3 className="service-name">{serviceName}</h3>
-                  <div className={`status-dot ${getStatusColor(service.status)}`}></div>
-                </div>
-
-                <div className="service-stats">
-                  <div className="stat-row">
-                    <span className="stat-label">{t('testDashboard.status')}:</span>
-                    <span className="stat-value">{service.status}</span>
+            <div className="services-grid">
+              {Object.entries(testSummary.services).map(([serviceName, service]) => (
+                <div
+                  key={serviceName}
+                  className={`service-card ${selectedService === serviceName ? 'selected' : ''}`}
+                  onClick={() => handleServiceClick(serviceName)}
+                >
+                  <div className="service-header">
+                    <h3 className="service-name">{serviceName}</h3>
+                    <div className={`status-dot ${getStatusColor(service.status)}`}></div>
                   </div>
-                  <div className="stat-row">
-                    <span className="stat-label">{t('testDashboard.files')}:</span>
-                    <span className="stat-value">{service.files}</span>
+
+                  <div className="service-stats">
+                    <div className="stat-row">
+                      <span className="stat-label">{t('testDashboard.status')}:</span>
+                      <span className="stat-value">{service.status}</span>
+                    </div>
+                    <div className="stat-row">
+                      <span className="stat-label">{t('testDashboard.files')}:</span>
+                      <span className="stat-value">{service.files}</span>
+                    </div>
+                    {(service as any).tests && (
+                      <div className="stat-row">
+                        <span className="stat-label">{t('testDashboard.tests')}:</span>
+                        <span className="stat-value">
+                          {(service as any).passed}/{(service as any).tests}
+                        </span>
+                      </div>
+                    )}
+                    {(service as any).failed > 0 && (
+                      <div className="stat-row">
+                        <span className="stat-label">{t('testDashboard.failed')}:</span>
+                        <span className="stat-value fail-count">{(service as any).failed}</span>
+                      </div>
+                    )}
+                    {(service as any).coverage !== undefined && (
+                      <div className="stat-row">
+                        <span className="stat-label">{t('testDashboard.coverage')}:</span>
+                        <span className="stat-value">
+                          {formatPercentage((service as any).coverage)}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {(service as any).tests && (
-                    <div className="stat-row">
-                      <span className="stat-label">{t('testDashboard.tests')}:</span>
-                      <span className="stat-value">{(service as any).passed}/{(service as any).tests}</span>
-                    </div>
-                  )}
-                  {(service as any).failed > 0 && (
-                    <div className="stat-row">
-                      <span className="stat-label">{t('testDashboard.failed')}:</span>
-                      <span className="stat-value fail-count">{(service as any).failed}</span>
-                    </div>
-                  )}
-                  {(service as any).coverage !== undefined && (
-                    <div className="stat-row">
-                      <span className="stat-label">{t('testDashboard.coverage')}:</span>
-                      <span className="stat-value">{formatPercentage((service as any).coverage)}</span>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {selectedService && serviceDetails && (
-        <div className="service-details-section">
-          <div className="details-header">
-            <h2 className="details-title">{selectedService} {t('testDashboard.details')}</h2>
-          </div>
+        {selectedService && serviceDetails && (
+          <div className="service-details-section">
+            <div className="details-header">
+              <h2 className="details-title">
+                {selectedService} {t('testDashboard.details')}
+              </h2>
+            </div>
 
-          <h3 className="files-list-title">{t('testDashboard.testFiles')} ({serviceDetails.count})</h3>
-          <div className="files-list">
-            {serviceDetails.files.map((file) => (
-              <div
-                key={file.name}
-                className="file-item"
-                onClick={() => handleFileClick(file.name)}
-              >
-                <span className="file-name">{file.name}</span>
-                <div className="file-meta">
-                  <span>{(file.size / 1024).toFixed(1)} KB</span>
-                  <span>{new Date(file.modified).toLocaleString()}</span>
+            <h3 className="files-list-title">
+              {t('testDashboard.testFiles')} ({serviceDetails.count})
+            </h3>
+            <div className="files-list">
+              {serviceDetails.files.map((file) => (
+                <div
+                  key={file.name}
+                  className="file-item"
+                  onClick={() => handleFileClick(file.name)}
+                >
+                  <span className="file-name">{file.name}</span>
+                  <div className="file-meta">
+                    <span>{(file.size / 1024).toFixed(1)} KB</span>
+                    <span>{new Date(file.modified).toLocaleString()}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {selectedFile && fileContent && (
-        <div className="file-content-section">
-          <h2 className="file-content-title">{selectedFile}</h2>
-          <pre className="file-content-display">{fileContent}</pre>
-        </div>
-      )}
+        {selectedFile && fileContent && (
+          <div className="file-content-section">
+            <h2 className="file-content-title">{selectedFile}</h2>
+            <pre className="file-content-display">{fileContent}</pre>
+          </div>
+        )}
       </div>
     </div>
   );

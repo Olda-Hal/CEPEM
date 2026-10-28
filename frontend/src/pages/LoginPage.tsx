@@ -10,7 +10,7 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { login, isAuthenticated } = useAuth();
   const { t } = useTranslation();
 
@@ -24,11 +24,11 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     const result = await login(email, password);
-    
+
     if (!result.success) {
       setError(result.error || t('login.invalidCredentials'));
     }
-    
+
     setLoading(false);
   };
 
@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
           <h2>{t('login.subtitle')}</h2>
           <p>{t('login.description')}</p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="email">{t('login.email')}</label>
@@ -57,7 +57,7 @@ export const LoginPage: React.FC = () => {
               placeholder={t('login.emailPlaceholder')}
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">{t('login.password')}</label>
             <input
@@ -70,14 +70,10 @@ export const LoginPage: React.FC = () => {
               placeholder={t('login.passwordPlaceholder')}
             />
           </div>
-          
+
           {error && <div className="error-message">{error}</div>}
-          
-          <button 
-            type="submit" 
-            className="login-button"
-            disabled={loading}
-          >
+
+          <button type="submit" className="login-button" disabled={loading}>
             {loading ? t('login.loggingIn') : t('login.loginButton')}
           </button>
         </form>

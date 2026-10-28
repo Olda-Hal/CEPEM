@@ -64,7 +64,8 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
       await onSlotsChanged();
       toast.success(t('reservationSlots.messages.blockedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.blockFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.blockFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.blockFailed'), error);
     }
@@ -85,7 +86,10 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
       <div className="selected-slot-banner">
         {selectedSlot ? (
           <>
-            <strong>{formatDate(selectedSlot.startDateTime)} · {formatTime(selectedSlot.startDateTime)} - {formatTime(selectedSlot.endDateTime)}</strong>
+            <strong>
+              {formatDate(selectedSlot.startDateTime)} · {formatTime(selectedSlot.startDateTime)} -{' '}
+              {formatTime(selectedSlot.endDateTime)}
+            </strong>
             <span>{selectedSlot.publicNote || t('reservationSlots.noPublicNote')}</span>
           </>
         ) : (
@@ -112,9 +116,12 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
         </label>
         <label className="full-width">
           <span>{t('reservationSlots.request.examinationType')}</span>
-          <select value={examinationTypeId} onChange={(event) => setExaminationTypeId(event.target.value)}>
+          <select
+            value={examinationTypeId}
+            onChange={(event) => setExaminationTypeId(event.target.value)}
+          >
             <option value="">{t('reservationSlots.request.selectExaminationType')}</option>
-            {examinationTypes.map(type => (
+            {examinationTypes.map((type) => (
               <option key={type.id} value={type.id}>
                 {type.name}
               </option>

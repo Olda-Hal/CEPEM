@@ -135,7 +135,7 @@
   background-color: var(--color-background-secondary, #f7fafc);
 }
 
-.dropdown-item input[type="checkbox"] {
+.dropdown-item input[type='checkbox'] {
   cursor: pointer;
   width: 18px;
   height: 18px;

@@ -15,9 +15,7 @@ vi.mock('../../contexts/AuthContext', () => ({
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      <I18nextProvider i18n={i18n}>
-        {component}
-      </I18nextProvider>
+      <I18nextProvider i18n={i18n}>{component}</I18nextProvider>
     </BrowserRouter>
   );
 };
@@ -34,13 +32,13 @@ describe('ProtectedRoute', () => {
     });
 
     const TestComponent = () => <div>Protected Content</div>;
-    
+
     renderWithRouter(
       <ProtectedRoute>
         <TestComponent />
       </ProtectedRoute>
     );
-    
+
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
@@ -60,15 +58,15 @@ describe('ProtectedRoute', () => {
       isAuthenticated: true,
       token: 'test-token'
     });
-    
+
     const TestComponent = () => <div>Protected Content</div>;
-    
+
     renderWithRouter(
       <ProtectedRoute>
         <TestComponent />
       </ProtectedRoute>
     );
-    
+
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
 
@@ -83,13 +81,13 @@ describe('ProtectedRoute', () => {
     });
 
     const TestComponent = () => <div>Protected Content</div>;
-    
+
     renderWithRouter(
       <ProtectedRoute>
         <TestComponent />
       </ProtectedRoute>
     );
-    
+
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 });

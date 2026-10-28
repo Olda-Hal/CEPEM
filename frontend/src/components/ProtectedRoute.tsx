@@ -25,10 +25,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return (
     <>
       {children}
-      <PasswordChangeModal 
-        isOpen={requiresPasswordChange} 
-        isForced={true}
-      />
+      <PasswordChangeModal isOpen={requiresPasswordChange} isForced={true} />
     </>
   );
 };

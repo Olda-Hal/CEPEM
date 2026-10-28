@@ -21,10 +21,10 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
     if (videoRef.current && viewportRef.current) {
       const video = videoRef.current;
       const viewport = viewportRef.current;
-      
+
       const videoRect = video.getBoundingClientRect();
       const minDimension = Math.min(videoRect.width, videoRect.height);
-      
+
       setCropFrameSize({
         width: minDimension,
         height: minDimension
@@ -41,7 +41,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
           facingMode: 'user'
         }
       });
-      
+
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -81,20 +81,16 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
       if (context) {
         const videoWidth = video.videoWidth;
         const videoHeight = video.videoHeight;
-        
+
         const minDimension = Math.min(videoWidth, videoHeight);
         const sx = (videoWidth - minDimension) / 2;
         const sy = (videoHeight - minDimension) / 2;
-        
-        context.drawImage(
-          video,
-          sx, sy, minDimension, minDimension,
-          0, 0, targetSize, targetSize
-        );
-        
+
+        context.drawImage(video, sx, sy, minDimension, minDimension, 0, 0, targetSize, targetSize);
+
         const imageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
         setCapturedImage(imageDataUrl);
-        
+
         if (stream) {
           stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
         }
@@ -110,8 +106,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
   const confirmCapture = () => {
     if (capturedImage) {
       fetch(capturedImage)
-        .then(res => res.blob())
-        .then(blob => {
+        .then((res) => res.blob())
+        .then((blob) => {
           onCapture(blob);
           if (stream) {
             stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
@@ -132,26 +128,19 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
       <div className="camera-capture-content" onClick={(e) => e.stopPropagation()}>
         <div className="camera-header">
           <h3>{t('patients.camera.title')}</h3>
-          <button className="close-button" onClick={handleCancel}>×</button>
+          <button className="close-button" onClick={handleCancel}>
+            ×
+          </button>
         </div>
 
-        {error && (
-          <div className="camera-error">
-            {error}
-          </div>
-        )}
+        {error && <div className="camera-error">{error}</div>}
 
         <div className="camera-viewport" ref={viewportRef}>
           {!capturedImage ? (
             <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="camera-video"
-              />
+              <video ref={videoRef} autoPlay playsInline className="camera-video" />
               {cropFrameSize.width > 0 && (
-                <div 
+                <div
                   className="crop-frame"
                   style={{
                     width: `${cropFrameSize.width}px`,

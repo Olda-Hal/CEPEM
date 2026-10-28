@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Employee, AuthContextType, LoginResponse, ChangePasswordRequest, CreateEmployeeRequest, CreateEmployeeResponse } from '../types';
+import {
+  Employee,
+  AuthContextType,
+  LoginResponse,
+  ChangePasswordRequest,
+  CreateEmployeeRequest,
+  CreateEmployeeResponse
+} from '../types';
 import { apiClient, ApiError, UNAUTHORIZED_EVENT } from '../utils/api';
 import { useTranslation } from 'react-i18next';
 
@@ -60,11 +67,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await apiClient.post<LoginResponse>('/api/auth/login', {
         email,
-        password,
+        password
       });
 
       setToken(response.token);
@@ -89,27 +99,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const changePassword = async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<{ success: boolean; error?: string }> => {
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       await apiClient.post('/api/auth/change-password', {
         currentPassword,
         newPassword,
-        confirmPassword,
+        confirmPassword
       });
-      
+
       // After successful password change, no longer requires password change
       setRequiresPasswordChange(false);
       return { success: true };
     } catch (error) {
       console.error(t('errors.changePasswordError'), error);
-      const errorMessage = error instanceof ApiError ? error.message : t('passwordChange.currentPasswordIncorrect');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('passwordChange.currentPasswordIncorrect');
       return { success: false, error: errorMessage };
     }
   };
 
-  const createEmployee = async (employeeData: CreateEmployeeRequest): Promise<CreateEmployeeResponse | null> => {
+  const createEmployee = async (
+    employeeData: CreateEmployeeRequest
+  ): Promise<CreateEmployeeResponse | null> => {
     try {
-      const response = await apiClient.post<CreateEmployeeResponse>('/api/auth/create-employee', employeeData);
+      const response = await apiClient.post<CreateEmployeeResponse>(
+        '/api/auth/create-employee',
+        employeeData
+      );
       return response;
     } catch (error) {
       console.error(t('errors.createEmployeeError'), error);
@@ -135,12 +155,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     createEmployee,
     isAuthenticated,
     loading,
-    requiresPasswordChange,
+    requiresPasswordChange
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

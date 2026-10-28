@@ -76,7 +76,7 @@ const getDefaultFormData = (firstName = '', lastName = ''): PatientFormData => (
   breastSurgery: false,
   breastSurgeryType: '',
   familyTumors: false,
-  familyTumorType: '',
+  familyTumorType: ''
 });
 
 export const IntakeFormByLinkPage: React.FC = () => {
@@ -98,7 +98,9 @@ export const IntakeFormByLinkPage: React.FC = () => {
       }
 
       try {
-        const info = await apiClient.get<IntakeFormLinkInfo>(`/api/events/intake-form-links/${token}`);
+        const info = await apiClient.get<IntakeFormLinkInfo>(
+          `/api/events/intake-form-links/${token}`
+        );
         setLinkInfo(info);
         setForm(getDefaultFormData(info.firstName, info.lastName));
       } catch (err: any) {
@@ -112,7 +114,7 @@ export const IntakeFormByLinkPage: React.FC = () => {
   }, [token, t]);
 
   const handleChange = (field: keyof PatientFormData, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -181,13 +183,19 @@ export const IntakeFormByLinkPage: React.FC = () => {
         covidVaccine: form.covidVaccine,
         vaccinesAfter2023: form.vaccinesAfter2023,
         lastMenstruationDate: form.lastMenstruationDate || undefined,
-        menstruationCycleDays: form.menstruationCycleDays ? parseInt(form.menstruationCycleDays) : undefined,
-        yearsSinceLastMenstruation: form.yearsSinceLastMenstruation ? parseInt(form.yearsSinceLastMenstruation) : undefined,
+        menstruationCycleDays: form.menstruationCycleDays
+          ? parseInt(form.menstruationCycleDays)
+          : undefined,
+        yearsSinceLastMenstruation: form.yearsSinceLastMenstruation
+          ? parseInt(form.yearsSinceLastMenstruation)
+          : undefined,
         gaveBirth: form.gaveBirth,
         birthCount: form.birthCount ? parseInt(form.birthCount) : undefined,
         birthWhen: form.birthWhen || undefined,
         breastfed: form.breastfed,
-        breastfeedingMonths: form.breastfeedingMonths ? parseInt(form.breastfeedingMonths) : undefined,
+        breastfeedingMonths: form.breastfeedingMonths
+          ? parseInt(form.breastfeedingMonths)
+          : undefined,
         breastfeedingInflammation: form.breastfeedingInflammation,
         endedWithInflammation: form.endedWithInflammation,
         contraception: form.contraception,
@@ -212,7 +220,7 @@ export const IntakeFormByLinkPage: React.FC = () => {
         signaturePlace: form.signaturePlace || undefined,
         signatureDate: form.signatureDate || undefined,
         signatureVector: form.signatureVector,
-        additionalHealthInfo: form.additionalHealthInfo || undefined,
+        additionalHealthInfo: form.additionalHealthInfo || undefined
       };
 
       await apiClient.post(`/api/events/intake-form-links/${token}/submit`, payload);
@@ -225,7 +233,13 @@ export const IntakeFormByLinkPage: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="add-patient-page"><div className="form-container"><h1>{t('common.loading')}</h1></div></div>;
+    return (
+      <div className="add-patient-page">
+        <div className="form-container">
+          <h1>{t('common.loading')}</h1>
+        </div>
+      </div>
+    );
   }
 
   if (success) {
@@ -243,12 +257,23 @@ export const IntakeFormByLinkPage: React.FC = () => {
     <div className="add-patient-page">
       <div className="form-container">
         <h1>{t('intakeLink.pageTitle')}</h1>
-        {linkInfo && <p>{t('intakeLink.pageSubtitle', { name: `${linkInfo.firstName} ${linkInfo.lastName}`.trim() })}</p>}
+        {linkInfo && (
+          <p>
+            {t('intakeLink.pageSubtitle', {
+              name: `${linkInfo.firstName} ${linkInfo.lastName}`.trim()
+            })}
+          </p>
+        )}
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="patient-form">
-          <PatientFormFields form={form} onChange={handleChange} disabled={submitting} showPhoto={false} />
+          <PatientFormFields
+            form={form}
+            onChange={handleChange}
+            disabled={submitting}
+            showPhoto={false}
+          />
 
           <div className="form-actions">
             <button type="submit" disabled={submitting} className="btn-submit">

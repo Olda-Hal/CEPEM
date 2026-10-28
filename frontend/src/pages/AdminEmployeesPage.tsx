@@ -2,12 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './AdminEmployeesPage.css';
-import {
-  EmployeeListItem,
-  Role,
-  UpdateEmployeeRequest,
-  UpdateEmployeeResponse,
-} from '../types';
+import { EmployeeListItem, Role, UpdateEmployeeRequest, UpdateEmployeeResponse } from '../types';
 import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
 import { AppHeader } from '../components/AppHeader';
@@ -39,7 +34,8 @@ const AdminEmployeesPage: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'employees.csv';
+      link.download =
+        response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'employees.csv';
       link.click();
       URL.revokeObjectURL(url);
     } catch (exportError) {
@@ -63,7 +59,8 @@ const AdminEmployeesPage: React.FC = () => {
     await queryClient.invalidateQueries({ queryKey: ['admin', 'employees-and-roles'] });
   }, [queryClient]);
 
-  const isRestrictedCountryAdmin = hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
+  const isRestrictedCountryAdmin =
+    hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
 
   const canManageEmployee = (employee: EmployeeListItem) => {
     if (!isRestrictedCountryAdmin) {
@@ -87,7 +84,10 @@ const AdminEmployeesPage: React.FC = () => {
   };
 
   const getPermissionLabel = (permissionKey: string, fallback?: string) => {
-    const translationKey = `admin.permissionLabels.${permissionKey.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+    const translationKey = `admin.permissionLabels.${permissionKey
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')}`;
     return t(translationKey, { defaultValue: fallback || permissionKey });
   };
 
@@ -124,7 +124,10 @@ const AdminEmployeesPage: React.FC = () => {
     if (!selectedEmployee) return;
 
     try {
-      const response = await apiClient.put<UpdateEmployeeResponse>(`/api/admin/employees/${selectedEmployee.employeeId}`, updatedEmployee);
+      const response = await apiClient.put<UpdateEmployeeResponse>(
+        `/api/admin/employees/${selectedEmployee.employeeId}`,
+        updatedEmployee
+      );
       if (response.success) {
         setSuccess(response.message);
         setShowEditModal(false);
@@ -151,7 +154,10 @@ const AdminEmployeesPage: React.FC = () => {
   const roles = data?.roles ?? [];
 
   const totalPages = Math.max(1, Math.ceil(employees.length / EMPLOYEES_PER_PAGE));
-  const pagedEmployees = employees.slice(page * EMPLOYEES_PER_PAGE, (page + 1) * EMPLOYEES_PER_PAGE);
+  const pagedEmployees = employees.slice(
+    page * EMPLOYEES_PER_PAGE,
+    (page + 1) * EMPLOYEES_PER_PAGE
+  );
 
   return (
     <div className="admin-employees-page">
@@ -193,7 +199,9 @@ const AdminEmployeesPage: React.FC = () => {
                 <td>
                   <div className="roles">
                     {employee.roles.map((role, index) => (
-                      <span key={index} className="role-badge">{translateRoleName(role)}</span>
+                      <span key={index} className="role-badge">
+                        {translateRoleName(role)}
+                      </span>
                     ))}
                   </div>
                 </td>
@@ -203,14 +211,13 @@ const AdminEmployeesPage: React.FC = () => {
                   </span>
                 </td>
                 <td>
-                  {employee.lastLoginAt 
+                  {employee.lastLoginAt
                     ? new Date(employee.lastLoginAt).toLocaleString()
-                    : t('admin.never')
-                  }
+                    : t('admin.never')}
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <button 
+                    <button
                       className="btn btn-primary btn-sm"
                       onClick={() => handleEdit(employee)}
                       disabled={!canManageEmployee(employee)}
@@ -226,7 +233,7 @@ const AdminEmployeesPage: React.FC = () => {
                       </button>
                     )}
                     {employee.active && (
-                      <button 
+                      <button
                         className="btn btn-danger btn-sm"
                         onClick={() => handleDeactivate(employee.employeeId)}
                         disabled={!canManageEmployee(employee)}
@@ -249,7 +256,9 @@ const AdminEmployeesPage: React.FC = () => {
             >
               {t('common.previous')}
             </button>
-            <span className="pagination-info">{page + 1} / {totalPages}</span>
+            <span className="pagination-info">
+              {page + 1} / {totalPages}
+            </span>
             <button
               className="btn btn-secondary"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
@@ -298,7 +307,12 @@ interface EmployeeEditModalProps {
   onCancel: () => void;
 }
 
-const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, onSave, onCancel }) => {
+const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
+  employee,
+  roles,
+  onSave,
+  onCancel
+}) => {
   const { t } = useTranslation();
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
@@ -329,9 +343,9 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
   useEffect(() => {
     // Set initial role IDs based on employee's current roles
     const currentRoleIds = roles
-      .filter(role => employee.roles.includes(role.name))
-      .map(role => role.id);
-    setFormData(prev => ({ ...prev, roleIds: currentRoleIds }));
+      .filter((role) => employee.roles.includes(role.name))
+      .map((role) => role.id);
+    setFormData((prev) => ({ ...prev, roleIds: currentRoleIds }));
   }, [employee.roles, roles]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -340,11 +354,9 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
   };
 
   const handleRoleChange = (roleId: number, checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      roleIds: checked 
-        ? [...prev.roleIds, roleId]
-        : prev.roleIds.filter(id => id !== roleId)
+      roleIds: checked ? [...prev.roleIds, roleId] : prev.roleIds.filter((id) => id !== roleId)
     }));
   };
 
@@ -353,9 +365,11 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
       <div className="modal-content">
         <div className="modal-header">
           <h2>{t('admin.editEmployee')}</h2>
-          <button className="close-button" onClick={onCancel}>&times;</button>
+          <button className="close-button" onClick={onCancel}>
+            &times;
+          </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="employee-form">
           <div className="form-row">
             <div className="form-group">
@@ -363,7 +377,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.titleBefore}
-                onChange={(e) => setFormData(prev => ({ ...prev, titleBefore: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, titleBefore: e.target.value }))}
               />
             </div>
             <div className="form-group">
@@ -371,7 +385,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.firstName}
-                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                 required
               />
             </div>
@@ -380,7 +394,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.lastName}
-                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
                 required
               />
             </div>
@@ -389,7 +403,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.titleAfter}
-                onChange={(e) => setFormData(prev => ({ ...prev, titleAfter: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, titleAfter: e.target.value }))}
               />
             </div>
           </div>
@@ -400,7 +414,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 required
               />
             </div>
@@ -409,7 +423,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="tel"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
                 required
               />
             </div>
@@ -421,7 +435,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.uid}
-                onChange={(e) => setFormData(prev => ({ ...prev, uid: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, uid: e.target.value }))}
                 required
               />
             </div>
@@ -429,7 +443,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <label>{t('admin.gender')} *</label>
               <select
                 value={formData.gender}
-                onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, gender: e.target.value }))}
                 required
               >
                 <option value="Male">{t('admin.male')}</option>
@@ -444,7 +458,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="checkbox"
                 checked={formData.active}
-                onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, active: e.target.checked }))}
               />
               {t('admin.active')}
             </label>

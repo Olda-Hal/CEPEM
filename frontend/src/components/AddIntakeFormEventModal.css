@@ -164,13 +164,13 @@
   background: var(--color-background);
 }
 
-.checkbox-grid input[type="checkbox"] {
+.checkbox-grid input[type='checkbox'] {
   cursor: pointer;
   width: 18px;
   height: 18px;
 }
 
-.checkbox-grid input[type="checkbox"]:disabled {
+.checkbox-grid input[type='checkbox']:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

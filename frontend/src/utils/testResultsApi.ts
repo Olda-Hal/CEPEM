@@ -13,7 +13,9 @@ export const testResultsApi = {
   },
 
   getTestFile: async (serviceName: string, fileName: string): Promise<string> => {
-    const response = await apiClient.get<string>(`/api/testresults/file/${serviceName}/${fileName}`);
+    const response = await apiClient.get<string>(
+      `/api/testresults/file/${serviceName}/${fileName}`
+    );
     return response;
   },
 

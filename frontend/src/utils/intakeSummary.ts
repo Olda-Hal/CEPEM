@@ -55,10 +55,13 @@ export const parseIntakeSummary = (comment?: string | null): IntakeSummary => {
     return summary;
   }
 
-  const lines = comment.split('\n').map(line => line.trim()).filter(Boolean);
+  const lines = comment
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
   summary.rawLines = lines;
 
-  lines.forEach(line => {
+  lines.forEach((line) => {
     if (line.startsWith('Váha:')) {
       summary.weight = line.replace('Váha:', '').trim();
       return;
@@ -84,7 +87,7 @@ export const parseIntakeSummary = (comment?: string | null): IntakeSummary => {
       return;
     }
 
-    if (GYNECOLOGY_PREFIXES.some(prefix => line.startsWith(prefix))) {
+    if (GYNECOLOGY_PREFIXES.some((prefix) => line.startsWith(prefix))) {
       summary.gynecology.push(line);
       return;
     }
@@ -145,7 +148,7 @@ export const formSubmissionToIntakeSummary = (
   summary.notes = formSubmission.lifestyle?.additionalHealthInfo || null;
 
   const covidList: string[] = [];
-  formSubmission.sicknessHistories?.forEach(history => {
+  formSubmission.sicknessHistories?.forEach((history) => {
     if (history.hadSickness) {
       covidList.push(`${history.sicknessName}: ano`);
     }
@@ -158,23 +161,53 @@ export const formSubmissionToIntakeSummary = (
   const reproductive = formSubmission.reproductiveHealth;
   const gynecologyList: string[] = [];
 
-  if (reproductive?.lastMenstruationDate) gynecologyList.push(`Poslední menzes: ${reproductive.lastMenstruationDate}`);
-  if (reproductive?.menstruationCycleDays) gynecologyList.push(`Cyklus opakování: ${reproductive.menstruationCycleDays} dní`);
-  if (reproductive?.yearsSinceLastMenstruation) gynecologyList.push(`Roky od poslední menzes: ${reproductive.yearsSinceLastMenstruation}`);
-  if (reproductive?.gaveBirth) gynecologyList.push(`Rodila: ano${reproductive.birthCount ? ` (${reproductive.birthCount}x)` : ''}`);
-  if (reproductive?.breastfed) gynecologyList.push(`Kojila: ano${reproductive.breastfeedingMonths ? ` (${reproductive.breastfeedingMonths} měsíců)` : ''}`);
+  if (reproductive?.lastMenstruationDate)
+    gynecologyList.push(`Poslední menzes: ${reproductive.lastMenstruationDate}`);
+  if (reproductive?.menstruationCycleDays)
+    gynecologyList.push(`Cyklus opakování: ${reproductive.menstruationCycleDays} dní`);
+  if (reproductive?.yearsSinceLastMenstruation)
+    gynecologyList.push(`Roky od poslední menzes: ${reproductive.yearsSinceLastMenstruation}`);
+  if (reproductive?.gaveBirth)
+    gynecologyList.push(
+      `Rodila: ano${reproductive.birthCount ? ` (${reproductive.birthCount}x)` : ''}`
+    );
+  if (reproductive?.breastfed)
+    gynecologyList.push(
+      `Kojila: ano${reproductive.breastfeedingMonths ? ` (${reproductive.breastfeedingMonths} měsíců)` : ''}`
+    );
   if (reproductive?.breastfeedingInflammation) gynecologyList.push('Záněty při kojení: ano');
   if (reproductive?.endedWithInflammation) gynecologyList.push('Končilo kojení zánětem: ano');
-  if (reproductive?.contraception) gynecologyList.push(`Antikoncepce: ano${reproductive.contraceptionDuration ? ` (${reproductive.contraceptionDuration})` : ''}`);
-  if (reproductive?.estrogen) gynecologyList.push(`Estrogen: ano${reproductive.estrogenType ? ` (${reproductive.estrogenType})` : ''}`);
-  if (reproductive?.interruption) gynecologyList.push(`Interrupce: ano${reproductive.interruptionCount ? ` (${reproductive.interruptionCount}x)` : ''}`);
-  if (reproductive?.miscarriage) gynecologyList.push(`Potrat: ano${reproductive.miscarriageCount ? ` (${reproductive.miscarriageCount}x)` : ''}`);
+  if (reproductive?.contraception)
+    gynecologyList.push(
+      `Antikoncepce: ano${reproductive.contraceptionDuration ? ` (${reproductive.contraceptionDuration})` : ''}`
+    );
+  if (reproductive?.estrogen)
+    gynecologyList.push(
+      `Estrogen: ano${reproductive.estrogenType ? ` (${reproductive.estrogenType})` : ''}`
+    );
+  if (reproductive?.interruption)
+    gynecologyList.push(
+      `Interrupce: ano${reproductive.interruptionCount ? ` (${reproductive.interruptionCount}x)` : ''}`
+    );
+  if (reproductive?.miscarriage)
+    gynecologyList.push(
+      `Potrat: ano${reproductive.miscarriageCount ? ` (${reproductive.miscarriageCount}x)` : ''}`
+    );
   if (reproductive?.breastInjury) gynecologyList.push('Úraz prsu: ano');
-  if (reproductive?.mammogram) gynecologyList.push(`RTG mamograf: ano${reproductive.mammogramCount ? ` (${reproductive.mammogramCount}x)` : ''}`);
+  if (reproductive?.mammogram)
+    gynecologyList.push(
+      `RTG mamograf: ano${reproductive.mammogramCount ? ` (${reproductive.mammogramCount}x)` : ''}`
+    );
   if (reproductive?.breastBiopsy) gynecologyList.push('Biopsie prsu: ano');
   if (reproductive?.breastImplants) gynecologyList.push('Implantáty: ano');
-  if (reproductive?.breastSurgery) gynecologyList.push(`Operace prsu: ano${reproductive.breastSurgeryType ? ` (${reproductive.breastSurgeryType})` : ''}`);
-  if (reproductive?.familyTumors) gynecologyList.push(`Nádory v rodině: ano${reproductive.familyTumorType ? ` (${reproductive.familyTumorType})` : ''}`);
+  if (reproductive?.breastSurgery)
+    gynecologyList.push(
+      `Operace prsu: ano${reproductive.breastSurgeryType ? ` (${reproductive.breastSurgeryType})` : ''}`
+    );
+  if (reproductive?.familyTumors)
+    gynecologyList.push(
+      `Nádory v rodině: ano${reproductive.familyTumorType ? ` (${reproductive.familyTumorType})` : ''}`
+    );
 
   summary.gynecology = gynecologyList;
 

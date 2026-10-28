@@ -2,7 +2,11 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PatientDetail, QuickPreviewSettings } from '../types';
-import { IntakeSummary, parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
+import {
+  IntakeSummary,
+  parseIntakeSummary,
+  formSubmissionToIntakeSummary
+} from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
 import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
@@ -48,7 +52,10 @@ export const PatientDetailPage: React.FC = () => {
 
     const intakeEvent = patient.events.find((event: PatientDetail['events'][number]) => {
       const eventName = event.eventTypeName.toLowerCase();
-      return eventName.includes('formul') || (event.comment?.includes('Váha:') && event.comment?.includes('Výška:'));
+      return (
+        eventName.includes('formul') ||
+        (event.comment?.includes('Váha:') && event.comment?.includes('Výška:'))
+      );
     });
 
     return parseIntakeSummary(intakeEvent?.comment ?? null);
@@ -144,9 +151,12 @@ export const PatientDetailPage: React.FC = () => {
     }
 
     try {
-      const response = await apiClient.post<{ intakePath: string }>('/api/events/intake-form-links', {
-        personId: patient.personId
-      });
+      const response = await apiClient.post<{ intakePath: string }>(
+        '/api/events/intake-form-links',
+        {
+          personId: patient.personId
+        }
+      );
 
       const absoluteLink = `${window.location.origin}${response.intakePath}`;
 
@@ -164,14 +174,14 @@ export const PatientDetailPage: React.FC = () => {
   const handleDocumentUpload = async (file: File) => {
     try {
       setUploadingDocument(true);
-      
+
       const formData = new FormData();
       formData.append('document', file);
 
       await apiClient.postFormData(`/api/patients/${id}/documents`, formData);
 
       setShowDocumentUpload(false);
-      
+
       if (id) {
         loadPatientDetail(parseInt(id));
       }
@@ -196,7 +206,9 @@ export const PatientDetailPage: React.FC = () => {
 
   const handleExaminationDocumentView = async (examinationId: number, documentId: number) => {
     try {
-      const blob = await apiClient.getBlob(`/api/examinations/${examinationId}/documents/${documentId}`);
+      const blob = await apiClient.getBlob(
+        `/api/examinations/${examinationId}/documents/${documentId}`
+      );
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (error) {
@@ -212,7 +224,7 @@ export const PatientDetailPage: React.FC = () => {
 
     try {
       await apiClient.delete(`/api/patients/${id}/documents/${documentId}`);
-      
+
       if (id) {
         loadPatientDetail(parseInt(id));
       }
@@ -224,12 +236,12 @@ export const PatientDetailPage: React.FC = () => {
 
   const handleSaveComment = async () => {
     if (!patient) return;
-    
+
     try {
       await apiClient.patch(`/api/patients/${patient.id}/comment`, {
-        comment: commentText,
+        comment: commentText
       });
-      
+
       setPatient({ ...patient, comment: commentText });
       setEditingComment(false);
     } catch (error) {
@@ -260,10 +272,6 @@ export const PatientDetailPage: React.FC = () => {
     setCommentText(patient?.comment || '');
     setEditingComment(false);
   };
-
-
-
-
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -329,17 +337,24 @@ export const PatientDetailPage: React.FC = () => {
                     }}
                   />
                 ) : null}
-                <svg className="photo-icon" viewBox="0 0 24 24" style={{ display: photoObjectUrl ? 'none' : 'block' }}>
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <svg
+                  className="photo-icon"
+                  viewBox="0 0 24 24"
+                  style={{ display: photoObjectUrl ? 'none' : 'block' }}
+                >
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               </div>
-              <button 
+              <button
                 className="photo-button"
                 onClick={() => setShowCamera(true)}
                 title="Vyfotit pacienta"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
-                  <path fill="currentColor" d="M12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                  <path
+                    fill="currentColor"
+                    d="M12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"
+                  />
                 </svg>
               </button>
             </div>
@@ -356,11 +371,15 @@ export const PatientDetailPage: React.FC = () => {
                 </div>
                 <div className="detail-row">
                   <span className="label">{t('patients.fields.birthDate')}:</span>
-                  <span className="value">{formatDate(patient.birthDate)} ({patient.age} {t('patients.yearsOld')})</span>
+                  <span className="value">
+                    {formatDate(patient.birthDate)} ({patient.age} {t('patients.yearsOld')})
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="label">{t('patients.fields.gender')}:</span>
-                  <span className="value">{t(`patients.genders.${patient.gender.toLowerCase()}`)}</span>
+                  <span className="value">
+                    {t(`patients.genders.${patient.gender.toLowerCase()}`)}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="label">{t('patients.fields.insuranceNumber')}:</span>
@@ -391,18 +410,24 @@ export const PatientDetailPage: React.FC = () => {
             <div className="card-header">
               <div>
                 <h2>{t('patients.intakeForm')}</h2>
-                <p className="intake-card-description">{t('patients.intakeFormSummaryDescription')}</p>
+                <p className="intake-card-description">
+                  {t('patients.intakeFormSummaryDescription')}
+                </p>
               </div>
             </div>
 
             <div className="intake-overview-grid">
               <div className="intake-overview-item">
                 <span className="intake-label">{t('patients.weight')}</span>
-                <span className="intake-value">{intakeSummary.weight || t('common.notProvided')}</span>
+                <span className="intake-value">
+                  {intakeSummary.weight || t('common.notProvided')}
+                </span>
               </div>
               <div className="intake-overview-item">
                 <span className="intake-label">{t('patients.height')}</span>
-                <span className="intake-value">{intakeSummary.height || t('common.notProvided')}</span>
+                <span className="intake-value">
+                  {intakeSummary.height || t('common.notProvided')}
+                </span>
               </div>
             </div>
 
@@ -411,7 +436,7 @@ export const PatientDetailPage: React.FC = () => {
                 <h3>{t('patients.medications')}</h3>
                 {intakeSummary.medications.length > 0 ? (
                   <ul>
-                    {intakeSummary.medications.map(item => (
+                    {intakeSummary.medications.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -424,7 +449,7 @@ export const PatientDetailPage: React.FC = () => {
                 <h3>{t('patients.healthStatus')}</h3>
                 {intakeSummary.healthStatus.length > 0 ? (
                   <ul>
-                    {intakeSummary.healthStatus.map(item => (
+                    {intakeSummary.healthStatus.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -437,7 +462,7 @@ export const PatientDetailPage: React.FC = () => {
                 <h3>{t('patients.covidAndVaccination')}</h3>
                 {intakeSummary.covid.length > 0 ? (
                   <ul>
-                    {intakeSummary.covid.map(item => (
+                    {intakeSummary.covid.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -450,7 +475,7 @@ export const PatientDetailPage: React.FC = () => {
                 <h3>{t('patients.gynecology')}</h3>
                 {intakeSummary.gynecology.length > 0 ? (
                   <ul>
-                    {intakeSummary.gynecology.map(item => (
+                    {intakeSummary.gynecology.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -474,13 +499,16 @@ export const PatientDetailPage: React.FC = () => {
           <div className="comment-header">
             <h3>Komentář o pacientovi</h3>
             {!editingComment && (
-              <button 
+              <button
                 className="edit-comment-btn"
                 onClick={() => setEditingComment(true)}
                 title="Upravit komentář"
               >
                 <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  <path
+                    fill="currentColor"
+                    d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                  />
                 </svg>
               </button>
             )}
@@ -518,13 +546,13 @@ export const PatientDetailPage: React.FC = () => {
         <div className="patient-quick-preview">
           <div className="quick-preview-header">
             <h3>{t('patients.quickPreview')}</h3>
-            <button 
+            <button
               className="settings-button"
               onClick={() => setShowSettingsModal(true)}
               title={t('patients.quickPreviewSettings')}
             >
               <svg viewBox="0 0 24 24" width="20" height="20">
-                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
               </svg>
             </button>
           </div>
@@ -532,7 +560,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showCovidVaccination && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.covidVaccination')}:</span>
-                <span className={`preview-value ${patient.quickPreview.hasCovidVaccination ? 'positive' : 'negative'}`}>
+                <span
+                  className={`preview-value ${patient.quickPreview.hasCovidVaccination ? 'positive' : 'negative'}`}
+                >
                   {patient.quickPreview.hasCovidVaccination ? t('common.yes') : t('common.no')}
                 </span>
               </div>
@@ -540,7 +570,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showFluVaccination && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.fluVaccination')}:</span>
-                <span className={`preview-value ${patient.quickPreview.hasFluVaccination ? 'positive' : 'negative'}`}>
+                <span
+                  className={`preview-value ${patient.quickPreview.hasFluVaccination ? 'positive' : 'negative'}`}
+                >
                   {patient.quickPreview.hasFluVaccination ? t('common.yes') : t('common.no')}
                 </span>
               </div>
@@ -548,7 +580,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showDiabetes && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.diabetes')}:</span>
-                <span className={`preview-value ${patient.quickPreview.hasDiabetes ? 'warning' : 'negative'}`}>
+                <span
+                  className={`preview-value ${patient.quickPreview.hasDiabetes ? 'warning' : 'negative'}`}
+                >
                   {patient.quickPreview.hasDiabetes ? t('common.yes') : t('common.no')}
                 </span>
               </div>
@@ -556,7 +590,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showHypertension && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.hypertension')}:</span>
-                <span className={`preview-value ${patient.quickPreview.hasHypertension ? 'warning' : 'negative'}`}>
+                <span
+                  className={`preview-value ${patient.quickPreview.hasHypertension ? 'warning' : 'negative'}`}
+                >
                   {patient.quickPreview.hasHypertension ? t('common.yes') : t('common.no')}
                 </span>
               </div>
@@ -564,7 +600,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showHeartDisease && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.heartDisease')}:</span>
-                <span className={`preview-value ${patient.quickPreview.hasHeartDisease ? 'warning' : 'negative'}`}>
+                <span
+                  className={`preview-value ${patient.quickPreview.hasHeartDisease ? 'warning' : 'negative'}`}
+                >
                   {patient.quickPreview.hasHeartDisease ? t('common.yes') : t('common.no')}
                 </span>
               </div>
@@ -572,7 +610,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showAllergies && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.allergies')}:</span>
-                <span className={`preview-value ${patient.quickPreview.hasAllergies ? 'warning' : 'negative'}`}>
+                <span
+                  className={`preview-value ${patient.quickPreview.hasAllergies ? 'warning' : 'negative'}`}
+                >
                   {patient.quickPreview.hasAllergies ? t('common.yes') : t('common.no')}
                 </span>
               </div>
@@ -586,7 +626,9 @@ export const PatientDetailPage: React.FC = () => {
             {patient.quickPreviewSettings.showUpcomingAppointments && (
               <div className="preview-item">
                 <span className="preview-label">{t('patients.upcomingAppointments')}:</span>
-                <span className="preview-value info">{patient.quickPreview.upcomingAppointmentsCount}</span>
+                <span className="preview-value info">
+                  {patient.quickPreview.upcomingAppointmentsCount}
+                </span>
               </div>
             )}
             {patient.quickPreviewSettings.showLastVisit && patient.quickPreview.lastVisit && (
@@ -615,12 +657,12 @@ export const PatientDetailPage: React.FC = () => {
         {/* Patient Appointments */}
         <div className="patient-appointments-card">
           <div className="card-header">
-            <h2>{t('patients.appointments')} ({patient.appointments.length})</h2>
-            <button className="add-appointment-btn">
-              {t('patients.addAppointment')}
-            </button>
+            <h2>
+              {t('patients.appointments')} ({patient.appointments.length})
+            </h2>
+            <button className="add-appointment-btn">{t('patients.addAppointment')}</button>
           </div>
-          
+
           {patient.appointments.length === 0 ? (
             <div className="no-data">
               <p>{t('patients.noAppointments')}</p>
@@ -630,10 +672,14 @@ export const PatientDetailPage: React.FC = () => {
               {patient.appointments.map((appointment) => (
                 <div key={appointment.id} className="appointment-item">
                   <div className="appointment-time">
-                    <div className="start-time">{formatDateTime(appointment.startTime, i18n.language)}</div>
-                    <div className="end-time">{formatDateTime(appointment.endTime, i18n.language)}</div>
+                    <div className="start-time">
+                      {formatDateTime(appointment.startTime, i18n.language)}
+                    </div>
+                    <div className="end-time">
+                      {formatDateTime(appointment.endTime, i18n.language)}
+                    </div>
                   </div>
-                  
+
                   <div className="appointment-details">
                     <div className="doctor">{appointment.doctorName}</div>
                     <div className="hospital">{appointment.hospitalName}</div>
@@ -693,10 +739,7 @@ export const PatientDetailPage: React.FC = () => {
 
       {/* Camera Modal */}
       {showCamera && (
-        <CameraCaptureModal
-          onClose={() => setShowCamera(false)}
-          onCapture={handleCapturePhoto}
-        />
+        <CameraCaptureModal onClose={() => setShowCamera(false)} onCapture={handleCapturePhoto} />
       )}
     </div>
   );

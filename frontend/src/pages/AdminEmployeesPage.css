@@ -273,7 +273,7 @@
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: auto;
   margin: 0;
 }
@@ -364,19 +364,19 @@
   .admin-employees-page {
     padding: 1rem;
   }
-  
+
   .employees-table-container {
     overflow-x: auto;
   }
-  
+
   .employees-table {
     min-width: 800px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-content {
     margin: 1rem;
     max-width: none;
@@ -385,7 +385,7 @@
   .access-rule-row {
     grid-template-columns: 1fr;
   }
-  
+
   .roles-checkboxes {
     grid-template-columns: 1fr;
   }

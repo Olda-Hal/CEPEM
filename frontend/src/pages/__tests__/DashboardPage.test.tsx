@@ -35,13 +35,11 @@ const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <I18nextProvider i18n={i18n}>
-        <AuthProvider>
-          {component}
-        </AuthProvider>
-      </I18nextProvider>
-    </BrowserRouter>
+      <BrowserRouter>
+        <I18nextProvider i18n={i18n}>
+          <AuthProvider>{component}</AuthProvider>
+        </I18nextProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
@@ -53,17 +51,19 @@ describe('DashboardPage', () => {
 
   test('renders dashboard title', async () => {
     mockApiClient.get.mockResolvedValue(mockStats);
-    
+
     renderWithProviders(<DashboardPage />);
-    
-    expect(screen.getByRole('heading', { name: /Center for Preventive Medicine/i })).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('heading', { name: /Center for Preventive Medicine/i })
+    ).toBeInTheDocument();
   });
 
   test('loads and displays dashboard stats', async () => {
     mockApiClient.get.mockResolvedValue(mockStats);
-    
+
     renderWithProviders(<DashboardPage />);
-    
+
     await waitFor(() => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/employees/dashboard-stats');
     });
@@ -96,11 +96,11 @@ describe('DashboardPage', () => {
 
   test('displays coming soon buttons as disabled', () => {
     mockApiClient.get.mockResolvedValue(mockStats);
-    
+
     renderWithProviders(<DashboardPage />);
-    
+
     const comingSoonButtons = screen.getAllByText(/Coming Soon/i);
-    comingSoonButtons.forEach(button => {
+    comingSoonButtons.forEach((button) => {
       expect(button).toBeDisabled();
     });
   });

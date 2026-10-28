@@ -19,7 +19,6 @@ import {
 } from '../types';
 import './ReservationSlotsPage.css';
 
-
 const formatDateInput = (date: Date) => date.toISOString().slice(0, 10);
 
 const formatDate = (value: string) =>
@@ -28,7 +27,8 @@ const formatDate = (value: string) =>
 const formatTime = (value: string) =>
   new Intl.DateTimeFormat('cs-CZ', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 
-const createLocalDateTime = (dateValue: string, timeValue: string) => new Date(`${dateValue}T${timeValue}:00`);
+const createLocalDateTime = (dateValue: string, timeValue: string) =>
+  new Date(`${dateValue}T${timeValue}:00`);
 import { useToast } from '../contexts/ToastContext';
 import SlotCreationPanel from '../components/reservations/SlotCreationPanel';
 import BookingPanel from '../components/reservations/BookingPanel';
@@ -43,14 +43,12 @@ export const ReservationSlotsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(formatDateInput(new Date()));
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
 
-
-
-
   const [editPublicNote, setEditPublicNote] = useState('');
   const [editInternalNote, setEditInternalNote] = useState('');
   const [editStatus, setEditStatus] = useState<ReservationSlotStatus>('AVAILABLE');
 
-  const canReviewSlots = hasRole(user, 'Doctor') || hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
+  const canReviewSlots =
+    hasRole(user, 'Doctor') || hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
   const canCreateSlots = hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
 
   const { data: initialData } = useQuery({
@@ -115,7 +113,7 @@ export const ReservationSlotsPage: React.FC = () => {
   );
 
   const selectedSlot = useMemo(
-    () => sortedSlots.find(slot => slot.id === selectedSlotId) ?? null,
+    () => sortedSlots.find((slot) => slot.id === selectedSlotId) ?? null,
     [sortedSlots, selectedSlotId]
   );
 
@@ -133,19 +131,21 @@ export const ReservationSlotsPage: React.FC = () => {
   }, [selectedSlot]);
 
   const availableSlots = useMemo(
-    () => sortedSlots.filter(slot => slot.status === 'AVAILABLE'),
+    () => sortedSlots.filter((slot) => slot.status === 'AVAILABLE'),
     [sortedSlots]
   );
 
   // The selection must not survive the deletion of the selected slot.
   useEffect(() => {
-    if (selectedSlotId && !slots.some(slot => slot.id === selectedSlotId)) {
+    if (selectedSlotId && !slots.some((slot) => slot.id === selectedSlotId)) {
       setSelectedSlotId(null);
     }
   }, [slots, selectedSlotId]);
 
   const refreshSlots = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['reservation-slots', selectedHospitalId, selectedDate] });
+    await queryClient.invalidateQueries({
+      queryKey: ['reservation-slots', selectedHospitalId, selectedDate]
+    });
   };
 
   const handleSelectSlot = (slot: ReservationSlot) => {
@@ -172,7 +172,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await refreshSlots();
       toast.success(t('reservationSlots.messages.updatedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.updateFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.updateFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.updateFailed'), error);
     }
@@ -188,7 +189,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await refreshSlots();
       toast.success(t('reservationSlots.messages.releasedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.releaseFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.releaseFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.releaseFailed'), error);
     }
@@ -209,7 +211,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await refreshSlots();
       toast.success(t('reservationSlots.messages.deletedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.deleteFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.deleteFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.deleteFailed'), error);
     }
@@ -230,7 +233,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await refreshSlots();
       toast.success(t('reservationSlots.messages.confirmedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.confirmFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.confirmFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.confirmFailed'), error);
     }
@@ -242,7 +246,8 @@ export const ReservationSlotsPage: React.FC = () => {
       await refreshSlots();
       toast.success(t('reservationSlots.messages.rejectedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.rejectFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.rejectFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.rejectFailed'), error);
     }
@@ -263,9 +268,12 @@ export const ReservationSlotsPage: React.FC = () => {
           <div className="hero-controls">
             <label>
               <span>{t('reservationSlots.hospital')}</span>
-              <select value={selectedHospitalId} onChange={(event) => setSelectedHospitalId(event.target.value)}>
+              <select
+                value={selectedHospitalId}
+                onChange={(event) => setSelectedHospitalId(event.target.value)}
+              >
                 <option value="">{t('reservationSlots.selectHospital')}</option>
-                {hospitals.map(hospital => (
+                {hospitals.map((hospital) => (
                   <option key={hospital.id} value={hospital.id}>
                     {hospital.name || t('reservationSlots.fallbackHospital', { id: hospital.id })}
                   </option>
@@ -275,7 +283,11 @@ export const ReservationSlotsPage: React.FC = () => {
 
             <label>
               <span>{t('reservationSlots.viewDay')}</span>
-              <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+              />
             </label>
           </div>
         </section>
@@ -315,7 +327,9 @@ export const ReservationSlotsPage: React.FC = () => {
           <BookingPanel
             selectedSlot={selectedSlot}
             selectedSlotId={selectedSlotId}
-            isSlotAvailable={!!selectedSlotId && availableSlots.some(slot => slot.id === selectedSlotId)}
+            isSlotAvailable={
+              !!selectedSlotId && availableSlots.some((slot) => slot.id === selectedSlotId)
+            }
             examinationTypes={examinationTypes}
             onBookingCleared={() => setSelectedSlotId(null)}
             onSlotsChanged={refreshSlots}
@@ -328,7 +342,10 @@ export const ReservationSlotsPage: React.FC = () => {
             <p>
               {loadingSlots
                 ? t('reservationSlots.overview.loading')
-                : t('reservationSlots.overview.loaded', { count: sortedSlots.length, day: formatDate(`${selectedDate}T00:00:00`) })}
+                : t('reservationSlots.overview.loaded', {
+                    count: sortedSlots.length,
+                    day: formatDate(`${selectedDate}T00:00:00`)
+                  })}
             </p>
           </div>
 
@@ -348,7 +365,11 @@ export const ReservationSlotsPage: React.FC = () => {
               <tbody>
                 {loadingSlots && sortedSlots.length === 0 ? (
                   Array.from({ length: 5 }).map((_, index) => (
-                    <tr key={`skel-${index}`} className="skeleton-row" data-testid="slots-skeleton-row">
+                    <tr
+                      key={`skel-${index}`}
+                      className="skeleton-row"
+                      data-testid="slots-skeleton-row"
+                    >
                       <td colSpan={canReviewSlots ? 7 : 6}>
                         <div className="skeleton-line" />
                       </td>
@@ -361,12 +382,17 @@ export const ReservationSlotsPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  sortedSlots.flatMap(slot => {
+                  sortedSlots.flatMap((slot) => {
                     const slotRow = (
-                      <tr key={slot.id} className={selectedSlotId === slot.id ? 'selected-row' : ''}>
+                      <tr
+                        key={slot.id}
+                        className={selectedSlotId === slot.id ? 'selected-row' : ''}
+                      >
                         <td>
                           <div className="slot-time-cell">
-                            <strong>{formatTime(slot.startDateTime)} - {formatTime(slot.endDateTime)}</strong>
+                            <strong>
+                              {formatTime(slot.startDateTime)} - {formatTime(slot.endDateTime)}
+                            </strong>
                             <span>{formatDate(slot.startDateTime)}</span>
                           </div>
                         </td>
@@ -382,7 +408,10 @@ export const ReservationSlotsPage: React.FC = () => {
                         <td>
                           <div className="action-stack">
                             {slot.status === 'AVAILABLE' && (
-                              <button className="ghost-button" onClick={() => handleSelectSlot(slot)}>
+                              <button
+                                className="ghost-button"
+                                onClick={() => handleSelectSlot(slot)}
+                              >
                                 {t('reservationSlots.table.select')}
                               </button>
                             )}
@@ -393,10 +422,16 @@ export const ReservationSlotsPage: React.FC = () => {
 
                             {canReviewSlots && slot.status === 'BLOCKED' && (
                               <>
-                                <button className="success-button" onClick={() => handleConfirmSlot(slot.id)}>
+                                <button
+                                  className="success-button"
+                                  onClick={() => handleConfirmSlot(slot.id)}
+                                >
                                   {t('reservationSlots.table.confirm')}
                                 </button>
-                                <button className="danger-button" onClick={() => handleRejectSlot(slot.id)}>
+                                <button
+                                  className="danger-button"
+                                  onClick={() => handleRejectSlot(slot.id)}
+                                >
                                   {t('reservationSlots.table.reject')}
                                 </button>
                               </>
@@ -422,27 +457,51 @@ export const ReservationSlotsPage: React.FC = () => {
 
                             <div className="selected-slot-banner">
                               <strong>
-                                {formatDate(slot.startDateTime)} · {formatTime(slot.startDateTime)} - {formatTime(slot.endDateTime)}
+                                {formatDate(slot.startDateTime)} · {formatTime(slot.startDateTime)}{' '}
+                                - {formatTime(slot.endDateTime)}
                               </strong>
-                              <span>{t(`reservationSlots.status.${slot.status.toLowerCase()}`)}</span>
+                              <span>
+                                {t(`reservationSlots.status.${slot.status.toLowerCase()}`)}
+                              </span>
                             </div>
 
                             <div className="form-grid">
                               <label className="full-width">
                                 <span>{t('reservationSlots.editor.publicNote')}</span>
-                                <textarea value={editPublicNote} onChange={(event) => setEditPublicNote(event.target.value)} rows={3} />
+                                <textarea
+                                  value={editPublicNote}
+                                  onChange={(event) => setEditPublicNote(event.target.value)}
+                                  rows={3}
+                                />
                               </label>
                               <label className="full-width">
                                 <span>{t('reservationSlots.editor.internalNote')}</span>
-                                <textarea value={editInternalNote} onChange={(event) => setEditInternalNote(event.target.value)} rows={3} />
+                                <textarea
+                                  value={editInternalNote}
+                                  onChange={(event) => setEditInternalNote(event.target.value)}
+                                  rows={3}
+                                />
                               </label>
                               <label>
                                 <span>{t('reservationSlots.editor.status')}</span>
-                                <select value={editStatus} onChange={(event) => setEditStatus(event.target.value as ReservationSlotStatus)}>
-                                  <option value="AVAILABLE">{t('reservationSlots.status.available')}</option>
-                                  <option value="UNAVAILABLE">{t('reservationSlots.status.unavailable')}</option>
-                                  <option value="BLOCKED">{t('reservationSlots.status.blocked')}</option>
-                                  <option value="RESERVED">{t('reservationSlots.status.reserved')}</option>
+                                <select
+                                  value={editStatus}
+                                  onChange={(event) =>
+                                    setEditStatus(event.target.value as ReservationSlotStatus)
+                                  }
+                                >
+                                  <option value="AVAILABLE">
+                                    {t('reservationSlots.status.available')}
+                                  </option>
+                                  <option value="UNAVAILABLE">
+                                    {t('reservationSlots.status.unavailable')}
+                                  </option>
+                                  <option value="BLOCKED">
+                                    {t('reservationSlots.status.blocked')}
+                                  </option>
+                                  <option value="RESERVED">
+                                    {t('reservationSlots.status.reserved')}
+                                  </option>
                                 </select>
                               </label>
                             </div>
@@ -452,7 +511,10 @@ export const ReservationSlotsPage: React.FC = () => {
                                 {t('reservationSlots.editor.saveButton')}
                               </button>
                               {(slot.status === 'BLOCKED' || slot.status === 'RESERVED') && (
-                                <button className="ghost-button" onClick={handleReleaseSelectedSlot}>
+                                <button
+                                  className="ghost-button"
+                                  onClick={handleReleaseSelectedSlot}
+                                >
                                   {t('reservationSlots.editor.releaseButton')}
                                 </button>
                               )}

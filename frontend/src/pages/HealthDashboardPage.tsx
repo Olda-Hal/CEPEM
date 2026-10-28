@@ -25,7 +25,7 @@ const PROBED_SERVICES: Array<{ name: string; url: string }> = [
 const HealthDashboardPage: React.FC = () => {
   const { t } = useTranslation();
   const [services, setServices] = useState<ServiceStatus[]>(
-    PROBED_SERVICES.map(service => ({ ...service, state: 'loading' }))
+    PROBED_SERVICES.map((service) => ({ ...service, state: 'loading' }))
   );
 
   useEffect(() => {
@@ -35,7 +35,9 @@ const HealthDashboardPage: React.FC = () => {
       const results = await Promise.all(
         PROBED_SERVICES.map(async (service): Promise<ServiceStatus> => {
           try {
-            const response = await apiClient.get<{ status?: string; service?: string }>(service.url);
+            const response = await apiClient.get<{ status?: string; service?: string }>(
+              service.url
+            );
             return { ...service, state: 'healthy', detail: response.status ?? 'OK' };
           } catch {
             return { ...service, state: 'unreachable' };
@@ -60,7 +62,7 @@ const HealthDashboardPage: React.FC = () => {
       <AppHeader sectionTitle={t('health.title')} />
 
       <div className="services-grid">
-        {services.map(service => (
+        {services.map((service) => (
           <div key={service.name} className={`service-card service-${service.state}`}>
             <h3>{service.name}</h3>
             <span className={`health-badge ${service.state}`}>

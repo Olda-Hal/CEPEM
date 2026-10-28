@@ -161,10 +161,11 @@ describe('PatientsPage', () => {
 
     fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'jane' } });
 
-    await waitFor(() => {
-      expect(mockApiClient.get).toHaveBeenCalledWith(
-        expect.stringContaining('search=jane')
-      );
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(mockApiClient.get).toHaveBeenCalledWith(expect.stringContaining('search=jane'));
+      },
+      { timeout: 2000 }
+    );
   });
 });

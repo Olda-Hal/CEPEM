@@ -29,7 +29,7 @@ export const DashboardPage: React.FC = () => {
 
   const { data: stats, isLoading: loading } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: () => apiClient.get<DashboardStats>('/api/employees/dashboard-stats'),
+    queryFn: () => apiClient.get<DashboardStats>('/api/employees/dashboard-stats')
   });
 
   const { data: buildNumber } = useQuery({
@@ -38,7 +38,7 @@ export const DashboardPage: React.FC = () => {
       const response = await fetch('/build_number.txt');
       return (await response.text()).trim();
     },
-    staleTime: Infinity,
+    staleTime: Infinity
   });
 
   const loadDashboardStats = () => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
@@ -63,16 +63,16 @@ export const DashboardPage: React.FC = () => {
       <AppHeader>
         <LanguageSwitcher />
         <ThemeSelector className="compact" />
-        <span 
+        <span
           className="welcome-text"
-          title={t('dashboard.welcome', { 
-            firstName: user?.firstName || '', 
-            lastName: user?.lastName || '' 
+          title={t('dashboard.welcome', {
+            firstName: user?.firstName || '',
+            lastName: user?.lastName || ''
           })}
         >
-          {t('dashboard.welcome', { 
-            firstName: user?.firstName || '', 
-            lastName: user?.lastName || '' 
+          {t('dashboard.welcome', {
+            firstName: user?.firstName || '',
+            lastName: user?.lastName || ''
           })}
         </span>
         <button onClick={logout} className="logout-button">
@@ -83,11 +83,12 @@ export const DashboardPage: React.FC = () => {
       <main className="dashboard-main">
         <div className="dashboard-content">
           <div className="collapsible-section">
-            <div className="section-header" onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}>
+            <div
+              className="section-header"
+              onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
+            >
               <h2>{t('dashboard.systemOverview')}</h2>
-              <button className="collapse-button">
-                {isOverviewExpanded ? '▼' : '▶'}
-              </button>
+              <button className="collapse-button">{isOverviewExpanded ? '▼' : '▶'}</button>
             </div>
             {isOverviewExpanded && (
               <div className="section-content">
@@ -97,15 +98,13 @@ export const DashboardPage: React.FC = () => {
                     <div className="stat-icon">👨‍⚕️</div>
                     <div className="stat-content">
                       <h3>{t('dashboard.myProfile')}</h3>
-                      <p 
+                      <p
                         className="stat-value"
                         title={`${user?.firstName || ''} ${user?.lastName || ''}`}
                       >
                         {user?.firstName} {user?.lastName}
                       </p>
-                      <p className="stat-label">
-                        {t('dashboard.uid', { uid: user?.uid || '' })}
-                      </p>
+                      <p className="stat-label">{t('dashboard.uid', { uid: user?.uid || '' })}</p>
                       <p className="stat-label">
                         {t('dashboard.email', { email: user?.email || '' })}
                       </p>
@@ -163,11 +162,12 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="collapsible-section">
-            <div className="section-header" onClick={() => setIsActionsExpanded(!isActionsExpanded)}>
+            <div
+              className="section-header"
+              onClick={() => setIsActionsExpanded(!isActionsExpanded)}
+            >
               <h3>{t('dashboard.quickActions')}</h3>
-              <button className="collapse-button">
-                {isActionsExpanded ? '▼' : '▶'}
-              </button>
+              <button className="collapse-button">{isActionsExpanded ? '▼' : '▶'}</button>
             </div>
             {isActionsExpanded && (
               <div className="section-content">
@@ -176,9 +176,7 @@ export const DashboardPage: React.FC = () => {
                     <h4>{t('dashboard.patients')}</h4>
                     <p>{t('dashboard.patientsDesc')}</p>
                     <Link to="/patients">
-                      <button className="action-button">
-                        {t('dashboard.patients')}
-                      </button>
+                      <button className="action-button">{t('dashboard.patients')}</button>
                     </Link>
                   </div>
 
@@ -186,9 +184,7 @@ export const DashboardPage: React.FC = () => {
                     <h4>{t('dashboard.reservations')}</h4>
                     <p>{t('dashboard.reservationsDesc')}</p>
                     <Link to="/reservations">
-                      <button className="action-button">
-                        {t('dashboard.reservations')}
-                      </button>
+                      <button className="action-button">{t('dashboard.reservations')}</button>
                     </Link>
                   </div>
 
@@ -196,12 +192,10 @@ export const DashboardPage: React.FC = () => {
                     <h4>{t('dashboard.examinations')}</h4>
                     <p>{t('dashboard.examinationsDesc')}</p>
                     <Link to="/examinations">
-                      <button className="action-button">
-                        {t('dashboard.examinations')}
-                      </button>
+                      <button className="action-button">{t('dashboard.examinations')}</button>
                     </Link>
                   </div>
-                  
+
                   <div className="action-card">
                     <h4>{t('dashboard.appointments')}</h4>
                     <p>{t('dashboard.appointmentsDesc')}</p>
@@ -209,7 +203,7 @@ export const DashboardPage: React.FC = () => {
                       {t('dashboard.comingSoon')}
                     </button>
                   </div>
-                  
+
                   <div className="action-card">
                     <h4>{t('dashboard.reports')}</h4>
                     <p>{t('dashboard.reportsDesc')}</p>
@@ -217,26 +211,21 @@ export const DashboardPage: React.FC = () => {
                       {t('dashboard.comingSoon')}
                     </button>
                   </div>
-                  
+
                   {isAdmin(user) && (
                     <div className="action-card admin-action">
                       <h4>{t('testDashboard.title')}</h4>
                       <p>{t('testDashboard.description')}</p>
                       <Link to="/tests">
-                        <button className="action-button admin-button">
-                          View Tests
-                        </button>
+                        <button className="action-button admin-button">View Tests</button>
                       </Link>
                     </div>
                   )}
-                  
+
                   <div className="action-card">
                     <h4>{t('dashboard.settings')}</h4>
                     <p>{t('dashboard.settingsDesc')}</p>
-                    <button 
-                      className="action-button"
-                      onClick={() => setShowPasswordModal(true)}
-                    >
+                    <button className="action-button" onClick={() => setShowPasswordModal(true)}>
                       {t('passwordChange.title')}
                     </button>
                   </div>
@@ -245,7 +234,7 @@ export const DashboardPage: React.FC = () => {
                     <div className="action-card admin-action">
                       <h4>{t('createEmployee.title')}</h4>
                       <p>{t('createEmployee.description')}</p>
-                      <button 
+                      <button
                         className="action-button admin-button"
                         onClick={() => setShowCreateEmployeeModal(true)}
                       >
@@ -308,7 +297,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       </main>
 
-      <PasswordChangeModal 
+      <PasswordChangeModal
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
         isForced={false}

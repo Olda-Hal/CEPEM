@@ -25,7 +25,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   onClose,
   closeOnOverlayClick = true,
   contentClassName,
-  children,
+  children
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
 

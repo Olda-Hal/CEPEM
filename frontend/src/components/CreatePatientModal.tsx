@@ -38,7 +38,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
   const [showCamera, setShowCamera] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  
+
   const [patientData, setPatientData] = useState<CreatePatientData>({
     firstName: '',
     lastName: '',
@@ -66,7 +66,9 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
     const now = new Date();
     const year = now.getFullYear().toString();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const randomPart = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
     return year + month + randomPart;
   };
 
@@ -89,28 +91,28 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
     while (attempts < maxAttempts) {
       const newUid = generateRandomUid();
       const exists = await checkUidExists(newUid);
-      
+
       if (!exists) {
-        setPatientData(prev => ({ ...prev, uid: newUid }));
+        setPatientData((prev) => ({ ...prev, uid: newUid }));
         setGeneratingUid(false);
         return;
       }
-      
+
       attempts++;
     }
 
     // If we can't find a unique UID after max attempts, generate a longer one
     const fallbackUid = Date.now().toString().slice(-10);
-    setPatientData(prev => ({ ...prev, uid: fallbackUid }));
+    setPatientData((prev) => ({ ...prev, uid: fallbackUid }));
     setGeneratingUid(false);
   };
 
   const handleInputChange = (field: keyof CreatePatientData, value: string) => {
-    setPatientData(prev => ({ ...prev, [field]: value }));
-    
+    setPatientData((prev) => ({ ...prev, [field]: value }));
+
     // Clear field error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -145,7 +147,10 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
       newErrors.email = t('patients.errors.emailInvalid');
     }
 
-    if (patientData.phoneNumber && !/^(\+420)?\s?\d{3}\s?\d{3}\s?\d{3}$/.test(patientData.phoneNumber.replace(/\s/g, ''))) {
+    if (
+      patientData.phoneNumber &&
+      !/^(\+420)?\s?\d{3}\s?\d{3}\s?\d{3}$/.test(patientData.phoneNumber.replace(/\s/g, ''))
+    ) {
       newErrors.phoneNumber = t('patients.errors.phoneInvalid');
     }
 
@@ -155,7 +160,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -168,22 +173,24 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
         ...patientData,
         phoneNumber: patientData.phoneNumber || undefined,
         email: patientData.email || undefined,
-        insuranceNumber: patientData.insuranceNumber ? parseInt(patientData.insuranceNumber) : undefined
+        insuranceNumber: patientData.insuranceNumber
+          ? parseInt(patientData.insuranceNumber)
+          : undefined
       };
 
       const response = await apiClient.post<any>('/api/patients', createData);
-      
+
       if (capturedPhoto && response?.id) {
         try {
           const formData = new FormData();
           formData.append('photo', capturedPhoto, 'patient-photo.jpg');
-          
+
           await apiClient.postFormData(`/api/patients/${response.id}/photo`, formData);
         } catch (photoError) {
           console.error('Error uploading photo:', photoError);
         }
       }
-      
+
       // Reset form
       setPatientData({
         firstName: '',
@@ -199,10 +206,10 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
       });
       setCapturedPhoto(null);
       setPhotoPreview(null);
-      
+
       // Generate new UID for next patient
       setTimeout(() => generateUniqueUid(), 100);
-      
+
       onPatientCreated(response?.id);
       onClose();
     } catch (error) {
@@ -276,7 +283,12 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
 
           <PatientRecordFields
             values={patientData}
-            onChange={(field, value) => handleInputChange(field, field === 'insuranceNumber' ? value.replace(/\D/g, '') : value)}
+            onChange={(field, value) =>
+              handleInputChange(
+                field,
+                field === 'insuranceNumber' ? value.replace(/\D/g, '') : value
+              )
+            }
             disabled={loading}
             errors={errors}
             onRegenerateUid={generateUniqueUid}
@@ -286,11 +298,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
           {error && <div className="error-text form-error">{error}</div>}
 
           <div className="form-actions">
-            <button
-              type="submit"
-              className="button primary"
-              disabled={loading}
-            >
+            <button type="submit" className="button primary" disabled={loading}>
               {loading ? t('common.creating') : t('patients.createPatient')}
             </button>
           </div>
@@ -298,6 +306,6 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
       </BaseModal>
     </>
   );
-}
+};
 
 export default CreatePatientModal;

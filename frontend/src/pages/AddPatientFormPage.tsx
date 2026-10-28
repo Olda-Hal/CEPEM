@@ -30,7 +30,7 @@ export const AddPatientFormPage: React.FC = () => {
     phone: '',
     address: '',
     postalCode: '',
-    
+
     medBloodPressure: false,
     medHeart: false,
     medCholesterol: false,
@@ -46,7 +46,7 @@ export const AddPatientFormPage: React.FC = () => {
     medAntibiotics: false,
     medSupplements: false,
     medAllergies: false,
-    
+
     poorSleep: false,
     digestiveIssues: false,
     physicalStress: false,
@@ -54,20 +54,20 @@ export const AddPatientFormPage: React.FC = () => {
     smoking: false,
     fatigue: false,
     lastMealHours: '',
-    
+
     confirmAccuracy: false,
     termsAccepted: false,
     signaturePlace: '',
     signatureDate: new Date().toISOString().split('T')[0],
     signatureVector: '',
-    
+
     additionalHealthInfo: '',
-    
+
     hadCovid: false,
     covidWhen: '',
     covidVaccine: false,
     vaccinesAfter2023: false,
-    
+
     lastMenstruationDate: '',
     menstruationCycleDays: '',
     yearsSinceLastMenstruation: '',
@@ -94,21 +94,21 @@ export const AddPatientFormPage: React.FC = () => {
     breastSurgery: false,
     breastSurgeryType: '',
     familyTumors: false,
-    familyTumorType: '',
+    familyTumorType: ''
   });
 
   const handleChange = (field: keyof PatientFormData, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user', width: 640, height: 480 } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
       });
       setCameraStream(stream);
       setShowCamera(true);
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -120,7 +120,7 @@ export const AddPatientFormPage: React.FC = () => {
 
   const stopCamera = () => {
     if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream.getTracks().forEach((track) => track.stop());
       setCameraStream(null);
     }
     setShowCamera(false);
@@ -133,24 +133,28 @@ export const AddPatientFormPage: React.FC = () => {
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext('2d');
-    
+
     if (ctx) {
       ctx.drawImage(videoRef.current, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          setPhotoFile(blob);
-          setPhotoPreview(URL.createObjectURL(blob));
-          stopCamera();
-        }
-      }, 'image/jpeg', 0.9);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            setPhotoFile(blob);
+            setPhotoPreview(URL.createObjectURL(blob));
+            stopCamera();
+          }
+        },
+        'image/jpeg',
+        0.9
+      );
     }
   };
 
   React.useEffect(() => {
     return () => {
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach((track) => track.stop());
       }
       if (photoPreview) {
         URL.revokeObjectURL(photoPreview);
@@ -161,17 +165,17 @@ export const AddPatientFormPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!form.firstName || !form.lastName || !form.dateOfBirth) {
       setError('Vyplňte jméno, příjmení a datum narození');
       return;
     }
-    
+
     if (!form.confirmAccuracy) {
       setError('Potvrďte správnost vyplněných údajů');
       return;
     }
-    
+
     if (!form.termsAccepted) {
       setError('Musíte souhlasit se smluvními podmínkami');
       return;
@@ -193,7 +197,7 @@ export const AddPatientFormPage: React.FC = () => {
         email: form.email || undefined,
         insuranceNumber: form.insuranceCompany ? parseInt(form.insuranceCompany) : undefined,
         weight: form.weight ? parseFloat(form.weight) : undefined,
-        height: form.height ? parseFloat(form.height) : undefined,
+        height: form.height ? parseFloat(form.height) : undefined
       };
 
       const response = await apiClient.post<any>('/api/patients', payload);
@@ -240,13 +244,19 @@ export const AddPatientFormPage: React.FC = () => {
           covidVaccine: form.covidVaccine,
           vaccinesAfter2023: form.vaccinesAfter2023,
           lastMenstruationDate: form.lastMenstruationDate || undefined,
-          menstruationCycleDays: form.menstruationCycleDays ? parseInt(form.menstruationCycleDays) : undefined,
-          yearsSinceLastMenstruation: form.yearsSinceLastMenstruation ? parseInt(form.yearsSinceLastMenstruation) : undefined,
+          menstruationCycleDays: form.menstruationCycleDays
+            ? parseInt(form.menstruationCycleDays)
+            : undefined,
+          yearsSinceLastMenstruation: form.yearsSinceLastMenstruation
+            ? parseInt(form.yearsSinceLastMenstruation)
+            : undefined,
           gaveBirth: form.gaveBirth,
           birthCount: form.birthCount ? parseInt(form.birthCount) : undefined,
           birthWhen: form.birthWhen || undefined,
           breastfed: form.breastfed,
-          breastfeedingMonths: form.breastfeedingMonths ? parseInt(form.breastfeedingMonths) : undefined,
+          breastfeedingMonths: form.breastfeedingMonths
+            ? parseInt(form.breastfeedingMonths)
+            : undefined,
           breastfeedingInflammation: form.breastfeedingInflammation,
           endedWithInflammation: form.endedWithInflammation,
           contraception: form.contraception,
@@ -272,33 +282,34 @@ export const AddPatientFormPage: React.FC = () => {
           signatureDate: form.signatureDate || undefined,
           signatureVector: form.signatureVector,
           additionalHealthInfo: form.additionalHealthInfo || undefined,
-          sicknessHistories: (form.hadCovid || form.covidVaccine || !!form.covidWhen)
-            ? [
-                {
-                  sicknessName: 'COVID-19',
-                  hadSickness: form.hadCovid,
-                  sicknessWhen: form.covidWhen || undefined,
-                  vaccinated: form.covidVaccine,
-                  notes: form.vaccinesAfter2023 ? 'Other vaccines after 2023: yes' : undefined,
-                },
-              ]
-            : [],
+          sicknessHistories:
+            form.hadCovid || form.covidVaccine || !!form.covidWhen
+              ? [
+                  {
+                    sicknessName: 'COVID-19',
+                    hadSickness: form.hadCovid,
+                    sicknessWhen: form.covidWhen || undefined,
+                    vaccinated: form.covidVaccine,
+                    notes: form.vaccinesAfter2023 ? 'Other vaccines after 2023: yes' : undefined
+                  }
+                ]
+              : []
         };
 
         await apiClient.post('/api/events/intake-form', intakePayload);
       }
-      
+
       if (photoFile && newId) {
         const formData = new FormData();
         formData.append('photo', photoFile, 'patient-photo.jpg');
-        
+
         try {
           await apiClient.postFormData(`/api/patients/${newId}/photo`, formData);
         } catch (photoError) {
           console.error('Error uploading photo:', photoError);
         }
       }
-      
+
       if (newId) {
         navigate(`/patients/${newId}`);
       } else {
@@ -316,18 +327,17 @@ export const AddPatientFormPage: React.FC = () => {
     <div className="add-patient-page">
       <div className="form-container">
         <h1>Vstupní formulář klienta</h1>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form onSubmit={handleSubmit} className="patient-form">
-          
           <section className="form-section photo-section">
             <h2>Fotografie pacienta</h2>
             <div className="photo-container">
               {photoPreview ? (
                 <div className="photo-preview">
                   <img src={photoPreview} alt="Náhled fotky" />
-                  <button 
+                  <button
                     type="button"
                     className="remove-photo-btn"
                     onClick={() => {
@@ -341,21 +351,20 @@ export const AddPatientFormPage: React.FC = () => {
               ) : (
                 <div className="photo-placeholder">
                   <svg viewBox="0 0 24 24" width="60" height="60">
-                    <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    <path
+                      fill="currentColor"
+                      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    />
                   </svg>
                 </div>
               )}
-              <button 
-                type="button"
-                className="camera-btn"
-                onClick={startCamera}
-              >
+              <button type="button" className="camera-btn" onClick={startCamera}>
                 📷 Vyfotit pacienta
               </button>
             </div>
           </section>
 
-          <PatientFormFields 
+          <PatientFormFields
             form={form}
             onChange={handleChange}
             disabled={loading}
@@ -379,14 +388,11 @@ export const AddPatientFormPage: React.FC = () => {
           <div className="camera-content">
             <div className="camera-header">
               <h3>Vyfotit pacienta</h3>
-              <button className="close-btn" onClick={stopCamera}>×</button>
+              <button className="close-btn" onClick={stopCamera}>
+                ×
+              </button>
             </div>
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline
-              className="camera-video"
-            />
+            <video ref={videoRef} autoPlay playsInline className="camera-video" />
             <div className="camera-actions">
               <button onClick={stopCamera} className="btn-cancel">
                 Zrušit

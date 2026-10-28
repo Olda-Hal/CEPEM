@@ -21,13 +21,7 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({ roles, children }) => {
   const allowed = isAdmin(user) || roles.some((role) => hasRole(user, role));
 
   return (
-    <ProtectedRoute>
-      {allowed ? (
-        children
-      ) : (
-        <Navigate to="/dashboard" replace />
-      )}
-    </ProtectedRoute>
+    <ProtectedRoute>{allowed ? children : <Navigate to="/dashboard" replace />}</ProtectedRoute>
   );
 };
 

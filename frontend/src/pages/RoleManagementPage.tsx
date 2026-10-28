@@ -3,12 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
 import BaseModal from '../components/BaseModal';
-import {
-  CreateRoleRequest,
-  Permission,
-  Role,
-  RolePermissionAssignment
-} from '../types';
+import { CreateRoleRequest, Permission, Role, RolePermissionAssignment } from '../types';
 import './RoleManagementPage.css';
 
 const RoleManagementPage: React.FC = () => {
@@ -86,10 +81,12 @@ const RoleManagementPage: React.FC = () => {
   };
 
   const getPermissionLabel = (permissionKey: string, fallback?: string) => {
-    const translationKey = `admin.permissionLabels.${permissionKey.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+    const translationKey = `admin.permissionLabels.${permissionKey
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')}`;
     return t(translationKey, { defaultValue: fallback || permissionKey });
   };
-
 
   const openRules = (role: Role) => {
     setSelectedRole(role);
@@ -125,7 +122,9 @@ const RoleManagementPage: React.FC = () => {
                 onChange={(e) => setNewRoleName(e.target.value)}
               />
               <button className="btn btn-primary" type="submit" disabled={creatingRole}>
-                {creatingRole ? t('admin.roleEditor.creatingButton') : t('admin.roleEditor.createButton')}
+                {creatingRole
+                  ? t('admin.roleEditor.creatingButton')
+                  : t('admin.roleEditor.createButton')}
               </button>
             </div>
           </form>
@@ -169,7 +168,11 @@ const RoleManagementPage: React.FC = () => {
             setShowRulesModal(false);
             setSelectedRole(null);
           }}
-          onSaved={() => setSuccess(t('admin.roleEditor.rulesSaved', { name: translateRoleName(selectedRole.name) }))}
+          onSaved={() =>
+            setSuccess(
+              t('admin.roleEditor.rulesSaved', { name: translateRoleName(selectedRole.name) })
+            )
+          }
           translateRoleName={translateRoleName}
           getPermissionLabel={getPermissionLabel}
         />
@@ -187,7 +190,14 @@ interface RoleRulesModalProps {
   getPermissionLabel: (permissionKey: string, fallback?: string) => string;
 }
 
-const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose, onSaved, translateRoleName, getPermissionLabel }) => {
+const RoleRulesModal: React.FC<RoleRulesModalProps> = ({
+  role,
+  catalog,
+  onClose,
+  onSaved,
+  translateRoleName,
+  getPermissionLabel
+}) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -200,7 +210,9 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
       setLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get<RolePermissionAssignment[]>(`/api/admin/access/roles/${role.id}/rules`);
+        const response = await apiClient.get<RolePermissionAssignment[]>(
+          `/api/admin/access/roles/${role.id}/rules`
+        );
         const initial: Record<string, 'Allow' | 'Deny' | undefined> = {};
         response.forEach((assignment) => {
           initial[assignment.code] = assignment.effect === 'Deny' ? 'Deny' : 'Allow';
@@ -250,50 +262,66 @@ const RoleRulesModal: React.FC<RoleRulesModalProps> = ({ role, catalog, onClose,
       onClose={onClose}
       contentClassName="role-access-modal-content"
     >
-        {loading ? (
-          <div className="employee-form">{t('common.loading')}</div>
-        ) : (
-          <div className="employee-form">
-            {error && <div className="alert alert-error">{error}</div>}
-            <p className="access-rules-help">{t('admin.accessRules.roleHelp')}</p>
-            <div className="access-rules-grid">
-              {catalog.map((permission) => {
-                const effect = assignments[permission.code];
-                const displayName = getPermissionLabel(permission.code, permission.code);
+      {loading ? (
+        <div className="employee-form">{t('common.loading')}</div>
+      ) : (
+        <div className="employee-form">
+          {error && <div className="alert alert-error">{error}</div>}
+          <p className="access-rules-help">{t('admin.accessRules.roleHelp')}</p>
+          <div className="access-rules-grid">
+            {catalog.map((permission) => {
+              const effect = assignments[permission.code];
+              const displayName = getPermissionLabel(permission.code, permission.code);
 
-                return (
+              return (
                 <div className="access-rule-row" key={permission.code}>
                   <div className="access-rule-key">
                     <div className="permission-title">
                       {displayName}
                       {permission.description && (
-                        <span className="permission-info" title={permission.description} aria-label={permission.description}>i</span>
+                        <span
+                          className="permission-info"
+                          title={permission.description}
+                          aria-label={permission.description}
+                        >
+                          i
+                        </span>
                       )}
                     </div>
                   </div>
                   <select
                     value={effect || ''}
-                    onChange={(e) => updateAssignment(permission.code, (e.target.value || undefined) as 'Allow' | 'Deny' | undefined)}
+                    onChange={(e) =>
+                      updateAssignment(
+                        permission.code,
+                        (e.target.value || undefined) as 'Allow' | 'Deny' | undefined
+                      )
+                    }
                   >
                     <option value="">{t('admin.accessRules.none')}</option>
                     <option value="Allow">{t('admin.accessRules.allow')}</option>
                     <option value="Deny">{t('admin.accessRules.deny')}</option>
                   </select>
                 </div>
-                );
-              })}
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>
-                {t('admin.accessRules.close')}
-              </button>
-              <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? t('admin.accessRules.savingRules') : t('admin.accessRules.saveRules')}
-              </button>
-            </div>
+              );
+            })}
           </div>
-        )}
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>
+              {t('admin.accessRules.close')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? t('admin.accessRules.savingRules') : t('admin.accessRules.saveRules')}
+            </button>
+          </div>
+        </div>
+      )}
     </BaseModal>
   );
 };

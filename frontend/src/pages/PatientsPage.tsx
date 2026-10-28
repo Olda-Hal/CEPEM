@@ -26,45 +26,42 @@ export const PatientsPage: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  const {
-    data,
-    error,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage
-  } = useInfiniteQuery({
-    queryKey: ['patients', debouncedQuery],
-    queryFn: async ({ pageParam = 0 }) => {
-      const queryParams = new URLSearchParams({
-        page: pageParam.toString(),
-        limit: ITEMS_PER_PAGE.toString(),
-        search: debouncedQuery,
-        sortBy: 'lastName',
-        sortOrder: 'asc'
-      });
-      return apiClient.get<PatientSearchResponse>(`/api/patients/search?${queryParams}`);
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined)
-  });
-
-  const patients = data?.pages.flatMap(page => page.patients) ?? [];
-  const totalCount = data?.pages[0]?.totalCount ?? 0;
-
-  const lastPatientElementCallback = useCallback((node: HTMLDivElement | null) => {
-    if (isFetchingNextPage) return;
-    if (observer.current) observer.current.disconnect();
-
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasNextPage && !isLoading) {
-        fetchNextPage();
-      }
+  const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteQuery({
+      queryKey: ['patients', debouncedQuery],
+      queryFn: async ({ pageParam = 0 }) => {
+        const queryParams = new URLSearchParams({
+          page: pageParam.toString(),
+          limit: ITEMS_PER_PAGE.toString(),
+          search: debouncedQuery,
+          sortBy: 'lastName',
+          sortOrder: 'asc'
+        });
+        return apiClient.get<PatientSearchResponse>(`/api/patients/search?${queryParams}`);
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined)
     });
 
-    if (node) observer.current.observe(node);
-    lastPatientElementRef.current = node;
-  }, [hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]);
+  const patients = data?.pages.flatMap((page) => page.patients) ?? [];
+  const totalCount = data?.pages[0]?.totalCount ?? 0;
+
+  const lastPatientElementCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isFetchingNextPage) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isLoading) {
+          fetchNextPage();
+        }
+      });
+
+      if (node) observer.current.observe(node);
+      lastPatientElementRef.current = node;
+    },
+    [hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]
+  );
 
   const formatDate = (dateString: string) => {
     const locale = i18n.language === 'cs' ? 'cs-CZ' : 'en-US';
@@ -89,17 +86,12 @@ export const PatientsPage: React.FC = () => {
 
   return (
     <div className="patients-container">
-      <AppHeader 
-        sectionTitle={t('patients.title')}
-      >
-        <button 
-          className="add-patient-button"
-          onClick={() => navigate('/patients/add')}
-        >
+      <AppHeader sectionTitle={t('patients.title')}>
+        <button className="add-patient-button" onClick={() => navigate('/patients/add')}>
           + {t('patients.addPatient')}
         </button>
       </AppHeader>
-      
+
       <div className="search-section">
         <div className="search-bar">
           <input
@@ -114,11 +106,7 @@ export const PatientsPage: React.FC = () => {
       </div>
 
       <div className="patients-content">
-        {error && (
-          <div className="error-message">
-            {t('errors.loadingPatients')}
-          </div>
-        )}
+        {error && <div className="error-message">{t('errors.loadingPatients')}</div>}
 
         {isLoading && patients.length === 0 ? (
           <div className="patients-grid" data-testid="patients-skeleton" aria-busy="true">
@@ -134,9 +122,7 @@ export const PatientsPage: React.FC = () => {
         ) : (
           <>
             <div className="patients-stats">
-              <span className="total-count">
-                {t('patients.totalFound', { count: totalCount })}
-              </span>
+              <span className="total-count">{t('patients.totalFound', { count: totalCount })}</span>
             </div>
 
             <div className="patients-grid">
@@ -190,9 +176,9 @@ export const PatientsPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="patient-actions">
-                    <button 
+                    <button
                       className="action-button primary"
                       onClick={() => handleViewPatientDetail(patient.id)}
                     >
@@ -217,9 +203,7 @@ export const PatientsPage: React.FC = () => {
             )}
 
             {!hasNextPage && patients.length > 0 && (
-              <div className="end-message">
-                {t('patients.allLoaded')}
-              </div>
+              <div className="end-message">{t('patients.allLoaded')}</div>
             )}
 
             {!isLoading && patients.length === 0 && (

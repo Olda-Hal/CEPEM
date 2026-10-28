@@ -38,7 +38,7 @@ class ApiClient {
     const token = getAuthToken();
     return {
       ...(token && { Authorization: `Bearer ${token}` }),
-      ...(!isFormData && { 'Content-Type': 'application/json' }),
+      ...(!isFormData && { 'Content-Type': 'application/json' })
     };
   }
 
@@ -84,7 +84,7 @@ class ApiClient {
   async get<T>(endpoint: string): Promise<T> {
     const response = await fetch(this.url(endpoint), {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getAuthHeaders()
     });
     return this.handleResponse<T>(response, endpoint);
   }
@@ -93,7 +93,7 @@ class ApiClient {
     const response = await fetch(this.url(endpoint), {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
+      body: data !== undefined ? JSON.stringify(data) : undefined
     });
     return this.handleResponse<T>(response, endpoint);
   }
@@ -102,7 +102,7 @@ class ApiClient {
     const response = await fetch(this.url(endpoint), {
       method: 'PUT',
       headers: this.getAuthHeaders(),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
+      body: data !== undefined ? JSON.stringify(data) : undefined
     });
     return this.handleResponse<T>(response, endpoint);
   }
@@ -111,7 +111,7 @@ class ApiClient {
     const response = await fetch(this.url(endpoint), {
       method: 'PATCH',
       headers: this.getAuthHeaders(),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
+      body: data !== undefined ? JSON.stringify(data) : undefined
     });
     return this.handleResponse<T>(response, endpoint);
   }
@@ -119,7 +119,7 @@ class ApiClient {
   async delete<T>(endpoint: string): Promise<T> {
     const response = await fetch(this.url(endpoint), {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      headers: this.getAuthHeaders()
     });
     return this.handleResponse<T>(response, endpoint);
   }
@@ -128,7 +128,7 @@ class ApiClient {
     const response = await fetch(this.url(endpoint), {
       method: 'POST',
       headers: this.getAuthHeaders(true),
-      body: formData,
+      body: formData
     });
     return this.handleResponse<T>(response, endpoint);
   }
@@ -136,7 +136,7 @@ class ApiClient {
   async getBlob(endpoint: string): Promise<Blob> {
     const response = await fetch(this.url(endpoint), {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getAuthHeaders()
     });
 
     if (!response.ok) {

@@ -52,21 +52,20 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({ onClose,
     }
 
     ctx.drawImage(videoRef.current, 0, 0);
-    canvas.toBlob((blob) => {
-      if (blob) {
-        onCapture(blob);
-      }
-    }, 'image/jpeg', 0.9);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          onCapture(blob);
+        }
+      },
+      'image/jpeg',
+      0.9
+    );
   };
 
   return (
     <BaseModal title={t('patients.takePhoto')} onClose={onClose} contentClassName="camera-content">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        className="camera-video"
-      />
+      <video ref={videoRef} autoPlay playsInline className="camera-video" />
       <div className="camera-actions">
         <button onClick={onClose} className="btn-cancel">
           {t('common.cancel')}

@@ -104,7 +104,8 @@ export const SlotCreationPanel: React.FC<SlotCreationPanelProps> = ({
       await onSlotsChanged();
       toast.success(t('reservationSlots.messages.generatedSuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.creatingSlots');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.creatingSlots');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.creatingSlots'), error);
     }
@@ -132,7 +133,8 @@ export const SlotCreationPanel: React.FC<SlotCreationPanelProps> = ({
       await onSlotsChanged();
       toast.success(t('reservationSlots.messages.copySuccess'));
     } catch (error) {
-      const errorMessage = error instanceof ApiError ? error.message : t('reservationSlots.errors.copyFailed');
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.copyFailed');
       toast.error(errorMessage);
       console.error(t('reservationSlots.errors.copyFailed'), error);
     }
@@ -148,15 +150,27 @@ export const SlotCreationPanel: React.FC<SlotCreationPanelProps> = ({
       <div className="form-grid">
         <label>
           <span>{t('reservationSlots.create.date')}</span>
-          <input type="date" value={slotDate} onChange={(event) => setSlotDate(event.target.value)} />
+          <input
+            type="date"
+            value={slotDate}
+            onChange={(event) => setSlotDate(event.target.value)}
+          />
         </label>
         <label>
           <span>{t('reservationSlots.create.startTime')}</span>
-          <input type="time" value={slotStartTime} onChange={(event) => setSlotStartTime(event.target.value)} />
+          <input
+            type="time"
+            value={slotStartTime}
+            onChange={(event) => setSlotStartTime(event.target.value)}
+          />
         </label>
         <label>
           <span>{t('reservationSlots.create.endTime')}</span>
-          <input type="time" value={slotEndTime} onChange={(event) => setSlotEndTime(event.target.value)} />
+          <input
+            type="time"
+            value={slotEndTime}
+            onChange={(event) => setSlotEndTime(event.target.value)}
+          />
         </label>
         <label>
           <span>{t('reservationSlots.create.duration')}</span>
@@ -169,15 +183,26 @@ export const SlotCreationPanel: React.FC<SlotCreationPanelProps> = ({
         </label>
         <label className="full-width">
           <span>{t('reservationSlots.create.publicNote')}</span>
-          <textarea value={slotPublicNote} onChange={(event) => setSlotPublicNote(event.target.value)} rows={3} />
+          <textarea
+            value={slotPublicNote}
+            onChange={(event) => setSlotPublicNote(event.target.value)}
+            rows={3}
+          />
         </label>
         <label className="full-width">
           <span>{t('reservationSlots.create.internalNote')}</span>
-          <textarea value={slotInternalNote} onChange={(event) => setSlotInternalNote(event.target.value)} rows={3} />
+          <textarea
+            value={slotInternalNote}
+            onChange={(event) => setSlotInternalNote(event.target.value)}
+            rows={3}
+          />
         </label>
         <label>
           <span>{t('reservationSlots.create.initialStatus')}</span>
-          <select value={slotInitialStatus} onChange={(event) => setSlotInitialStatus(event.target.value as ReservationSlotStatus)}>
+          <select
+            value={slotInitialStatus}
+            onChange={(event) => setSlotInitialStatus(event.target.value as ReservationSlotStatus)}
+          >
             <option value="AVAILABLE">{t('reservationSlots.status.available')}</option>
             <option value="UNAVAILABLE">{t('reservationSlots.status.unavailable')}</option>
           </select>
@@ -196,11 +221,19 @@ export const SlotCreationPanel: React.FC<SlotCreationPanelProps> = ({
       <div className="form-grid">
         <label>
           <span>{t('reservationSlots.copy.sourceDate')}</span>
-          <input type="date" value={copySourceDate} onChange={(event) => setCopySourceDate(event.target.value)} />
+          <input
+            type="date"
+            value={copySourceDate}
+            onChange={(event) => setCopySourceDate(event.target.value)}
+          />
         </label>
         <label>
           <span>{t('reservationSlots.copy.targetDate')}</span>
-          <input type="date" value={targetDate} onChange={(event) => onDateChange(event.target.value)} />
+          <input
+            type="date"
+            value={targetDate}
+            onChange={(event) => onDateChange(event.target.value)}
+          />
         </label>
         <label className="full-width" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <input

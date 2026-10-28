@@ -10,17 +10,17 @@ interface PasswordChangeModalProps {
   isForced?: boolean;
 }
 
-export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ 
-  isOpen, 
+export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
+  isOpen,
   onClose,
-  isForced = false 
+  isForced = false
 }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { changePassword } = useAuth();
   const { t } = useTranslation();
 
@@ -51,19 +51,22 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
     }
 
     const result = await changePassword(currentPassword, newPassword, confirmPassword);
-    
+
     if (result.success) {
       // Reset form
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      
+
       if (onClose && !isForced) {
         onClose();
       }
     } else {
       // Check for specific error messages
-      if (result.error?.includes('stejné jako současné') || result.error?.includes('same as current')) {
+      if (
+        result.error?.includes('stejné jako současné') ||
+        result.error?.includes('same as current')
+      ) {
         setError(t('passwordChange.samePassword'));
       } else if (result.error?.includes('nesprávné') || result.error?.includes('incorrect')) {
         setError(t('passwordChange.currentPasswordIncorrect'));
@@ -71,7 +74,7 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
         setError(result.error || t('passwordChange.currentPasswordIncorrect'));
       }
     }
-    
+
     setLoading(false);
   };
 
@@ -88,77 +91,72 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
       closeOnOverlayClick={!isForced}
       contentClassName="password-modal"
     >
-        
-        <div className="password-modal-body">
-          {isForced && (
-            <div className="password-modal-warning">
-              <p>{t('passwordChange.expiredMessage')}</p>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="password-change-form">
-            <div className="form-group">
-              <label htmlFor="currentPassword">{t('passwordChange.currentPassword')}</label>
-              <input
-                type="password"
-                id="currentPassword"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                disabled={loading}
-                placeholder={t('passwordChange.currentPasswordPlaceholder')}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="newPassword">{t('passwordChange.newPassword')}</label>
-              <input
-                type="password"
-                id="newPassword"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                disabled={loading}
-                placeholder={t('passwordChange.newPasswordPlaceholder')}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="confirmPassword">{t('passwordChange.confirmPassword')}</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                placeholder={t('passwordChange.confirmPasswordPlaceholder')}
-              />
-            </div>
-            
-            {error && <div className="error-message">{error}</div>}
-            
-            <div className="password-modal-actions">
-              <button 
-                type="submit" 
-                className="password-change-button"
+      <div className="password-modal-body">
+        {isForced && (
+          <div className="password-modal-warning">
+            <p>{t('passwordChange.expiredMessage')}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="password-change-form">
+          <div className="form-group">
+            <label htmlFor="currentPassword">{t('passwordChange.currentPassword')}</label>
+            <input
+              type="password"
+              id="currentPassword"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+              disabled={loading}
+              placeholder={t('passwordChange.currentPasswordPlaceholder')}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="newPassword">{t('passwordChange.newPassword')}</label>
+            <input
+              type="password"
+              id="newPassword"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              disabled={loading}
+              placeholder={t('passwordChange.newPasswordPlaceholder')}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">{t('passwordChange.confirmPassword')}</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              disabled={loading}
+              placeholder={t('passwordChange.confirmPasswordPlaceholder')}
+            />
+          </div>
+
+          {error && <div className="error-message">{error}</div>}
+
+          <div className="password-modal-actions">
+            <button type="submit" className="password-change-button" disabled={loading}>
+              {loading ? t('passwordChange.changing') : t('passwordChange.changeButton')}
+            </button>
+            {!isForced && (
+              <button
+                type="button"
+                className="password-cancel-button"
+                onClick={handleClose}
                 disabled={loading}
               >
-                {loading ? t('passwordChange.changing') : t('passwordChange.changeButton')}
+                {t('passwordChange.cancel')}
               </button>
-              {!isForced && (
-                <button 
-                  type="button" 
-                  className="password-cancel-button"
-                  onClick={handleClose}
-                  disabled={loading}
-                >
-                  {t('passwordChange.cancel')}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
+            )}
+          </div>
+        </form>
+      </div>
     </BaseModal>
   );
 };

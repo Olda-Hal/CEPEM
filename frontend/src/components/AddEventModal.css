@@ -93,8 +93,8 @@
   background-color: var(--color-background-secondary);
 }
 
-.checkbox-item input[type="checkbox"],
-.checkbox-item input[type="radio"] {
+.checkbox-item input[type='checkbox'],
+.checkbox-item input[type='radio'] {
   width: auto;
   margin-right: 0.5rem;
   margin-bottom: 0;
@@ -135,7 +135,7 @@
   cursor: pointer;
 }
 
-.radio-item input[type="radio"] {
+.radio-item input[type='radio'] {
   width: auto;
   margin-right: 0.5rem;
   margin-bottom: 0;

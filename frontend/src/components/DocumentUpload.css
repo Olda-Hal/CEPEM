@@ -238,15 +238,15 @@
   .upload-buttons {
     grid-template-columns: 1fr;
   }
-  
+
   .document-upload-modal {
     width: 95%;
   }
-  
+
   .preview-actions {
     flex-direction: column-reverse;
   }
-  
+
   .button-primary,
   .button-secondary {
     width: 100%;

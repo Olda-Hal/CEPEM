@@ -1,4 +1,13 @@
-export type Theme = 'aurora' | 'nebula-blue' | 'emerald-dawn' | 'mystic-violet' | 'obsidian' | 'cyber-azure' | 'forest-shadow' | 'cosmic-purple' | 'crimson-night';
+export type Theme =
+  | 'aurora'
+  | 'nebula-blue'
+  | 'emerald-dawn'
+  | 'mystic-violet'
+  | 'obsidian'
+  | 'cyber-azure'
+  | 'forest-shadow'
+  | 'cosmic-purple'
+  | 'crimson-night';
 
 export interface ThemeInfo {
   id: Theme;
@@ -8,12 +17,12 @@ export interface ThemeInfo {
 
 export const availableThemes: ThemeInfo[] = [
   { id: 'aurora', category: 'light', translationKey: 'themes.aurora' },
-  { id: 'nebula-blue', category: 'light', translationKey: 'themes.nebulaBlue' }, 
+  { id: 'nebula-blue', category: 'light', translationKey: 'themes.nebulaBlue' },
   { id: 'emerald-dawn', category: 'light', translationKey: 'themes.emeraldDawn' },
   { id: 'mystic-violet', category: 'light', translationKey: 'themes.mysticViolet' },
   { id: 'obsidian', category: 'dark', translationKey: 'themes.obsidian' },
   { id: 'cyber-azure', category: 'dark', translationKey: 'themes.cyberAzure' },
-  { id: 'forest-shadow', category: 'dark', translationKey: 'themes.forestShadow' }, 
+  { id: 'forest-shadow', category: 'dark', translationKey: 'themes.forestShadow' },
   { id: 'cosmic-purple', category: 'dark', translationKey: 'themes.cosmicPurple' },
   { id: 'crimson-night', category: 'dark', translationKey: 'themes.crimsonNight' }
 ];
@@ -49,24 +58,25 @@ export class ThemeManager {
   }
 
   public getNextTheme(): Theme {
-    const currentIndex = availableThemes.findIndex(t => t.id === this.currentTheme);
+    const currentIndex = availableThemes.findIndex((t) => t.id === this.currentTheme);
     const nextIndex = (currentIndex + 1) % availableThemes.length;
     return availableThemes[nextIndex].id;
   }
 
   public toggleThemeCategory(): void {
-    const currentThemeInfo = availableThemes.find(t => t.id === this.currentTheme);
+    const currentThemeInfo = availableThemes.find((t) => t.id === this.currentTheme);
     if (!currentThemeInfo) return;
 
     const oppositeCategory = currentThemeInfo.category === 'light' ? 'dark' : 'light';
-    const themesInCategory = availableThemes.filter(t => t.category === oppositeCategory);
-    
+    const themesInCategory = availableThemes.filter((t) => t.category === oppositeCategory);
+
     if (themesInCategory.length > 0) {
       // Try to find a similar theme in the opposite category
-      const similarTheme = themesInCategory.find(t => 
-        t.id.includes(currentThemeInfo.id.split('-')[1]) // Match color variant
-      ) || themesInCategory[0]; // Fallback to first theme in category
-      
+      const similarTheme =
+        themesInCategory.find(
+          (t) => t.id.includes(currentThemeInfo.id.split('-')[1]) // Match color variant
+        ) || themesInCategory[0]; // Fallback to first theme in category
+
       this.setTheme(similarTheme.id);
     }
   }
@@ -94,7 +104,7 @@ export class ThemeManager {
   private loadTheme(): void {
     try {
       const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-      if (savedTheme && availableThemes.some(t => t.id === savedTheme)) {
+      if (savedTheme && availableThemes.some((t) => t.id === savedTheme)) {
         this.currentTheme = savedTheme;
         this.applyTheme(savedTheme);
       }
@@ -120,8 +130,8 @@ export class ThemeManager {
         // Only auto-switch if user hasn't manually selected a theme recently
         const lastThemeChange = localStorage.getItem('cepem-theme-manual-change');
         const now = Date.now();
-        const fiveMinutesAgo = now - (5 * 60 * 1000);
-        
+        const fiveMinutesAgo = now - 5 * 60 * 1000;
+
         if (!lastThemeChange || parseInt(lastThemeChange) < fiveMinutesAgo) {
           this.setTheme(e.matches ? 'obsidian' : 'aurora');
         }
@@ -130,7 +140,7 @@ export class ThemeManager {
   }
 
   private notifyListeners(theme: Theme): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(theme);
       } catch (error) {
@@ -166,5 +176,5 @@ export const getThemeUtils = () => ({
     themeManager.markManualThemeChange();
     themeManager.setTheme(themeManager.getNextTheme());
   },
-  availableThemes,
+  availableThemes
 });

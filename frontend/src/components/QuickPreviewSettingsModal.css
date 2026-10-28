@@ -106,7 +106,7 @@
   padding-left: 35px;
 }
 
-.setting-label input[type="checkbox"] {
+.setting-label input[type='checkbox'] {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -137,7 +137,7 @@
 }
 
 .checkmark:after {
-  content: "";
+  content: '';
   position: absolute;
   display: none;
 }
@@ -214,11 +214,11 @@
     width: 95%;
     margin: 10px;
   }
-  
+
   .settings-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-header,
   .modal-content,
   .modal-footer {

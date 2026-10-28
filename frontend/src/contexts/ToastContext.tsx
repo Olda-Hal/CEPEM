@@ -26,16 +26,19 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const push = useCallback((type: ToastType, message: string) => {
-    const id = ++nextId.current;
-    setToasts((prev) => [...prev.slice(-4), { id, type, message }]);
-    window.setTimeout(() => dismiss(id), type === 'error' ? 7000 : 4000);
-  }, [dismiss]);
+  const push = useCallback(
+    (type: ToastType, message: string) => {
+      const id = ++nextId.current;
+      setToasts((prev) => [...prev.slice(-4), { id, type, message }]);
+      window.setTimeout(() => dismiss(id), type === 'error' ? 7000 : 4000);
+    },
+    [dismiss]
+  );
 
   const value: ToastContextValue = {
     success: useCallback((message: string) => push('success', message), [push]),
     error: useCallback((message: string) => push('error', message), [push]),
-    info: useCallback((message: string) => push('info', message), [push]),
+    info: useCallback((message: string) => push('info', message), [push])
   };
 
   return (

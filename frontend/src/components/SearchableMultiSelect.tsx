@@ -42,13 +42,13 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(option =>
-    option.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  const filteredOptions = options
+    .filter((option) => option.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleToggle = (id: number) => {
     if (selectedIds.includes(id)) {
-      onChange(selectedIds.filter(selectedId => selectedId !== id));
+      onChange(selectedIds.filter((selectedId) => selectedId !== id));
     } else {
       onChange([...selectedIds, id]);
     }
@@ -66,14 +66,15 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
+
       if (filteredOptions.length === 1) {
         handleToggle(filteredOptions[0].id);
       } else if (showAddButton) {
         handleAddNew();
       }
     }
-  };  const selectedOptions = options.filter(option => selectedIds.includes(option.id));
+  };
+  const selectedOptions = options.filter((option) => selectedIds.includes(option.id));
 
   const showAddButton = onAddNew && searchQuery.trim() && filteredOptions.length === 0;
 
@@ -81,10 +82,10 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
     <div className="searchable-multi-select" ref={containerRef}>
       {label && <label className="multi-select-label">{label}</label>}
       {helpText && <p className="form-help-text">{helpText}</p>}
-      
+
       {selectedOptions.length > 0 && (
         <div className="selected-items">
-          {selectedOptions.map(option => (
+          {selectedOptions.map((option) => (
             <div key={option.id} className="selected-item">
               <span>{option.name}</span>
               <button
@@ -113,11 +114,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
           className="search-input"
         />
         {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="clear-search"
-          >
+          <button type="button" onClick={() => setSearchQuery('')} className="clear-search">
             ×
           </button>
         )}
@@ -125,7 +122,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
 
       {isOpen && (
         <div className="dropdown-menu">
-          {filteredOptions.map(option => (
+          {filteredOptions.map((option) => (
             <label key={option.id} className="dropdown-item">
               <input
                 type="checkbox"
@@ -136,11 +133,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
             </label>
           ))}
           {showAddButton && (
-            <button
-              type="button"
-              onClick={handleAddNew}
-              className="add-new-button"
-            >
+            <button type="button" onClick={handleAddNew} className="add-new-button">
               {t('events.addToList', { name: searchQuery })}
             </button>
           )}

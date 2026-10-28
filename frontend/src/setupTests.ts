@@ -13,11 +13,11 @@ if (typeof globalThis.localStorage === 'undefined' || globalThis.localStorage ==
     key: (index: number) => Array.from(store.keys())[index] ?? null,
     get length() {
       return store.size;
-    },
+    }
   };
   Object.defineProperty(globalThis, 'localStorage', {
     value: memoryLocalStorage,
     configurable: true,
-    writable: true,
+    writable: true
   });
 }

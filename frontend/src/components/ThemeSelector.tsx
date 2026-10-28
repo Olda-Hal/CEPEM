@@ -21,23 +21,21 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className = '' }) 
       >
         <optgroup label={t('themes.lightThemes')}>
           {availableThemes
-            .filter(theme => theme.category === 'light')
-            .map(theme => (
+            .filter((theme) => theme.category === 'light')
+            .map((theme) => (
               <option key={theme.id} value={theme.id}>
                 {t(theme.translationKey)}
               </option>
-            ))
-          }
+            ))}
         </optgroup>
         <optgroup label={t('themes.darkThemes')}>
           {availableThemes
-            .filter(theme => theme.category === 'dark')
-            .map(theme => (
+            .filter((theme) => theme.category === 'dark')
+            .map((theme) => (
               <option key={theme.id} value={theme.id}>
                 {t(theme.translationKey)}
               </option>
-            ))
-          }
+            ))}
         </optgroup>
       </select>
       <div className="theme-preview" />

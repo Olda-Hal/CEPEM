@@ -24,10 +24,20 @@ describe('parseIntakeSummary', () => {
 
   it('routes covid and gynecology lines into their sections', () => {
     const summary = parseIntakeSummary(
-      ['COVID: ano', 'Vakcinace (Chřipka): 2021', 'Rodila: ano (2x)', 'Kojila: ano', 'RTG mamograf: ano (1x)'].join('\n')
+      [
+        'COVID: ano',
+        'Vakcinace (Chřipka): 2021',
+        'Rodila: ano (2x)',
+        'Kojila: ano',
+        'RTG mamograf: ano (1x)'
+      ].join('\n')
     );
     expect(summary.covid).toEqual(['COVID: ano', 'Vakcinace (Chřipka): 2021']);
-    expect(summary.gynecology).toEqual(['Rodila: ano (2x)', 'Kojila: ano', 'RTG mamograf: ano (1x)']);
+    expect(summary.gynecology).toEqual([
+      'Rodila: ano (2x)',
+      'Kojila: ano',
+      'RTG mamograf: ano (1x)'
+    ]);
   });
 
   it('skips blank lines and keeps raw lines', () => {

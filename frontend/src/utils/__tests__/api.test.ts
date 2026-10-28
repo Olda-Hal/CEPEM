@@ -31,7 +31,7 @@ describe('API Client', () => {
       expect.stringContaining('/test-endpoint'),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'Authorization': `Bearer ${mockToken}`
+          Authorization: `Bearer ${mockToken}`
         })
       })
     );
@@ -61,7 +61,7 @@ describe('API Client', () => {
 
   test('makes POST request with data', async () => {
     const testData = { name: 'test' };
-    
+
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true }),

@@ -31,11 +31,11 @@ interface ExtractableTextProps {
 
 /**
  * Komponenta pro automatickou extrakci textů do lokalizačních souborů
- * 
+ *
  * Použití:
- * <ExtractableText 
- *   i18nKey="dashboard.welcome" 
- *   defaultText={t('common.welcome')} 
+ * <ExtractableText
+ *   i18nKey="dashboard.welcome"
+ *   defaultText={t('common.welcome')}
  *   values={{ name: t('common.defaultName') }}
  *   as="h1"
  *   className="title"
@@ -50,8 +50,8 @@ export const ExtractableText: React.FC<ExtractableTextProps> = ({
   ...props
 }) => {
   const { t } = useTranslation();
-  
+
   const translatedText = t(i18nKey, { defaultValue: defaultText, ...values });
-  
+
   return React.createElement(Component as any, { className, ...props }, translatedText);
 };

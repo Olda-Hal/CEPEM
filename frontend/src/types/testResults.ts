@@ -36,9 +36,12 @@ export interface ServiceDetails {
 export interface LiveStatus {
   timestamp: string;
   testResultsPath: boolean;
-  services: Record<string, {
-    hasResults: boolean;
-    fileCount: number;
-    lastUpdate: string | null;
-  }>;
+  services: Record<
+    string,
+    {
+      hasResults: boolean;
+      fileCount: number;
+      lastUpdate: string | null;
+    }
+  >;
 }

@@ -40,34 +40,42 @@ const ActivityLogPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<ActivityLogEntry | null>(null);
 
-  const buildParams = useCallback((pageToLoad: number) => {
-    const params = new URLSearchParams({ page: String(pageToLoad), limit: String(PAGE_SIZE) });
-    if (search.trim()) {
-      params.set('search', search.trim());
-    }
-    if (methodFilter) {
-      params.set('method', methodFilter);
-    }
-    if (statusFilter) {
-      params.set('statusCode', statusFilter);
-    }
-    return params;
-  }, [search, methodFilter, statusFilter]);
+  const buildParams = useCallback(
+    (pageToLoad: number) => {
+      const params = new URLSearchParams({ page: String(pageToLoad), limit: String(PAGE_SIZE) });
+      if (search.trim()) {
+        params.set('search', search.trim());
+      }
+      if (methodFilter) {
+        params.set('method', methodFilter);
+      }
+      if (statusFilter) {
+        params.set('statusCode', statusFilter);
+      }
+      return params;
+    },
+    [search, methodFilter, statusFilter]
+  );
 
-  const loadLogs = useCallback(async (pageToLoad: number) => {
-    setLoading(true);
-    try {
-      const response = await apiClient.get<ActivityLogListResponse>(`/api/activitylogs?${buildParams(pageToLoad).toString()}`);
-      setLogs(response.logs);
-      setTotalCount(response.totalCount);
-      setHasMore(response.hasMore);
-    } catch (error) {
-      console.error('Error loading activity log', error);
-      toast.error(t('activityLog.loadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [buildParams, t, toast]);
+  const loadLogs = useCallback(
+    async (pageToLoad: number) => {
+      setLoading(true);
+      try {
+        const response = await apiClient.get<ActivityLogListResponse>(
+          `/api/activitylogs?${buildParams(pageToLoad).toString()}`
+        );
+        setLogs(response.logs);
+        setTotalCount(response.totalCount);
+        setHasMore(response.hasMore);
+      } catch (error) {
+        console.error('Error loading activity log', error);
+        toast.error(t('activityLog.loadFailed'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildParams, t, toast]
+  );
 
   useEffect(() => {
     void loadLogs(page);
@@ -93,7 +101,8 @@ const ActivityLogPage: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'activity-log.csv';
+      link.download =
+        response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'activity-log.csv';
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -127,19 +136,31 @@ const ActivityLogPage: React.FC = () => {
           <select
             aria-label={t('activityLog.actionFilter')}
             value={methodFilter}
-            onChange={(e) => { setMethodFilter(e.target.value); setPage(0); }}
+            onChange={(e) => {
+              setMethodFilter(e.target.value);
+              setPage(0);
+            }}
           >
-            <option value="">{t('activityLog.actionFilter')}: {t('activityLog.all')}</option>
+            <option value="">
+              {t('activityLog.actionFilter')}: {t('activityLog.all')}
+            </option>
             {HTTP_METHODS.map((method) => (
-              <option key={method} value={method}>{method}</option>
+              <option key={method} value={method}>
+                {method}
+              </option>
             ))}
           </select>
           <select
             aria-label={t('activityLog.statusFilter')}
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(0);
+            }}
           >
-            <option value="">{t('activityLog.statusFilter')}: {t('activityLog.all')}</option>
+            <option value="">
+              {t('activityLog.statusFilter')}: {t('activityLog.all')}
+            </option>
             <option value="200">200</option>
             <option value="201">201</option>
             <option value="400">400</option>
@@ -158,11 +179,7 @@ const ActivityLogPage: React.FC = () => {
         </form>
 
         <div className="activity-log-meta">
-          {loading ? (
-            t('common.loading')
-          ) : (
-            t('activityLog.totalEntries', { count: totalCount })
-          )}
+          {loading ? t('common.loading') : t('activityLog.totalEntries', { count: totalCount })}
         </div>
 
         {!loading && logs.length === 0 ? (
@@ -185,13 +202,22 @@ const ActivityLogPage: React.FC = () => {
                   className={`log-row-clickable${log.statusCode && log.statusCode >= 400 ? ' log-row-error' : ''}`}
                   onClick={() => setSelectedLog(log)}
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedLog(log); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedLog(log);
+                    }
+                  }}
                 >
                   <td className="log-time">{formatTime(log.timestamp)}</td>
                   <td className="log-user">{log.employeeEmail ?? '—'}</td>
                   <td className="log-method">{log.method ?? '—'}</td>
-                  <td className="log-action" title={log.details ?? undefined}>{log.action}</td>
-                  <td className={`log-status ${log.statusCode && log.statusCode >= 400 ? 'status-error' : 'status-ok'}`}>
+                  <td className="log-action" title={log.details ?? undefined}>
+                    {log.action}
+                  </td>
+                  <td
+                    className={`log-status ${log.statusCode && log.statusCode >= 400 ? 'status-error' : 'status-ok'}`}
+                  >
                     {log.statusCode ?? '—'}
                   </td>
                 </tr>
@@ -227,7 +253,10 @@ const ActivityLogPage: React.FC = () => {
             <dt>{t('activityLog.time')}</dt>
             <dd>{formatTime(selectedLog.timestamp)}</dd>
             <dt>{t('activityLog.user')}</dt>
-            <dd>{selectedLog.employeeEmail ?? '—'}{selectedLog.employeeId != null ? ` (#${selectedLog.employeeId})` : ''}</dd>
+            <dd>
+              {selectedLog.employeeEmail ?? '—'}
+              {selectedLog.employeeId != null ? ` (#${selectedLog.employeeId})` : ''}
+            </dd>
             <dt>{t('activityLog.method')}</dt>
             <dd>{selectedLog.method ?? '—'}</dd>
             <dt>{t('activityLog.action')}</dt>

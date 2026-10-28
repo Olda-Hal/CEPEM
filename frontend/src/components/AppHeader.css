@@ -91,7 +91,7 @@
   color: white;
 }
 
-.auto-refresh-control input[type="checkbox"] {
+.auto-refresh-control input[type='checkbox'] {
   width: 1rem;
   height: 1rem;
 }
@@ -140,29 +140,29 @@
   .app-header {
     padding: 20px 15px;
   }
-  
+
   .app-header-content {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .header-left {
     align-self: flex-start;
   }
-  
+
   .logo-icon {
     width: 24px;
     height: 24px;
   }
-  
+
   .app-name {
     font-size: 1.4rem;
   }
-  
+
   .app-subtitle {
     font-size: 0.8rem;
   }
-  
+
   .section-title h2 {
     font-size: 1.8rem;
   }
