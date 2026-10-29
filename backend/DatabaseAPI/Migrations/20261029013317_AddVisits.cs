@@ -113,7 +113,7 @@ LEFT JOIN `Comments` c ON c.`Id` = e.`CommentId`;
 
             migrationBuilder.Sql(@"
 INSERT INTO `Visits` (`PatientId`, `VisitDate`, `Note`, `SourceEventId`, `CreatedByEmployeeId`, `CreatedAt`, `CountryCode`)
-SELECT d.`PatientId`, CAST(DATE(d.`UploadedAt`) AS datetime), 'Přeneseno při migraci', NULL, NULL, UTC_TIMESTAMP(), 'CZ'
+SELECT d.`PatientId`, DATE(d.`UploadedAt`), 'Přeneseno při migraci', NULL, NULL, UTC_TIMESTAMP(), 'CZ'
 FROM `PatientDocuments` d
 WHERE NOT EXISTS (
     SELECT 1 FROM `Visits` v
