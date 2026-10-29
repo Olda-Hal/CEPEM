@@ -8,16 +8,15 @@ produkčním nasazení.
 
 ## TOP 1 — pořadač po UI refactoru (zadáno 2026-10-29, implementovat po dokončení UI oprav/testů)
 
-- **Scoping rolí pro administrátory center a zemí**
-  - Administrátor centra: vidí a edituje **pouze zaměstnance svého centra** a může udělovat **pouze role Vyšetřující a Doktor**; navíc smí **deaktivovat účty** a **vytvářet nové zaměstnance** (rovnou se zařazením do svého centra). *[rozhodnuto 2026-10-29]*
-  - Administrátor země: vytváří centra **jen v zemích, ke kterým má přiřazené administrátorství**, a jen k nim vytváří/přiřazuje pracovníky jako administrátory středisek.
-  - Zasáhnout: DatabaseAPI/HealthcareAPI (filtrování + AUTHORIZAČNÍ kontroly na serveru, nejen skrývání ve FE) a AdminEmployeesPage/CenterManagementPage/CreateEmployeeModal v FE.
-- **Přiřazení zaměstnanců k zemi/centru v editaci zaměstnance** *[rozhodnuto 2026-10-29]*
-  - Do EmployeeEditModal přidat výběr země a centra zaměstnance, aby šlo opravit chybějící přiřazení (podmínka pro zakládání pacientů).
-- **Defaulty při vytváření pacienta**
-  - Home centrum nového pacienta = centrum přihlášeného pracovníka (ke kterému je přiřazen).
-  - Home země nového pacienta = země pracovníka, který pacienta zadal.
-  - Pracovník **bez přiřazeného centra/země NEMŮŽE pacienta založit** (server-side 400 + srozumitelná hláška a návod jít do editace zaměstnance). *[rozhodnuto 2026-10-29]*
+- ~~**Scoping rolí pro administrátory center a zemí**~~ ✅ *(commit ba00c74)*
+  - Administrátor centra: vidí a edituje **pouze zaměstnance svého centra** a může udělovat **pouze role Vyšetřující a Doktor**; smí **deaktivovat účty** a **vytvářet nové zaměstnance** (EmployeeScopeService + seed grants employees.* pro Center Admin).
+  - Administrátor země: vytváří centra **jen v zemích, ke kterým má přiřazené administrátorství** (kontroly v HospitalsController), a jen k nim vytváří/přiřazuje pracovníky (vč. Center Admin rolí). Spravované země = vlastní země + země přiřazených center.
+  - Server-side enforcement (DatabaseAPI), GET /api/admin/employees/scope pro FE zrcadlení.
+- ~~**Přiřazení zaměstnanců k zemi/centru v editaci zaměstnance**~~ ✅ *(commit ba00c74)*
+  - Edit modál i create modál zaměstnance mají výběr země a center; server validuje scope.
+- ~~**Defaulty při vytváření pacienta**~~ ✅ ✅
+  - `Patient.HomeHospitalId` (nový sloupec, migrace `AddPatientHomeHospital`) = první centrum přiřazené tvůrci; home země = země tvůrce (Person.CountryCode).
+  - Pracovník bez přiřazeného centra **nemůže pacienta založit** (400 + česká hláška). ověřeno na živém stacku + 3 testy.
 - **Stránka pacienta → Návštěvy (místo Termínů + Dokumentů + Událostí)**
   - Odstranit tab Termíny ze stránky pacienta **úplně** (rezervační sloty v top menu zůstávají). *[rozhodnuto 2026-10-29]*
   - Dokumenty a Události sloučit do seznamu „návštěv": každá návštěva má **datum**, **poznámku** a **N dokumentů**; k návštěvě lze připojit i **událost vstupního formuláře**, která se vede jako prohlížitelný dokument.

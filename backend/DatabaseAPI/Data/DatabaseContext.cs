@@ -144,6 +144,13 @@ public class DatabaseContext : DbContext
             .HasOne(p => p.Comment)
             .WithMany(c => c.Patients)
             .HasForeignKey(p => p.CommentId);
+
+        // Patient -> HomeHospital (optional; assigned from creator's center)
+        modelBuilder.Entity<Patient>()
+            .HasOne(p => p.HomeHospital)
+            .WithMany()
+            .HasForeignKey(p => p.HomeHospitalId)
+            .OnDelete(DeleteBehavior.Restrict);
             
         // Patient -> PatientDocument (1:many)
         modelBuilder.Entity<PatientDocument>()

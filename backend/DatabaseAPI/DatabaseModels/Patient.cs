@@ -27,6 +27,13 @@ public class Patient
     [StringLength(2)]
     public string CountryCode { get; set; } = DefaultCountryCode;
 
+    /// <summary>
+    /// Home center of the patient — assigned automatically from the creating
+    /// employee's center. Nullable for historical records (pre-migration).
+    /// </summary>
+    public int? HomeHospitalId { get; set; }
+    public Hospital? HomeHospital { get; set; }
+
     public string? PhotoPath { get; set; }
 
     // Soft-delete ("hide from the listing") — records stay in the table for

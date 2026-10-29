@@ -1,6 +1,7 @@
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace DatabaseAPI.Services;
 
@@ -17,15 +18,38 @@ public class PatientService : IPatientService
 {
     private readonly DatabaseContext _context;
     private readonly IUidService _uidService;
+    private readonly IActorCountryContextService _actorCountryContextService;
 
-    public PatientService(DatabaseContext context, IUidService uidService)
+    public PatientService(
+        DatabaseContext context,
+        IUidService uidService,
+        IActorCountryContextService actorCountryContextService)
     {
         _context = context;
         _uidService = uidService;
+        _actorCountryContextService = actorCountryContextService;
     }
 
     public async Task<Patient> CreatePatientAsync(CreatePatientRequest request, string actorCountryCode)
     {
+        // Home centrum pacienta = centrum zakládajícího pracovníka. Pracovník
+        // bez přiřazeného centra nesmí pacienta založit (přiřazení nastaví
+        // nadřízený v editaci zaměstnance).
+        var actorEmployeeId = _actorCountryContextService.GetActorEmployeeId();
+        var homeHospitalId = actorEmployeeId == null
+            ? (int?)null
+            : await _context.HospitalEmployees
+                .Where(he => he.EmployeeId == actorEmployeeId.Value)
+                .Select(he => (int?)he.HospitalId)
+                .FirstOrDefaultAsync();
+
+        if (homeHospitalId == null)
+        {
+            throw new ScopeViolationException(
+                "Pacienta nelze založit: váš účet není přiřazen k žádnému centru. " +
+                "Požádejte svého nadřízeného o přiřazení centra v editaci zaměstnance.");
+        }
+
         var uid = request.Uid;
         if (string.IsNullOrWhiteSpace(uid) || !int.TryParse(uid, out _))
         {
@@ -74,7 +98,8 @@ public class PatientService : IPatientService
             BirthDate = request.BirthDate,
             InsuranceNumber = request.InsuranceNumber ?? 0,
             CountryCode = actorCountryCode,
-            Alive = true
+            Alive = true,
+            HomeHospitalId = homeHospitalId
         };
 
         _context.Patients.Add(patient);

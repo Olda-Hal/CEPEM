@@ -1152,6 +1152,9 @@ namespace DatabaseAPI.Migrations
                     b.Property<string>("DeletedBy")
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("HomeHospitalId")
+                        .HasColumnType("int");
+
                     b.Property<int>("InsuranceNumber")
                         .HasColumnType("int");
 
@@ -1167,6 +1170,8 @@ namespace DatabaseAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CommentId");
+
+                    b.HasIndex("HomeHospitalId");
 
                     b.HasIndex("PersonId")
                         .IsUnique();
@@ -2143,6 +2148,11 @@ namespace DatabaseAPI.Migrations
                         .WithMany("Patients")
                         .HasForeignKey("CommentId");
 
+                    b.HasOne("DatabaseAPI.DatabaseModels.Hospital", "HomeHospital")
+                        .WithMany()
+                        .HasForeignKey("HomeHospitalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("DatabaseAPI.DatabaseModels.Person", "Person")
                         .WithOne("Patient")
                         .HasForeignKey("DatabaseAPI.DatabaseModels.Patient", "PersonId")
@@ -2150,6 +2160,8 @@ namespace DatabaseAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Comment");
+
+                    b.Navigation("HomeHospital");
 
                     b.Navigation("Person");
                 });

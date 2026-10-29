@@ -155,6 +155,11 @@ namespace DatabaseAPI.Controllers
 
                 return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patientDto);
             }
+            catch (ScopeViolationException ex)
+            {
+                // Actor without an assigned center may not create patients
+                return BadRequest(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating patient");

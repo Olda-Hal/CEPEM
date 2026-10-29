@@ -315,7 +315,9 @@ export const AddPatientFormPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || 'Chyba při vytváření pacienta');
+      // ApiError.message carries the server-provided reason (např. chybějící
+      // přiřazení účtu k centru); fallback is the generic failure message.
+      setError(err?.response?.data?.message || err?.message || 'Chyba při vytváření pacienta');
     } finally {
       setLoading(false);
     }
