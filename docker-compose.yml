@@ -45,6 +45,7 @@ services:
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
       - DATABASE_CORS_ORIGINS=http://${APP_HOST}:3000,http://127.0.0.1:3000,http://frontend:3000
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents
