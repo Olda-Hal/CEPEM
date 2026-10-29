@@ -162,6 +162,7 @@ jobs:
           HEALTHCARE_API_PORT=3001
           DATABASE_API_PORT=5001
           FRONTEND_PORT=3000
+          GRAFANA_PORT=3002
           ADMIN_INITIAL_PASSWORD=E2eCiTest123!
           ENV
           docker compose up -d --build
