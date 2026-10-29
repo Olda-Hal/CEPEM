@@ -693,3 +693,31 @@ export interface AdminScope {
   administeredCountryScopeIds: number[];
   assignableRoleNames: string[];
 }
+
+/** Visit ("návštěva") of a patient. */
+export interface VisitListItem {
+  id: number;
+  visitDate: string;
+  note?: string | null;
+  documentCount: number;
+  hasIntakeForm: boolean;
+  sourceEventId?: number | null;
+}
+
+export interface VisitDocumentItem {
+  documentId: number;
+  fileName: string;
+  originalFileName: string;
+  uploadedAt: string;
+  fileSize: number;
+}
+
+export interface VisitDetail {
+  id: number;
+  patientId: number;
+  visitDate: string;
+  note?: string | null;
+  sourceEventId?: number | null;
+  documents: VisitDocumentItem[];
+  intakeForm?: string | null;
+}

@@ -10,7 +10,7 @@ interface AddIntakeFormEventModalProps {
   patientLastName?: string;
   isOpen: boolean;
   onClose: () => void;
-  onEventCreated: () => void;
+  onEventCreated: (eventId?: number) => void;
 }
 
 const getDefaultFormData = (firstName: string, lastName: string): PatientFormData => ({
@@ -233,8 +233,11 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
             : []
       };
 
-      await apiClient.post('/api/events/intake-form', payload);
-      onEventCreated();
+      const created = await apiClient.post<{ eventId?: number }>(
+        '/api/events/intake-form',
+        payload
+      );
+      onEventCreated(created?.eventId);
       onClose();
     } catch (err: any) {
       console.error(err);

@@ -1657,6 +1657,72 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("VaccineTypes");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Visit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("varchar(2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SourceEventId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("VisitDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("SourceEventId");
+
+                    b.ToTable("Visits");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.VisitDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("PatientDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VisitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientDocumentId");
+
+                    b.HasIndex("VisitId", "PatientDocumentId")
+                        .IsUnique();
+
+                    b.ToTable("VisitDocuments");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Appointment", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.HospitalEmployee", "HospitalEmployee")
@@ -2398,6 +2464,43 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("NameTranslation");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Visit", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Event", "SourceEvent")
+                        .WithMany()
+                        .HasForeignKey("SourceEventId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("SourceEvent");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.VisitDocument", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.PatientDocument", "PatientDocument")
+                        .WithMany()
+                        .HasForeignKey("PatientDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Visit", "Visit")
+                        .WithMany("Documents")
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PatientDocument");
+
+                    b.Navigation("Visit");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Address", b =>
                 {
                     b.Navigation("Hospital");
@@ -2584,6 +2687,11 @@ namespace DatabaseAPI.Migrations
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.VaccineType", b =>
                 {
                     b.Navigation("Vaccines");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.Visit", b =>
+                {
+                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

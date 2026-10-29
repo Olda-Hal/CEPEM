@@ -17,13 +17,12 @@ produkčním nasazení.
 - ~~**Defaulty při vytváření pacienta**~~ ✅ ✅
   - `Patient.HomeHospitalId` (nový sloupec, migrace `AddPatientHomeHospital`) = první centrum přiřazené tvůrci; home země = země tvůrce (Person.CountryCode).
   - Pracovník bez přiřazeného centra **nemůže pacienta založit** (400 + česká hláška). ověřeno na živém stacku + 3 testy.
-- **Stránka pacienta → Návštěvy (místo Termínů + Dokumentů + Událostí)**
-  - Odstranit tab Termíny ze stránky pacienta **úplně** (rezervační sloty v top menu zůstávají). *[rozhodnuto 2026-10-29]*
-  - Dokumenty a Události sloučit do seznamu „návštěv": každá návštěva má **datum**, **poznámku** a **N dokumentů**; k návštěvě lze připojit i **událost vstupního formuláře**, která se vede jako prohlížitelný dokument.
-  - Workflow: doktor přidá návštěvu → zvolí datum → nová stránka návštěvy (vlevo karta pacienta s fotkou a jménem, vpravo upload dokumentů / přidání intake formuláře).
-  - **Migrace existujících dat povinná a bez ztráty**: stávající události → návštěvy; dokumenty navázané na události jdou do jejich návštěv; **nenavázané dokumenty se rozřadí do návštěv podle dne nahrání** (jedna návštěva na pacienta+den, poznámka např. „Přeneseno při migraci"). Nic nemazat. *[rozhodnuto 2026-10-29: per-day varianta]*
-- **Hover submenu v horní navigaci**
-  - Při najetí na položky top menu (Administrativ/Admin…) zobrazit dropdown s podmožnostmi, pokud existují.
+- ~~**Stránka pacienta → Návštěvy (místo Termínů + Dokumentů + Událostí)**~~ ✅
+  - Nové entity Visit + VisitDocument (migrace `AddVisits` vč. SQL backfillu: Events → Visits s poznámkou z komentáře, PatientDocuments roztříděné do návštěv podle dne nahrání s preferencí event-návštěvy; žádná data smazána).
+  - Detail pacienta: sekce Termíny odstraněna, Události+Dokumenty nahrazeny seznamem Návštěv; nová stránka detailu návštěvy `/patients/:id/visits/:visitId` (sidebar karta pacienta, poznámka, dokumenty s uploadem, vstupní formulář jako propojitelný prohlížitelný obsah).
+  - Backend VisitsController (list/create/update/attach) + gateway proxy routy; 4 nové backend testy; ověřeno živě včetně backfillu.
+- ~~**Hover submenu v horní navigaci**~~ ✅
+  - Administrativa a Admin v top menu mají hover/focus dropdown s podsekcemi; položky filtrované rolí uživatele.
 
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
@@ -33,6 +32,19 @@ produkčním nasazení.
 - DB hygiena: v tabulkách zaměstnanců jsou záznamy s UUID UID („Admin User") a ve správě rolí bezjmenná role.
 - Nativní date/time inputy se renderují podle locale prohlížeče (v headless testech en-US formát) — sjednotit cs-CZ, případně vlastní pickery.
 - Health dashboard: po deploy ověřit nové routy `/health` a `/db-health` v produkčním nginxu (nginx.conf se peče do image, nutný rebuild frontendu).
+
+## Další možnosti (nápady navrhované po dokončení TOP 1, 2026-10-29)
+
+- **Rezervace → Návštěva**: rezervační slot propojit s návštěvou (karta slotu → "zahájit návštěvu" vytvoří návštěvu na dnešek s předvyplněným pacientem; na návštěvě vidět, ze kterého slotu vznikla).
+- **Vstupní formulář jako PDF**: preview intake formuláře v návštěvě je teď text z komentáře; zvážit generování/ukládání reálného PDF dokumentu (konzistentní s ostatními přílohami, tisk).
+- **Editace návštěvy v UI**: datum návštěvy i odpojení přílohy/smazání návštěvy (PATCH endpoint má, FE zatím jen poznámka).
+- **Intake formulář editovatelně dodatečně**: po odevzdání zatím jen náhled — povolit opravu (existující Event/FormSubmission edit flow nebo nová verze formuláře jako další "revize" dokumentu).
+- **hygiena dat admin plochy**: bezjmenná role („") ve správě rolí a zaměstnanci s UUID UID („Admin User") — skript na sjednocení + UNIQUE ochrana před duplicitními rolemi.
+- **Naturální lokalizace**: strojové anglické label v tabulkách pacientů/employes (Status "Živ", názvy typů událostí/rolí z EN překladů) přeložit do CS i EN klíčů konzistentně.
+- **E2E suite pro TOP 1 toky**: playwright testy (scoping viditelnost zaměstnanců, vytvoření pacienta s/bez centra, návštěvy vč. backfill sanity) jako trvalé repro (dev smoke skripty se mažou).
+- **Hromadné přiřazení center**: při onboardingu nového pracovníka bez centra — akce "přiřadit do centra" přímo z tabulky zaměstnanců (de facto hotovo v edit modálu, zvážit inline UX).
+- **Skener → návštěva**: rychlé naskenování dokumentu přímo do otevřené návštěvy (rozšíření stávající kamery/scan flow v DocumentUpload).
+- **Hlídání "orphan" příloh**: dokumenty bez návštěvy po novém toku by už neměly vznikat — přidat index/view/report kontrolující, že každý dokument má VisitDocument záznam (dev DB má 0, ověřit na produkci).
 
 ## Nasazení (nejdřív tohle) — zbývá udělat na produkci
 

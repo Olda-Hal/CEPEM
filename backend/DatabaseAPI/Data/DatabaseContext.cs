@@ -12,6 +12,8 @@ public class DatabaseContext : DbContext
     // Core entities
     public DbSet<Person> Persons { get; set; }
     public DbSet<Patient> Patients { get; set; }
+    public DbSet<Visit> Visits { get; set; }
+    public DbSet<VisitDocument> VisitDocuments { get; set; }
     public DbSet<Employee> Employees { get; set; }
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Role> Roles { get; set; }
@@ -151,6 +153,35 @@ public class DatabaseContext : DbContext
             .WithMany()
             .HasForeignKey(p => p.HomeHospitalId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Patient -> Visit (1:many); Visit -> VisitDocument (1:many)
+        modelBuilder.Entity<Visit>()
+            .HasOne(v => v.Patient)
+            .WithMany()
+            .HasForeignKey(v => v.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Visit>()
+            .HasOne(v => v.SourceEvent)
+            .WithMany()
+            .HasForeignKey(v => v.SourceEventId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VisitDocument>()
+            .HasOne(vd => vd.Visit)
+            .WithMany(v => v.Documents)
+            .HasForeignKey(vd => vd.VisitId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VisitDocument>()
+            .HasOne(vd => vd.PatientDocument)
+            .WithMany()
+            .HasForeignKey(vd => vd.PatientDocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VisitDocument>()
+            .HasIndex(vd => new { vd.VisitId, vd.PatientDocumentId })
+            .IsUnique();
             
         // Patient -> PatientDocument (1:many)
         modelBuilder.Entity<PatientDocument>()

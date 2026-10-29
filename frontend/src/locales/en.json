@@ -518,7 +518,10 @@
         "uploadFailed": "Error uploading document",
         "viewFailed": "Error viewing document",
         "deleteFailed": "Error deleting document"
-      }
+      },
+      "upload": "Upload document",
+      "empty": "No documents yet.",
+      "uploadSuccess": "Document uploaded"
     },
     "genders": {
       "m": "Male",
@@ -544,7 +547,15 @@
     "deleteConfirm": "The patient will be hidden from lists, but their data (events, documents, forms) stays in the database. Continue?",
     "deleteAction": "Hide patient",
     "deleteFailed": "Failed to hide patient",
-    "restoreFailed": "Failed to restore patient"
+    "restoreFailed": "Failed to restore patient",
+    "backToPatient": "Back to patient",
+    "insuranceCompany": "Insurance company",
+    "docs": {
+      "title": "Documents",
+      "upload": "Upload document",
+      "empty": "No documents yet.",
+      "uploadSuccess": "Document uploaded"
+    }
   },
   "admin": {
     "employeeManagement": "Employee Management",
@@ -920,5 +931,26 @@
   },
   "app": {
     "defaultName": "CEPEM"
+  },
+  "visits": {
+    "title": "Visits",
+    "addVisit": "Add visit",
+    "addVisitTitle": "New visit",
+    "createVisit": "Create visit",
+    "visitDate": "Visit date",
+    "visitNote": "Note",
+    "visitNotePlaceholder": "Note for this visit…",
+    "documentsCount": "{{count}} doc.",
+    "intakeBadge": "Intake form",
+    "empty": "No visits yet.",
+    "loadFailed": "Failed to load visits",
+    "createFailed": "Failed to create the visit",
+    "detailTitle": "Visit on {{date}}",
+    "saveNote": "Save note",
+    "noteSaved": "Note saved",
+    "noteSaveFailed": "Failed to save the note",
+    "intakeTitle": "Intake form",
+    "intakeEmpty": "No intake form filled for this visit yet.",
+    "addIntake": "Fill intake form"
   }
 }

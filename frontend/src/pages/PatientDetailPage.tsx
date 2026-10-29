@@ -5,16 +5,11 @@ import { PatientDetail, QuickPreviewSettings } from '../types';
 import { parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
-import AddEventModal from '../components/AddEventModal';
-import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
-import { DocumentUpload } from '../components/DocumentUpload';
 import './PatientDetailPage.css';
 
 import { useToast } from '../contexts/ToastContext';
-import PatientEventsSection from '../components/patient/PatientEventsSection';
-import PatientDocumentsSection from '../components/patient/PatientDocumentsSection';
+import PatientVisitsSection from '../components/patient/PatientVisitsSection';
 import CameraCaptureModal from '../components/patient/CameraCaptureModal';
-import { formatDateTime } from '../utils/format';
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,14 +21,9 @@ export const PatientDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [photoObjectUrl, setPhotoObjectUrl] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showAddEventModal, setShowAddEventModal] = useState(false);
-  const [showAddIntakeFormModal, setShowAddIntakeFormModal] = useState(false);
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-  const [uploadingDocument, setUploadingDocument] = useState(false);
   const [editingComment, setEditingComment] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showCamera, setShowCamera] = useState(false);
-  const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
 
   const intakeSummary = useMemo(() => {
     if (!patient) {
@@ -54,18 +44,6 @@ export const PatientDetailPage: React.FC = () => {
 
     return parseIntakeSummary(intakeEvent?.comment ?? null);
   }, [patient]);
-
-  const toggleEvent = (eventId: number) => {
-    setExpandedEvents((prev: Set<number>) => {
-      const next = new Set(prev);
-      if (next.has(eventId)) {
-        next.delete(eventId);
-      } else {
-        next.add(eventId);
-      }
-      return next;
-    });
-  };
 
   useEffect(() => {
     if (id) {
@@ -130,101 +108,6 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving quick preview settings:', error);
-    }
-  };
-
-  const handleEventAdded = () => {
-    if (id) {
-      loadPatientDetail(parseInt(id));
-    }
-  };
-
-  const handleGenerateIntakeLink = async () => {
-    if (!patient) {
-      return;
-    }
-
-    try {
-      const response = await apiClient.post<{ intakePath: string }>(
-        '/api/events/intake-form-links',
-        {
-          personId: patient.personId
-        }
-      );
-
-      const absoluteLink = `${window.location.origin}${response.intakePath}`;
-
-      try {
-        await navigator.clipboard.writeText(absoluteLink);
-        toast.info(t('patients.intakeLinkCopied', { link: absoluteLink }));
-      } catch {
-        toast.info(t('patients.intakeLinkGenerated', { link: absoluteLink }));
-      }
-    } catch (err: any) {
-      toast.info(err.message || t('patients.intakeLinkGenerationFailed'));
-    }
-  };
-
-  const handleDocumentUpload = async (file: File) => {
-    try {
-      setUploadingDocument(true);
-
-      const formData = new FormData();
-      formData.append('document', file);
-
-      await apiClient.postFormData(`/api/patients/${id}/documents`, formData);
-
-      setShowDocumentUpload(false);
-
-      if (id) {
-        loadPatientDetail(parseInt(id));
-      }
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error(t('patients.documents.errors.uploadFailed'));
-    } finally {
-      setUploadingDocument(false);
-    }
-  };
-
-  const handleDocumentView = async (documentId: number) => {
-    try {
-      const blob = await apiClient.getBlob(`/api/patients/${id}/documents/${documentId}`);
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    } catch (error) {
-      console.error('Error viewing document:', error);
-      toast.error(t('patients.documents.errors.viewFailed'));
-    }
-  };
-
-  const handleExaminationDocumentView = async (examinationId: number, documentId: number) => {
-    try {
-      const blob = await apiClient.getBlob(
-        `/api/examinations/${examinationId}/documents/${documentId}`
-      );
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    } catch (error) {
-      console.error('Error viewing examination document:', error);
-      toast.error(t('patients.documents.errors.viewFailed'));
-    }
-  };
-
-  const handleDocumentDelete = async (documentId: number) => {
-    if (!window.confirm(t('patients.documents.confirmDelete'))) {
-      return;
-    }
-
-    try {
-      await apiClient.delete(`/api/patients/${id}/documents/${documentId}`);
-
-      if (id) {
-        loadPatientDetail(parseInt(id));
-      }
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      toast.error(t('patients.documents.errors.deleteFailed'));
     }
   };
 
@@ -643,64 +526,8 @@ export const PatientDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Patient Events */}
-        <PatientEventsSection
-          events={patient.events}
-          expandedEvents={expandedEvents}
-          onToggleEvent={toggleEvent}
-          onAddEvent={() => setShowAddEventModal(true)}
-          onAddIntakeForm={() => setShowAddIntakeFormModal(true)}
-          onGenerateIntakeLink={handleGenerateIntakeLink}
-          onExaminationDocumentView={handleExaminationDocumentView}
-        />
-
-        {/* Patient Appointments */}
-        <div className="patient-appointments-card">
-          <div className="card-header">
-            <h2>
-              {t('patients.appointments')} ({patient.appointments.length})
-            </h2>
-            <button className="add-appointment-btn">{t('patients.addAppointment')}</button>
-          </div>
-
-          {patient.appointments.length === 0 ? (
-            <div className="no-data">
-              <p>{t('patients.noAppointments')}</p>
-            </div>
-          ) : (
-            <div className="appointments-list">
-              {patient.appointments.map((appointment) => (
-                <div key={appointment.id} className="appointment-item">
-                  <div className="appointment-time">
-                    <div className="start-time">
-                      {formatDateTime(appointment.startTime, i18n.language)}
-                    </div>
-                    <div className="end-time">
-                      {formatDateTime(appointment.endTime, i18n.language)}
-                    </div>
-                  </div>
-
-                  <div className="appointment-details">
-                    <div className="doctor">{appointment.doctorName}</div>
-                    <div className="hospital">{appointment.hospitalName}</div>
-                    {appointment.equipmentName && (
-                      <div className="equipment">{appointment.equipmentName}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Patient Documents */}
-        <PatientDocumentsSection
-          documents={patient.documents}
-          uploading={uploadingDocument}
-          onAdd={() => setShowDocumentUpload(true)}
-          onDocumentView={handleDocumentView}
-          onDocumentDelete={handleDocumentDelete}
-        />
+        {/* Patient Visits ("návštěvy") — replaces the old Termíny + Documents + Events sections */}
+        <PatientVisitsSection patientId={patient.id} />
       </div>
 
       {/* Quick Preview Settings Modal */}
@@ -710,32 +537,6 @@ export const PatientDetailPage: React.FC = () => {
         settings={patient.quickPreviewSettings}
         onSave={handleSaveSettings}
       />
-
-      {/* Add Event Modal */}
-      <AddEventModal
-        isOpen={showAddEventModal}
-        onClose={() => setShowAddEventModal(false)}
-        patientId={patient.id}
-        onEventAdded={handleEventAdded}
-      />
-
-      {/* Add Intake Form Event Modal */}
-      <AddIntakeFormEventModal
-        isOpen={showAddIntakeFormModal}
-        patientId={patient.id}
-        patientFirstName={patient.firstName}
-        patientLastName={patient.lastName}
-        onClose={() => setShowAddIntakeFormModal(false)}
-        onEventCreated={handleEventAdded}
-      />
-
-      {/* Document Upload Modal */}
-      {showDocumentUpload && (
-        <DocumentUpload
-          onUpload={handleDocumentUpload}
-          onCancel={() => setShowDocumentUpload(false)}
-        />
-      )}
 
       {/* Camera Modal */}
       {showCamera && (

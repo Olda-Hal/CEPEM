@@ -34,6 +34,7 @@ const PatientDetailPage = React.lazy(() =>
     return { default: m.PatientDetailPage };
   })
 );
+const VisitDetailPage = React.lazy(() => import('./pages/VisitDetailPage'));
 const AddPatientFormPage = React.lazy(() =>
   import('./pages/AddPatientFormPage').then((m) => {
     return { default: m.AddPatientFormPage };
@@ -155,6 +156,7 @@ function App() {
                     <Route path="/patients" element={<PatientsPage />} />
                     <Route path="/patients/add" element={<AddPatientFormPage />} />
                     <Route path="/patients/:id" element={<PatientDetailPage />} />
+                    <Route path="/patients/:id/visits/:visitId" element={<VisitDetailPage />} />
                     <Route path="/patients/:id/edit" element={<EditPatientPage />} />
                     <Route path="/reservations" element={<ReservationSlotsPage />} />
                     <Route path="/examinations" element={<ExaminationsPage />} />

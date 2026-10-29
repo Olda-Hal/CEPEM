@@ -65,6 +65,7 @@ builder.Services.AddScoped<IEmployeeScopeService, EmployeeScopeService>();
 builder.Services.AddScoped<IUidService, UidService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IVisitService, VisitService>();
 builder.Services.AddScoped<IEventOptionsService, EventOptionsService>();
 builder.Services.AddScoped<IIntakeFormLinkService, IntakeFormLinkService>();
 builder.Services.AddScoped<IExaminationsRepository, ExaminationsRepository>();

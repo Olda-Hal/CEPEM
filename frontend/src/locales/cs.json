@@ -525,7 +525,10 @@
         "uploadFailed": "Chyba při nahrávání dokumentu",
         "viewFailed": "Chyba při otevírání dokumentu",
         "deleteFailed": "Chyba při mazání dokumentu"
-      }
+      },
+      "upload": "Nahrát dokument",
+      "empty": "Zatím žádné dokumenty.",
+      "uploadSuccess": "Dokument nahrán"
     },
     "genders": {
       "m": "Muž",
@@ -551,7 +554,15 @@
     "deleteConfirm": "Pacient bude skrytý ze seznamů, ale jeho údaje (události, dokumenty, formuláře) zůstanou zachovány v databázi. Chcete pokračovat?",
     "deleteAction": "Skrýt pacienta",
     "deleteFailed": "Skrytí pacienta se nezdařilo",
-    "restoreFailed": "Obnovení pacienta se nezdařilo"
+    "restoreFailed": "Obnovení pacienta se nezdařilo",
+    "backToPatient": "Zpět na pacienta",
+    "insuranceCompany": "Pojišťovna",
+    "docs": {
+      "title": "Dokumenty",
+      "upload": "Nahrát dokument",
+      "empty": "Zatím žádné dokumenty.",
+      "uploadSuccess": "Dokument nahrán"
+    }
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",
@@ -931,5 +942,26 @@
   },
   "app": {
     "defaultName": "CEPEM"
+  },
+  "visits": {
+    "title": "Návštěvy",
+    "addVisit": "Přidat návštěvu",
+    "addVisitTitle": "Nová návštěva",
+    "createVisit": "Vytvořit návštěvu",
+    "visitDate": "Datum návštěvy",
+    "visitNote": "Poznámka",
+    "visitNotePlaceholder": "Poznámka k návštěvě…",
+    "documentsCount": "{{count}} dok.",
+    "intakeBadge": "Vstupní formulář",
+    "empty": "Zatím žádné návštěvy.",
+    "loadFailed": "Nepodařilo se načíst návštěvy",
+    "createFailed": "Nepodařilo se vytvořit návštěvu",
+    "detailTitle": "Návštěva {{date}}",
+    "saveNote": "Uložit poznámku",
+    "noteSaved": "Poznámka uložena",
+    "noteSaveFailed": "Poznámku se nepodařilo uložit",
+    "intakeTitle": "Vstupní formulář",
+    "intakeEmpty": "K návštěvě zatím není vyplněný vstupní formulář.",
+    "addIntake": "Vyplnit vstupní formulář"
   }
 }
