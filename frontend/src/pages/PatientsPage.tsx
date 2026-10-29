@@ -18,7 +18,8 @@ export const PatientsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const canSeeDeleted = isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
+  const canSeeDeleted =
+    isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);

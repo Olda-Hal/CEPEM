@@ -3,7 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MdAssignment, MdOutlineDescription, MdPerson } from 'react-icons/md';
 import { apiClient } from '../utils/api';
-import { Patient, PatientDetail, PatientSearchResponse, VisitDetail, VisitListItem } from '../types';
+import {
+  Patient,
+  PatientDetail,
+  PatientSearchResponse,
+  VisitDetail,
+  VisitListItem
+} from '../types';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
 import { BaseModal } from '../components/BaseModal';
@@ -79,9 +85,7 @@ const VisitDetailPage: React.FC = () => {
           sortBy: 'lastName',
           sortOrder: 'asc'
         });
-        const data = await apiClient.get<PatientSearchResponse>(
-          `/api/patients/search?${params}`
-        );
+        const data = await apiClient.get<PatientSearchResponse>(`/api/patients/search?${params}`);
         setSearchResults(data.patients);
         setShowSearchResults(true);
       } catch (err) {
@@ -95,7 +99,9 @@ const VisitDetailPage: React.FC = () => {
     setShowSearchResults(false);
     setPatientSearch('');
     try {
-      const list = await apiClient.get<VisitListItem[]>(`/api/patients/${selectedPatientId}/visits`);
+      const list = await apiClient.get<VisitListItem[]>(
+        `/api/patients/${selectedPatientId}/visits`
+      );
       const latest = list[0];
       if (latest) {
         navigate(`/patients/${selectedPatientId}/visits/${latest.id}`);

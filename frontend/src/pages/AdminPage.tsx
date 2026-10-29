@@ -1,7 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MdAdminPanelSettings, MdAssignment, MdMonitorHeart, MdQueryStats, MdScience } from 'react-icons/md';
+import {
+  MdAdminPanelSettings,
+  MdAssignment,
+  MdMonitorHeart,
+  MdQueryStats,
+  MdScience
+} from 'react-icons/md';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../utils/roles';
 import './AdministrationPage.css';
