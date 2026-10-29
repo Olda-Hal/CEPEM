@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { MdAssignment, MdOutlineDescription, MdPerson } from 'react-icons/md';
 import { apiClient } from '../utils/api';
-import { PatientDetail, VisitDetail } from '../types';
+import { Patient, PatientDetail, PatientSearchResponse, VisitDetail, VisitListItem } from '../types';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
 import { BaseModal } from '../components/BaseModal';
@@ -23,6 +24,7 @@ const VisitDetailPage: React.FC = () => {
   const [patient, setPatient] = useState<PatientDetail | null>(null);
   const [photoObjectUrl, setPhotoObjectUrl] = useState<string | null>(null);
   const [visit, setVisit] = useState<VisitDetail | null>(null);
+  const [visits, setVisits] = useState<VisitListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,17 +33,23 @@ const VisitDetailPage: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
 
+  const [patientSearch, setPatientSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
   const patientId = Number(id);
   const visitIdNum = Number(visitId);
 
   const load = useCallback(async () => {
     try {
-      const [patientData, visitData] = await Promise.all([
+      const [patientData, visitData, visitsData] = await Promise.all([
         apiClient.get<PatientDetail>(`/api/patients/${patientId}`),
-        apiClient.get<VisitDetail>(`/api/patients/${patientId}/visits/${visitIdNum}`)
+        apiClient.get<VisitDetail>(`/api/patients/${patientId}/visits/${visitIdNum}`),
+        apiClient.get<VisitListItem[]>(`/api/patients/${patientId}/visits`)
       ]);
       setPatient(patientData);
       setVisit(visitData);
+      setVisits(visitsData);
       setNoteDraft(visitData.note ?? '');
       setError(null);
     } catch (err) {
@@ -55,6 +63,50 @@ const VisitDetailPage: React.FC = () => {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Patient search (debounced) — lets the user jump to visits of other patients
+  useEffect(() => {
+    if (patientSearch.trim().length < 2) {
+      setSearchResults([]);
+      return undefined;
+    }
+    const timeoutId = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          page: '0',
+          limit: '8',
+          search: patientSearch.trim(),
+          sortBy: 'lastName',
+          sortOrder: 'asc'
+        });
+        const data = await apiClient.get<PatientSearchResponse>(
+          `/api/patients/search?${params}`
+        );
+        setSearchResults(data.patients);
+        setShowSearchResults(true);
+      } catch (err) {
+        console.error('Patient search failed', err);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [patientSearch]);
+
+  const handleSelectPatient = async (selectedPatientId: number) => {
+    setShowSearchResults(false);
+    setPatientSearch('');
+    try {
+      const list = await apiClient.get<VisitListItem[]>(`/api/patients/${selectedPatientId}/visits`);
+      const latest = list[0];
+      if (latest) {
+        navigate(`/patients/${selectedPatientId}/visits/${latest.id}`);
+      } else {
+        navigate(`/patients/${selectedPatientId}`);
+      }
+    } catch (err) {
+      console.error(err);
+      navigate(`/patients/${selectedPatientId}`);
+    }
+  };
 
   // Photo through the authenticated client (endpoint is not anonymous)
   useEffect(() => {
@@ -181,13 +233,40 @@ const VisitDetailPage: React.FC = () => {
 
       <div className="visit-layout">
         <aside className="visit-sidebar">
+          <div className="visit-patient-search">
+            <input
+              type="text"
+              className="visit-patient-search-input"
+              placeholder={t('visits.patientSearchPlaceholder')}
+              value={patientSearch}
+              onChange={(e) => setPatientSearch(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+            />
+            {showSearchResults && searchResults.length > 0 && (
+              <ul className="visit-patient-search-results">
+                {searchResults.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" onClick={() => handleSelectPatient(p.id)}>
+                      <span className="visit-patient-search-name">
+                        {p.lastName}, {p.firstName}
+                      </span>
+                      <span className="visit-patient-search-meta">
+                        {new Date(p.birthDate).toLocaleDateString(i18n.language)} · {p.uid}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <div className="visit-patient-card">
             <div className="visit-patient-photo">
               {photoObjectUrl ? (
                 <img src={photoObjectUrl} alt={fullName} className="visit-patient-photo-img" />
               ) : (
                 <div className="visit-patient-photo-placeholder" aria-hidden>
-                  👤
+                  <MdPerson size={72} />
                 </div>
               )}
             </div>
@@ -201,6 +280,34 @@ const VisitDetailPage: React.FC = () => {
               <dd>{patient.insuranceNumber}</dd>
             </dl>
           </div>
+
+          {visits.length > 0 && (
+            <div className="visit-sidebar-card">
+              <h3 className="visit-sidebar-card-title">{t('visits.otherVisits')}</h3>
+              <div className="visit-sidebar-visits">
+                {visits.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    className={`visit-sidebar-item${v.id === visitIdNum ? ' active' : ''}`}
+                    onClick={() => navigate(`/patients/${patientId}/visits/${v.id}`)}
+                  >
+                    <span className="visit-sidebar-item-date">
+                      {new Date(v.visitDate).toLocaleDateString(i18n.language)}
+                    </span>
+                    <span className="visit-sidebar-item-meta">
+                      {t('visits.documentsCount', { count: v.documentCount })}
+                      {v.hasIntakeForm && (
+                        <span className="visit-sidebar-item-badge">
+                          <MdAssignment size={15} />
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </aside>
 
         <main className="visit-main">
@@ -242,7 +349,8 @@ const VisitDetailPage: React.FC = () => {
                       className="visit-doc-name"
                       onClick={() => handleDocumentView(doc.documentId)}
                     >
-                      📄 {doc.originalFileName}
+                      <MdOutlineDescription size={15} />
+                      {doc.originalFileName}
                     </button>
                     <span className="visit-doc-meta">
                       {new Date(doc.uploadedAt).toLocaleDateString(i18n.language)} ·{' '}
