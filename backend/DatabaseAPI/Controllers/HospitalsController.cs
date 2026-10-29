@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Services;
 
 namespace DatabaseAPI.Controllers;
 
@@ -11,11 +12,33 @@ public class HospitalsController : ControllerBase
 {
     private readonly DatabaseContext _context;
     private readonly ILogger<HospitalsController> _logger;
+    private readonly IEmployeeScopeService _employeeScopeService;
 
-    public HospitalsController(DatabaseContext context, ILogger<HospitalsController> logger)
+    public HospitalsController(
+        DatabaseContext context,
+        ILogger<HospitalsController> logger,
+        IEmployeeScopeService employeeScopeService)
     {
         _context = context;
         _logger = logger;
+        _employeeScopeService = employeeScopeService;
+    }
+
+    /// <summary>
+    /// Country Admin may create/edit centers only within administered countries.
+    /// Returns null when allowed; a 403 result otherwise.
+    /// </summary>
+    private async Task<IActionResult?> CheckCountryScopeAllowedAsync(int requestedScopeId)
+    {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        if (!actor.IsScopedAdmin || !actor.IsCountryAdmin)
+        {
+            return null; // full access or scoping handled elsewhere
+        }
+
+        return actor.AdministeredCountryScopeIds.Contains(requestedScopeId)
+            ? null
+            : StatusCode(403, "Centrum lze zakládat pouze v zemích, které spravujete");
     }
 
     [HttpGet]
@@ -103,6 +126,10 @@ public class HospitalsController : ControllerBase
             if (duplicateExists)
                 return Conflict("Hospital with the same name already exists");
 
+            var scopeCheck = await CheckCountryScopeAllowedAsync(request.CountryScopeId ?? Hospital.CzechCountryScopeId);
+            if (scopeCheck != null)
+                return scopeCheck;
+
             var hospital = new Hospital
             {
                 Name = trimmedName,
@@ -180,7 +207,12 @@ public class HospitalsController : ControllerBase
                 hospital.Active = request.Active;
 
             if (request.CountryScopeId.HasValue && request.CountryScopeId.Value > 0)
+            {
+                var scopeCheck = await CheckCountryScopeAllowedAsync(request.CountryScopeId.Value);
+                if (scopeCheck != null)
+                    return scopeCheck;
                 hospital.CountryScopeId = request.CountryScopeId.Value;
+            }
 
             if (request.Street != null || request.City != null || request.PostalCode != null || request.Country != null)
             {

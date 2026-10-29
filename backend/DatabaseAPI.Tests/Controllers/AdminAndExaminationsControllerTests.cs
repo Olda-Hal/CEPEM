@@ -15,17 +15,20 @@ namespace DatabaseAPI.Tests.Controllers;
 public class AdminControllerTests
 {
     private readonly Mock<IEmployeeManagementService> _service = new();
+    private readonly Mock<IEmployeeScopeService> _scopeService = new();
     private readonly AdminController _controller;
 
     public AdminControllerTests()
     {
-        _controller = new AdminController(_service.Object);
+        _scopeService.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(null, new List<string>(), new List<int>(), new List<int>()));
+        _controller = new AdminController(_service.Object, _scopeService.Object);
     }
 
     [Fact]
     public async Task GetAllEmployees_ReturnsOk()
     {
-        _service.Setup(s => s.GetAllEmployeesAsync())
+        _service.Setup(s => s.GetAllEmployeesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<EmployeeListItem> { new() { EmployeeId = 1 } });
 
         var result = await _controller.GetAllEmployees();
@@ -48,7 +51,7 @@ public class AdminControllerTests
     [Fact]
     public async Task UpdateEmployee_OnFailure_ReturnsBadRequest()
     {
-        _service.Setup(s => s.UpdateEmployeeAsync(It.IsAny<int>(), It.IsAny<UpdateEmployeeRequest>()))
+        _service.Setup(s => s.UpdateEmployeeAsync(It.IsAny<int>(), It.IsAny<UpdateEmployeeRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UpdateEmployeeResponse { Success = false, Message = "bad" });
 
         var result = await _controller.UpdateEmployee(1, new UpdateEmployeeRequest());
@@ -59,7 +62,7 @@ public class AdminControllerTests
     [Fact]
     public async Task DeactivateEmployee_ForMissingEmployee_ReturnsNotFound()
     {
-        _service.Setup(s => s.DeactivateEmployeeAsync(It.IsAny<int>())).ReturnsAsync(false);
+        _service.Setup(s => s.DeactivateEmployeeAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((false, (string?)null));
 
         var result = await _controller.DeactivateEmployee(99999);
 
@@ -69,7 +72,7 @@ public class AdminControllerTests
     [Fact]
     public async Task DeactivateEmployee_OnSuccess_ReturnsOk()
     {
-        _service.Setup(s => s.DeactivateEmployeeAsync(It.IsAny<int>())).ReturnsAsync(true);
+        _service.Setup(s => s.DeactivateEmployeeAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((true, (string?)null));
 
         var result = await _controller.DeactivateEmployee(1);
 

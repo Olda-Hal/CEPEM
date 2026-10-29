@@ -164,12 +164,12 @@ namespace HealthcareAPI.Services
             }
         }
 
-        public async Task<CreateEmployeeResponse?> CreateEmployeeAsync(CreateEmployeeRequest request)
+        public async Task<(CreateEmployeeResponse? Result, string? ErrorBody)> CreateEmployeeAsync(CreateEmployeeRequest request)
         {
             try
             {
                 var client = _httpClientFactory.CreateClient("DatabaseAPI");
-                
+
                 var json = JsonSerializer.Serialize(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await client.PostAsync("/api/auth/create-employee", content);
@@ -181,14 +181,16 @@ namespace HealthcareAPI.Services
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    return JsonSerializer.Deserialize<CreateEmployeeResponse>(responseContent, options);
+                    return (JsonSerializer.Deserialize<CreateEmployeeResponse>(responseContent, options), null);
                 }
 
-                return null;
+                // Surface validation/scope errors from DatabaseAPI
+                var body = (await response.Content.ReadAsStringAsync()).Trim().Trim('"');
+                return (null, string.IsNullOrWhiteSpace(body) ? null : body);
             }
             catch (Exception)
             {
-                return null;
+                return (null, null);
             }
         }
 

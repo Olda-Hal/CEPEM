@@ -24,7 +24,12 @@ public class HospitalsControllerTests : IAsyncLifetime
 
         _context = new DatabaseContext(options);
         _logger = new Mock<ILogger<HospitalsController>>().Object;
-        _controller = new HospitalsController(_context, _logger);
+
+        var scopeMock = new Mock<DatabaseAPI.Services.IEmployeeScopeService>();
+        scopeMock.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DatabaseAPI.Services.ActorScope(
+                null, new List<string> { "SysAdmin" }, new List<int>(), new List<int>()));
+        _controller = new HospitalsController(_context, _logger, scopeMock.Object);
     }
 
     public async Task InitializeAsync()

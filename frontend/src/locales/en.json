@@ -722,7 +722,10 @@
     },
     "activityLog": "Audit log",
     "activityLogDescription": "Overview of all system activity",
-    "activityLogButton": "Open audit log"
+    "activityLogButton": "Open audit log",
+    "country": "Country",
+    "centersLabel": "Centers",
+    "noCentersAvailable": "No centers available"
   },
   "centerManagement": {
     "title": "Center Management",

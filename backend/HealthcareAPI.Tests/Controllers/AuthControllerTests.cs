@@ -185,7 +185,7 @@ public class AuthControllerTests
         var response = new CreateEmployeeResponse { EmployeeId = 1, PersonId = 1, Email = "john@example.com", FullName = "John Doe", UID = "12345678" };
         
         _mockAuthService.Setup(s => s.CreateEmployeeAsync(request))
-            .ReturnsAsync(response);
+            .ReturnsAsync((response, (string?)null));
 
         // Act
         var result = await _controller.CreateEmployee(request);
@@ -257,7 +257,7 @@ public class AuthControllerTests
         };
 
         _mockAuthService.Setup(s => s.CreateEmployeeAsync(request))
-            .ReturnsAsync((CreateEmployeeResponse?)null);
+            .ReturnsAsync(((CreateEmployeeResponse?)null, (string?)null));
 
         // Act
         var result = await _controller.CreateEmployee(request);

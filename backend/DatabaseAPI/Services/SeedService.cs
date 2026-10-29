@@ -312,7 +312,8 @@ namespace DatabaseAPI.Services
             });
             await SeedRoleGrantsAsync("Center Admin", new[]
             {
-                "dashboard.read",
+                "dashboard.read", "uid.read",
+                "employees.read", "employees.create", "employees.manage",
                 "hospitals.read", "hospitals.write",
                 "examinationrooms.read", "examinationrooms.write",
                 "reservations.read", "reservations.write",

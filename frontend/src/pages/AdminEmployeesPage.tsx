@@ -2,13 +2,25 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './AdminEmployeesPage.css';
-import { EmployeeListItem, Role, UpdateEmployeeRequest, UpdateEmployeeResponse } from '../types';
+import {
+  AdminScope,
+  EmployeeListItem,
+  Hospital,
+  Role,
+  UpdateEmployeeRequest,
+  UpdateEmployeeResponse
+} from '../types';
 import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
 import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
-import { hasRole } from '../utils/roles';
+import {
+  countryScopeByCode,
+  countryCodeByScopeId,
+  countryOptions,
+  normalizeCountryCode
+} from '../utils/countryScope';
 
 const EMPLOYEES_PER_PAGE = 25;
 
@@ -49,11 +61,13 @@ const AdminEmployeesPage: React.FC = () => {
   const { data, isLoading: loading } = useQuery({
     queryKey: ['admin', 'employees-and-roles'],
     queryFn: async () => {
-      const [employees, roles] = await Promise.all([
+      const [employees, roles, scope, hospitals] = await Promise.all([
         apiClient.get<EmployeeListItem[]>('/api/admin/employees'),
-        apiClient.get<Role[]>('/api/admin/roles')
+        apiClient.get<Role[]>('/api/admin/roles'),
+        apiClient.get<AdminScope>('/api/admin/employees/scope'),
+        apiClient.get<Hospital[]>('/api/hospitals')
       ]);
-      return { employees, roles };
+      return { employees, roles, scope, hospitals };
     }
   });
 
@@ -61,16 +75,57 @@ const AdminEmployeesPage: React.FC = () => {
     await queryClient.invalidateQueries({ queryKey: ['admin', 'employees-and-roles'] });
   }, [queryClient]);
 
-  const isRestrictedCountryAdmin =
-    hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
+  const scope = data?.scope ?? null;
+  const isScopedAdmin =
+    !!scope && !scope.hasFullAccess && (scope.isCountryAdmin || scope.isCenterAdmin);
 
+  // Mirrors the server-side EmployeeScopeService visibility rule so action
+  // buttons are only offered for employees the actor may actually manage.
   const canManageEmployee = (employee: EmployeeListItem) => {
-    if (!isRestrictedCountryAdmin) {
+    if (!isScopedAdmin || !scope) {
       return true;
     }
 
-    return employee.createdByEmployeeId === user?.id;
+    if (scope.isCenterAdmin && employee.hospitalIds?.some((id) => scope.hospitalIds.includes(id))) {
+      return true;
+    }
+
+    if (scope.isCountryAdmin) {
+      const employeeScopeId = countryScopeByCode[normalizeCountryCode(employee.countryCode)] ?? -1;
+      if (scope.administeredCountryScopeIds.includes(employeeScopeId)) {
+        return true;
+      }
+      if (employee.createdByEmployeeId === user?.id) {
+        return true;
+      }
+    }
+
+    return false;
   };
+
+  // Role checkboxes the actor may grant (full access → everything)
+  const assignableRoles = (data?.roles ?? []).filter(
+    (role) => !isScopedAdmin || !scope || scope.assignableRoleNames.includes(role.name)
+  );
+
+  // Country options the actor may assign
+  const allowedCountryCodes =
+    !isScopedAdmin || !scope
+      ? countryOptions
+      : scope.administeredCountryScopeIds
+          .map((scopeId) => countryCodeByScopeId[scopeId])
+          .filter((code): code is string => Boolean(code));
+
+  // Center assignment options the actor may grant
+  const allowedHospitals = (data?.hospitals ?? []).filter((hospital) => {
+    if (!isScopedAdmin || !scope) {
+      return true;
+    }
+    if (scope.isCenterAdmin && !scope.isCountryAdmin) {
+      return scope.hospitalIds.includes(hospital.id);
+    }
+    return scope.administeredCountryScopeIds.includes(hospital.countryScopeId ?? -1);
+  });
 
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
@@ -153,7 +208,6 @@ const AdminEmployeesPage: React.FC = () => {
   }
 
   const employees = data?.employees ?? [];
-  const roles = data?.roles ?? [];
 
   const totalPages = Math.max(1, Math.ceil(employees.length / EMPLOYEES_PER_PAGE));
   const pagedEmployees = employees.slice(
@@ -238,7 +292,7 @@ const AdminEmployeesPage: React.FC = () => {
                   >
                     {t('admin.edit')}
                   </button>
-                  {!isRestrictedCountryAdmin && (
+                  {!isScopedAdmin && (
                     <button
                       className="btn btn-secondary btn-sm"
                       onClick={() => handleRules(employee)}
@@ -293,13 +347,24 @@ const AdminEmployeesPage: React.FC = () => {
             setShowCreateModal(false);
             void loadData();
           }}
+          roles={assignableRoles}
+          hospitals={allowedHospitals}
+          allowedCountryCodes={allowedCountryCodes}
+          defaultCountryCode={normalizeCountryCode(user?.countryCode)}
+          defaultHospitalIds={
+            scope && !scope.hasFullAccess && scope.isCenterAdmin && !scope.isCountryAdmin
+              ? scope.hospitalIds
+              : []
+          }
         />
       )}
 
       {showEditModal && selectedEmployee && (
         <EmployeeEditModal
           employee={selectedEmployee}
-          roles={roles}
+          roles={assignableRoles}
+          hospitals={allowedHospitals}
+          allowedCountryCodes={allowedCountryCodes}
           onSave={handleSave}
           onCancel={() => {
             setShowEditModal(false);
@@ -329,6 +394,8 @@ const AdminEmployeesPage: React.FC = () => {
 interface EmployeeEditModalProps {
   employee: EmployeeListItem;
   roles: Role[];
+  hospitals: Hospital[];
+  allowedCountryCodes: string[];
   onSave: (employee: UpdateEmployeeRequest) => void;
   onCancel: () => void;
 }
@@ -336,6 +403,8 @@ interface EmployeeEditModalProps {
 const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   employee,
   roles,
+  hospitals,
+  allowedCountryCodes,
   onSave,
   onCancel
 }) => {
@@ -363,7 +432,9 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     titleBefore: employee.titleBefore || '',
     titleAfter: employee.titleAfter || '',
     active: employee.active,
-    roleIds: []
+    roleIds: [],
+    countryCode: normalizeCountryCode(employee.countryCode),
+    hospitalIds: employee.hospitalIds ?? []
   });
 
   useEffect(() => {
@@ -383,6 +454,15 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       roleIds: checked ? [...prev.roleIds, roleId] : prev.roleIds.filter((id) => id !== roleId)
+    }));
+  };
+
+  const handleHospitalChange = (hospitalId: number, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      hospitalIds: checked
+        ? [...(prev.hospitalIds ?? []), hospitalId]
+        : (prev.hospitalIds ?? []).filter((id) => id !== hospitalId)
     }));
   };
 
@@ -488,6 +568,38 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               />
               {t('admin.active')}
             </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>{t('admin.country')}</label>
+              <select
+                value={formData.countryCode}
+                onChange={(e) => setFormData((prev) => ({ ...prev, countryCode: e.target.value }))}
+              >
+                {allowedCountryCodes.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>{t('admin.centersLabel')}</label>
+              <div className="roles-checkboxes">
+                {hospitals.length === 0 && <small>{t('admin.noCentersAvailable')}</small>}
+                {hospitals.map((hospital) => (
+                  <label key={hospital.id} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={(formData.hospitalIds ?? []).includes(hospital.id)}
+                      onChange={(e) => handleHospitalChange(hospital.id, e.target.checked)}
+                    />
+                    {hospital.name ?? `#${hospital.id}`}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="form-group">

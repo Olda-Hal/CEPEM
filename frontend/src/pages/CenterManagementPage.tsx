@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../utils/api';
 import { hasRole } from '../utils/roles';
+import { countryScopeByCode, countryOptions, normalizeCountryCode } from '../utils/countryScope';
 import { ExaminationType, Hospital } from '../types';
 import './CenterManagementPage.css';
 
@@ -16,24 +17,7 @@ interface HospitalPayload {
   active?: boolean;
 }
 
-const countryScopeByCode: Record<string, number> = {
-  CZ: 203,
-  DE: 276,
-  SK: 703,
-  AT: 40,
-  PL: 616,
-  NL: 528
-};
-
-const countryOptions = Object.keys(countryScopeByCode);
-
-const normalizeCountryCode = (countryCode?: string) => {
-  if (!countryCode) {
-    return 'CZ';
-  }
-
-  return countryCode.trim().toUpperCase().slice(0, 2);
-};
+// shared mapping lives in utils/countryScope
 
 const emptyCenterForm = {
   name: '',

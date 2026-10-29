@@ -18,6 +18,8 @@ namespace DatabaseAPI.APIModels
         public DateTime PasswordExpiration { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
         public string FullName { get; set; } = string.Empty;
+        public string CountryCode { get; set; } = string.Empty;
+        public List<int> HospitalIds { get; set; } = new List<int>();
     }
 
     public class UpdateEmployeeRequest
@@ -32,6 +34,12 @@ namespace DatabaseAPI.APIModels
         public string? TitleAfter { get; set; }
         public bool Active { get; set; }
         public List<int> RoleIds { get; set; } = new List<int>();
+
+        /// <summary>Pracovní země zaměstnance (např. CZ). Volitelné — prázdné = beze změny.</summary>
+        public string? CountryCode { get; set; }
+
+        /// <summary>Centra, ke kterým je zaměstnanec přiřazen. Null = beze změny.</summary>
+        public List<int>? HospitalIds { get; set; }
     }
 
     public class UpdateEmployeeResponse

@@ -44,6 +44,8 @@ export interface EmployeeListItem {
   passwordExpiration: string;
   roles: string[];
   fullName: string;
+  countryCode: string;
+  hospitalIds: number[];
 }
 
 export interface UpdateEmployeeRequest {
@@ -57,6 +59,8 @@ export interface UpdateEmployeeRequest {
   titleAfter?: string;
   active: boolean;
   roleIds: number[];
+  countryCode?: string;
+  hospitalIds?: number[];
 }
 
 export interface UpdateEmployeeResponse {
@@ -106,6 +110,9 @@ export interface CreateEmployeeRequest {
   titleBefore?: string;
   titleAfter?: string;
   active: boolean;
+  roleIds?: number[];
+  countryCode?: string;
+  hospitalIds?: number[];
 }
 
 export interface CreateEmployeeResponse {
@@ -673,4 +680,16 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   requiresPasswordChange: boolean;
+}
+
+/** Resolved administrative scope of the signed-in employee (gateway /api/admin/employees/scope). */
+export interface AdminScope {
+  employeeId: number | null;
+  roles: string[];
+  hasFullAccess: boolean;
+  isCountryAdmin: boolean;
+  isCenterAdmin: boolean;
+  hospitalIds: number[];
+  administeredCountryScopeIds: number[];
+  assignableRoleNames: string[];
 }

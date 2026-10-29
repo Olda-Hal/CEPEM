@@ -161,7 +161,7 @@ public class AdminControllerTests
         // Arrange
         var employeeId = 1;
         _mockAdminService.Setup(s => s.DeactivateEmployeeAsync(employeeId))
-            .ReturnsAsync(true);
+            .ReturnsAsync((true, (string?)null));
 
         // Act
         var result = await _controller.DeactivateEmployee(employeeId);
@@ -177,7 +177,7 @@ public class AdminControllerTests
         // Arrange
         var employeeId = 999;
         _mockAdminService.Setup(s => s.DeactivateEmployeeAsync(employeeId))
-            .ReturnsAsync(false);
+            .ReturnsAsync((false, (string?)null));
 
         // Act
         var result = await _controller.DeactivateEmployee(employeeId);

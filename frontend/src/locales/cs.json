@@ -729,7 +729,10 @@
     },
     "activityLog": "Audit log",
     "activityLogDescription": "Přehled všech akcí v systému",
-    "activityLogButton": "Otevřít audit log"
+    "activityLogButton": "Otevřít audit log",
+    "country": "Země",
+    "centersLabel": "Centra",
+    "noCentersAvailable": "Žádná dostupná centra"
   },
   "centerManagement": {
     "title": "Správa center",

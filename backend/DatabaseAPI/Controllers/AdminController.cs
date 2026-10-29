@@ -9,10 +9,12 @@ namespace DatabaseAPI.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IEmployeeManagementService _employeeManagementService;
+        private readonly IEmployeeScopeService _employeeScopeService;
 
-        public AdminController(IEmployeeManagementService employeeManagementService)
+        public AdminController(IEmployeeManagementService employeeManagementService, IEmployeeScopeService employeeScopeService)
         {
             _employeeManagementService = employeeManagementService;
+            _employeeScopeService = employeeScopeService;
         }
 
         [HttpGet("employees")]
@@ -20,6 +22,30 @@ namespace DatabaseAPI.Controllers
         {
             var employees = await _employeeManagementService.GetAllEmployeesAsync();
             return Ok(employees);
+        }
+
+        /// <summary>
+        /// Resolved administrative scope of the calling employee so the UI can
+        /// mirror the server-side authorization rules (allowed roles, countries
+        /// and centers; full access flag).
+        /// </summary>
+        [HttpGet("employees/scope")]
+        public async Task<ActionResult<object>> GetActorScope()
+        {
+            var actor = await _employeeScopeService.GetActorScopeAsync();
+            return Ok(new
+            {
+                actor.EmployeeId,
+                actor.Roles,
+                HasFullAccess = actor.HasFullAccess,
+                actor.IsCountryAdmin,
+                actor.IsCenterAdmin,
+                actor.HospitalIds,
+                actor.AdministeredCountryScopeIds,
+                AssignableRoleNames = actor.HasFullAccess
+                    ? (await _employeeManagementService.GetAllRolesAsync()).Select(r => r.Name).ToList()
+                    : actor.AssignableRoleNames
+            });
         }
 
         /// <summary>All employees as CSV (semicolon-separated, BOM for Excel).</summary>
@@ -97,10 +123,14 @@ namespace DatabaseAPI.Controllers
         [HttpPatch("employees/{employeeId}/deactivate")]
         public async Task<ActionResult> DeactivateEmployee(int employeeId)
         {
-            var success = await _employeeManagementService.DeactivateEmployeeAsync(employeeId);
-            if (!success)
+            var (found, forbidden) = await _employeeManagementService.DeactivateEmployeeAsync(employeeId);
+            if (!found)
             {
                 return NotFound("Employee not found");
+            }
+            if (forbidden != null)
+            {
+                return StatusCode(403, forbidden);
             }
             return Ok(new { message = "Employee deactivated successfully" });
         }

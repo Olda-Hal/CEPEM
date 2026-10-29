@@ -70,26 +70,8 @@ namespace HealthcareAPI.Controllers
         {
             try
             {
-                if (User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin") && !User.IsInRole("Admin"))
-                {
-                    var actorEmployeeIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    if (!int.TryParse(actorEmployeeIdClaim, out var actorEmployeeId) || actorEmployeeId <= 0)
-                    {
-                        return Forbid();
-                    }
-
-                    var targetEmployee = await _adminService.GetEmployeeByIdAsync(employeeId);
-                    if (targetEmployee == null)
-                    {
-                        return NotFound("Employee not found");
-                    }
-
-                    if (targetEmployee.CreatedByEmployeeId != actorEmployeeId)
-                    {
-                        return StatusCode(403, "Country admin can edit only employees created by this account");
-                    }
-                }
-
+                // Scope enforcement (Center/Country Admin) happens in DatabaseAPI;
+                // it validates the target visibility, assignable roles and assignments.
                 var result = await _adminService.UpdateEmployeeAsync(employeeId, request);
                 if (!result.Success)
                 {
@@ -111,29 +93,14 @@ namespace HealthcareAPI.Controllers
         {
             try
             {
-                if (User.IsInRole("Country Admin") && !User.IsInRole("SysAdmin") && !User.IsInRole("Admin"))
-                {
-                    var actorEmployeeIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    if (!int.TryParse(actorEmployeeIdClaim, out var actorEmployeeId) || actorEmployeeId <= 0)
-                    {
-                        return Forbid();
-                    }
-
-                    var targetEmployee = await _adminService.GetEmployeeByIdAsync(employeeId);
-                    if (targetEmployee == null)
-                    {
-                        return NotFound("Employee not found");
-                    }
-
-                    if (targetEmployee.CreatedByEmployeeId != actorEmployeeId)
-                    {
-                        return StatusCode(403, "Country admin can deactivate only employees created by this account");
-                    }
-                }
-
-                var success = await _adminService.DeactivateEmployeeAsync(employeeId);
+                var (success, errorBody) = await _adminService.DeactivateEmployeeAsync(employeeId);
                 if (!success)
                 {
+                    if (errorBody != null)
+                    {
+                        // Scope violation or another DB-side reason (e.g. 403 from DatabaseAPI)
+                        return StatusCode(403, errorBody);
+                    }
                     return NotFound("Employee not found");
                 }
                 return Ok(new { message = "Employee deactivated successfully" });
@@ -143,6 +110,19 @@ namespace HealthcareAPI.Controllers
                 _logger.LogError(ex, $"Error deactivating employee {employeeId}");
                 return StatusCode(500, "Internal server error");
             }
+        }
+
+        [RequirePermission("employees.read")]
+        [HttpGet("employees/scope")]
+        [PermissionDisplayName("View Own Admin Scope")]
+        public async Task<IActionResult> GetActorScope()
+        {
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.GetAsync("/api/admin/employees/scope");
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Error retrieving actor scope");
+            var content = await response.Content.ReadAsStringAsync();
+            return Content(content, "application/json");
         }
 
         [RequirePermission("employees.read")]

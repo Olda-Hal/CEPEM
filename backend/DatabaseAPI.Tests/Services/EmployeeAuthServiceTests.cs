@@ -38,13 +38,30 @@ public class EmployeeAuthServiceTests : IDisposable
         var uidMock = new Mock<IUidService>();
         uidMock.Setup(service => service.GetNextAvailableUidAsync()).ReturnsAsync("00000042");
 
-        _service = new EmployeeAuthService(_context, actorCountryMock.Object, uidMock.Object);
+        _service = new EmployeeAuthService(_context, actorCountryMock.Object, uidMock.Object, CreatePermissiveScopeMock().Object);
+    }
+
+    /// <summary>Scope service stub: no restrictions (actor has full access).</summary>
+    private static Mock<IEmployeeScopeService> CreatePermissiveScopeMock()
+    {
+        var scopeMock = new Mock<IEmployeeScopeService>();
+        scopeMock.Setup(s => s.GetVisibleEmployeeIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HashSet<int>?)null);
+        scopeMock.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(null, new List<string>(), new List<int>(), new List<int>()));
+        scopeMock.Setup(s => s.ValidateAssignableRolesAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+        scopeMock.Setup(s => s.ValidateCountryAssignmentAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+        scopeMock.Setup(s => s.ValidateHospitalAssignmentAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+        return scopeMock;
     }
 
     [Fact]
     public async Task ResetPassword_ForMissingEmployee_ReturnsNull()
     {
-        var management = new EmployeeManagementService(_context);
+        var management = new EmployeeManagementService(_context, CreatePermissiveScopeMock().Object);
 
         var result = await management.ResetPasswordAsync(99999);
 
@@ -55,7 +72,7 @@ public class EmployeeAuthServiceTests : IDisposable
     public async Task ResetPassword_GeneratesUsablePassword_AndForcesChange()
     {
         var employee = SeedEmployee("jan@example.com", password: "OldPassword1");
-        var management = new EmployeeManagementService(_context);
+        var management = new EmployeeManagementService(_context, CreatePermissiveScopeMock().Object);
 
         var temporary = await management.ResetPasswordAsync(employee.Id);
 

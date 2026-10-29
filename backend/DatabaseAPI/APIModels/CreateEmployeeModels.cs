@@ -19,6 +19,12 @@ namespace DatabaseAPI.APIModels
         /// default-denied on every permission-gated endpoint (/me included).
         /// </summary>
         public List<int> RoleIds { get; set; } = new List<int>();
+
+        /// <summary>Pracovní země zaměstnance (např. CZ). Prázdné = země tvůrce.</summary>
+        public string? CountryCode { get; set; }
+
+        /// <summary>Centra, ke kterým má být zaměstnanec přiřazen.</summary>
+        public List<int> HospitalIds { get; set; } = new List<int>();
     }
 
     public class CreateEmployeeResponse

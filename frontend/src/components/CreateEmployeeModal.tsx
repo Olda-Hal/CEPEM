@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CreateEmployeeRequest } from '../types';
+import { CreateEmployeeRequest, Hospital, Role } from '../types';
 import { apiClient } from '../utils/api';
+import { normalizeCountryCode } from '../utils/countryScope';
 import BaseModal from './BaseModal';
 import './CreateEmployeeModal.css';
 
@@ -9,12 +10,26 @@ interface CreateEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEmployeeCreated: () => void;
+  /** Roles the signed-in admin may grant (server enforces the same rule) */
+  roles?: Role[];
+  /** Centers the new employee may be assigned to */
+  hospitals?: Hospital[];
+  /** Country options the admin may assign */
+  allowedCountryCodes?: string[];
+  defaultCountryCode?: string;
+  /** Pre-checked centers (e.g. Center Admin's own centers) */
+  defaultHospitalIds?: number[];
 }
 
 export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
   isOpen,
   onClose,
-  onEmployeeCreated
+  onEmployeeCreated,
+  roles = [],
+  hospitals = [],
+  allowedCountryCodes = [],
+  defaultCountryCode = 'CZ',
+  defaultHospitalIds = []
 }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -30,7 +45,10 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
     password: '',
     titleBefore: '',
     titleAfter: '',
-    active: true
+    active: true,
+    roleIds: [],
+    countryCode: normalizeCountryCode(defaultCountryCode),
+    hospitalIds: defaultHospitalIds
   });
 
   // Fetch next available UID when modal opens
@@ -90,9 +108,43 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
       password: '',
       titleBefore: '',
       titleAfter: '',
-      active: true
+      active: true,
+      roleIds: [],
+      countryCode: normalizeCountryCode(defaultCountryCode),
+      hospitalIds: defaultHospitalIds
     });
     setError('');
+  };
+
+  const handleRoleChange = (roleId: number, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      roleIds: checked
+        ? [...(prev.roleIds ?? []), roleId]
+        : (prev.roleIds ?? []).filter((id) => id !== roleId)
+    }));
+  };
+
+  const handleHospitalChange = (hospitalId: number, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      hospitalIds: checked
+        ? [...(prev.hospitalIds ?? []), hospitalId]
+        : (prev.hospitalIds ?? []).filter((id) => id !== hospitalId)
+    }));
+  };
+
+  const translateRoleName = (roleName: string) => {
+    const keyMap: Record<string, string> = {
+      SysAdmin: 'admin.roleNames.sysAdmin',
+      Examiner: 'admin.roleNames.examiner',
+      Doctor: 'admin.roleNames.doctor',
+      'Center Admin': 'admin.roleNames.centerAdmin',
+      'Country Admin': 'admin.roleNames.countryAdmin'
+    };
+
+    const key = keyMap[roleName];
+    return key ? t(key) : roleName;
   };
 
   const handleClose = () => {
@@ -236,6 +288,58 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
           />
           <small className="form-hint">{t('createEmployee.passwordHint')}</small>
         </div>
+
+        <div className="form-group">
+          <label htmlFor="countryCode">{t('admin.country')}</label>
+          <select
+            id="countryCode"
+            name="countryCode"
+            value={formData.countryCode}
+            onChange={handleInputChange}
+          >
+            {allowedCountryCodes.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {hospitals.length > 0 && (
+          <div className="form-group checkbox-group">
+            <label>{t('admin.centersLabel')}</label>
+            <div className="choice-list">
+              {hospitals.map((hospital) => (
+                <label key={hospital.id}>
+                  <input
+                    type="checkbox"
+                    checked={(formData.hospitalIds ?? []).includes(hospital.id)}
+                    onChange={(e) => handleHospitalChange(hospital.id, e.target.checked)}
+                  />
+                  {hospital.name ?? `#${hospital.id}`}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {roles.length > 0 && (
+          <div className="form-group checkbox-group">
+            <label>{t('admin.roles')}</label>
+            <div className="choice-list">
+              {roles.map((role) => (
+                <label key={role.id}>
+                  <input
+                    type="checkbox"
+                    checked={(formData.roleIds ?? []).includes(role.id)}
+                    onChange={(e) => handleRoleChange(role.id, e.target.checked)}
+                  />
+                  {translateRoleName(role.name)}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="form-group checkbox-group">
           <label>

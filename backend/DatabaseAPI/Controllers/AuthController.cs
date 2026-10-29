@@ -89,14 +89,21 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Heslo musí mít alespoň 6 znaků");
             }
 
-            var result = await _authService.CreateEmployeeAsync(request);
-
-            if (result == null)
+            try
             {
-                return BadRequest("Nepodařilo se vytvořit uživatele. Email nebo UID již existuje.");
-            }
+                var result = await _authService.CreateEmployeeAsync(request);
 
-            return Ok(result);
+                if (result == null)
+                {
+                    return BadRequest("Nepodařilo se vytvořit uživatele. Email nebo UID již existuje.");
+                }
+
+                return Ok(result);
+            }
+            catch (ScopeViolationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("next-uid")]

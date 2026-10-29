@@ -22,12 +22,18 @@ namespace DatabaseAPI.Services
         private readonly DatabaseContext _context;
         private readonly IActorCountryContextService _actorCountryContextService;
         private readonly IUidService _uidService;
+        private readonly IEmployeeScopeService _employeeScopeService;
 
-        public EmployeeAuthService(DatabaseContext context, IActorCountryContextService actorCountryContextService, IUidService uidService)
+        public EmployeeAuthService(
+            DatabaseContext context,
+            IActorCountryContextService actorCountryContextService,
+            IUidService uidService,
+            IEmployeeScopeService employeeScopeService)
         {
             _context = context;
             _actorCountryContextService = actorCountryContextService;
             _uidService = uidService;
+            _employeeScopeService = employeeScopeService;
         }
 
         public async Task<EmployeeAuthInfo?> AuthenticateAsync(string email, string password)
@@ -255,6 +261,35 @@ namespace DatabaseAPI.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Administrative scope: country/center admins may only create
+                // employees within their scope and only with assignable roles.
+                if (request.RoleIds.Count > 0)
+                {
+                    var roleError = await _employeeScopeService.ValidateAssignableRolesAsync(request.RoleIds);
+                    if (roleError != null)
+                    {
+                        throw new ScopeViolationException(roleError);
+                    }
+                }
+
+                string? countryError = null;
+                if (!string.IsNullOrWhiteSpace(request.CountryCode))
+                {
+                    countryError = await _employeeScopeService.ValidateCountryAssignmentAsync(request.CountryCode);
+                }
+                if (countryError != null)
+                {
+                    throw new ScopeViolationException(countryError);
+                }
+
+                if (request.HospitalIds.Count > 0)
+                {
+                    var hospitalError = await _employeeScopeService.ValidateHospitalAssignmentAsync(request.HospitalIds);
+                    if (hospitalError != null)
+                    {
+                        throw new ScopeViolationException(hospitalError);
+                    }
+                }
                 // Check if email or UID already exists
                 var normalizedEmail = request.Email.Trim();
                 request.Email = normalizedEmail;
@@ -281,7 +316,9 @@ namespace DatabaseAPI.Services
                     LastName = request.LastName,
                     UID = request.UID,
                     Gender = request.Gender,
-                    CountryCode = await _actorCountryContextService.GetActorCountryCodeAsync(),
+                    CountryCode = !string.IsNullOrWhiteSpace(request.CountryCode)
+                        ? DatabaseAPI.Utils.CountryScopeMapper.NormalizeCode(request.CountryCode)
+                        : await _actorCountryContextService.GetActorCountryCodeAsync(),
                     TitleBefore = request.TitleBefore,
                     TitleAfter = request.TitleAfter,
                     Active = request.Active,
@@ -343,6 +380,20 @@ namespace DatabaseAPI.Services
                 }
                 await _context.SaveChangesAsync();
 
+                // Přiřazení zaměstnance k centrům
+                foreach (var hospitalId in request.HospitalIds.Distinct())
+                {
+                    if (await _context.Hospitals.AnyAsync(h => h.Id == hospitalId))
+                    {
+                        _context.HospitalEmployees.Add(new HospitalEmployee
+                        {
+                            EmployeeId = employee.Id,
+                            HospitalId = hospitalId
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return new CreateEmployeeResponse
@@ -354,6 +405,11 @@ namespace DatabaseAPI.Services
                     UID = person.UID,
                     Active = person.Active
                 };
+            }
+            catch (ScopeViolationException)
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
             catch (Exception)
             {

@@ -8,7 +8,7 @@ namespace HealthcareAPI.Services
         Task<List<EmployeeListItem>> GetAllEmployeesAsync();
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
-        Task<bool> DeactivateEmployeeAsync(int employeeId);
+        Task<(bool Success, string? ErrorBody)> DeactivateEmployeeAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
     }
@@ -108,17 +108,23 @@ namespace HealthcareAPI.Services
             }
         }
 
-        public async Task<bool> DeactivateEmployeeAsync(int employeeId)
+        public async Task<(bool Success, string? ErrorBody)> DeactivateEmployeeAsync(int employeeId)
         {
             try
             {
                 var response = await _httpClient.PatchAsync($"/api/admin/employees/{employeeId}/deactivate", null);
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? null : body);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error deactivating employee {employeeId}");
-                return false;
+                return (false, null);
             }
         }
 

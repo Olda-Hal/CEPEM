@@ -18,6 +18,8 @@ namespace HealthcareAPI.Models
         public DateTime PasswordExpiration { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
         public string FullName { get; set; } = string.Empty;
+        public string CountryCode { get; set; } = string.Empty;
+        public List<int> HospitalIds { get; set; } = new List<int>();
     }
 
     public class UpdateEmployeeRequest
@@ -32,6 +34,8 @@ namespace HealthcareAPI.Models
         public string? TitleAfter { get; set; }
         public bool Active { get; set; }
         public List<int> RoleIds { get; set; } = new List<int>();
+        public string? CountryCode { get; set; }
+        public List<int>? HospitalIds { get; set; }
     }
 
     public class UpdateEmployeeResponse

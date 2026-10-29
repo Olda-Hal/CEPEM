@@ -106,10 +106,14 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
             }
 
-            var result = await _authService.CreateEmployeeAsync(request);
+            var (result, errorBody) = await _authService.CreateEmployeeAsync(request);
 
             if (result == null)
             {
+                if (errorBody != null)
+                {
+                    return BadRequest(errorBody);
+                }
                 return BadRequest("Nepodařilo se vytvořit uživatele. Email nebo UID již existuje.");
             }
 
