@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { MdAdminPanelSettings, MdAssignment, MdMonitorHeart, MdQueryStats, MdScience } from 'react-icons/md';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../utils/roles';
 import './AdministrationPage.css';
@@ -8,15 +9,16 @@ import './AdministrationPage.css';
 interface AdminMenuItem {
   key: string;
   to: string;
-  icon: string;
+  icon: React.ReactNode;
   titleKey: string;
   descriptionKey: string;
   allowed: boolean;
 }
 
 /**
- * System-level admin area: audit log, test dashboard, role management and
- * service health. Tiles are filtered by what the signed-in user may open.
+ * System-level admin area: audit log, monitoring, test dashboard, role
+ * management and service health. Tiles are filtered by what the signed-in
+ * user may open.
  */
 const AdminPage: React.FC = () => {
   const { t } = useTranslation();
@@ -26,9 +28,17 @@ const AdminPage: React.FC = () => {
 
   const items: AdminMenuItem[] = [
     {
+      key: 'monitoring',
+      to: '/admin/monitoring',
+      icon: <MdQueryStats size={28} />,
+      titleKey: 'adminPage.monitoringTitle',
+      descriptionKey: 'adminPage.monitoringDescription',
+      allowed: sysAdminOnly
+    },
+    {
       key: 'audit-log',
       to: '/admin/activity-log',
-      icon: '📋',
+      icon: <MdAssignment size={28} />,
       titleKey: 'adminPage.auditLogTitle',
       descriptionKey: 'adminPage.auditLogDescription',
       allowed: sysAdminOnly
@@ -36,7 +46,7 @@ const AdminPage: React.FC = () => {
     {
       key: 'tests',
       to: '/tests',
-      icon: '🧪',
+      icon: <MdScience size={28} />,
       titleKey: 'adminPage.testsTitle',
       descriptionKey: 'adminPage.testsDescription',
       allowed: sysAdminOnly
@@ -44,7 +54,7 @@ const AdminPage: React.FC = () => {
     {
       key: 'roles',
       to: '/admin/roles',
-      icon: '🔐',
+      icon: <MdAdminPanelSettings size={28} />,
       titleKey: 'adminPage.rolesTitle',
       descriptionKey: 'adminPage.rolesDescription',
       allowed: sysAdminOnly
@@ -52,7 +62,7 @@ const AdminPage: React.FC = () => {
     {
       key: 'health',
       to: '/admin/health',
-      icon: '🩺',
+      icon: <MdMonitorHeart size={28} />,
       titleKey: 'adminPage.healthTitle',
       descriptionKey: 'adminPage.healthDescription',
       allowed: sysAdminOnly

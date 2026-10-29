@@ -921,7 +921,10 @@
     "rolesDescription": "Define roles and their permissions.",
     "noAccess": "You do not have access to this section.",
     "healthTitle": "System health",
-    "healthDescription": "Availability of the individual platform services."
+    "healthDescription": "Availability of the individual platform services.",
+    "monitoringTitle": "Monitoring",
+    "monitoringDescription": "Live traffic statistics — requests, status codes, latency.",
+    "openInGrafana": "Open in Grafana"
   },
   "settings": {
     "title": "Settings",
@@ -951,6 +954,8 @@
     "noteSaveFailed": "Failed to save the note",
     "intakeTitle": "Intake form",
     "intakeEmpty": "No intake form filled for this visit yet.",
-    "addIntake": "Fill intake form"
+    "addIntake": "Fill intake form",
+    "otherVisits": "Other visits",
+    "patientSearchPlaceholder": "Search patients…"
   }
 }

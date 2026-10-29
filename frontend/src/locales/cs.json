@@ -932,7 +932,10 @@
     "rolesDescription": "Definice rolí a jejich oprávnění.",
     "noAccess": "Pro tuto sekci nemáte oprávnění.",
     "healthTitle": "Zdraví systému",
-    "healthDescription": "Dostupnost jednotlivých služeb platformy."
+    "healthDescription": "Dostupnost jednotlivých služeb platformy.",
+    "monitoringTitle": "Monitoring",
+    "monitoringDescription": "Statistiky provozu — requesty, response kódy, latence.",
+    "openInGrafana": "Otevřít v Grafaně"
   },
   "settings": {
     "title": "Nastavení",
@@ -962,6 +965,8 @@
     "noteSaveFailed": "Poznámku se nepodařilo uložit",
     "intakeTitle": "Vstupní formulář",
     "intakeEmpty": "K návštěvě zatím není vyplněný vstupní formulář.",
-    "addIntake": "Vyplnit vstupní formulář"
+    "addIntake": "Vyplnit vstupní formulář",
+    "otherVisits": "Další návštěvy",
+    "patientSearchPlaceholder": "Hledat pacienta…"
   }
 }

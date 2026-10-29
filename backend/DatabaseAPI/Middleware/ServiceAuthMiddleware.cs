@@ -13,7 +13,10 @@ public class ServiceAuthMiddleware
     private static readonly string[] ExemptPaths =
     {
         "/health",
-        "/api/health"
+        "/api/health",
+        // Read-only Prometheus scrape endpoint (proxy-only on the private
+        // network; carries no patient data)
+        "/metrics"
     };
 
     private readonly RequestDelegate _next;
