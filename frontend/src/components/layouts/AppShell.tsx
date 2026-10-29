@@ -16,13 +16,33 @@ const fetchBuildVersion = async (): Promise<string | null> => {
   }
 };
 
+interface NavSubItem {
+  key: string;
+  to: string;
+  labelKey: string;
+}
+
 interface NavSection {
   key: string;
   to: string;
   labelKey: string;
   /** Every path that should highlight this section (sub-pages included) */
   matchPrefixes: string[];
+  /** Optional hover dropdown with direct links to sub-pages */
+  children?: NavSubItem[];
 }
+
+const ADMINISTRATION_CHILDREN: NavSubItem[] = [
+  { key: 'centers', to: '/admin/centers', labelKey: 'administration.centersTitle' },
+  { key: 'employees', to: '/admin/employees', labelKey: 'administration.employeesTitle' }
+];
+
+const ADMIN_CHILDREN: NavSubItem[] = [
+  { key: 'audit-log', to: '/admin/activity-log', labelKey: 'adminPage.auditLogTitle' },
+  { key: 'tests', to: '/tests', labelKey: 'adminPage.testsTitle' },
+  { key: 'roles', to: '/admin/roles', labelKey: 'adminPage.rolesTitle' },
+  { key: 'health', to: '/admin/health', labelKey: 'adminPage.healthTitle' }
+];
 
 const NAV_SECTIONS: NavSection[] = [
   { key: 'patients', to: '/patients', labelKey: 'patients.title', matchPrefixes: ['/patients'] },
@@ -42,13 +62,15 @@ const NAV_SECTIONS: NavSection[] = [
     key: 'administration',
     to: '/administration',
     labelKey: 'shell.administration',
-    matchPrefixes: ['/administration', '/admin/centers', '/admin/employees']
+    matchPrefixes: ['/administration', '/admin/centers', '/admin/employees'],
+    children: ADMINISTRATION_CHILDREN
   },
   {
     key: 'admin',
     to: '/admin',
     labelKey: 'shell.admin',
-    matchPrefixes: ['/admin', '/tests']
+    matchPrefixes: ['/admin', '/tests'],
+    children: ADMIN_CHILDREN
     // "/admin" prefix stays last so the more specific administration match
     // above wins on /admin/centers and /admin/employees.
   }
@@ -117,13 +139,33 @@ export const AppShell: React.FC = () => {
 
           <nav className="shell-nav" aria-label={t('shell.mainNavigation')}>
             {visibleSections(user).map((section) => (
-              <Link
-                key={section.key}
-                to={section.to}
-                className={`shell-nav-link${activeSection?.key === section.key ? ' active' : ''}`}
-              >
-                {t(section.labelKey)}
-              </Link>
+              <div key={section.key} className="shell-nav-item">
+                <Link
+                  to={section.to}
+                  className={`shell-nav-link${activeSection?.key === section.key ? ' active' : ''}`}
+                >
+                  {t(section.labelKey)}
+                  {section.children && (
+                    <span className="shell-nav-caret" aria-hidden="true">
+                      ▾
+                    </span>
+                  )}
+                </Link>
+                {section.children && (
+                  <div className="shell-dropdown" role="menu">
+                    {section.children.map((child) => (
+                      <Link
+                        key={child.key}
+                        to={child.to}
+                        className="shell-dropdown-link"
+                        role="menuitem"
+                      >
+                        {t(child.labelKey)}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 

@@ -64,7 +64,15 @@
   align-items: center;
   gap: 4px;
   flex: 1 1 auto;
-  overflow-x: auto;
+  min-width: 0;
+
+  /* no overflow-x here — it would clip the hover dropdowns */
+  overflow-x: visible;
+}
+
+.shell-nav-item {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .shell-nav-link {
@@ -193,4 +201,62 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+.shell-nav-caret {
+  margin-left: 5px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Hover/focus dropdown with sub-pages */
+.shell-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: var(--z-header, 40);
+  min-width: 190px;
+  padding: 6px;
+  margin-top: 4px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, rgb(0 0 0 / 10%));
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-raised, 0 10px 28px rgb(0 0 0 / 12%));
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shell-nav-item:hover .shell-dropdown,
+.shell-nav-item:focus-within .shell-dropdown {
+  display: flex;
+}
+
+/* Invisible bridge so the menu doesn't close while moving the pointer down */
+.shell-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.shell-dropdown-link {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 500;
+  color: var(--color-text, #1f2937);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.shell-dropdown-link:hover {
+  background: var(--color-primary-tint, rgb(37 99 235 / 8%));
+  color: var(--color-primary, #2563eb);
 }

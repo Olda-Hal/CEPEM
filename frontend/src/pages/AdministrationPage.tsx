@@ -38,7 +38,7 @@ const AdministrationPage: React.FC = () => {
       icon: '👥',
       titleKey: 'administration.employeesTitle',
       descriptionKey: 'administration.employeesDescription',
-      allowed: isAdmin(user) || hasRole(user, 'Country Admin')
+      allowed: isAdmin(user) || hasRole(user, 'Country Admin') || hasRole(user, 'Center Admin')
     }
   ].filter((item) => item.allowed);
 
