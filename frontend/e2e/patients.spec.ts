@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel(/email/i).fill(EMAIL!);
   await page.getByLabel(/heslo|password/i).fill(PASSWORD!);
   await page.getByRole('button', { name: /přihlásit|login/i }).click();
-  await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/patients/, { timeout: 15_000 });
 });
 
 test('patient list loads and shows patients', async ({ page }) => {

@@ -10,30 +10,30 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel(/email/i).fill(EMAIL!);
   await page.getByLabel(/heslo|password/i).fill(PASSWORD!);
   await page.getByRole('button', { name: /přihlásit|login/i }).click();
-  await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/patients/, { timeout: 15_000 });
 });
 
 test('audit log page loads with filters', async ({ page }) => {
-  await page.goto('/activity-log');
+  await page.goto('/admin/activity-log');
 
-  await expect(page.locator('.activity-log-table')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('table.data-table')).toBeVisible({ timeout: 20_000 });
   // method + status filter selects are present
-  await expect(page.locator('select')).toHaveCount(2);
+  await expect(page.locator('.activity-log-filters select')).toHaveCount(2);
 });
 
 test('method filter narrows the request', async ({ page }) => {
-  await page.goto('/activity-log');
-  await expect(page.locator('.activity-log-table')).toBeVisible({ timeout: 20_000 });
+  await page.goto('/admin/activity-log');
+  await expect(page.locator('table.data-table')).toBeVisible({ timeout: 20_000 });
 
   const requestPromise = page.waitForRequest(req => req.url().includes('/api/activitylogs') && req.url().includes('method='));
-  await page.locator('select').first().selectOption('GET');
+  await page.locator('.activity-log-filters select').first().selectOption('GET');
   await requestPromise;
 });
 
 test('clicking a row opens the detail modal', async ({ page }) => {
-  await page.goto('/activity-log');
+  await page.goto('/admin/activity-log');
 
-  const firstRow = page.locator('.activity-log-table tbody tr').first();
+  const firstRow = page.locator('table.data-table tbody tr').first();
   await expect(firstRow).toBeVisible({ timeout: 20_000 });
   await firstRow.click();
 
@@ -43,7 +43,11 @@ test('clicking a row opens the detail modal', async ({ page }) => {
 });
 
 test('language switch changes login page text', async ({ page }) => {
+  // Auth token lives in localStorage (not cookies), so clear both before
+  // asserting that the login page renders signed out.
   await page.context().clearCookies();
+  await page.goto('/login');
+  await page.evaluate(() => localStorage.clear());
   await page.goto('/login');
 
   const select = page.locator('select').first();

@@ -153,6 +153,7 @@ jobs:
           JWT_AUDIENCE=CI
           DATABASE_API_URL=http://database-api:5001
           SERVICE_AUTH_KEY=ci-e2e-service-key
+          RATE_LIMITING__LOGINPERMITLIMIT=200
           PHOTO_ENCRYPTION_KEY=ci-e2e-photo-key-32-chars-padding!!
           PHOTO_ENCRYPTION_IV=ci-e2e-iv-16
           DOCUMENT_ENCRYPTION_KEY=ci-e2e-doc-key-32-chars-padding!!

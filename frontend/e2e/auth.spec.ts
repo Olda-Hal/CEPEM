@@ -13,13 +13,13 @@ test.beforeEach(async ({ page }) => {
   }
 });
 
-test('login with valid credentials reaches the dashboard', async ({ page }) => {
+test('login with valid credentials reaches the patients page', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill(EMAIL!);
   await page.getByLabel(/heslo|password/i).fill(PASSWORD!);
   await page.getByRole('button', { name: /přihlásit|login/i }).click();
 
-  await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/patients/, { timeout: 15_000 });
 });
 
 test('login with a wrong password shows an error and stays on the page', async ({ page }) => {

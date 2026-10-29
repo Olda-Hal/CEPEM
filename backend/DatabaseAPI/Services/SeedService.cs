@@ -16,11 +16,13 @@ namespace DatabaseAPI.Services
     {
         private readonly DatabaseContext _context;
         private readonly ILogger<SeedService> _logger;
+        private readonly IHostEnvironment _env;
 
-        public SeedService(DatabaseContext context, ILogger<SeedService> logger)
+        public SeedService(DatabaseContext context, ILogger<SeedService> logger, IHostEnvironment env)
         {
             _context = context;
             _logger = logger;
+            _env = env;
         }
 
         public async Task SeedAsync()
@@ -32,6 +34,10 @@ namespace DatabaseAPI.Services
                 await SeedPermissionsAsync();
                 await BackfillEmployeeRolesAsync();
                 await SeedIntakeFormEventTypeAsync();
+                if (_env.IsDevelopment())
+                {
+                    await SeedDemoDataAsync();
+                }
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Database seeded successfully.");
             }
@@ -167,6 +173,95 @@ namespace DatabaseAPI.Services
 
             _logger.LogInformation("SysAdmin user created with email: {Email}. Change this password after first login.",
                 "admin@cepem.local");
+        }
+
+        /// <summary>
+        /// Development-only demo records (one hospital, one patient) so that a
+        /// fresh database is immediately usable — including E2E tests that
+        /// assert a patient's detail or create reservation slots. Production
+        /// databases never get demo rows.
+        /// </summary>
+        private async Task SeedDemoDataAsync()
+        {
+            var hospital = await _context.Hospitals
+                .FirstOrDefaultAsync(h => h.Name == "Demo zdravotnické středisko");
+            if (hospital == null)
+            {
+                hospital = new Hospital
+                {
+                    Name = "Demo zdravotnické středisko",
+                    Active = true
+                };
+                _context.Hospitals.Add(hospital);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Demo hospital created.");
+            }
+
+            const string demoPatientUid = "DEMO-P-0001";
+            var exists = await _context.Persons.AnyAsync(p => p.UID == demoPatientUid);
+            if (exists)
+            {
+                return;
+            }
+
+            var adminEmployee = await _context.Employees
+                .OrderBy(e => e.Id)
+                .FirstOrDefaultAsync();
+
+            var person = new Person
+            {
+                FirstName = "Demo",
+                LastName = "Pacient",
+                UID = demoPatientUid,
+                Active = true,
+                Gender = "M",
+                CountryCode = Patient.DefaultCountryCode,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Persons.Add(person);
+            await _context.SaveChangesAsync();
+
+            var contact = new Contact();
+            _context.Contacts.Add(contact);
+            await _context.SaveChangesAsync();
+            _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = "demo.pacient@cepem.local" });
+            _context.ContactToObjects.Add(new ContactToObject
+            {
+                ContactId = contact.Id,
+                ObjectId = person.Id,
+                ObjectType = ContactObjectType.Person,
+                PersonId = person.Id
+            });
+            await _context.SaveChangesAsync();
+
+            _context.Patients.Add(new Patient
+            {
+                PersonId = person.Id,
+                BirthDate = new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                InsuranceNumber = 1234567890,
+                CountryCode = Patient.DefaultCountryCode,
+                HomeHospitalId = hospital.Id,
+                CreatedByEmployeeId = adminEmployee?.Id
+            });
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Demo patient created (UID {Uid}).", demoPatientUid);
+
+            // One audit trail entry so the activity log page has a row to show
+            if (!await _context.ActivityLogs.AnyAsync(l => l.Action == "demo.seed"))
+            {
+                _context.ActivityLogs.Add(new ActivityLog
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Service = "DatabaseAPI",
+                    Action = "demo.seed",
+                    Method = "GET",
+                    StatusCode = 200,
+                    EmployeeId = adminEmployee?.Id,
+                    EmployeeEmail = adminEmployee != null ? "admin@cepem.local" : null,
+                    Details = "Demo record created by the development seeder."
+                });
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task SeedIntakeFormEventTypeAsync()

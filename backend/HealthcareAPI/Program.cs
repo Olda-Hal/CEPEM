@@ -130,6 +130,10 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    // Login brute-force budget; configurable so E2E/dev can raise it without
+    // weakening the production default (10 attempts per minute per IP).
+    var loginPermitLimit = builder.Configuration.GetValue("RateLimiting:LoginPermitLimit", 10);
+
     // everything without an explicit policy gets a generous read budget
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
@@ -145,7 +149,7 @@ builder.Services.AddRateLimiter(options =>
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = loginPermitLimit,
                 Window = TimeSpan.FromMinutes(1)
             }));
 

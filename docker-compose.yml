@@ -80,6 +80,7 @@ services:
       - JWT__Audience=${JWT_AUDIENCE}
       - DatabaseApiUrl=${DATABASE_API_URL}
       - DatabaseApiServiceKey=${SERVICE_AUTH_KEY}
+      - RateLimiting__LoginPermitLimit=${RATE_LIMITING__LOGINPERMITLIMIT:-10}
       - HEALTHCARE_CORS_ORIGINS=http://${APP_HOST}:3000,http://127.0.0.1:3000,http://frontend:3000
     depends_on:
       database-api:

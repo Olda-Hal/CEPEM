@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel(/email/i).fill(EMAIL!);
   await page.getByLabel(/heslo|password/i).fill(PASSWORD!);
   await page.getByRole('button', { name: /přihlásit|login/i }).click();
-  await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/patients/, { timeout: 15_000 });
 });
 
 test('reservation slots page loads for the day', async ({ page }) => {
@@ -39,19 +39,15 @@ test('creating a slot makes it appear in the table (admin)', async ({ page }) =>
   await page.goto('/reservations');
   await expect(page.locator('.slots-table')).toBeVisible({ timeout: 20_000 });
 
-  const startInput = page.locator('input[type="time"]').first();
-  if ((await startInput.count()) === 0) {
-    test.skip(true, 'slot creation panel not visible for this role');
-  }
+  // Slots are created per hospital — pick the seeded demo hospital first.
+  await page.getByLabel('Nemocnice').selectOption({ index: 1 });
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 2);
-  await page.locator('input[type="date"]').first().fill(tomorrow.toISOString().slice(0, 10));
-  await page.locator('input[type="time"]').first().fill('09:00');
-
-  const submit = page.getByRole('button', { name: /vytvořit|create/i }).first();
+  // Generation panel defaults: today, 09:00–16:00, 30-minute slots.
+  const submit = page.getByRole('button', { name: /vygenerovat|vytvořit|create/i }).first();
   await submit.click();
 
-  // a success toast, or the new slot row itself, confirms creation
-  await page.waitForTimeout(2500);
+  // The generated slots replace the empty-state row in the day table.
+  await expect(
+    page.locator('.slots-table tbody tr:not(:has(.empty-row))').first()
+  ).toBeVisible({ timeout: 15_000 });
 });
