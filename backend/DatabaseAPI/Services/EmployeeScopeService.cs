@@ -30,6 +30,9 @@ public record ActorScope(
     /// <summary>Whether the scoping restrictions apply to this actor at all.</summary>
     public bool IsScopedAdmin => !HasFullAccess && (IsCountryAdmin || IsCenterAdmin);
 
+    /// <summary>Only Center Admin and above may see/list hidden (soft-deleted) patients.</summary>
+    public bool CanSeeDeletedPatients => HasFullAccess || IsCountryAdmin || IsCenterAdmin;
+
     /// <summary>
     /// Role names this actor may grant to others:
     /// SysAdmin/Admin → any; Country Admin → Center Admin and below;

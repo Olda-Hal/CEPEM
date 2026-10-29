@@ -17,6 +17,7 @@ namespace DatabaseAPI.Controllers
         private readonly PatientPhotoService _photoService;
         private readonly PatientDocumentService _documentService;
         private readonly IActorCountryContextService _actorCountryContextService;
+        private readonly IEmployeeScopeService _employeeScopeService;
         private readonly IUidService _uidService;
         private readonly IPatientService _patientService;
 
@@ -26,6 +27,7 @@ namespace DatabaseAPI.Controllers
             PatientPhotoService photoService,
             PatientDocumentService documentService,
             IActorCountryContextService actorCountryContextService,
+            IEmployeeScopeService employeeScopeService,
             IUidService uidService,
             IPatientService patientService)
         {
@@ -34,6 +36,7 @@ namespace DatabaseAPI.Controllers
             _photoService = photoService;
             _documentService = documentService;
             _actorCountryContextService = actorCountryContextService;
+            _employeeScopeService = employeeScopeService;
             _uidService = uidService;
             _patientService = patientService;
         }
@@ -49,6 +52,13 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                // Hidden (soft-deleted) patients are visible only to Center Admin and above
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!actorScope.CanSeeDeletedPatients)
+                {
+                    includeDeleted = false;
+                }
+
                 var query = _context.Patients
                 .AsNoTracking()
                     .Include(p => p.Person)
@@ -90,30 +100,46 @@ namespace DatabaseAPI.Controllers
 
                 var totalCount = await query.CountAsync();
                 var skip = page * limit;
-                
-                var patients = await query
+
+                var rows = await query
                     .Skip(skip)
                     .Take(limit)
-                    .Select(p => new PatientDto
+                    .Select(p => new
                     {
-                        Id = p.Id,
-                        PersonId = p.PersonId,
-                        FirstName = p.Person.FirstName,
-                        LastName = p.Person.LastName,
-                        BirthDate = p.BirthDate,
-                        PhoneNumber = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                        Email = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                        InsuranceNumber = p.InsuranceNumber,
-                        Gender = p.Person.Gender,
-                        CreatedAt = p.Person.CreatedAt,
-                        UID = p.Person.UID,
-                    TitleBefore = p.Person.TitleBefore,
-                    TitleAfter = p.Person.TitleAfter,
-                    Alive = p.Alive,
-                    FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p)
-                })
-                    .ToListAsync();                var hasMore = totalCount > skip + limit;
+                        Dto = new PatientDto
+                        {
+                            Id = p.Id,
+                            PersonId = p.PersonId,
+                            FirstName = p.Person.FirstName,
+                            LastName = p.Person.LastName,
+                            BirthDate = p.BirthDate,
+                            PhoneNumber = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                            Email = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
+                            InsuranceNumber = p.InsuranceNumber,
+                            Gender = p.Person.Gender,
+                            CreatedAt = p.Person.CreatedAt,
+                            UID = p.Person.UID,
+                            TitleBefore = p.Person.TitleBefore,
+                            TitleAfter = p.Person.TitleAfter,
+                            Alive = p.Alive,
+                            FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
+                            PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p),
+                            IsDeleted = p.IsDeleted,
+                            CreatedByEmployeeId = p.CreatedByEmployeeId
+                        },
+                        CreatorSupervisorId = p.CreatedByEmployee != null ? p.CreatedByEmployee.CreatedByEmployeeId : null
+                    })
+                    .ToListAsync();
+
+                var patients = rows
+                    .Select(r =>
+                    {
+                        r.Dto.CanDelete = CanDeletePatient(actorScope, r.Dto.CreatedByEmployeeId, r.CreatorSupervisorId);
+                        return r.Dto;
+                    })
+                    .ToList();
+
+                var hasMore = totalCount > skip + limit;
 
                 var response = new PatientSearchResponse
                 {
@@ -171,16 +197,26 @@ namespace DatabaseAPI.Controllers
         /// Soft-delete: the patient stays in the table (events, form
         /// submissions and documents must remain auditable) but is hidden
         /// from listings and detail reads unless includeDeleted is used.
+        /// Only the creating employee, their direct supervisor or a
+        /// (Sys)Admin may hide a patient.
         /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePatient(int id)
         {
             try
             {
-                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == id);
+                var patient = await _context.Patients
+                    .Include(p => p.CreatedByEmployee)
+                    .FirstOrDefaultAsync(p => p.Id == id);
                 if (patient == null || patient.IsDeleted)
                 {
                     return NotFound("Patient not found");
+                }
+
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!CanDeletePatient(actorScope, patient.CreatedByEmployeeId, patient.CreatedByEmployee?.CreatedByEmployeeId))
+                {
+                    return StatusCode(403, "Pacienta může skrýt pouze ten, kdo jej založil, nebo jeho nadřízený.");
                 }
 
                 patient.IsDeleted = true;
@@ -954,6 +990,16 @@ namespace DatabaseAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Delete permission: the creating employee, their direct supervisor
+        /// (the one who created their account), or a (Sys)Admin.
+        /// </summary>
+        private static bool CanDeletePatient(ActorScope actor, int? creatorId, int? creatorSupervisorId)
+            => actor.EmployeeId != null && (
+                actor.HasFullAccess
+                || actor.EmployeeId == creatorId
+                || (creatorSupervisorId != null && actor.EmployeeId == creatorSupervisorId));
+
         private PatientDto MapToDto(Patient patient) => new PatientDto
         {
             Id = patient.Id,
@@ -971,7 +1017,9 @@ namespace DatabaseAPI.Controllers
             TitleAfter = patient.Person.TitleAfter,
             Alive = patient.Alive,
             FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
-            PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
+            PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient),
+            IsDeleted = patient.IsDeleted,
+            CreatedByEmployeeId = patient.CreatedByEmployeeId
         };
     }
 }

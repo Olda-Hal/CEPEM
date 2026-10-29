@@ -99,7 +99,8 @@ public class PatientService : IPatientService
             InsuranceNumber = request.InsuranceNumber ?? 0,
             CountryCode = actorCountryCode,
             Alive = true,
-            HomeHospitalId = homeHospitalId
+            HomeHospitalId = homeHospitalId,
+            CreatedByEmployeeId = actorEmployeeId
         };
 
         _context.Patients.Add(patient);

@@ -35,12 +35,18 @@ public class PatientsControllerTests : IAsyncLifetime
             new Mock<ILogger<PatientPhotoService>>().Object);
         _ = photoService;
         Directory.CreateDirectory(storageDir);
+        // Unrestricted scope mock: full-access actor so delete checks pass
+        var scopeServiceMock = new Mock<IEmployeeScopeService>();
+        scopeServiceMock
+            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(1, ["Admin"], [], []));
         _controller = new PatientsController(
             _context,
             _logger,
             photoService,
             null!,
             new Mock<IActorCountryContextService>().Object,
+            scopeServiceMock.Object,
             new Mock<IUidService>().Object,
             new Mock<IPatientService>().Object);
     }

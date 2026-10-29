@@ -1146,6 +1146,9 @@ namespace DatabaseAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("datetime(6)");
 
@@ -1170,6 +1173,8 @@ namespace DatabaseAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CommentId");
+
+                    b.HasIndex("CreatedByEmployeeId");
 
                     b.HasIndex("HomeHospitalId");
 
@@ -2214,6 +2219,10 @@ namespace DatabaseAPI.Migrations
                         .WithMany("Patients")
                         .HasForeignKey("CommentId");
 
+                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "CreatedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("CreatedByEmployeeId");
+
                     b.HasOne("DatabaseAPI.DatabaseModels.Hospital", "HomeHospital")
                         .WithMany()
                         .HasForeignKey("HomeHospitalId")
@@ -2226,6 +2235,8 @@ namespace DatabaseAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Comment");
+
+                    b.Navigation("CreatedByEmployee");
 
                     b.Navigation("HomeHospital");
 

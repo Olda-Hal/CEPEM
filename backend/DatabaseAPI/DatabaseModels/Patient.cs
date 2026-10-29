@@ -34,6 +34,13 @@ public class Patient
     public int? HomeHospitalId { get; set; }
     public Hospital? HomeHospital { get; set; }
 
+    /// <summary>
+    /// Employee who created the patient — only them (or their direct
+    /// supervisor) may hide/delete the record. Nullable for historical records.
+    /// </summary>
+    public int? CreatedByEmployeeId { get; set; }
+    public Employee? CreatedByEmployee { get; set; }
+
     public string? PhotoPath { get; set; }
 
     // Soft-delete ("hide from the listing") — records stay in the table for
