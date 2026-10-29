@@ -1,9 +1,6 @@
 .center-management-page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 4% 8%, rgb(15 122 88 / 14%), transparent 28%),
-    radial-gradient(circle at 96% 94%, rgb(18 89 122 / 12%), transparent 32%),
-    linear-gradient(180deg, #f7faf8 0%, #edf5f2 100%);
+  background-color: var(--color-background-page);
 }
 
 .center-management-layout {

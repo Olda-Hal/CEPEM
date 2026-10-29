@@ -544,7 +544,7 @@
 }
 
 .add-event-btn {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -577,7 +577,7 @@
 }
 
 .add-appointment-btn {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -958,7 +958,7 @@
 }
 
 .add-document-btn {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 12px 24px;

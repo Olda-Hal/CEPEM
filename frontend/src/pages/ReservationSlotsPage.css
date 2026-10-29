@@ -1,9 +1,6 @@
 .reservation-slots-page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgb(12 115 123 / 18%), transparent 34%),
-    radial-gradient(circle at bottom right, rgb(244 174 28 / 12%), transparent 28%),
-    linear-gradient(180deg, #f7faf9 0%, #eef4f2 100%);
+  background-color: var(--color-background-page);
 }
 
 .reservation-slots-layout {
@@ -221,8 +218,8 @@
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 18px;
-  background: linear-gradient(135deg, rgb(14 106 113 / 8%), rgb(244 174 28 / 8%));
-  color: #18353c;
+  background: var(--color-primary-light, rgb(102 126 234 / 12%));
+  color: var(--color-text, #1f2937);
   display: grid;
   gap: 4px;
 }
