@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -23,7 +24,12 @@ public class HospitalsControllerTests : IAsyncLifetime
 
         _context = new DatabaseContext(options);
         _logger = new Mock<ILogger<HospitalsController>>().Object;
-        _controller = new HospitalsController(_context, _logger);
+
+        var scopeMock = new Mock<DatabaseAPI.Services.IEmployeeScopeService>();
+        scopeMock.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DatabaseAPI.Services.ActorScope(
+                null, new List<string> { "SysAdmin" }, new List<int>(), new List<int>()));
+        _controller = new HospitalsController(_context, _logger, scopeMock.Object);
     }
 
     public async Task InitializeAsync()
@@ -91,7 +97,7 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Create(request);
 
         // Assert
-        Assert.True(result.Result is CreatedAtActionResult or BadRequestObjectResult);
+        Assert.True(result is ObjectResult { StatusCode: StatusCodes.Status201Created });
     }
 
     [Fact]
@@ -136,7 +142,7 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Create(request);
 
         // Assert - Either success or validation error is acceptable
-        Assert.True(result.Result is CreatedAtActionResult or BadRequestObjectResult);
+        Assert.True(result is CreatedAtActionResult or BadRequestObjectResult);
     }
 
     [Fact]
@@ -149,7 +155,7 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Create(request);
 
         // Assert
-        Assert.True(result.Result is CreatedAtActionResult or BadRequestObjectResult);
+        Assert.True(result is ObjectResult { StatusCode: StatusCodes.Status201Created });
     }
 
     [Fact]

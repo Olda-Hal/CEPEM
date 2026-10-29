@@ -9,7 +9,7 @@ export const LanguageSwitcher: React.FC = () => {
 
   const languages: { code: SupportedLanguages; name: string; flag: string }[] = [
     { code: 'cs', name: t('common.czech'), flag: '🇨🇿' },
-    { code: 'en', name: t('common.english'), flag: '🇺🇸' },
+    { code: 'en', name: t('common.english'), flag: '🇺🇸' }
   ];
 
   const handleLanguageChange = (languageCode: SupportedLanguages) => {

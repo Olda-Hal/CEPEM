@@ -6,7 +6,7 @@ namespace HealthcareAPI.Services
     {
         Task<LoginResponse?> LoginAsync(LoginRequest request);
         Task<bool> ChangePasswordAsync(int employeeId, ChangePasswordRequest request);
-        Task<CreateEmployeeResponse?> CreateEmployeeAsync(CreateEmployeeRequest request);
+        Task<(CreateEmployeeResponse? Result, string? ErrorBody)> CreateEmployeeAsync(CreateEmployeeRequest request);
         Task<string> GetNextAvailableUidAsync();
     }
 }

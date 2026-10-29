@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: healthcare-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["healthcare-api:80"]
+        labels:
+          service: healthcare-api
+
+  - job_name: database-api
+    # Internal-only scrape: database-api exposes /metrics without auth on the
+    # private network (ServiceAuthMiddleware covers /api/* only)
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["database-api:5001"]
+        labels:
+          service: database-api

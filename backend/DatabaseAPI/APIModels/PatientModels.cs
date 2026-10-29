@@ -44,6 +44,13 @@ public class PatientDto
     public bool Alive { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string? PhotoUrl { get; set; }
+    public bool IsDeleted { get; set; }
+
+    /// <summary>Employee who created the patient (null for historical records).</summary>
+    public int? CreatedByEmployeeId { get; set; }
+
+    /// <summary>Computed for the acting user: may they hide/delete the patient.</summary>
+    public bool CanDelete { get; set; }
 }
 
 public class PatientSearchRequest

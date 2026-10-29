@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Security.Claims;
 using Xunit;
 using HealthcareAPI.Controllers;
 using HealthcareAPI.Models;
@@ -16,6 +18,18 @@ public class AuthControllerTests
     {
         _mockAuthService = new Mock<IAuthService>();
         _controller = new AuthController(_mockAuthService.Object);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, "1"),
+                    new Claim(ClaimTypes.Role, "SysAdmin")
+                }, "TestAuthentication"))
+            }
+        };
+
     }
 
     [Fact]
@@ -23,7 +37,7 @@ public class AuthControllerTests
     {
         // Arrange
         var request = new LoginRequest { Email = "user@example.com", Password = "password123" };
-        var response = new LoginResponse { Token = "test-token", ExpiresIn = 3600 };
+        var response = new LoginResponse { Token = "test-token", Email = "user@example.com", FullName = "Test User" };
         
         _mockAuthService.Setup(s => s.LoginAsync(request))
             .ReturnsAsync(response);
@@ -109,7 +123,7 @@ public class AuthControllerTests
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("alespoň 6 znaků", badRequestResult.Value?.ToString());
+        Assert.Contains("alespoň 8 znaků", badRequestResult.Value?.ToString());
     }
 
     [Fact]
@@ -168,10 +182,10 @@ public class AuthControllerTests
             Password = "password123"
         };
 
-        var response = new CreateEmployeeResponse { EmployeeId = 1, Message = "Employee created" };
+        var response = new CreateEmployeeResponse { EmployeeId = 1, PersonId = 1, Email = "john@example.com", FullName = "John Doe", UID = "12345678" };
         
         _mockAuthService.Setup(s => s.CreateEmployeeAsync(request))
-            .ReturnsAsync(response);
+            .ReturnsAsync((response, (string?)null));
 
         // Act
         var result = await _controller.CreateEmployee(request);
@@ -224,7 +238,7 @@ public class AuthControllerTests
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Contains("6 znaků", badRequestResult.Value?.ToString());
+        Assert.Contains("8 znaků", badRequestResult.Value?.ToString());
     }
 
     [Fact]
@@ -243,7 +257,7 @@ public class AuthControllerTests
         };
 
         _mockAuthService.Setup(s => s.CreateEmployeeAsync(request))
-            .ReturnsAsync((CreateEmployeeResponse?)null);
+            .ReturnsAsync(((CreateEmployeeResponse?)null, (string?)null));
 
         // Act
         var result = await _controller.CreateEmployee(request);

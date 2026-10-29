@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { TestSummary, ServiceDetails, TestFileInfo, LiveStatus } from '../types/testResults';
+import { TestSummary, ServiceDetails, LiveStatus } from '../types/testResults';
 
 export const testResultsApi = {
   getTestSummary: async (): Promise<TestSummary> => {
@@ -13,7 +13,9 @@ export const testResultsApi = {
   },
 
   getTestFile: async (serviceName: string, fileName: string): Promise<string> => {
-    const response = await apiClient.get<string>(`/api/testresults/file/${serviceName}/${fileName}`);
+    const response = await apiClient.get<string>(
+      `/api/testresults/file/${serviceName}/${fileName}`
+    );
     return response;
   },
 

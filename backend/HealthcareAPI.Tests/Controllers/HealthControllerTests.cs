@@ -31,9 +31,8 @@ public class HealthControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var value = okResult.Value as dynamic;
-        Assert.NotNull(value);
-        Assert.Equal("Healthy", value.Status);
+        var json = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+        Assert.Contains("\"Status\":\"Healthy\"", json);
     }
 
     [Fact]
@@ -44,9 +43,8 @@ public class HealthControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var value = okResult.Value as dynamic;
-        Assert.NotNull(value);
-        Assert.Equal("HealthcareAPI", value.Service);
+        var json = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+        Assert.Contains("\"Service\":\"HealthcareAPI\"", json);
     }
 
     [Fact]

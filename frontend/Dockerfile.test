@@ -1,10 +1,10 @@
-FROM node:18-alpine AS test
+FROM node:20-alpine AS test
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 # Copy source code
 COPY . .

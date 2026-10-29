@@ -46,7 +46,7 @@ public class ReservationSlot
 
     [Required]
     [StringLength(50)]
-    public string Status { get; set; } = "AVAILABLE";
+    public SlotStatus Status { get; set; } = SlotStatus.Available;
 
     [Required]
     [StringLength(2)]

@@ -1,45 +1,62 @@
 /* Global Theme Override - Apply to all components */
 
 /* Apply theme colors to common elements */
-input, select, textarea, button {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+input,
+select,
+textarea,
+button {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease !important;
 }
 
 /* Override any remaining hardcoded colors in components */
-.modal-overlay, [data-overlay] {
-  background-color: rgba(0, 0, 0, 0.5) !important;
+.modal-overlay,
+[data-overlay] {
+  background-color: rgb(0 0 0 / 50%) !important;
 }
 
-.modal, .modal-content, [data-modal] {
+.modal,
+.modal-content,
+[data-modal] {
   background: var(--color-background) !important;
   color: var(--color-text-primary) !important;
 }
 
 /* Ensure all text inputs use theme colors */
-input:not([type="checkbox"]):not([type="radio"]), 
-select, 
+input:not([type='checkbox'], [type='radio']),
+select,
 textarea {
   background-color: var(--color-background) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-border) !important;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):focus, 
-select:focus, 
+input:not([type='checkbox'], [type='radio']):focus,
+select:focus,
 textarea:focus {
   border-color: var(--color-border-focus) !important;
   box-shadow: 0 0 0 2px var(--color-primary-light) !important;
 }
 
-/* Theme all buttons */
-.btn, button:not([class*="close"]):not([class*="collapse"]) {
+/* Theme all buttons (solid look; primary = theme accent) */
+.btn,
+button:not([class*='close'], [class*='collapse']) {
   transition: all 0.2s ease !important;
 }
 
-.btn-primary, .login-button, .add-patient-button {
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%) !important;
+.btn-primary,
+.login-button,
+.add-patient-button {
+  background: var(--color-primary) !important;
   color: white !important;
   border-color: var(--color-primary) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
 }
 
 .btn-secondary {
@@ -58,23 +75,37 @@ textarea:focus {
 }
 
 /* Theme all modals and cards */
-.card, .modal-content, .employees-table-container, 
-.patient-card, .stat-card, .action-card {
+.card,
+.modal-content,
+.employees-table-container,
+.patient-card,
+.stat-card,
+.action-card {
   background: var(--color-background) !important;
   border-color: var(--color-border) !important;
   box-shadow: 0 2px 8px var(--color-shadow-light) !important;
 }
 
 /* Theme all headers and text */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--color-text-primary) !important;
 }
 
-p, span, div, label {
+p,
+span,
+div,
+label {
   color: inherit !important;
 }
 
-.text-muted, .text-secondary, small {
+.text-muted,
+.text-secondary,
+small {
   color: var(--color-text-secondary) !important;
 }
 
@@ -95,25 +126,32 @@ table tr:hover {
 }
 
 /* Theme alerts and status badges */
-.alert-error, .status-badge.inactive {
+.alert-error,
+.status-badge.inactive {
   background-color: var(--color-error-light) !important;
   color: var(--color-error) !important;
   border-color: var(--color-error) !important;
 }
 
-.alert-success, .status-badge.active {
+.alert-success,
+.status-badge.active {
   background-color: var(--color-success-light) !important;
   color: var(--color-success) !important;
   border-color: var(--color-success) !important;
 }
 
 /* Theme borders */
-hr, .border, [class*="border"] {
+hr,
+.border,
+[class*='border'] {
   border-color: var(--color-border) !important;
 }
 
 /* Page backgrounds */
-.page, .container, [class*="page"], [class*="container"] {
+.page,
+.container,
+[class*='page'],
+[class*='container'] {
   background-color: var(--color-background-page) !important;
 }
 
@@ -123,13 +161,15 @@ hr, .border, [class*="border"] {
 }
 
 /* Theme specific components that might have hardcoded colors */
-.patients-card, .employee-card {
+.patients-card,
+.employee-card {
   background: var(--color-background) !important;
   border: 1px solid var(--color-border) !important;
   box-shadow: 0 2px 4px var(--color-shadow-light) !important;
 }
 
-.patients-card:hover, .employee-card:hover {
+.patients-card:hover,
+.employee-card:hover {
   box-shadow: 0 4px 12px var(--color-shadow-medium) !important;
 }
 
@@ -139,17 +179,20 @@ hr, .border, [class*="border"] {
 }
 
 /* Theme loading states */
-.loading, .spinner {
+.loading,
+.spinner {
   color: var(--color-text-secondary) !important;
 }
 
 /* Theme form validation */
-.error, .invalid {
+.error,
+.invalid {
   color: var(--color-error) !important;
   border-color: var(--color-error) !important;
 }
 
-.success, .valid {
+.success,
+.valid {
   color: var(--color-success) !important;
   border-color: var(--color-success) !important;
 }

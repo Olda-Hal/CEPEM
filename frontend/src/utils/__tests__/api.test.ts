@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { apiClient } from '../api';
 
 describe('API Client', () => {
@@ -5,49 +6,49 @@ describe('API Client', () => {
     // Clear localStorage before each test
     localStorage.clear();
     // Reset fetch mock
-    global.fetch = jest.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   test('includes auth token in request headers when available', async () => {
     const mockToken = 'test-jwt-token';
     localStorage.setItem('authToken', mockToken);
 
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: 'test' }),
       headers: {
-        get: jest.fn().mockReturnValue('application/json')
+        get: vi.fn().mockReturnValue('application/json')
       }
     });
 
     await apiClient.get('/test-endpoint');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/test-endpoint'),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'Authorization': `Bearer ${mockToken}`
+          Authorization: `Bearer ${mockToken}`
         })
       })
     );
   });
 
   test('makes GET request without auth token when not available', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: 'test' }),
       headers: {
-        get: jest.fn().mockReturnValue('application/json')
+        get: vi.fn().mockReturnValue('application/json')
       }
     });
 
     await apiClient.get('/test-endpoint');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/test-endpoint'),
       expect.objectContaining({
         method: 'GET',
@@ -60,18 +61,18 @@ describe('API Client', () => {
 
   test('makes POST request with data', async () => {
     const testData = { name: 'test' };
-    
-    (global.fetch as jest.Mock).mockResolvedValue({
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true }),
       headers: {
-        get: jest.fn().mockReturnValue('application/json')
+        get: vi.fn().mockReturnValue('application/json')
       }
     });
 
     await apiClient.post('/test-endpoint', testData);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/test-endpoint'),
       expect.objectContaining({
         method: 'POST',
@@ -84,7 +85,7 @@ describe('API Client', () => {
   });
 
   test('throws error for non-ok responses', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: 'Not Found'

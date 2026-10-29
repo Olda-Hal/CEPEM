@@ -20,7 +20,7 @@
 }
 
 .form-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--color-text-primary);
   font-size: 1.1rem;
   font-weight: 600;
@@ -93,8 +93,8 @@
   background-color: var(--color-background-secondary);
 }
 
-.checkbox-item input[type="checkbox"],
-.checkbox-item input[type="radio"] {
+.checkbox-item input[type='checkbox'],
+.checkbox-item input[type='radio'] {
   width: auto;
   margin-right: 0.5rem;
   margin-bottom: 0;
@@ -135,7 +135,7 @@
   cursor: pointer;
 }
 
-.radio-item input[type="radio"] {
+.radio-item input[type='radio'] {
   width: auto;
   margin-right: 0.5rem;
   margin-bottom: 0;
@@ -233,7 +233,6 @@
 
 .drug-categories {
   margin-top: 1rem;
-  padding-top: 1rem;
   border-top: 1px solid var(--color-border);
   background-color: var(--color-background);
   border-radius: 4px;
@@ -326,7 +325,7 @@
 }
 
 .examination-documents-title {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.5rem;
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -336,7 +335,7 @@
 .examination-documents-help {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   text-align: center;
 }
 
@@ -368,7 +367,7 @@
   border-color: var(--color-primary);
   background-color: var(--color-primary-light);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 10%);
 }
 
 .examination-upload-button:active {
@@ -390,7 +389,7 @@
 
 .examination-upload-error {
   color: #dc3545;
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: rgb(220 53 69 / 10%);
   padding: 0.75rem;
   border-radius: 4px;
   margin: 0.75rem 0;
@@ -406,7 +405,7 @@
 }
 
 .selected-files-title {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.75rem;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -431,7 +430,7 @@
 
 .selected-examination-file-item:hover {
   border-color: var(--color-primary);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 5%);
 }
 
 .file-icon-container {
@@ -485,7 +484,7 @@
 }
 
 .file-remove-button:hover {
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: rgb(220 53 69 / 10%);
 }
 
 .file-remove-button svg {
@@ -493,7 +492,7 @@
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .add-event-modal {
     max-width: 95vw;
     margin: 1rem;
@@ -558,7 +557,7 @@
 }
 
 .remove-button:hover {
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: rgb(220 53 69 / 10%);
 }
 
 .add-to-group-button {

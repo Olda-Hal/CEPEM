@@ -16,11 +16,13 @@ namespace DatabaseAPI.Services
     {
         private readonly DatabaseContext _context;
         private readonly ILogger<SeedService> _logger;
+        private readonly IHostEnvironment _env;
 
-        public SeedService(DatabaseContext context, ILogger<SeedService> logger)
+        public SeedService(DatabaseContext context, ILogger<SeedService> logger, IHostEnvironment env)
         {
             _context = context;
             _logger = logger;
+            _env = env;
         }
 
         public async Task SeedAsync()
@@ -29,8 +31,13 @@ namespace DatabaseAPI.Services
             {
                 await SeedRolesAsync();
                 await SeedAdminUserAsync();
-                await SeedAccessControlRulesAsync();
+                await SeedPermissionsAsync();
+                await BackfillEmployeeRolesAsync();
                 await SeedIntakeFormEventTypeAsync();
+                if (_env.IsDevelopment())
+                {
+                    await SeedDemoDataAsync();
+                }
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Database seeded successfully.");
             }
@@ -48,6 +55,38 @@ namespace DatabaseAPI.Services
             await EnsureRoleExistsAsync("Doctor");
             await EnsureRoleExistsAsync("Center Admin");
             await EnsureRoleExistsAsync("Country Admin");
+        }
+
+        private async Task EnsureRoleExistsAsync(string roleName)
+        {
+            var existingRole = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
+
+            if (existingRole != null)
+            {
+                return;
+            }
+
+            var translation = new Translation
+            {
+                EN = roleName,
+                CS = roleName
+            };
+            _context.Translations.Add(translation);
+            await _context.SaveChangesAsync();
+
+            _context.Roles.Add(new Role { NameTranslationId = translation.Id });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("{RoleName} role created.", roleName);
+        }
+
+        private async Task<Role?> GetRoleByNameAsync(string roleName)
+        {
+            return await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
         }
 
         private async Task SeedAdminUserAsync()
@@ -101,7 +140,14 @@ namespace DatabaseAPI.Services
             await _context.SaveChangesAsync();
 
             // Create Employee for admin
-            var password = "admin";
+            var password = Environment.GetEnvironmentVariable("ADMIN_INITIAL_PASSWORD");
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                _logger.LogWarning(
+                    "No SysAdmin user exists and ADMIN_INITIAL_PASSWORD is not set - skipping admin creation. " +
+                    "Set ADMIN_INITIAL_PASSWORD and restart to create the initial admin account.");
+                return;
+            }
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
             var adminEmployee = new Employee
@@ -125,8 +171,97 @@ namespace DatabaseAPI.Services
 
             _context.UserRoles.Add(userRole);
 
-            _logger.LogInformation("SysAdmin user created with email: {Email} and password: {Password}", 
-                "admin@cepem.local", password);
+            _logger.LogInformation("SysAdmin user created with email: {Email}. Change this password after first login.",
+                "admin@cepem.local");
+        }
+
+        /// <summary>
+        /// Development-only demo records (one hospital, one patient) so that a
+        /// fresh database is immediately usable — including E2E tests that
+        /// assert a patient's detail or create reservation slots. Production
+        /// databases never get demo rows.
+        /// </summary>
+        private async Task SeedDemoDataAsync()
+        {
+            var hospital = await _context.Hospitals
+                .FirstOrDefaultAsync(h => h.Name == "Demo zdravotnické středisko");
+            if (hospital == null)
+            {
+                hospital = new Hospital
+                {
+                    Name = "Demo zdravotnické středisko",
+                    Active = true
+                };
+                _context.Hospitals.Add(hospital);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Demo hospital created.");
+            }
+
+            const string demoPatientUid = "DEMO-P-0001";
+            var exists = await _context.Persons.AnyAsync(p => p.UID == demoPatientUid);
+            if (exists)
+            {
+                return;
+            }
+
+            var adminEmployee = await _context.Employees
+                .OrderBy(e => e.Id)
+                .FirstOrDefaultAsync();
+
+            var person = new Person
+            {
+                FirstName = "Demo",
+                LastName = "Pacient",
+                UID = demoPatientUid,
+                Active = true,
+                Gender = "M",
+                CountryCode = Patient.DefaultCountryCode,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Persons.Add(person);
+            await _context.SaveChangesAsync();
+
+            var contact = new Contact();
+            _context.Contacts.Add(contact);
+            await _context.SaveChangesAsync();
+            _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = "demo.pacient@cepem.local" });
+            _context.ContactToObjects.Add(new ContactToObject
+            {
+                ContactId = contact.Id,
+                ObjectId = person.Id,
+                ObjectType = ContactObjectType.Person,
+                PersonId = person.Id
+            });
+            await _context.SaveChangesAsync();
+
+            _context.Patients.Add(new Patient
+            {
+                PersonId = person.Id,
+                BirthDate = new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                InsuranceNumber = 1234567890,
+                CountryCode = Patient.DefaultCountryCode,
+                HomeHospitalId = hospital.Id,
+                CreatedByEmployeeId = adminEmployee?.Id
+            });
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Demo patient created (UID {Uid}).", demoPatientUid);
+
+            // One audit trail entry so the activity log page has a row to show
+            if (!await _context.ActivityLogs.AnyAsync(l => l.Action == "demo.seed"))
+            {
+                _context.ActivityLogs.Add(new ActivityLog
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Service = "DatabaseAPI",
+                    Action = "demo.seed",
+                    Method = "GET",
+                    StatusCode = 200,
+                    EmployeeId = adminEmployee?.Id,
+                    EmployeeEmail = adminEmployee != null ? "admin@cepem.local" : null,
+                    Details = "Demo record created by the development seeder."
+                });
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task SeedIntakeFormEventTypeAsync()
@@ -161,232 +296,170 @@ namespace DatabaseAPI.Services
             _logger.LogInformation("Intake Form event type created.");
         }
 
-        private async Task SeedAccessControlRulesAsync()
+        // Permission catalog: codes are referenced by [RequirePermission] attributes
+        // in HealthcareAPI controllers and granted to roles below.
+        private static readonly (string Code, string Description)[] PermissionCatalog =
         {
-            await SeedSysAdminRulesAsync();
-            await SeedRoleRulesIfEmptyAsync("Examiner", BuildExaminerRules());
-            await SeedRoleRulesIfEmptyAsync("Doctor", BuildDoctorRules());
-            await SeedRoleRulesIfEmptyAsync("Center Admin", BuildCenterAdminRules());
-            await SeedRoleRulesIfEmptyAsync("Country Admin", BuildCountryAdminRules());
-        }
+            ("dashboard.read", "View own employee profile and dashboard statistics"),
+            ("uid.read", "Look up the next available patient UID"),
+            ("patients.read", "View and search patients, including photos"),
+            ("patients.write", "Create patients and edit patient data/comments"),
+            ("patients.photo.write", "Upload patient photos"),
+            ("patients.documents.read", "View and download patient documents"),
+            ("patients.documents.write", "Upload and delete patient documents"),
+            ("events.read", "View event options (types, symptoms, drugs, ...)"),
+            ("events.write", "Record patient events"),
+            ("examinations.read", "View examinations"),
+            ("examinations.export", "Export examinations"),
+            ("examinations.documents.read", "View and download examination documents"),
+            ("examinations.documents.write", "Upload and delete examination documents"),
+            ("hospitals.read", "View hospitals"),
+            ("hospitals.write", "Create, update and deactivate hospitals"),
+            ("examinationtypes.read", "View examination types"),
+            ("examinationtypes.write", "Manage hospital examination type assignments"),
+            ("examinationtypes.manage", "Create, update and delete examination types"),
+            ("examinationrooms.read", "View examination rooms"),
+            ("examinationrooms.write", "Create, update and delete examination rooms"),
+            ("doctorexaminationrooms.read", "View doctor examination room assignments"),
+            ("doctorexaminationrooms.write", "Assign and remove doctor examination rooms"),
+            ("reservations.read", "View reservation slots"),
+            ("reservations.write", "Create, update, block, confirm and release reservation slots"),
+            ("employees.read", "View employee and role lists"),
+            ("employees.create", "Create employees"),
+            ("employees.manage", "Update and deactivate employees"),
+            ("roles.manage", "Create roles and manage role permissions"),
+            ("permissions.manage", "Manage permissions and per-employee permission overrides"),
+            ("settings.read", "View application settings"),
+            ("settings.write", "Change application settings"),
+            ("tests.read", "View the test results dashboard"),
+            ("audit.read", "View the activity audit log")
+        };
 
-        private async Task EnsureRoleExistsAsync(string roleName)
+        /// <summary>
+        /// Assigns the baseline "Examiner" role to any employee whose person
+        /// has no role at all. Employees created before the role model (or
+        /// through creation paths that forgot UserRole rows) ended up unable
+        /// to call any permission-gated endpoint — most visibly /api/employees/me
+        /// right after login (403).
+        /// </summary>
+        private async Task BackfillEmployeeRolesAsync()
         {
-            var existingRole = await _context.Roles
-                .Include(r => r.NameTranslation)
-                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
-
-            if (existingRole != null)
-                return;
-
-            var translation = new Translation { EN = roleName };
-            _context.Translations.Add(translation);
-            await _context.SaveChangesAsync();
-
-            _context.Roles.Add(new Role { NameTranslationId = translation.Id });
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("{RoleName} role created.", roleName);
-        }
-
-        private async Task SeedSysAdminRulesAsync()
-        {
-            var adminRole = await GetRoleByNameAsync("SysAdmin");
-            if (adminRole == null)
-                return;
-
-            var hasWildcardRule = await _context.RolePermissionRules
-                .AnyAsync(r => r.RoleId == adminRole.Id && r.PermissionKey == "*");
-
-            if (hasWildcardRule)
-                return;
-
-            _context.RolePermissionRules.Add(new RolePermissionRule
+            var baselineRole = await GetRoleByNameAsync("Examiner");
+            if (baselineRole == null)
             {
-                RoleId = adminRole.Id,
-                PermissionKey = "*",
-                Effect = AccessRuleEffect.Allow
-            });
+                return;
+            }
 
-            _logger.LogInformation("Seeded SysAdmin wildcard permission rule.");
+            var orphanedEmployees = await _context.Employees
+                .Include(e => e.Person)
+                .Where(e => !e.Person.UserRoles.Any())
+                .ToListAsync();
+
+            foreach (var employee in orphanedEmployees)
+            {
+                _context.UserRoles.Add(new UserRole
+                {
+                    UserId = employee.PersonId,
+                    RoleId = baselineRole.Id
+                });
+                _logger.LogWarning(
+                    "Employee {EmployeeId} ({FirstName} {LastName}) had no role - assigned baseline role Examiner.",
+                    employee.Id, employee.Person.FirstName, employee.Person.LastName);
+            }
+
+            if (orphanedEmployees.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
         }
 
-        private async Task SeedRoleRulesIfEmptyAsync(string roleName, List<RolePermissionRule> rules)
+        private async Task SeedPermissionsAsync()
+        {
+            foreach (var (code, description) in PermissionCatalog)
+            {
+                var existing = await _context.Permissions.FirstOrDefaultAsync(p => p.Code == code);
+                if (existing == null)
+                {
+                    _context.Permissions.Add(new Permission { Code = code, Description = description });
+                }
+                else if (existing.Description != description)
+                {
+                    existing.Description = description;
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            await SeedRoleGrantsAsync("SysAdmin", PermissionCatalog.Select(p => p.Code).ToArray());
+            await SeedRoleGrantsAsync("Examiner", new[]
+            {
+                "dashboard.read", "uid.read", "employees.read", "employees.create",
+                "patients.read", "patients.write", "patients.photo.write",
+                "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
+                "examinations.read", "examinations.export", "examinations.documents.write"
+            });
+            await SeedRoleGrantsAsync("Doctor", new[]
+            {
+                "dashboard.read",
+                "patients.read", "patients.documents.read",
+                "examinations.read", "examinations.export", "examinations.documents.read",
+                "hospitals.read"
+            });
+            await SeedRoleGrantsAsync("Center Admin", new[]
+            {
+                "dashboard.read", "uid.read",
+                "employees.read", "employees.create", "employees.manage",
+                "hospitals.read", "hospitals.write",
+                "examinationrooms.read", "examinationrooms.write",
+                "reservations.read", "reservations.write",
+                "examinations.read", "examinations.export"
+            });
+            await SeedRoleGrantsAsync("Country Admin", new[]
+            {
+                "dashboard.read", "uid.read",
+                "employees.read", "employees.create", "employees.manage",
+                "patients.read", "patients.write", "patients.photo.write",
+                "patients.documents.read", "patients.documents.write",
+                "hospitals.read", "hospitals.write",
+                "examinationtypes.read", "examinationtypes.write",
+                "examinationrooms.read", "examinationrooms.write",
+                "doctorexaminationrooms.read", "doctorexaminationrooms.write",
+                "reservations.read", "reservations.write",
+                "examinations.read", "examinations.export"
+            });
+        }
+
+        private async Task SeedRoleGrantsAsync(string roleName, string[] permissionCodes)
         {
             var role = await GetRoleByNameAsync(roleName);
             if (role == null)
+            {
+                _logger.LogWarning("Role {RoleName} not found, skipping permission grants.", roleName);
                 return;
+            }
 
-            var existingRules = await _context.RolePermissionRules
-                .Where(r => r.RoleId == role.Id)
-                .Include(r => r.Scopes)
+            var permissions = await _context.Permissions
+                .Where(p => permissionCodes.Contains(p.Code))
                 .ToListAsync();
 
-            static string BuildScopeSignature(IEnumerable<RolePermissionScope> scopes)
+            var existingGrants = await _context.RolePermissions
+                .Where(rp => rp.RoleId == role.Id)
+                .ToListAsync();
+            var existingByPermission = existingGrants.ToDictionary(rp => rp.PermissionId);
+
+            foreach (var permission in permissions)
             {
-                return string.Join("|", scopes
-                    .OrderBy(scope => scope.ResourceType)
-                    .ThenBy(scope => scope.ResourceId)
-                    .Select(scope => $"{scope.ResourceType}:{scope.ResourceId}"));
+                if (!existingByPermission.ContainsKey(permission.Id))
+                {
+                    _context.RolePermissions.Add(new RolePermission
+                    {
+                        RoleId = role.Id,
+                        PermissionId = permission.Id,
+                        Effect = "Allow"
+                    });
+                }
             }
-
-            foreach (var rule in rules)
-            {
-                var incomingSignature = BuildScopeSignature(rule.Scopes);
-                var exists = existingRules.Any(existing =>
-                    string.Equals(existing.PermissionKey, rule.PermissionKey, StringComparison.OrdinalIgnoreCase) &&
-                    existing.Effect == rule.Effect &&
-                    BuildScopeSignature(existing.Scopes) == incomingSignature);
-
-                if (exists)
-                    continue;
-
-                rule.RoleId = role.Id;
-                _context.RolePermissionRules.Add(rule);
-            }
-
-            _logger.LogInformation("Ensured default ACL rules for role {RoleName}.", roleName);
-        }
-
-        private async Task<Role?> GetRoleByNameAsync(string roleName)
-        {
-            return await _context.Roles
-                .Include(r => r.NameTranslation)
-                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == roleName);
-        }
-
-        private static List<RolePermissionRule> BuildExaminerRules()
-        {
-            return new List<RolePermissionRule>
-            {
-                Allow("POST:/api/auth/change-password"),
-                Allow("POST:/api/auth/create-employee"),
-                Allow("GET:/api/auth/next-uid"),
-                Allow("GET:/api/admin/employees"),
-                Allow("GET:/api/admin/employees/{employeeid}"),
-                Allow("GET:/api/admin/roles"),
-                Allow("GET:/api/employees/me"),
-                Allow("GET:/api/employees/dashboard-stats"),
-                Allow("GET:/api/events/options"),
-                Allow("POST:/api/events*"),
-                Allow("GET:/api/patients/search"),
-                Allow("POST:/api/patients"),
-                Allow("GET:/api/patients/{id}"),
-                Allow("GET:/api/patients/{id}/detail"),
-                Allow("POST:/api/patients/{id}/photo"),
-                Allow("POST:/api/patients/{id}/documents"),
-                Allow("GET:/api/patients/{id}/documents"),
-                Allow("POST:/api/examinations/{examinationid}/documents"),
-                Allow("GET:/api/examinations"),
-                Allow("GET:/api/examinations/export")
-            };
-        }
-
-        private static List<RolePermissionRule> BuildDoctorRules()
-        {
-            return new List<RolePermissionRule>
-            {
-                Allow("POST:/api/auth/change-password"),
-                Allow("GET:/api/employees/me"),
-                Allow("GET:/api/employees/dashboard-stats"),
-                Allow("GET:/api/patients/search"),
-                Allow("GET:/api/patients/{id}"),
-                Allow("GET:/api/patients/{id}/detail"),
-                Allow("GET:/api/patients/{id}/documents"),
-                Allow("GET:/api/patients/{patientid}/documents/{documentid}"),
-                Allow("GET:/api/examinations/{examinationid}/documents/{documentid}"),
-                Allow("GET:/api/hospitals"),
-                Allow("GET:/api/examinations"),
-                Allow("GET:/api/examinations/export")
-            };
-        }
-
-        private static List<RolePermissionRule> BuildCenterAdminRules()
-        {
-            return new List<RolePermissionRule>
-            {
-                Allow("POST:/api/auth/change-password"),
-                Allow("GET:/api/employees/me"),
-                Allow("GET:/api/employees/dashboard-stats"),
-                Allow("GET:/api/hospitals", Scope("Hospital", 0)),
-                Allow("GET:/api/hospitals/{hospitalid}/examination-types", Scope("Hospital", 0)),
-                Allow("PUT:/api/hospitals/{hospitalid}", Scope("Hospital", 0)),
-                Allow("GET:/api/examinationrooms/hospital/{hospitalid}", Scope("Hospital", 0)),
-                Allow("POST:/api/examinationrooms", Scope("Hospital", 0)),
-                Allow("PUT:/api/examinationrooms/{roomid}", Scope("Hospital", 0)),
-                Allow("DELETE:/api/examinationrooms/{roomid}", Scope("Hospital", 0)),
-                Allow("GET:/api/reservations/slots/hospital/{hospitalid}", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots/hospital/{hospitalid}/copy-day", Scope("Hospital", 0)),
-                Allow("PUT:/api/reservations/slots/{slotid}", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/release", Scope("Hospital", 0)),
-                Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Hospital", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Hospital", 0)),
-                Allow("GET:/api/examinations"),
-                Allow("GET:/api/examinations/export")
-            };
-        }
-
-        private static List<RolePermissionRule> BuildCountryAdminRules()
-        {
-            return new List<RolePermissionRule>
-            {
-                Allow("POST:/api/auth/change-password"),
-                Allow("POST:/api/auth/create-employee"),
-                Allow("GET:/api/auth/next-uid"),
-                Allow("GET:/api/employees/me"),
-                Allow("GET:/api/employees/dashboard-stats"),
-                Allow("GET:/api/hospitals"),
-                Allow("POST:/api/hospitals", Scope("Country", 0)),
-                Allow("GET:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 0)),
-                Allow("PUT:/api/hospitals/{hospitalid}/examination-types", Scope("Country", 0)),
-                Allow("PUT:/api/hospitals/{hospitalid}", Scope("Country", 0)),
-                Allow("DELETE:/api/hospitals/{hospitalid}", Scope("Country", 0)),
-                Allow("GET:/api/examinationrooms/hospital/{hospitalid}", Scope("Country", 0)),
-                Allow("POST:/api/examinationrooms", Scope("Country", 0)),
-                Allow("PUT:/api/examinationrooms/{roomid}", Scope("Country", 0)),
-                Allow("DELETE:/api/examinationrooms/{roomid}", Scope("Country", 0)),
-                Allow("GET:/api/admin/employees"),
-                Allow("GET:/api/admin/employees/{employeeid}"),
-                Allow("PUT:/api/admin/employees/{employeeid}"),
-                Allow("PATCH:/api/admin/employees/{employeeid}/deactivate"),
-                Allow("GET:/api/admin/roles"),
-                Allow("GET:/api/examinationtypes"),
-                Allow("POST:/api/doctorexaminationrooms", Scope("Country", 0)),
-                Allow("DELETE:/api/doctorexaminationrooms/{assignmentid}", Scope("Country", 0)),
-                Allow("GET:/api/doctorexaminationrooms/doctor/{doctorid}", Scope("Country", 0)),
-                Allow("GET:/api/reservations/slots/hospital/{hospitalid}", Scope("Country", 0)),
-                Allow("POST:/api/reservations/slots", Scope("Country", 0)),
-                Allow("POST:/api/reservations/slots/hospital/{hospitalid}/copy-day", Scope("Country", 0)),
-                Allow("PUT:/api/reservations/slots/{slotid}", Scope("Country", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/release", Scope("Country", 0)),
-                Allow("DELETE:/api/reservations/slots/{slotid}", Scope("Country", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/block", Scope("Country", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/confirm", Scope("Country", 0)),
-                Allow("POST:/api/reservations/slots/{slotid}/reject", Scope("Country", 0)),
-                Allow("GET:/api/examinations"),
-                Allow("GET:/api/examinations/export")
-            };
-        }
-
-        private static RolePermissionRule Allow(string permissionKey, params RolePermissionScope[] scopes)
-        {
-            return new RolePermissionRule
-            {
-                PermissionKey = permissionKey,
-                Effect = AccessRuleEffect.Allow,
-                Scopes = scopes.ToList()
-            };
-        }
-
-        private static RolePermissionScope Scope(string resourceType, int resourceId)
-        {
-            return new RolePermissionScope
-            {
-                ResourceType = resourceType,
-                ResourceId = resourceId
-            };
+            await _context.SaveChangesAsync();
         }
     }
 }

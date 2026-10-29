@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
-import { AppHeader } from '../components/AppHeader';
+import PatientRecordFields from '../components/patient/PatientRecordFields';
+import '../components/patient/PatientRecordFields.css';
 import { PatientDetail, UpdatePatientRequest } from '../types';
 import './EditPatientPage.css';
 
@@ -32,9 +33,7 @@ interface IntakeSummary {
 }
 
 const formatFieldLabel = (key: string): string => {
-  return key
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/^./, (char) => char.toUpperCase());
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (char) => char.toUpperCase());
 };
 
 const formatFieldValue = (value: unknown, t: (key: string) => string): string => {
@@ -89,9 +88,9 @@ const parseIntakeSummary = (comment?: string | null): IntakeSummary => {
 
   comment
     .split('\n')
-    .map(line => line.trim())
+    .map((line) => line.trim())
     .filter(Boolean)
-    .forEach(line => {
+    .forEach((line) => {
       if (line.startsWith('Váha:')) {
         summary.weight = line.replace('Váha:', '').trim();
         return;
@@ -148,7 +147,9 @@ const parseIntakeSummary = (comment?: string | null): IntakeSummary => {
   return summary;
 };
 
-const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmission'] | null): IntakeSummary => {
+const formSubmissionToIntakeSummary = (
+  formSubmission?: PatientDetail['formSubmission'] | null
+): IntakeSummary => {
   const summary: IntakeSummary = {
     weight: null,
     height: null,
@@ -164,7 +165,7 @@ const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmi
   }
 
   const medicationList: string[] = [];
-  
+
   if (formSubmission.medication?.medBloodPressure) medicationList.push('Léky na krevní tlak');
   if (formSubmission.medication?.medHeart) medicationList.push('Léky na srdce');
   if (formSubmission.medication?.medCholesterol) medicationList.push('Léky na cholesterol');
@@ -184,7 +185,7 @@ const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmi
   summary.medications = medicationList;
 
   const healthStatusList: string[] = [];
-  
+
   if (formSubmission.lifestyle?.poorSleep) healthStatusList.push('Špatný spánek');
   if (formSubmission.lifestyle?.digestiveIssues) healthStatusList.push('Zažívací problémy');
   if (formSubmission.lifestyle?.physicalStress) healthStatusList.push('Fyzický stres');
@@ -196,7 +197,7 @@ const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmi
   summary.notes = formSubmission.lifestyle?.additionalHealthInfo || null;
 
   const covidList: string[] = [];
-  formSubmission.sicknessHistories?.forEach(history => {
+  formSubmission.sicknessHistories?.forEach((history) => {
     if (history.hadSickness) {
       covidList.push(`${history.sicknessName}: ano`);
     }
@@ -208,23 +209,61 @@ const formSubmissionToIntakeSummary = (formSubmission?: PatientDetail['formSubmi
 
   const gynecologyList: string[] = [];
 
-  if (formSubmission.reproductiveHealth?.lastMenstruationDate) gynecologyList.push(`Poslední menzes: ${formSubmission.reproductiveHealth.lastMenstruationDate}`);
-  if (formSubmission.reproductiveHealth?.menstruationCycleDays) gynecologyList.push(`Cyklus opakování: ${formSubmission.reproductiveHealth.menstruationCycleDays} dní`);
-  if (formSubmission.reproductiveHealth?.yearsSinceLastMenstruation) gynecologyList.push(`Roky od poslední menzes: ${formSubmission.reproductiveHealth.yearsSinceLastMenstruation}`);
-  if (formSubmission.reproductiveHealth?.gaveBirth) gynecologyList.push(`Rodila: ano${formSubmission.reproductiveHealth.birthCount ? ` (${formSubmission.reproductiveHealth.birthCount}x)` : ''}`);
-  if (formSubmission.reproductiveHealth?.breastfed) gynecologyList.push(`Kojila: ano${formSubmission.reproductiveHealth.breastfeedingMonths ? ` (${formSubmission.reproductiveHealth.breastfeedingMonths} měsíců)` : ''}`);
-  if (formSubmission.reproductiveHealth?.breastfeedingInflammation) gynecologyList.push('Záněty při kojení: ano');
-  if (formSubmission.reproductiveHealth?.endedWithInflammation) gynecologyList.push('Končilo kojení zánětem: ano');
-  if (formSubmission.reproductiveHealth?.contraception) gynecologyList.push(`Antikoncepce: ano${formSubmission.reproductiveHealth.contraceptionDuration ? ` (${formSubmission.reproductiveHealth.contraceptionDuration})` : ''}`);
-  if (formSubmission.reproductiveHealth?.estrogen) gynecologyList.push(`Estrogen: ano${formSubmission.reproductiveHealth.estrogenType ? ` (${formSubmission.reproductiveHealth.estrogenType})` : ''}`);
-  if (formSubmission.reproductiveHealth?.interruption) gynecologyList.push(`Interrupce: ano${formSubmission.reproductiveHealth.interruptionCount ? ` (${formSubmission.reproductiveHealth.interruptionCount}x)` : ''}`);
-  if (formSubmission.reproductiveHealth?.miscarriage) gynecologyList.push(`Potrat: ano${formSubmission.reproductiveHealth.miscarriageCount ? ` (${formSubmission.reproductiveHealth.miscarriageCount}x)` : ''}`);
+  if (formSubmission.reproductiveHealth?.lastMenstruationDate)
+    gynecologyList.push(
+      `Poslední menzes: ${formSubmission.reproductiveHealth.lastMenstruationDate}`
+    );
+  if (formSubmission.reproductiveHealth?.menstruationCycleDays)
+    gynecologyList.push(
+      `Cyklus opakování: ${formSubmission.reproductiveHealth.menstruationCycleDays} dní`
+    );
+  if (formSubmission.reproductiveHealth?.yearsSinceLastMenstruation)
+    gynecologyList.push(
+      `Roky od poslední menzes: ${formSubmission.reproductiveHealth.yearsSinceLastMenstruation}`
+    );
+  if (formSubmission.reproductiveHealth?.gaveBirth)
+    gynecologyList.push(
+      `Rodila: ano${formSubmission.reproductiveHealth.birthCount ? ` (${formSubmission.reproductiveHealth.birthCount}x)` : ''}`
+    );
+  if (formSubmission.reproductiveHealth?.breastfed)
+    gynecologyList.push(
+      `Kojila: ano${formSubmission.reproductiveHealth.breastfeedingMonths ? ` (${formSubmission.reproductiveHealth.breastfeedingMonths} měsíců)` : ''}`
+    );
+  if (formSubmission.reproductiveHealth?.breastfeedingInflammation)
+    gynecologyList.push('Záněty při kojení: ano');
+  if (formSubmission.reproductiveHealth?.endedWithInflammation)
+    gynecologyList.push('Končilo kojení zánětem: ano');
+  if (formSubmission.reproductiveHealth?.contraception)
+    gynecologyList.push(
+      `Antikoncepce: ano${formSubmission.reproductiveHealth.contraceptionDuration ? ` (${formSubmission.reproductiveHealth.contraceptionDuration})` : ''}`
+    );
+  if (formSubmission.reproductiveHealth?.estrogen)
+    gynecologyList.push(
+      `Estrogen: ano${formSubmission.reproductiveHealth.estrogenType ? ` (${formSubmission.reproductiveHealth.estrogenType})` : ''}`
+    );
+  if (formSubmission.reproductiveHealth?.interruption)
+    gynecologyList.push(
+      `Interrupce: ano${formSubmission.reproductiveHealth.interruptionCount ? ` (${formSubmission.reproductiveHealth.interruptionCount}x)` : ''}`
+    );
+  if (formSubmission.reproductiveHealth?.miscarriage)
+    gynecologyList.push(
+      `Potrat: ano${formSubmission.reproductiveHealth.miscarriageCount ? ` (${formSubmission.reproductiveHealth.miscarriageCount}x)` : ''}`
+    );
   if (formSubmission.reproductiveHealth?.breastInjury) gynecologyList.push('Úraz prsu: ano');
-  if (formSubmission.reproductiveHealth?.mammogram) gynecologyList.push(`RTG mamograf: ano${formSubmission.reproductiveHealth.mammogramCount ? ` (${formSubmission.reproductiveHealth.mammogramCount}x)` : ''}`);
+  if (formSubmission.reproductiveHealth?.mammogram)
+    gynecologyList.push(
+      `RTG mamograf: ano${formSubmission.reproductiveHealth.mammogramCount ? ` (${formSubmission.reproductiveHealth.mammogramCount}x)` : ''}`
+    );
   if (formSubmission.reproductiveHealth?.breastBiopsy) gynecologyList.push('Biopsie prsu: ano');
   if (formSubmission.reproductiveHealth?.breastImplants) gynecologyList.push('Implantáty: ano');
-  if (formSubmission.reproductiveHealth?.breastSurgery) gynecologyList.push(`Operace prsu: ano${formSubmission.reproductiveHealth.breastSurgeryType ? ` (${formSubmission.reproductiveHealth.breastSurgeryType})` : ''}`);
-  if (formSubmission.reproductiveHealth?.familyTumors) gynecologyList.push(`Nádory v rodině: ano${formSubmission.reproductiveHealth.familyTumorType ? ` (${formSubmission.reproductiveHealth.familyTumorType})` : ''}`);
+  if (formSubmission.reproductiveHealth?.breastSurgery)
+    gynecologyList.push(
+      `Operace prsu: ano${formSubmission.reproductiveHealth.breastSurgeryType ? ` (${formSubmission.reproductiveHealth.breastSurgeryType})` : ''}`
+    );
+  if (formSubmission.reproductiveHealth?.familyTumors)
+    gynecologyList.push(
+      `Nádory v rodině: ano${formSubmission.reproductiveHealth.familyTumorType ? ` (${formSubmission.reproductiveHealth.familyTumorType})` : ''}`
+    );
 
   summary.gynecology = gynecologyList;
 
@@ -247,11 +286,11 @@ export const EditPatientPage: React.FC = () => {
     if (!patient) {
       return parseIntakeSummary(null);
     }
-    
+
     if (patient.formSubmission) {
       return formSubmissionToIntakeSummary(patient.formSubmission);
     }
-    
+
     return parseIntakeSummary(patient?.comment ?? null);
   }, [patient]);
 
@@ -294,7 +333,7 @@ export const EditPatientPage: React.FC = () => {
   }, [id, t]);
 
   const handleFormChange = (field: keyof PatientEditForm, value: string | boolean) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
     if (successMessage) {
       setSuccessMessage(null);
     }
@@ -350,7 +389,7 @@ export const EditPatientPage: React.FC = () => {
   if (loading) {
     return (
       <div className="edit-patient-page">
-        <AppHeader sectionTitle={t('patients.editPatient')} />
+        <h1 className="page-title">{t('patients.editPatient')}</h1>
         <div className="edit-patient-state">{t('common.loading')}</div>
       </div>
     );
@@ -359,7 +398,7 @@ export const EditPatientPage: React.FC = () => {
   if (!patient) {
     return (
       <div className="edit-patient-page">
-        <AppHeader sectionTitle={t('patients.editPatient')} />
+        <h1 className="page-title">{t('patients.editPatient')}</h1>
         <div className="edit-patient-state error">{error || t('errors.patientNotFound')}</div>
       </div>
     );
@@ -367,132 +406,55 @@ export const EditPatientPage: React.FC = () => {
 
   return (
     <div className="edit-patient-page">
-      <AppHeader sectionTitle={t('patients.editPatient')}>
-        <button className="edit-patient-header-btn" onClick={() => navigate(`/patients/${id}`)}>
-          {t('patients.viewDetails')}
-        </button>
-        <button className="edit-patient-header-btn" onClick={() => navigate('/patients')}>
-          {t('patients.backToPatients')}
-        </button>
-      </AppHeader>
+      <div className="page-heading">
+        <h1 className="page-title">{t('patients.editPatient')}</h1>
+        <div className="page-heading-actions">
+          <button className="btn btn-secondary" onClick={() => navigate(`/patients/${id}`)}>
+            {t('patients.viewDetails')}
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/patients')}>
+            {t('patients.backToPatients')}
+          </button>
+        </div>
+      </div>
 
       <div className="edit-patient-container">
         <div className="edit-patient-meta">
           <span>ID: {patient.id}</span>
-          <span>{t('patients.createdAt')}: {new Date(patient.createdAt).toLocaleDateString()}</span>
+          <span>
+            {t('patients.createdAt')}: {new Date(patient.createdAt).toLocaleDateString()}
+          </span>
         </div>
 
         {error && <div className="edit-patient-alert error">{error}</div>}
         {successMessage && <div className="edit-patient-alert success">{successMessage}</div>}
 
         <form className="edit-patient-form" onSubmit={handleSubmit}>
-          <div className="edit-grid">
-            <label>
-              {t('patients.titleBefore')}
-              <input
-                type="text"
-                value={form.titleBefore}
-                onChange={(e) => handleFormChange('titleBefore', e.target.value)}
-              />
-            </label>
+          <PatientRecordFields
+            values={{
+              titleBefore: form.titleBefore,
+              firstName: form.firstName,
+              lastName: form.lastName,
+              titleAfter: form.titleAfter,
+              uid: form.uid,
+              birthDate: form.birthDate,
+              gender: form.gender,
+              insuranceNumber: form.insuranceNumber,
+              email: form.email,
+              phoneNumber: form.phoneNumber
+            }}
+            onChange={(field, value) => handleFormChange(field, value)}
+            disabled={saving}
+          />
 
-            <label>
-              {t('patients.titleAfter')}
-              <input
-                type="text"
-                value={form.titleAfter}
-                onChange={(e) => handleFormChange('titleAfter', e.target.value)}
-              />
-            </label>
-
-            <label>
-              {t('patients.firstName')}
-              <input
-                type="text"
-                value={form.firstName}
-                onChange={(e) => handleFormChange('firstName', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.lastName')}
-              <input
-                type="text"
-                value={form.lastName}
-                onChange={(e) => handleFormChange('lastName', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.uid')}
-              <input
-                type="text"
-                value={form.uid}
-                onChange={(e) => handleFormChange('uid', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.birthDate')}
-              <input
-                type="date"
-                value={form.birthDate}
-                onChange={(e) => handleFormChange('birthDate', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.gender')}
-              <select
-                value={form.gender}
-                onChange={(e) => handleFormChange('gender', e.target.value)}
-              >
-                <option value="M">{t('patients.male')}</option>
-                <option value="F">{t('patients.female')}</option>
-              </select>
-            </label>
-
-            <label>
-              {t('patients.insuranceNumber')}
-              <input
-                type="number"
-                value={form.insuranceNumber}
-                onChange={(e) => handleFormChange('insuranceNumber', e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              {t('patients.email')}
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => handleFormChange('email', e.target.value)}
-              />
-            </label>
-
-            <label>
-              {t('patients.phone')}
-              <input
-                type="tel"
-                value={form.phoneNumber}
-                onChange={(e) => handleFormChange('phoneNumber', e.target.value)}
-              />
-            </label>
-
-            <label className="alive-toggle">
-              <input
-                type="checkbox"
-                checked={form.alive}
-                onChange={(e) => handleFormChange('alive', e.target.checked)}
-              />
-              {t('patients.alive')}
-            </label>
-          </div>
+          <label className="alive-toggle">
+            <input
+              type="checkbox"
+              checked={form.alive}
+              onChange={(e) => handleFormChange('alive', e.target.checked)}
+            />
+            {t('patients.alive')}
+          </label>
 
           <label className="comment-field">
             {t('patients.comment')}
@@ -522,53 +484,151 @@ export const EditPatientPage: React.FC = () => {
           <div className="patient-overview-grid">
             <div className="overview-panel">
               <h3>{t('patients.title')}</h3>
-              <div className="overview-row"><span>{t('patients.firstName')}</span><strong>{patient.firstName}</strong></div>
-              <div className="overview-row"><span>{t('patients.lastName')}</span><strong>{patient.lastName}</strong></div>
-              <div className="overview-row"><span>{t('patients.titleBefore')}</span><strong>{patient.titleBefore || t('common.notProvided')}</strong></div>
-              <div className="overview-row"><span>{t('patients.titleAfter')}</span><strong>{patient.titleAfter || t('common.notProvided')}</strong></div>
-              <div className="overview-row"><span>{t('patients.uid')}</span><strong>{patient.uid}</strong></div>
-              <div className="overview-row"><span>{t('patients.birthDate')}</span><strong>{new Date(patient.birthDate).toLocaleDateString()}</strong></div>
-              <div className="overview-row"><span>{t('patients.gender')}</span><strong>{t(`patients.genders.${patient.gender.toLowerCase()}`)}</strong></div>
-              <div className="overview-row"><span>{t('patients.status')}</span><strong>{patient.alive ? t('patients.alive') : t('patients.deceased')}</strong></div>
-              <div className="overview-row"><span>{t('patients.insuranceNumber')}</span><strong>{patient.insuranceNumber}</strong></div>
-              <div className="overview-row"><span>{t('patients.email')}</span><strong>{patient.email || t('common.notProvided')}</strong></div>
-              <div className="overview-row"><span>{t('patients.phone')}</span><strong>{patient.phoneNumber || t('common.notProvided')}</strong></div>
+              <div className="overview-row">
+                <span>{t('patients.firstName')}</span>
+                <strong>{patient.firstName}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.lastName')}</span>
+                <strong>{patient.lastName}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.titleBefore')}</span>
+                <strong>{patient.titleBefore || t('common.notProvided')}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.titleAfter')}</span>
+                <strong>{patient.titleAfter || t('common.notProvided')}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.uid')}</span>
+                <strong>{patient.uid}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.birthDate')}</span>
+                <strong>{new Date(patient.birthDate).toLocaleDateString()}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.gender')}</span>
+                <strong>{t(`patients.genders.${patient.gender.toLowerCase()}`)}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.status')}</span>
+                <strong>{patient.alive ? t('patients.alive') : t('patients.deceased')}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.insuranceNumber')}</span>
+                <strong>{patient.insuranceNumber}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.email')}</span>
+                <strong>{patient.email || t('common.notProvided')}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.phone')}</span>
+                <strong>{patient.phoneNumber || t('common.notProvided')}</strong>
+              </div>
             </div>
 
             <div className="overview-panel">
               <h3>{t('patients.quickPreview')}</h3>
-              <div className="overview-row"><span>{t('patients.covidVaccination')}</span><strong>{patient.quickPreview.hasCovidVaccination ? t('common.yes') : t('common.no')}</strong></div>
-              <div className="overview-row"><span>{t('patients.fluVaccination')}</span><strong>{patient.quickPreview.hasFluVaccination ? t('common.yes') : t('common.no')}</strong></div>
-              <div className="overview-row"><span>{t('patients.diabetes')}</span><strong>{patient.quickPreview.hasDiabetes ? t('common.yes') : t('common.no')}</strong></div>
-              <div className="overview-row"><span>{t('patients.hypertension')}</span><strong>{patient.quickPreview.hasHypertension ? t('common.yes') : t('common.no')}</strong></div>
-              <div className="overview-row"><span>{t('patients.heartDisease')}</span><strong>{patient.quickPreview.hasHeartDisease ? t('common.yes') : t('common.no')}</strong></div>
-              <div className="overview-row"><span>{t('patients.allergies')}</span><strong>{patient.quickPreview.hasAllergies ? t('common.yes') : t('common.no')}</strong></div>
-              <div className="overview-row"><span>{t('patients.recentEvents')}</span><strong>{patient.quickPreview.recentEventsCount}</strong></div>
-              <div className="overview-row"><span>{t('patients.upcomingAppointments')}</span><strong>{patient.quickPreview.upcomingAppointmentsCount}</strong></div>
-              <div className="overview-row"><span>{t('patients.lastVisit')}</span><strong>{patient.quickPreview.lastVisit ? new Date(patient.quickPreview.lastVisit).toLocaleString() : t('common.notProvided')}</strong></div>
+              <div className="overview-row">
+                <span>{t('patients.covidVaccination')}</span>
+                <strong>
+                  {patient.quickPreview.hasCovidVaccination ? t('common.yes') : t('common.no')}
+                </strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.fluVaccination')}</span>
+                <strong>
+                  {patient.quickPreview.hasFluVaccination ? t('common.yes') : t('common.no')}
+                </strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.diabetes')}</span>
+                <strong>
+                  {patient.quickPreview.hasDiabetes ? t('common.yes') : t('common.no')}
+                </strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.hypertension')}</span>
+                <strong>
+                  {patient.quickPreview.hasHypertension ? t('common.yes') : t('common.no')}
+                </strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.heartDisease')}</span>
+                <strong>
+                  {patient.quickPreview.hasHeartDisease ? t('common.yes') : t('common.no')}
+                </strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.allergies')}</span>
+                <strong>
+                  {patient.quickPreview.hasAllergies ? t('common.yes') : t('common.no')}
+                </strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.recentEvents')}</span>
+                <strong>{patient.quickPreview.recentEventsCount}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.upcomingAppointments')}</span>
+                <strong>{patient.quickPreview.upcomingAppointmentsCount}</strong>
+              </div>
+              <div className="overview-row">
+                <span>{t('patients.lastVisit')}</span>
+                <strong>
+                  {patient.quickPreview.lastVisit
+                    ? new Date(patient.quickPreview.lastVisit).toLocaleString()
+                    : t('common.notProvided')}
+                </strong>
+              </div>
             </div>
 
             <div className="overview-panel full-width">
               <h3>{t('patients.intakeForm')}</h3>
               <div className="intake-grid compact">
-                <div className="overview-row"><span>{t('patients.weight')}</span><strong>{intakeSummary.weight || t('common.notProvided')}</strong></div>
-                <div className="overview-row"><span>{t('patients.height')}</span><strong>{intakeSummary.height || t('common.notProvided')}</strong></div>
+                <div className="overview-row">
+                  <span>{t('patients.weight')}</span>
+                  <strong>{intakeSummary.weight || t('common.notProvided')}</strong>
+                </div>
+                <div className="overview-row">
+                  <span>{t('patients.height')}</span>
+                  <strong>{intakeSummary.height || t('common.notProvided')}</strong>
+                </div>
               </div>
               <div className="overview-subsection">
                 <h4>{t('patients.medications')}</h4>
-                <p>{intakeSummary.medications.length > 0 ? intakeSummary.medications.join(', ') : t('common.notProvided')}</p>
+                <p>
+                  {intakeSummary.medications.length > 0
+                    ? intakeSummary.medications.join(', ')
+                    : t('common.notProvided')}
+                </p>
               </div>
               <div className="overview-subsection">
                 <h4>{t('patients.healthStatus')}</h4>
-                <p>{intakeSummary.healthStatus.length > 0 ? intakeSummary.healthStatus.join(', ') : t('common.notProvided')}</p>
+                <p>
+                  {intakeSummary.healthStatus.length > 0
+                    ? intakeSummary.healthStatus.join(', ')
+                    : t('common.notProvided')}
+                </p>
               </div>
               <div className="overview-subsection">
                 <h4>{t('patients.covidAndVaccination')}</h4>
-                <p>{intakeSummary.covid.length > 0 ? intakeSummary.covid.join(' | ') : t('common.notProvided')}</p>
+                <p>
+                  {intakeSummary.covid.length > 0
+                    ? intakeSummary.covid.join(' | ')
+                    : t('common.notProvided')}
+                </p>
               </div>
               <div className="overview-subsection">
                 <h4>{t('patients.gynecology')}</h4>
-                <p>{intakeSummary.gynecology.length > 0 ? intakeSummary.gynecology.join(' | ') : t('common.notProvided')}</p>
+                <p>
+                  {intakeSummary.gynecology.length > 0
+                    ? intakeSummary.gynecology.join(' | ')
+                    : t('common.notProvided')}
+                </p>
               </div>
               <div className="overview-subsection">
                 <h4>{t('patients.notes')}</h4>
@@ -580,10 +640,24 @@ export const EditPatientPage: React.FC = () => {
               <h3>Structured FormSubmission (all fields)</h3>
               {patient.formSubmission ? (
                 <>
-                  <div className="overview-row"><span>Submission ID</span><strong>{patient.formSubmission.id}</strong></div>
-                  <div className="overview-row"><span>Patient ID</span><strong>{patient.formSubmission.patientId}</strong></div>
-                  <div className="overview-row"><span>Event ID</span><strong>{patient.formSubmission.eventId}</strong></div>
-                  <div className="overview-row"><span>Submitted At</span><strong>{new Date(patient.formSubmission.submittedAtUtc).toLocaleString()}</strong></div>
+                  <div className="overview-row">
+                    <span>Submission ID</span>
+                    <strong>{patient.formSubmission.id}</strong>
+                  </div>
+                  <div className="overview-row">
+                    <span>Patient ID</span>
+                    <strong>{patient.formSubmission.patientId}</strong>
+                  </div>
+                  <div className="overview-row">
+                    <span>Event ID</span>
+                    <strong>{patient.formSubmission.eventId}</strong>
+                  </div>
+                  <div className="overview-row">
+                    <span>Submitted At</span>
+                    <strong>
+                      {new Date(patient.formSubmission.submittedAtUtc).toLocaleString()}
+                    </strong>
+                  </div>
 
                   <div className="overview-subsection">
                     <h4>Medication</h4>
@@ -616,12 +690,14 @@ export const EditPatientPage: React.FC = () => {
                   <div className="overview-subsection">
                     <h4>Reproductive Health</h4>
                     {patient.formSubmission.reproductiveHealth ? (
-                      Object.entries(patient.formSubmission.reproductiveHealth).map(([key, value]) => (
-                        <div className="overview-row" key={`repro-${key}`}>
-                          <span>{formatFieldLabel(key)}</span>
-                          <strong>{formatFieldValue(value, t)}</strong>
-                        </div>
-                      ))
+                      Object.entries(patient.formSubmission.reproductiveHealth).map(
+                        ([key, value]) => (
+                          <div className="overview-row" key={`repro-${key}`}>
+                            <span>{formatFieldLabel(key)}</span>
+                            <strong>{formatFieldValue(value, t)}</strong>
+                          </div>
+                        )
+                      )
                     ) : (
                       <p>{t('common.notProvided')}</p>
                     )}
@@ -631,15 +707,20 @@ export const EditPatientPage: React.FC = () => {
                     <h4>Consent</h4>
                     {patient.formSubmission.consent ? (
                       <>
-                        {Object.entries(patient.formSubmission.consent).filter(([key]) => key !== 'signatureVector').map(([key, value]) => (
-                          <div className="overview-row" key={`consent-${key}`}>
-                            <span>{formatFieldLabel(key)}</span>
-                            <strong>{formatFieldValue(value, t)}</strong>
-                          </div>
-                        ))}
+                        {Object.entries(patient.formSubmission.consent)
+                          .filter(([key]) => key !== 'signatureVector')
+                          .map(([key, value]) => (
+                            <div className="overview-row" key={`consent-${key}`}>
+                              <span>{formatFieldLabel(key)}</span>
+                              <strong>{formatFieldValue(value, t)}</strong>
+                            </div>
+                          ))}
                         <div className="overview-subsection">
                           <h4>Signature Vector Raw Data</h4>
-                          <pre className="raw-data-pre">{patient.formSubmission.consent.signatureVector || t('common.notProvided')}</pre>
+                          <pre className="raw-data-pre">
+                            {patient.formSubmission.consent.signatureVector ||
+                              t('common.notProvided')}
+                          </pre>
                         </div>
                       </>
                     ) : (
@@ -672,27 +753,56 @@ export const EditPatientPage: React.FC = () => {
 
             <div className="overview-panel full-width">
               <h3>{t('patients.comment')}</h3>
-              <pre className="patient-comment-pre">{patient.comment || t('common.notProvided')}</pre>
+              <pre className="patient-comment-pre">
+                {patient.comment || t('common.notProvided')}
+              </pre>
             </div>
 
             <div className="overview-panel full-width">
-              <h3>{t('patients.events')} ({patient.events.length})</h3>
+              <h3>
+                {t('patients.events')} ({patient.events.length})
+              </h3>
               {patient.events.length > 0 ? (
                 <div className="timeline-list">
-                  {patient.events.map(event => (
+                  {patient.events.map((event) => (
                     <div key={event.id} className="timeline-item">
                       <div className="timeline-main">
                         <strong>{event.eventTypeName}</strong>
                         <span>{new Date(event.happenedAt).toLocaleString()}</span>
                       </div>
                       <div className="timeline-details">
-                        {event.happenedTo && <div>{t('patients.eventUntil')}: {new Date(event.happenedTo).toLocaleString()}</div>}
+                        {event.happenedTo && (
+                          <div>
+                            {t('patients.eventUntil')}:{' '}
+                            {new Date(event.happenedTo).toLocaleString()}
+                          </div>
+                        )}
                         {event.comment && <pre>{event.comment}</pre>}
-                        {event.drugUses.length > 0 && <div><strong>{t('patients.drugUses')}:</strong> {event.drugUses.join(', ')}</div>}
-                        {event.symptoms.length > 0 && <div><strong>{t('patients.symptoms')}:</strong> {event.symptoms.join(', ')}</div>}
-                        {event.injuries.length > 0 && <div><strong>{t('patients.injuries')}:</strong> {event.injuries.join(', ')}</div>}
-                        {event.vaccines.length > 0 && <div><strong>{t('patients.vaccines')}:</strong> {event.vaccines.join(', ')}</div>}
-                        {event.hasPregnancy && <div><strong>{t('patients.pregnancy')}</strong></div>}
+                        {event.drugUses.length > 0 && (
+                          <div>
+                            <strong>{t('patients.drugUses')}:</strong> {event.drugUses.join(', ')}
+                          </div>
+                        )}
+                        {event.symptoms.length > 0 && (
+                          <div>
+                            <strong>{t('patients.symptoms')}:</strong> {event.symptoms.join(', ')}
+                          </div>
+                        )}
+                        {event.injuries.length > 0 && (
+                          <div>
+                            <strong>{t('patients.injuries')}:</strong> {event.injuries.join(', ')}
+                          </div>
+                        )}
+                        {event.vaccines.length > 0 && (
+                          <div>
+                            <strong>{t('patients.vaccines')}:</strong> {event.vaccines.join(', ')}
+                          </div>
+                        )}
+                        {event.hasPregnancy && (
+                          <div>
+                            <strong>{t('patients.pregnancy')}</strong>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -703,14 +813,22 @@ export const EditPatientPage: React.FC = () => {
             </div>
 
             <div className="overview-panel full-width">
-              <h3>{t('patients.appointments')} ({patient.appointments.length})</h3>
+              <h3>
+                {t('patients.appointments')} ({patient.appointments.length})
+              </h3>
               {patient.appointments.length > 0 ? (
                 <div className="simple-list">
-                  {patient.appointments.map(appointment => (
+                  {patient.appointments.map((appointment) => (
                     <div key={appointment.id} className="simple-list-item">
-                      <strong>{new Date(appointment.startTime).toLocaleString()} - {new Date(appointment.endTime).toLocaleString()}</strong>
+                      <strong>
+                        {new Date(appointment.startTime).toLocaleString()} -{' '}
+                        {new Date(appointment.endTime).toLocaleString()}
+                      </strong>
                       <span>{appointment.doctorName}</span>
-                      <span>{appointment.hospitalName}{appointment.equipmentName ? ` · ${appointment.equipmentName}` : ''}</span>
+                      <span>
+                        {appointment.hospitalName}
+                        {appointment.equipmentName ? ` · ${appointment.equipmentName}` : ''}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -720,10 +838,12 @@ export const EditPatientPage: React.FC = () => {
             </div>
 
             <div className="overview-panel full-width">
-              <h3>{t('patients.documents.title')} ({patient.documents.length})</h3>
+              <h3>
+                {t('patients.documents.title')} ({patient.documents.length})
+              </h3>
               {patient.documents.length > 0 ? (
                 <div className="simple-list">
-                  {patient.documents.map(document => (
+                  {patient.documents.map((document) => (
                     <div key={document.id} className="simple-list-item">
                       <strong>{document.fileName}</strong>
                       <span>{new Date(document.uploadedAt).toLocaleString()}</span>

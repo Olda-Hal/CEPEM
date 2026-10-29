@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # Test Services
@@ -26,15 +25,6 @@ services:
     networks:
       - cepem-test-network
 
-  ai-service-tests:
-    build:
-      context: ./backend/AIService
-      dockerfile: Dockerfile.test
-    volumes:
-      - ./test-results:/results/ai-service
-    restart: "no"
-    networks:
-      - cepem-test-network
 
   frontend-tests:
     build:
@@ -52,7 +42,6 @@ services:
     depends_on:
       - healthcare-api-tests
       - database-api-tests
-      - ai-service-tests
       - frontend-tests
     volumes:
       - ./test-results:/results

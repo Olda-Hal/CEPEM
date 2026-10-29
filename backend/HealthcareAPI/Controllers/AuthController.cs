@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using HealthcareAPI.Models;
@@ -19,6 +20,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
             try
@@ -57,9 +59,14 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Neplatné údaje pro změnu hesla");
             }
 
-            if (request.NewPassword.Length < 6)
+            if (request.NewPassword.Length < 8)
             {
-                return BadRequest("Nové heslo musí mít alespoň 6 znaků");
+                return BadRequest("Nové heslo musí mít alespoň 8 znaků");
+            }
+
+            if (!request.NewPassword.Any(char.IsDigit) || !request.NewPassword.Any(char.IsLetter))
+            {
+                return BadRequest("Nové heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
             }
 
             var success = await _authService.ChangePasswordAsync(employeeId, request);
@@ -72,6 +79,8 @@ namespace HealthcareAPI.Controllers
             return Ok(new { message = "Heslo bylo úspěšně změněno" });
         }
 
+        [RequirePermission("employees.create")]
+        [EnableRateLimiting("api-write")]
         [HttpPost("create-employee")]
         [Authorize]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
@@ -87,21 +96,31 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Všechna povinná pole musí být vyplněna");
             }
 
-            if (request.Password.Length < 6)
+            if (request.Password.Length < 8)
             {
-                return BadRequest("Heslo musí mít alespoň 6 znaků");
+                return BadRequest("Heslo musí mít alespoň 8 znaků");
             }
 
-            var result = await _authService.CreateEmployeeAsync(request);
+            if (!request.Password.Any(char.IsDigit) || !request.Password.Any(char.IsLetter))
+            {
+                return BadRequest("Heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
+            }
+
+            var (result, errorBody) = await _authService.CreateEmployeeAsync(request);
 
             if (result == null)
             {
+                if (errorBody != null)
+                {
+                    return BadRequest(errorBody);
+                }
                 return BadRequest("Nepodařilo se vytvořit uživatele. Email nebo UID již existuje.");
             }
 
             return Ok(result);
         }
 
+        [RequirePermission("uid.read")]
         [HttpGet("next-uid")]
         [Authorize]
         public async Task<ActionResult<string>> GetNextAvailableUid()

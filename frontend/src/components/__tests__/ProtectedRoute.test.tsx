@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { ProtectedRoute } from '../ProtectedRoute';
@@ -6,17 +7,15 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../../i18n';
 
 // Mock the AuthContext
-const mockUseAuth = jest.fn();
-jest.mock('../../contexts/AuthContext', () => ({
+const mockUseAuth = vi.fn();
+vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth()
 }));
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      <I18nextProvider i18n={i18n}>
-        {component}
-      </I18nextProvider>
+      <I18nextProvider i18n={i18n}>{component}</I18nextProvider>
     </BrowserRouter>
   );
 };
@@ -25,21 +24,21 @@ describe('ProtectedRoute', () => {
   test('redirects to login when user is not authenticated', () => {
     mockUseAuth.mockReturnValue({
       user: null,
-      login: jest.fn(),
-      logout: jest.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
       loading: false,
       isAuthenticated: false,
       token: null
     });
 
     const TestComponent = () => <div>Protected Content</div>;
-    
+
     renderWithRouter(
       <ProtectedRoute>
         <TestComponent />
       </ProtectedRoute>
     );
-    
+
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
@@ -53,42 +52,42 @@ describe('ProtectedRoute', () => {
 
     mockUseAuth.mockReturnValue({
       user: authenticatedUser,
-      login: jest.fn(),
-      logout: jest.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
       loading: false,
       isAuthenticated: true,
       token: 'test-token'
     });
-    
+
     const TestComponent = () => <div>Protected Content</div>;
-    
+
     renderWithRouter(
       <ProtectedRoute>
         <TestComponent />
       </ProtectedRoute>
     );
-    
+
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
 
   test('shows loading state when loading is true', () => {
     mockUseAuth.mockReturnValue({
       user: null,
-      login: jest.fn(),
-      logout: jest.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
       loading: true,
       isAuthenticated: false,
       token: null
     });
 
     const TestComponent = () => <div>Protected Content</div>;
-    
+
     renderWithRouter(
       <ProtectedRoute>
         <TestComponent />
       </ProtectedRoute>
     );
-    
+
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 });

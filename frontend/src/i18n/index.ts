@@ -28,37 +28,45 @@ i18n
     resources,
     fallbackLng: 'cs',
     defaultNS: 'translation',
-    
+
     // Language detection options
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       lookupLocalStorage: 'preferred-language',
-      caches: ['localStorage'],
+      caches: ['localStorage']
     },
 
     interpolation: {
-      escapeValue: false, // React already escapes by default
+      escapeValue: false // React already escapes by default
     },
 
     // Pluralization options
     pluralSeparator: '_',
     contextSeparator: '_',
-    
+
     // Development options
-    debug: process.env.NODE_ENV === 'development',
-    
+    debug: import.meta.env.DEV,
+
     // Namespace and key separator
     keySeparator: '.',
     nsSeparator: ':',
-    
+
     // Enable key extraction in development
-    saveMissing: process.env.NODE_ENV === 'development',
+    saveMissing: import.meta.env.DEV,
     saveMissingTo: 'current',
-    missingKeyHandler: (lng, ns, key, fallbackValue) => {
-      if (process.env.NODE_ENV === 'development') {
+    missingKeyHandler: (lng, _ns, key, _fallbackValue) => {
+      if (import.meta.env.DEV) {
         console.warn(`Missing translation key: ${key} for language: ${lng}`);
       }
-    },
+    }
   });
+
+// Keep the document language in sync with the selected i18n language
+// (the app is bilingual cs/en; the hardcoded lang="cs" broke screen
+// readers and translation tools for English users)
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng.split('-')[0] ?? lng;
+});
+document.documentElement.lang = (i18n.language || 'cs').split('-')[0] ?? 'cs';
 
 export default i18n;

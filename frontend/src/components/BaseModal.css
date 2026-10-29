@@ -1,0 +1,71 @@
+/* Shared modal primitives - replaces the per-file modal copies */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #222);
+  border-radius: 10px;
+  max-width: 720px;
+  width: 100%;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
+  outline: none;
+}
+
+.modal-content:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-focus, #4a90d9);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 10%));
+}
+
+.modal-header h2,
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.close-button:hover {
+  background: rgb(0 0 0 / 7%);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border, rgb(0 0 0 / 10%));
+}
+
+@media (width <= 600px) {
+  .modal-content {
+    max-width: 100%;
+  }
+}

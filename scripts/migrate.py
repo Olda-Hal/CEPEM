@@ -685,8 +685,13 @@ class CepemHealthcareMigration:
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
 
-        ENCRYPTION_KEY = b"CEPEMSecureKey1234567890123456\x00\x00"[:32]
-        ENCRYPTION_IV  = b"CEPEMInitVector1"[:16]
+        import os as _os
+        _key = _os.environ.get("PHOTO_ENCRYPTION_KEY")
+        _iv = _os.environ.get("PHOTO_ENCRYPTION_IV")
+        if not _key or not _iv:
+            raise SystemExit("PHOTO_ENCRYPTION_KEY / PHOTO_ENCRYPTION_IV must be set in the environment")
+        ENCRYPTION_KEY = _key.encode().ljust(32, b"\x00")[:32]
+        ENCRYPTION_IV  = _iv.encode().ljust(16, b"\x00")[:16]
 
         def encrypt_file(data: bytes) -> bytes:
             pad_len = 16 - (len(data) % 16)
@@ -861,8 +866,13 @@ class CepemHealthcareMigration:
     def migrate_patient_photos(self, photo_storage_dir="/home/olda/programovani/CEPEM/data/patient-photos"):
         print("\n🔄 Migruju fotky pacientů...")
 
-        ENCRYPTION_KEY = b"CEPEMSecureKey1234567890123456\x00\x00"[:32]
-        ENCRYPTION_IV  = b"CEPEMInitVector1"[:16]
+        import os as _os
+        _key = _os.environ.get("PHOTO_ENCRYPTION_KEY")
+        _iv = _os.environ.get("PHOTO_ENCRYPTION_IV")
+        if not _key or not _iv:
+            raise SystemExit("PHOTO_ENCRYPTION_KEY / PHOTO_ENCRYPTION_IV must be set in the environment")
+        ENCRYPTION_KEY = _key.encode().ljust(32, b"\x00")[:32]
+        ENCRYPTION_IV  = _iv.encode().ljust(16, b"\x00")[:16]
 
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.primitives import padding
@@ -949,11 +959,12 @@ class CepemHealthcareMigration:
 
 if __name__ == "__main__":
     # Inicializuj migraci s tvými credentials
+    import os
     migration = CepemHealthcareMigration(
-        host="127.0.0.1",
-        user="root",
-        password="oldaolda",
-        port=3306
+        host=os.environ.get("LEGACY_DB_HOST", "127.0.0.1"),
+        user=os.environ.get("LEGACY_DB_USER", "root"),
+        password=os.environ.get("LEGACY_DB_PASSWORD", ""),
+        port=int(os.environ.get("LEGACY_DB_PORT", "3306"))
     )
     
     # Spusť všechny migrace

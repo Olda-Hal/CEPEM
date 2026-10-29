@@ -1,4 +1,5 @@
-{  "login": {
+{
+  "login": {
     "title": "Center for Preventive Medicine",
     "subtitle": "Healthcare Administrative System",
     "description": "Login for doctors",
@@ -310,7 +311,10 @@
     "yes": "Yes",
     "save": "Save",
     "delete": "Delete",
-    "confirmDelete": "Are you sure?"
+    "confirmDelete": "Are you sure?",
+    "search": "Search",
+    "previous": "Previous",
+    "next": "Next"
   },
   "intakeLink": {
     "pageTitle": "Intake Form",
@@ -357,10 +361,11 @@
     "changeButton": "Change Password",
     "changing": "Changing Password...",
     "cancel": "Cancel",
-    "passwordTooShort": "Password must be at least 6 characters long",
     "passwordsDoNotMatch": "Passwords do not match",
     "currentPasswordIncorrect": "Current password is incorrect",
-    "samePassword": "New password cannot be the same as current password"
+    "samePassword": "New password cannot be the same as current password",
+    "passwordMinLength": "Password must be at least 8 characters long",
+    "passwordComplexity": "Password must contain at least one letter and one digit"
   },
   "createEmployee": {
     "title": "Create New Employee",
@@ -513,7 +518,10 @@
         "uploadFailed": "Error uploading document",
         "viewFailed": "Error viewing document",
         "deleteFailed": "Error deleting document"
-      }
+      },
+      "upload": "Upload document",
+      "empty": "No documents yet.",
+      "uploadSuccess": "Document uploaded"
     },
     "genders": {
       "m": "Male",
@@ -530,7 +538,24 @@
       "phoneNumber": "Phone"
     },
     "updateSuccess": "Patient information was updated successfully",
-    "updateFailed": "Failed to update patient information"
+    "updateFailed": "Failed to update patient information",
+    "capturePhoto": "Capture",
+    "showDeleted": "Show deleted",
+    "delete": "Hide",
+    "restore": "Restore",
+    "deleteTitle": "Hide patient",
+    "deleteConfirm": "The patient will be hidden from lists, but their data (events, documents, forms) stays in the database. Continue?",
+    "deleteAction": "Hide patient",
+    "deleteFailed": "Failed to hide patient",
+    "restoreFailed": "Failed to restore patient",
+    "backToPatient": "Back to patient",
+    "insuranceCompany": "Insurance company",
+    "docs": {
+      "title": "Documents",
+      "upload": "Upload document",
+      "empty": "No documents yet.",
+      "uploadSuccess": "Document uploaded"
+    }
   },
   "admin": {
     "employeeManagement": "Employee Management",
@@ -601,7 +626,15 @@
         "employee": "Employee",
         "reservationslot": "Reservation Slot",
         "examinationroom": "Examination Room"
-      }
+      },
+      "scopeTypePlaceholder": "Scope type (e.g. Hospital)",
+      "scopeIdPlaceholder": "Scope id",
+      "addPermission": "Add permission",
+      "employeeOverrides": "Employee permission overrides",
+      "noEmployeeOverrides": "No individual permission overrides.",
+      "globalScope": "Global",
+      "permissionColumn": "Permission",
+      "effectColumn": "Effect"
     },
     "roleEditor": {
       "title": "Role Management",
@@ -697,7 +730,13 @@
       "post_api_reservations_slots_slotid_reject": "Reject Reservation Slot",
       "get_api_settings_quick_preview": "View Quick Preview Settings",
       "put_api_settings_quick_preview": "Update Quick Preview Settings"
-    }
+    },
+    "activityLog": "Audit log",
+    "activityLogDescription": "Overview of all system activity",
+    "activityLogButton": "Open audit log",
+    "country": "Country",
+    "centersLabel": "Centers",
+    "noCentersAvailable": "No centers available"
   },
   "centerManagement": {
     "title": "Center Management",
@@ -830,5 +869,93 @@
     "uploadingDocuments": "Uploading documents...",
     "groupUploadNotSupported": "Examination document upload is available only outside group mode.",
     "addToList": "Add \"{{name}}\" to list"
+  },
+  "activityLog": {
+    "title": "Audit log",
+    "loadFailed": "Failed to load the audit log",
+    "searchPlaceholder": "Search (action, email, details...)",
+    "noEntries": "No entries",
+    "totalEntries": "Total entries: {{count}}",
+    "time": "Time",
+    "user": "User",
+    "method": "Method",
+    "action": "Action",
+    "status": "Status",
+    "actionFilter": "Method",
+    "statusFilter": "Status",
+    "all": "All",
+    "exportCsv": "Export CSV",
+    "details": "Entry details",
+    "exportFailed": "Export failed"
+  },
+  "health": {
+    "title": "Service health",
+    "healthy": "Healthy",
+    "unreachable": "Unreachable"
+  },
+  "shell": {
+    "mainNavigation": "Main navigation",
+    "administration": "Administration",
+    "admin": "Admin",
+    "settings": "Settings",
+    "logout": "Log out",
+    "versionUnknown": "version unknown"
+  },
+  "administration": {
+    "title": "Administration",
+    "lead": "Back-office tools for the clinic.",
+    "centersTitle": "Center management",
+    "centersDescription": "Manage centers, branches and their details.",
+    "employeesTitle": "Employee management",
+    "employeesDescription": "Employee accounts, roles and access.",
+    "noAccess": "You do not have access to this section."
+  },
+  "adminPage": {
+    "title": "Admin",
+    "lead": "System tools and oversight.",
+    "auditLogTitle": "Audit log",
+    "auditLogDescription": "Record of all actions performed in the system.",
+    "testsTitle": "Test dashboard",
+    "testsDescription": "Overview of test results.",
+    "rolesTitle": "Role management",
+    "rolesDescription": "Define roles and their permissions.",
+    "noAccess": "You do not have access to this section.",
+    "healthTitle": "System health",
+    "healthDescription": "Availability of the individual platform services.",
+    "monitoringTitle": "Monitoring",
+    "monitoringDescription": "Live traffic statistics — requests, status codes, latency.",
+    "openInGrafana": "Open in Grafana"
+  },
+  "settings": {
+    "title": "Settings",
+    "lead": "Personal settings for your account.",
+    "changePasswordTitle": "Change password",
+    "changePasswordDescription": "Update the password you use to sign in."
+  },
+  "app": {
+    "defaultName": "CEPEM"
+  },
+  "visits": {
+    "title": "Visits",
+    "addVisit": "Add visit",
+    "addVisitTitle": "New visit",
+    "createVisit": "Create visit",
+    "visitDate": "Visit date",
+    "visitNote": "Note",
+    "visitNotePlaceholder": "Note for this visit…",
+    "documentsCount": "{{count}} doc.",
+    "intakeBadge": "Intake form",
+    "empty": "No visits yet.",
+    "loadFailed": "Failed to load visits",
+    "createFailed": "Failed to create the visit",
+    "detailTitle": "Visit on {{date}}",
+    "saveNote": "Save note",
+    "noteSaved": "Note saved",
+    "noteSaveFailed": "Failed to save the note",
+    "intakeTitle": "Intake form",
+    "intakeEmpty": "No intake form filled for this visit yet.",
+    "addIntake": "Fill intake form",
+    "otherVisits": "Other visits",
+    "patientSearchPlaceholder": "Search patients…"
   }
 }

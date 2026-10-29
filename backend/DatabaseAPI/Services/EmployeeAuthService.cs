@@ -21,11 +21,19 @@ namespace DatabaseAPI.Services
     {
         private readonly DatabaseContext _context;
         private readonly IActorCountryContextService _actorCountryContextService;
+        private readonly IUidService _uidService;
+        private readonly IEmployeeScopeService _employeeScopeService;
 
-        public EmployeeAuthService(DatabaseContext context, IActorCountryContextService actorCountryContextService)
+        public EmployeeAuthService(
+            DatabaseContext context,
+            IActorCountryContextService actorCountryContextService,
+            IUidService uidService,
+            IEmployeeScopeService employeeScopeService)
         {
             _context = context;
             _actorCountryContextService = actorCountryContextService;
+            _uidService = uidService;
+            _employeeScopeService = employeeScopeService;
         }
 
         public async Task<EmployeeAuthInfo?> AuthenticateAsync(string email, string password)
@@ -87,15 +95,44 @@ namespace DatabaseAPI.Services
                 };
             }
 
+            // Account lockout: 5 failed attempts lock for 15 minutes
+            var employeeEntity = await _context.Employees.FindAsync(employeeInfo.EmployeeId);
+            if (employeeEntity != null && employeeEntity.LockedUntil > DateTime.UtcNow)
+            {
+                return new AuthenticationResponse
+                {
+                    Result = AuthenticationResult.AccountLocked,
+                    Message = "Účet je dočasně uzamčen po opakovaných neúspěšných pokusech o přihlášení. Zkuste to prosím později."
+                };
+            }
+
             // Ověř heslo
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, employeeInfo.PasswordHash);
             if (!isPasswordValid)
             {
+                if (employeeEntity != null)
+                {
+                    employeeEntity.FailedLoginAttempts++;
+                    if (employeeEntity.FailedLoginAttempts >= 5)
+                    {
+                        employeeEntity.LockedUntil = DateTime.UtcNow.AddMinutes(15);
+                        employeeEntity.FailedLoginAttempts = 0;
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
                 return new AuthenticationResponse
                 {
                     Result = AuthenticationResult.InvalidCredentials,
                     Message = "Invalid credentials"
                 };
+            }
+
+            if (employeeEntity != null && (employeeEntity.FailedLoginAttempts > 0 || employeeEntity.LockedUntil != null))
+            {
+                employeeEntity.FailedLoginAttempts = 0;
+                employeeEntity.LockedUntil = null;
+                await _context.SaveChangesAsync();
             }
 
             // Zkontroluj, jestli je účet aktivní
@@ -224,6 +261,35 @@ namespace DatabaseAPI.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Administrative scope: country/center admins may only create
+                // employees within their scope and only with assignable roles.
+                if (request.RoleIds.Count > 0)
+                {
+                    var roleError = await _employeeScopeService.ValidateAssignableRolesAsync(request.RoleIds);
+                    if (roleError != null)
+                    {
+                        throw new ScopeViolationException(roleError);
+                    }
+                }
+
+                string? countryError = null;
+                if (!string.IsNullOrWhiteSpace(request.CountryCode))
+                {
+                    countryError = await _employeeScopeService.ValidateCountryAssignmentAsync(request.CountryCode);
+                }
+                if (countryError != null)
+                {
+                    throw new ScopeViolationException(countryError);
+                }
+
+                if (request.HospitalIds.Count > 0)
+                {
+                    var hospitalError = await _employeeScopeService.ValidateHospitalAssignmentAsync(request.HospitalIds);
+                    if (hospitalError != null)
+                    {
+                        throw new ScopeViolationException(hospitalError);
+                    }
+                }
                 // Check if email or UID already exists
                 var normalizedEmail = request.Email.Trim();
                 request.Email = normalizedEmail;
@@ -250,7 +316,9 @@ namespace DatabaseAPI.Services
                     LastName = request.LastName,
                     UID = request.UID,
                     Gender = request.Gender,
-                    CountryCode = await _actorCountryContextService.GetActorCountryCodeAsync(),
+                    CountryCode = !string.IsNullOrWhiteSpace(request.CountryCode)
+                        ? DatabaseAPI.Utils.CountryScopeMapper.NormalizeCode(request.CountryCode)
+                        : await _actorCountryContextService.GetActorCountryCodeAsync(),
                     TitleBefore = request.TitleBefore,
                     TitleAfter = request.TitleAfter,
                     Active = request.Active,
@@ -296,6 +364,36 @@ namespace DatabaseAPI.Services
                 _context.Employees.Add(employee);
                 await _context.SaveChangesAsync();
 
+                // Role assignment: explicit RoleIds win; otherwise default to the
+                // baseline "Examiner" role so the account isn't default-denied
+                // on every permission-gated endpoint (/me included).
+                var roleIds = request.RoleIds.Count > 0
+                    ? request.RoleIds
+                    : await DefaultBaselineRoleIdsAsync();
+
+                foreach (var roleId in roleIds.Distinct())
+                {
+                    if (await _context.Roles.AnyAsync(r => r.Id == roleId))
+                    {
+                        _context.UserRoles.Add(new UserRole { UserId = person.Id, RoleId = roleId });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                // Přiřazení zaměstnance k centrům
+                foreach (var hospitalId in request.HospitalIds.Distinct())
+                {
+                    if (await _context.Hospitals.AnyAsync(h => h.Id == hospitalId))
+                    {
+                        _context.HospitalEmployees.Add(new HospitalEmployee
+                        {
+                            EmployeeId = employee.Id,
+                            HospitalId = hospitalId
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return new CreateEmployeeResponse
@@ -308,51 +406,35 @@ namespace DatabaseAPI.Services
                     Active = person.Active
                 };
             }
+            catch (ScopeViolationException)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
             catch (Exception)
             {
                 await transaction.RollbackAsync();
                 return null;
             }
         }
-
         public async Task<string> GetNextAvailableUidAsync()
         {
-            try
-            {
-                // Get all existing UIDs from the database
-                var existingUids = await _context.Persons
-                    .Select(p => p.UID)
-                    .Where(uid => !string.IsNullOrEmpty(uid))
-                    .ToListAsync();
+            return await _uidService.GetNextAvailableUidAsync();
+        }
 
-                // Convert to integers (assuming UIDs are numeric)
-                var numericUids = existingUids
-                    .Where(uid => int.TryParse(uid, out _))
-                    .Select(int.Parse)
-                    .OrderBy(x => x)
-                    .ToList();
+        /// <summary>
+        /// Baseline role for employees created with no explicit role list.
+        /// Resolved fresh per call (roles are seeded early in startup; an
+        /// employee may be created after migrations run but before the seed
+        /// cache would be warm).
+        /// </summary>
+        private async Task<List<int>> DefaultBaselineRoleIdsAsync()
+        {
+            var baseline = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.NameTranslation != null && r.NameTranslation.EN == "Examiner");
 
-                // Find the first gap or return next sequential number
-                int nextUid = 1;
-                foreach (var uid in numericUids)
-                {
-                    if (uid == nextUid)
-                    {
-                        nextUid++;
-                    }
-                    else if (uid > nextUid)
-                    {
-                        break;
-                    }
-                }
-
-                return nextUid.ToString();
-            }
-            catch (Exception)
-            {
-                // Fallback: return a timestamp-based UID
-                return DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-            }
+            return baseline != null ? new List<int> { baseline.Id } : new List<int>();
         }
     }
 }

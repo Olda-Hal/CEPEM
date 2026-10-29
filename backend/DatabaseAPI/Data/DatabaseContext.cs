@@ -12,14 +12,15 @@ public class DatabaseContext : DbContext
     // Core entities
     public DbSet<Person> Persons { get; set; }
     public DbSet<Patient> Patients { get; set; }
+    public DbSet<Visit> Visits { get; set; }
+    public DbSet<VisitDocument> VisitDocuments { get; set; }
     public DbSet<Employee> Employees { get; set; }
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<RolePermissionRule> RolePermissionRules { get; set; }
-    public DbSet<RolePermissionScope> RolePermissionScopes { get; set; }
-    public DbSet<EmployeePermissionRule> EmployeePermissionRules { get; set; }
-    public DbSet<EmployeePermissionScope> EmployeePermissionScopes { get; set; }
+    public DbSet<Permission> Permissions { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
+    public DbSet<EmployeePermission> EmployeePermissions { get; set; }
     
     // Event related entities
     public DbSet<Event> Events { get; set; }
@@ -106,7 +107,7 @@ public class DatabaseContext : DbContext
         ConfigureAddressRelationships(modelBuilder);
         ConfigureTranslationRelationships(modelBuilder);
         ConfigureFormSubmissionRelationships(modelBuilder);
-        ConfigureAccessControlRelationships(modelBuilder);
+        ConfigurePermissionsRelationships(modelBuilder);
     }
     
     private void ConfigurePersonRelationships(ModelBuilder modelBuilder)
@@ -115,6 +116,12 @@ public class DatabaseContext : DbContext
             .Property(person => person.CountryCode)
             .HasMaxLength(2)
             .HasDefaultValue(Person.DefaultCountryCode);
+
+        // UID must be unique across all persons; the migration backfills
+        // legacy empty-string values before creating the index
+        modelBuilder.Entity<Person>()
+            .HasIndex(person => person.UID)
+            .IsUnique();
 
         // Person -> Patient (1:0..1)
         modelBuilder.Entity<Patient>()
@@ -139,6 +146,42 @@ public class DatabaseContext : DbContext
             .HasOne(p => p.Comment)
             .WithMany(c => c.Patients)
             .HasForeignKey(p => p.CommentId);
+
+        // Patient -> HomeHospital (optional; assigned from creator's center)
+        modelBuilder.Entity<Patient>()
+            .HasOne(p => p.HomeHospital)
+            .WithMany()
+            .HasForeignKey(p => p.HomeHospitalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Patient -> Visit (1:many); Visit -> VisitDocument (1:many)
+        modelBuilder.Entity<Visit>()
+            .HasOne(v => v.Patient)
+            .WithMany()
+            .HasForeignKey(v => v.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Visit>()
+            .HasOne(v => v.SourceEvent)
+            .WithMany()
+            .HasForeignKey(v => v.SourceEventId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VisitDocument>()
+            .HasOne(vd => vd.Visit)
+            .WithMany(v => v.Documents)
+            .HasForeignKey(vd => vd.VisitId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VisitDocument>()
+            .HasOne(vd => vd.PatientDocument)
+            .WithMany()
+            .HasForeignKey(vd => vd.PatientDocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VisitDocument>()
+            .HasIndex(vd => new { vd.VisitId, vd.PatientDocumentId })
+            .IsUnique();
             
         // Patient -> PatientDocument (1:many)
         modelBuilder.Entity<PatientDocument>()
@@ -381,9 +424,18 @@ public class DatabaseContext : DbContext
             .HasDefaultValue(Patient.DefaultCountryCode);
 
         modelBuilder.Entity<ReservationSlot>()
+            .Property(slot => slot.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        modelBuilder.Entity<ReservationSlot>()
             .Property(slot => slot.CountryCode)
             .HasMaxLength(2)
             .HasDefaultValue(ReservationSlot.DefaultCountryCode);
+
+        // Slot queries always filter by hospital + time range
+        modelBuilder.Entity<ReservationSlot>()
+            .HasIndex(slot => new { slot.HospitalId, slot.StartDateTime });
 
         // ExaminationRoom relationships
         modelBuilder.Entity<ExaminationRoom>()
@@ -403,6 +455,11 @@ public class DatabaseContext : DbContext
             .HasForeignKey(der => der.DoctorId);
             
         // Reservation relationships
+        modelBuilder.Entity<Reservation>()
+            .Property(reservation => reservation.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         modelBuilder.Entity<Reservation>()
             .HasOne(r => r.Doctor)
             .WithMany(e => e.Reservations)
@@ -470,6 +527,15 @@ public class DatabaseContext : DbContext
             .WithMany(c => c.Emails)
             .HasForeignKey(ce => ce.ContactId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Login lookups filter by email; varchar (not longtext) is required
+        // for a MySQL index. RFC 3696 caps email addresses at 320 characters.
+        modelBuilder.Entity<ContactEmail>()
+            .Property(ce => ce.Email)
+            .HasMaxLength(320);
+
+        modelBuilder.Entity<ContactEmail>()
+            .HasIndex(ce => ce.Email);
 
         modelBuilder.Entity<ContactToObject>()
             .HasOne(cto => cto.Contact)
@@ -591,46 +657,65 @@ public class DatabaseContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
     }
 
-    private void ConfigureAccessControlRelationships(ModelBuilder modelBuilder)
+    private void ConfigurePermissionsRelationships(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<RolePermissionRule>()
-            .HasOne(rpr => rpr.Role)
-            .WithMany(r => r.PermissionRules)
-            .HasForeignKey(rpr => rpr.RoleId)
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Permission>()
+            .Property(p => p.Code)
+            .HasMaxLength(100)
+            .IsRequired();
 
-        modelBuilder.Entity<RolePermissionRule>()
-            .HasIndex(rpr => new { rpr.RoleId, rpr.PermissionKey })
+        modelBuilder.Entity<Permission>()
+            .HasIndex(p => p.Code)
             .IsUnique();
 
-        modelBuilder.Entity<RolePermissionScope>()
-            .HasOne(rps => rps.RolePermissionRule)
-            .WithMany(rpr => rpr.Scopes)
-            .HasForeignKey(rps => rps.RolePermissionRuleId)
+        modelBuilder.Entity<Permission>()
+            .Property(p => p.Description)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Role)
+            .WithMany()
+            .HasForeignKey(rp => rp.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<RolePermissionScope>()
-            .HasIndex(rps => new { rps.RolePermissionRuleId, rps.ResourceType, rps.ResourceId })
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Permission)
+            .WithMany(p => p.RolePermissions)
+            .HasForeignKey(rp => rp.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .Property(rp => rp.Effect)
+            .HasMaxLength(10)
+            .IsRequired();
+
+        modelBuilder.Entity<RolePermission>()
+            .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
             .IsUnique();
 
-        modelBuilder.Entity<EmployeePermissionRule>()
-            .HasOne(epr => epr.Employee)
-            .WithMany(e => e.PermissionRules)
-            .HasForeignKey(epr => epr.EmployeeId)
+        modelBuilder.Entity<EmployeePermission>()
+            .HasOne(ep => ep.User)
+            .WithMany()
+            .HasForeignKey(ep => ep.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<EmployeePermissionRule>()
-            .HasIndex(epr => new { epr.EmployeeId, epr.PermissionKey })
-            .IsUnique();
-
-        modelBuilder.Entity<EmployeePermissionScope>()
-            .HasOne(eps => eps.EmployeePermissionRule)
-            .WithMany(epr => epr.Scopes)
-            .HasForeignKey(eps => eps.EmployeePermissionRuleId)
+        modelBuilder.Entity<EmployeePermission>()
+            .HasOne(ep => ep.Permission)
+            .WithMany(p => p.EmployeePermissions)
+            .HasForeignKey(ep => ep.PermissionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<EmployeePermissionScope>()
-            .HasIndex(eps => new { eps.EmployeePermissionRuleId, eps.ResourceType, eps.ResourceId })
+        modelBuilder.Entity<EmployeePermission>()
+            .Property(ep => ep.Effect)
+            .HasMaxLength(10)
+            .IsRequired();
+
+        modelBuilder.Entity<EmployeePermission>()
+            .Property(ep => ep.ScopeType)
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<EmployeePermission>()
+            .HasIndex(ep => new { ep.UserId, ep.PermissionId, ep.ScopeType, ep.ScopeId })
             .IsUnique();
     }
 }

@@ -1,12 +1,5 @@
-# Build number increment stage
-FROM alpine AS build-counter
-COPY BUILD_NUMBER /tmp/current_build
-RUN CURRENT=$(cat /tmp/current_build) && \
-    NEW_BUILD=$((CURRENT + 1)) && \
-    echo $NEW_BUILD > /tmp/new_build_number.txt
-
 # Multi-stage build for React frontend
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
@@ -14,14 +7,13 @@ WORKDIR /app
 COPY frontend/package*.json ./
 
 # Install dependencies (use legacy peer deps to handle version conflicts)
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 # Copy source code
 COPY frontend/ .
 
 # Build args for API URLs (passed from docker-compose.yml)
-ARG REACT_APP_API_URL
-ARG REACT_APP_AI_API_URL
+ARG VITE_API_URL
 
 # Build the application
 RUN npm run build
@@ -30,10 +22,11 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy build files to nginx
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy incremented build number as static file for frontend to fetch
-COPY --from=build-counter /tmp/new_build_number.txt /usr/share/nginx/html/build_number.txt
+# Record the image build version (CI can pass -build-arg BUILD_NUMBER=<n>)
+ARG BUILD_NUMBER=dev
+RUN echo "$BUILD_NUMBER" > /usr/share/nginx/html/build_number.txt
 
 # Copy nginx configuration
 COPY frontend/nginx.conf /etc/nginx/nginx.conf

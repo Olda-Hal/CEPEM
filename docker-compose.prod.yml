@@ -10,6 +10,12 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     networks:
       - cepem_network
 
@@ -24,16 +30,21 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=${HEALTHCARE_API_CONNECTION_STRING}
       - JWT__SecretKey=${JWT_SECRET_KEY}
       - JWT__Issuer=${JWT_ISSUER}
       - JWT__Audience=${JWT_AUDIENCE}
       - DatabaseApiUrl=http://database-api:5001
+      - DatabaseApiServiceKey=${SERVICE_AUTH_KEY}
       - HEALTHCARE_CORS_ORIGINS=https://${DOMAIN_NAME}
-    volumes:
-      - ./test-results:/app/test-results:ro
     depends_on:
-      - database-api
+      database-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - cepem_network
 
@@ -56,37 +67,19 @@ services:
       - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
       - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}
+      - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents
     networks:
       - cepem_network
 
-  ai-service:
-    build:
-      context: ./backend/AIService
-      dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:8000:8000"
-    container_name: cepem_ai_service
-    restart: unless-stopped
-    environment:
-      - CORS_ORIGINS=https://${DOMAIN_NAME}
-      - PORT=8000
-    depends_on:
-      - healthcare-api
-      - database-api
-    networks:
-      - cepem_network
 
   frontend:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
-      args:
-        REACT_APP_API_URL: https://${DOMAIN_NAME}/api
-        REACT_APP_DATABASE_API_URL: https://${DOMAIN_NAME}/api/database
-        REACT_APP_AI_API_URL: https://${DOMAIN_NAME}/api/ai
     ports:
       - "127.0.0.1:3000:3000"
     container_name: cepem_frontend
@@ -94,9 +87,49 @@ services:
     networks:
       - cepem_network
 
+  # Observability: /metrics on both APIs, scraped by Prometheus, rendered
+  # by Grafana. Both read credentials purely from env — no secrets in the
+  # repo. Access Grafana at http://127.0.0.1:${GRAFANA_PORT}.
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: cepem_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - cepem_network
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: cepem_grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:?}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - cepem_network
+
 volumes:
   mysql_data:
     name: cepem_mysql_data
+  prometheus_data:
+    name: cepem_prometheus_data
+  grafana_data:
+    name: cepem_grafana_data
 
 networks:
   cepem_network:

@@ -105,15 +105,17 @@ namespace HealthcareAPI.Services
         private string GenerateJwtToken(EmployeeAuthInfo employeeInfo)
         {
             var jwtSettings = _configuration.GetSection("JWT");
-            var secretKey = jwtSettings["SecretKey"] 
-                ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
-                ?? "test-secret-key-for-jwt-testing-minimum-256-bits-long";
-            var issuer = jwtSettings["Issuer"] 
-                ?? Environment.GetEnvironmentVariable("JWT_ISSUER") 
-                ?? "test-issuer";
-            var audience = jwtSettings["Audience"] 
-                ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
-                ?? "test-audience";
+            var secretKey = jwtSettings["SecretKey"]
+                ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            if (string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new InvalidOperationException(
+                    "JWT secret key is not configured. Set the JWT__SecretKey configuration value or the JWT_SECRET_KEY environment variable.");
+            }
+            var issuer = jwtSettings["Issuer"]
+                ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
+            var audience = jwtSettings["Audience"]
+                ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -162,12 +164,12 @@ namespace HealthcareAPI.Services
             }
         }
 
-        public async Task<CreateEmployeeResponse?> CreateEmployeeAsync(CreateEmployeeRequest request)
+        public async Task<(CreateEmployeeResponse? Result, string? ErrorBody)> CreateEmployeeAsync(CreateEmployeeRequest request)
         {
             try
             {
                 var client = _httpClientFactory.CreateClient("DatabaseAPI");
-                
+
                 var json = JsonSerializer.Serialize(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await client.PostAsync("/api/auth/create-employee", content);
@@ -179,14 +181,16 @@ namespace HealthcareAPI.Services
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    return JsonSerializer.Deserialize<CreateEmployeeResponse>(responseContent, options);
+                    return (JsonSerializer.Deserialize<CreateEmployeeResponse>(responseContent, options), null);
                 }
 
-                return null;
+                // Surface validation/scope errors from DatabaseAPI
+                var body = (await response.Content.ReadAsStringAsync()).Trim().Trim('"');
+                return (null, string.IsNullOrWhiteSpace(body) ? null : body);
             }
             catch (Exception)
             {
-                return null;
+                return (null, null);
             }
         }
 

@@ -43,7 +43,7 @@ public class Reservation
     public string? Notes { get; set; }
 
     [StringLength(50)]
-    public string Status { get; set; } = "Scheduled";
+    public ReservationStatus Status { get; set; } = ReservationStatus.Scheduled;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

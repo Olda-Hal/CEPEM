@@ -1,11 +1,8 @@
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgb(0 0 0 / 50%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,7 +56,7 @@
 }
 
 .close-button svg {
-  fill: currentColor;
+  fill: currentcolor;
 }
 
 /* Modal Content */
@@ -106,7 +103,7 @@
   padding-left: 35px;
 }
 
-.setting-label input[type="checkbox"] {
+.setting-label input[type='checkbox'] {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -136,17 +133,17 @@
   border-color: var(--color-primary);
 }
 
-.checkmark:after {
-  content: "";
+.checkmark::after {
+  content: '';
   position: absolute;
   display: none;
 }
 
-.setting-label input:checked ~ .checkmark:after {
+.setting-label input:checked ~ .checkmark::after {
   display: block;
 }
 
-.setting-label .checkmark:after {
+.setting-label .checkmark::after {
   left: 6px;
   top: 2px;
   width: 6px;
@@ -197,7 +194,7 @@
 }
 
 .save-button {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
   color: white;
   border: none;
 }
@@ -209,16 +206,16 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .settings-modal {
     width: 95%;
     margin: 10px;
   }
-  
+
   .settings-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-header,
   .modal-content,
   .modal-footer {

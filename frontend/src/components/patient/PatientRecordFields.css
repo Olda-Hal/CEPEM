@@ -1,0 +1,79 @@
+/* Shared patient-record field grid (create modal + edit page) */
+
+.patient-record-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 16px;
+  margin-bottom: 8px;
+}
+
+.record-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.record-field > span {
+  color: var(--color-text-secondary, #555);
+  font-weight: 500;
+}
+
+.record-field input,
+.record-field select {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #222);
+}
+
+.record-field input:disabled,
+.record-field select:disabled {
+  opacity: 0.6;
+  background: var(--color-surface-alt, #f5f6f8);
+}
+
+.record-field input.error {
+  border-color: #d64545;
+}
+
+.record-field .error-text {
+  color: #d64545;
+  font-size: 12px;
+}
+
+.uid-field {
+  grid-column: span 1;
+}
+
+.uid-input-group {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.uid-input-group input {
+  flex: 1;
+  min-width: 0;
+}
+
+.regenerate-uid-button {
+  padding: 0 10px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border-radius: 6px;
+  background: var(--color-surface-alt, #f5f6f8);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.regenerate-uid-button:hover:not(:disabled) {
+  background: var(--color-surface, #fff);
+}
+
+@media (width <= 600px) {
+  .patient-record-grid {
+    grid-template-columns: 1fr;
+  }
+}

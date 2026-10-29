@@ -1,0 +1,197 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - refactor
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: Backend build & tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore CEPEM.sln
+
+      - name: Build
+        run: dotnet build CEPEM.sln --no-restore
+
+      - name: Test DatabaseAPI
+        run: dotnet test backend/DatabaseAPI.Tests/DatabaseAPI.Tests.csproj --no-build --logger "trx" --results-directory ./test-results
+
+      - name: Test HealthcareAPI
+        run: dotnet test backend/HealthcareAPI.Tests/HealthcareAPI.Tests.csproj --no-build --logger "trx" --results-directory ./test-results
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: test-results/**/*.trx
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend build & typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Run tests
+        working-directory: frontend
+        run: npm run test
+
+      - name: Build (includes typecheck)
+        working-directory: frontend
+        run: npm run build
+
+  lint:
+    name: Lint (ESLint + Prettier + Stylelint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Prettier
+        working-directory: frontend
+        run: npm run format
+
+      - name: Stylelint
+        working-directory: frontend
+        run: npm run lint:css
+
+  containers:
+    name: Container build
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build containers
+        run: docker compose build
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the stack
+        run: |
+          cat > .env <<'ENV'
+          MYSQL_ROOT_PASSWORD=ci-test-root-pw
+          MYSQL_DATABASE=cepem_healthcare
+          MYSQL_USER=cepem_user
+          MYSQL_PASSWORD=ci-test-user-pw
+          MYSQL_PORT=3306
+          ASPNETCORE_ENVIRONMENT=Development
+          ASPNETCORE_URLS_HEALTHCARE=http://+:80
+          ASPNETCORE_URLS_DATABASE=http://+:5001
+          DATABASE_API_CONNECTION_STRING=Server=mysql;Port=3306;Database=cepem_healthcare;Uid=cepem_user;Password=ci-test-user-pw;
+          JWT_SECRET_KEY=ci-e2e-jwt-secret-key-that-is-long-enough-256-bits
+          JWT_ISSUER=CI
+          JWT_AUDIENCE=CI
+          DATABASE_API_URL=http://database-api:5001
+          SERVICE_AUTH_KEY=ci-e2e-service-key
+          RATE_LIMITING__LOGINPERMITLIMIT=200
+          PHOTO_ENCRYPTION_KEY=ci-e2e-photo-key-32-chars-padding!!
+          PHOTO_ENCRYPTION_IV=ci-e2e-iv-16
+          DOCUMENT_ENCRYPTION_KEY=ci-e2e-doc-key-32-chars-padding!!
+          DOCUMENT_ENCRYPTION_IV=ci-e2e-iv-16
+          PHOTO_STORAGE_PATH=/app/patient-photos
+          DOCUMENT_STORAGE_PATH=/app/patient-documents
+          HEALTHCARE_API_PORT=3001
+          DATABASE_API_PORT=5001
+          FRONTEND_PORT=3000
+          GRAFANA_PORT=3002
+          ADMIN_INITIAL_PASSWORD=E2eCiTest123!
+          ENV
+          docker compose up -d --build
+
+      - name: Wait for the stack to become healthy
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/ > /dev/null 2>&1; then
+              echo "frontend is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "frontend did not become healthy in time"
+          docker compose logs | tail -50
+          exit 1
+
+      - name: Run E2E tests
+        working-directory: frontend
+        env:
+          E2E_EMAIL: admin@cepem.local
+          E2E_PASSWORD: E2eCiTest123!
+        run: npx playwright test
+
+      - name: Dump stack logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
+
+      - name: Tear down the stack
+        if: always()
+        run: docker compose down -v --remove-orphans

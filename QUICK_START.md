@@ -10,52 +10,44 @@
 
 ### 2. Manual Docker Run
 ```bash
-cd /home/olda/programovani/github/CEPEM
-docker-compose up --build
+cd /home/olda/programovani/CEPEM
+
+# First time only: create your .env from the template and fill in real values
+cp .env.example .env
+
+docker compose up --build
 ```
 
 ### 3. Background Run
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
-## 📱 Application Access
+## Application Access
 
 After containers start:
 
 - **Frontend (React)**: http://localhost:3000
-- **Test Dashboard**: http://localhost:3000/tests
 - **API**: http://localhost:5000
-- **Database API**: http://localhost:5001 
-- **MySQL Database**: localhost:3306
+- **Database API**: http://localhost:5001 (service-key protected, docker network only)
+- **MySQL Database**: localhost:3306 (bound to 127.0.0.1)
 
-## 🧪 Testing System
+## Running Tests
 
-The platform includes a comprehensive testing system that continues running even when individual tests fail:
-
-- **Resilient Build**: Application starts regardless of test failures
-- **Test Dashboard**: Monitor all test results at `/tests` route
-- **Coverage Reports**: Detailed coverage analysis for all services
-- **Live Status**: Real-time test execution monitoring
-
-### Test Commands
+Tests run in CI (`.github/workflows/ci.yml`) and must pass for container
+builds. Locally:
 
 ```bash
-# Build with tests (recommended)
-./build.sh
+# Backend
+dotnet test backend/DatabaseAPI.Tests/DatabaseAPI.Tests.csproj
+dotnet test backend/HealthcareAPI.Tests/HealthcareAPI.Tests.csproj
 
-# Build without tests
-./build.sh --no-tests
-
-# Run tests only
-./build.sh --tests-only
-
-# Clean build
-./build.sh --clean
+# Frontend (vitest)
+cd frontend && npm run test
 ```
 
 ## Stop Services
 
 ```bash
-docker-compose down
+docker compose down
 ```

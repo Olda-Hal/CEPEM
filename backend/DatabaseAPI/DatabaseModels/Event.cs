@@ -4,6 +4,7 @@ namespace DatabaseAPI.DatabaseModels;
 
 public class Event
 {
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public const string DefaultCountryCode = "CZ";
 
     public int Id { get; set; }

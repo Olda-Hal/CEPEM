@@ -31,6 +31,8 @@ namespace DatabaseAPI.Controllers
                 case AuthenticationResult.AccountDeactivated:
                     return Unauthorized("Váš účet byl deaktivován. Kontaktujte administrátora.");
 
+                case AuthenticationResult.AccountLocked:
+                    return Unauthorized(new { message = result.Message });
                 case AuthenticationResult.UserNotFound:
                 case AuthenticationResult.InvalidCredentials:
                 default:
@@ -87,14 +89,21 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Heslo musí mít alespoň 6 znaků");
             }
 
-            var result = await _authService.CreateEmployeeAsync(request);
-
-            if (result == null)
+            try
             {
-                return BadRequest("Nepodařilo se vytvořit uživatele. Email nebo UID již existuje.");
-            }
+                var result = await _authService.CreateEmployeeAsync(request);
 
-            return Ok(result);
+                if (result == null)
+                {
+                    return BadRequest("Nepodařilo se vytvořit uživatele. Email nebo UID již existuje.");
+                }
+
+                return Ok(result);
+            }
+            catch (ScopeViolationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("next-uid")]

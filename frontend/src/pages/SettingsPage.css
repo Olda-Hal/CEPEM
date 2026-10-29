@@ -1,0 +1,60 @@
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+}
+
+.settings-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border, rgb(0 0 0 / 10%));
+  background: var(--color-surface, #fff);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.settings-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised);
+}
+
+.settings-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--color-primary-tint, rgb(37 99 235 / 12%));
+  font-size: 22px;
+}
+
+.settings-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.settings-card-text strong {
+  font-size: var(--text-md);
+}
+
+.settings-card-text small {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}

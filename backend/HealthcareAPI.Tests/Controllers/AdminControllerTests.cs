@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Security.Claims;
+using System.Net.Http;
 using HealthcareAPI.Controllers;
 using HealthcareAPI.Models;
 using HealthcareAPI.Services;
@@ -11,14 +14,28 @@ namespace HealthcareAPI.Tests.Controllers;
 public class AdminControllerTests
 {
     private readonly Mock<IAdminService> _mockAdminService;
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly Mock<ILogger<AdminController>> _mockLogger;
     private readonly AdminController _controller;
 
     public AdminControllerTests()
     {
         _mockAdminService = new Mock<IAdminService>();
+        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockLogger = new Mock<ILogger<AdminController>>();
-        _controller = new AdminController(_mockAdminService.Object, _mockLogger.Object);
+        _controller = new AdminController(_mockAdminService.Object, _mockHttpClientFactory.Object, _mockLogger.Object);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, "1"),
+                    new Claim(ClaimTypes.Role, "SysAdmin")
+                }, "TestAuthentication"))
+            }
+        };
+
     }
 
     [Fact]
@@ -27,8 +44,8 @@ public class AdminControllerTests
         // Arrange
         var employees = new List<EmployeeListItem>
         {
-            new EmployeeListItem { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" },
-            new EmployeeListItem { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
+            new EmployeeListItem { EmployeeId = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" },
+            new EmployeeListItem { EmployeeId = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
         _mockAdminService.Setup(s => s.GetAllEmployeesAsync())
@@ -66,7 +83,7 @@ public class AdminControllerTests
         var employeeId = 1;
         var employee = new EmployeeListItem 
         { 
-            Id = employeeId, 
+            EmployeeId = employeeId,
             FirstName = "John", 
             LastName = "Doe", 
             Email = "john@example.com" 
@@ -81,7 +98,7 @@ public class AdminControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedEmployee = Assert.IsType<EmployeeListItem>(okResult.Value);
-        Assert.Equal(employeeId, returnedEmployee.Id);
+        Assert.Equal(employeeId, returnedEmployee.EmployeeId);
     }
 
     [Fact]
@@ -144,7 +161,7 @@ public class AdminControllerTests
         // Arrange
         var employeeId = 1;
         _mockAdminService.Setup(s => s.DeactivateEmployeeAsync(employeeId))
-            .ReturnsAsync(true);
+            .ReturnsAsync((true, (string?)null));
 
         // Act
         var result = await _controller.DeactivateEmployee(employeeId);
@@ -160,7 +177,7 @@ public class AdminControllerTests
         // Arrange
         var employeeId = 999;
         _mockAdminService.Setup(s => s.DeactivateEmployeeAsync(employeeId))
-            .ReturnsAsync(false);
+            .ReturnsAsync((false, (string?)null));
 
         // Act
         var result = await _controller.DeactivateEmployee(employeeId);

@@ -5,8 +5,6 @@ using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Services;
 using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace DatabaseAPI.Controllers;
 
@@ -16,71 +14,34 @@ public class EventsController : ControllerBase
 {
     private readonly DatabaseContext _context;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IUidService _uidService;
+    private readonly IEventService _eventService;
+    private readonly IEventOptionsService _eventOptionsService;
+    private readonly IIntakeFormLinkService _intakeFormLinkService;
+    private readonly ILogger<EventsController> _logger;
 
-    public EventsController(DatabaseContext context, IActorCountryContextService actorCountryContextService)
+    public EventsController(
+        DatabaseContext context,
+        IActorCountryContextService actorCountryContextService,
+        IUidService uidService,
+        IEventService eventService,
+        IEventOptionsService eventOptionsService,
+        IIntakeFormLinkService intakeFormLinkService,
+        ILogger<EventsController> logger)
     {
         _context = context;
         _actorCountryContextService = actorCountryContextService;
+        _uidService = uidService;
+        _eventService = eventService;
+        _eventOptionsService = eventOptionsService;
+        _intakeFormLinkService = intakeFormLinkService;
+        _logger = logger;
     }
 
     [HttpGet("options")]
     public async Task<ActionResult<EventOptionsResponse>> GetEventOptions([FromQuery] string? language = "cs")
     {
-        var eventTypes = await _context.EventTypes.Include(et => et.NameTranslation).ToListAsync();
-        var drugs = await _context.Drugs.Include(d => d.NameTranslation).ToListAsync();
-        var drugCategories = await _context.DrugCategories.Include(dc => dc.NameTranslation).ToListAsync();
-        var examinationTypes = await _context.ExaminationTypes.Include(et => et.NameTranslation).ToListAsync();
-        var symptoms = await _context.Symptoms.Include(s => s.NameTranslation).ToListAsync();
-        var injuryTypes = await _context.InjuryTypes.Include(it => it.NameTranslation).ToListAsync();
-        var vaccineTypes = await _context.VaccineTypes.Include(vt => vt.NameTranslation).ToListAsync();
-
-        string Resolve(Translation? t) => language switch
-        {
-            "cs" => t?.CS ?? t?.EN ?? string.Empty,
-            "nl" => t?.NL ?? t?.EN ?? string.Empty,
-            _    => t?.EN ?? string.Empty,
-        };
-
-        var response = new EventOptionsResponse
-        {
-            EventTypes = eventTypes.Select(et => new EventTypeResponse
-            {
-                Id = et.Id,
-                Name = Resolve(et.NameTranslation)
-            }).OrderBy(x => x.Name).ToList(),
-            Drugs = drugs.Select(d => new DrugResponse
-            {
-                Id = d.Id,
-                Name = Resolve(d.NameTranslation)
-            }).OrderBy(x => x.Name).ToList(),
-            DrugCategories = drugCategories.Select(dc => new DrugCategoryResponse
-            {
-                Id = dc.Id,
-                Name = Resolve(dc.NameTranslation)
-            }).OrderBy(x => x.Name).ToList(),
-            ExaminationTypes = examinationTypes.Select(et => new ExaminationTypeResponse
-            {
-                Id = et.Id,
-                Name = Resolve(et.NameTranslation)
-            }).OrderBy(x => x.Name).ToList(),
-            Symptoms = symptoms.Select(s => new SymptomResponse
-            {
-                Id = s.Id,
-                Name = Resolve(s.NameTranslation)
-            }).OrderBy(x => x.Name).ToList(),
-            InjuryTypes = injuryTypes.Select(it => new InjuryTypeResponse
-            {
-                Id = it.Id,
-                Name = Resolve(it.NameTranslation)
-            }).OrderBy(x => x.Name).ToList(),
-            VaccineTypes = vaccineTypes.Select(vt => new VaccineTypeResponse
-            {
-                Id = vt.Id,
-                Name = Resolve(vt.NameTranslation)
-            }).OrderBy(x => x.Name).ToList()
-        };
-
-        return Ok(response);
+        return Ok(await _eventOptionsService.GetOptionsAsync(language ?? "cs"));
     }
 
     [HttpPost]
@@ -91,120 +52,20 @@ public class EventsController : ControllerBase
         try
         {
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
-            Comment? comment = null;
-            if (!string.IsNullOrEmpty(request.Comment))
-            {
-                comment = new Comment { Text = request.Comment };
-                _context.Comments.Add(comment);
-                await _context.SaveChangesAsync();
-            }
-
-            var eventEntity = new Event
-            {
-                PatientId = request.PatientId,
-                EventTypeId = request.EventTypeId,
-                HappenedAt = request.HappenedAt,
-                HappenedTo = request.HappenedTo,
-                CommentId = comment?.Id,
-                CountryCode = actorCountryCode,
-                EventGroupId = request.EventGroupId
-            };
-
-            _context.Events.Add(eventEntity);
-            await _context.SaveChangesAsync();
-
-            foreach (var drugUse in request.DrugUses)
-            {
-                var drugUseEntity = new DrugUse
-                {
-                    DrugId = drugUse.DrugId,
-                    EventId = eventEntity.Id
-                };
-                _context.DrugUses.Add(drugUseEntity);
-                await _context.SaveChangesAsync();
-
-                // Add drug categories for this drug use
-                foreach (var categoryId in drugUse.CategoryIds)
-                {
-                    var drugToDrugCategory = new DrugToDrugCategory
-                    {
-                        DrugId = drugUse.DrugId,
-                        CategoryId = categoryId
-                    };
-                    _context.DrugToDrugCategories.Add(drugToDrugCategory);
-                }
-            }
-
-            var examinationIds = new List<int>();
-
-            foreach (var examinationTypeId in request.ExaminationTypeIds)
-            {
-                var examination = new Examination
-                {
-                    ExaminationTypeId = examinationTypeId,
-                    EventId = eventEntity.Id,
-                    CountryCode = actorCountryCode
-                };
-                _context.Examinations.Add(examination);
-            }
-
-            foreach (var symptomId in request.SymptomIds)
-            {
-                var patientSymptom = new PatientSymptom
-                {
-                    SymptomId = symptomId,
-                    EventId = eventEntity.Id
-                };
-                _context.PatientSymptoms.Add(patientSymptom);
-            }
-
-            foreach (var injuryTypeId in request.InjuryTypeIds)
-            {
-                var injury = new Injury
-                {
-                    InjuryTypeId = injuryTypeId,
-                    EventId = eventEntity.Id
-                };
-                _context.Injuries.Add(injury);
-            }
-
-            foreach (var vaccineTypeId in request.VaccineTypeIds)
-            {
-                var vaccine = new Vaccine
-                {
-                    VaccineTypeId = vaccineTypeId,
-                    EventId = eventEntity.Id
-                };
-                _context.Vaccines.Add(vaccine);
-            }
-
-            if (request.IsPregnant == true)
-            {
-                var pregnancy = new Pregnancy
-                {
-                    EventId = eventEntity.Id,
-                    Result = request.PregnancyResult ?? false
-                };
-                _context.Pregnancies.Add(pregnancy);
-            }
-
-            await _context.SaveChangesAsync();
-            examinationIds = await _context.Examinations
-                .Where(ex => ex.EventId == eventEntity.Id)
-                .Select(ex => ex.Id)
-                .ToListAsync();
+            var (eventId, examinationIds) = await _eventService.CreateEventRecordAsync(request, request.EventGroupId, actorCountryCode);
             await transaction.CommitAsync();
 
             return Ok(new CreateEventResponse
             {
-                EventId = eventEntity.Id,
+                EventId = eventId,
                 ExaminationIds = examinationIds
             });
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, $"Error creating event: {ex.Message}");
+            _logger.LogError(ex, "Error creating event");
+            return StatusCode(500, "Error creating event");
         }
     }
 
@@ -224,102 +85,8 @@ public class EventsController : ControllerBase
                 eventRequest.PatientId = request.PatientId;
                 eventRequest.EventGroupId = eventGroupId;
 
-                Comment? comment = null;
-                if (!string.IsNullOrEmpty(eventRequest.Comment))
-                {
-                    comment = new Comment { Text = eventRequest.Comment };
-                    _context.Comments.Add(comment);
-                    await _context.SaveChangesAsync();
-                }
-
-                var eventEntity = new Event
-                {
-                    PatientId = eventRequest.PatientId,
-                    EventTypeId = eventRequest.EventTypeId,
-                    HappenedAt = eventRequest.HappenedAt,
-                    HappenedTo = eventRequest.HappenedTo,
-                    CommentId = comment?.Id,
-                    CountryCode = actorCountryCode,
-                    EventGroupId = eventGroupId
-                };
-
-                _context.Events.Add(eventEntity);
-                await _context.SaveChangesAsync();
-
-                foreach (var drugUse in eventRequest.DrugUses)
-                {
-                    var drugUseEntity = new DrugUse
-                    {
-                        DrugId = drugUse.DrugId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.DrugUses.Add(drugUseEntity);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var categoryId in drugUse.CategoryIds)
-                    {
-                        var drugToDrugCategory = new DrugToDrugCategory
-                        {
-                            DrugId = drugUse.DrugId,
-                            CategoryId = categoryId
-                        };
-                        _context.DrugToDrugCategories.Add(drugToDrugCategory);
-                    }
-                }
-
-                foreach (var examinationTypeId in eventRequest.ExaminationTypeIds)
-                {
-                    var examination = new Examination
-                    {
-                        ExaminationTypeId = examinationTypeId,
-                        EventId = eventEntity.Id,
-                        CountryCode = actorCountryCode
-                    };
-                    _context.Examinations.Add(examination);
-                }
-
-                foreach (var symptomId in eventRequest.SymptomIds)
-                {
-                    var patientSymptom = new PatientSymptom
-                    {
-                        SymptomId = symptomId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.PatientSymptoms.Add(patientSymptom);
-                }
-
-                foreach (var injuryTypeId in eventRequest.InjuryTypeIds)
-                {
-                    var injury = new Injury
-                    {
-                        InjuryTypeId = injuryTypeId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.Injuries.Add(injury);
-                }
-
-                foreach (var vaccineTypeId in eventRequest.VaccineTypeIds)
-                {
-                    var vaccine = new Vaccine
-                    {
-                        VaccineTypeId = vaccineTypeId,
-                        EventId = eventEntity.Id
-                    };
-                    _context.Vaccines.Add(vaccine);
-                }
-
-                if (eventRequest.IsPregnant == true)
-                {
-                    var pregnancy = new Pregnancy
-                    {
-                        EventId = eventEntity.Id,
-                        Result = eventRequest.PregnancyResult ?? false
-                    };
-                    _context.Pregnancies.Add(pregnancy);
-                }
-
-                await _context.SaveChangesAsync();
-                eventIds.Add(eventEntity.Id);
+                var (eventId, _) = await _eventService.CreateEventRecordAsync(eventRequest, eventGroupId, actorCountryCode);
+                eventIds.Add(eventId);
             }
 
             await transaction.CommitAsync();
@@ -333,80 +100,51 @@ public class EventsController : ControllerBase
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, $"Error creating event group: {ex.Message}");
+            _logger.LogError(ex, "Error creating event group");
+            return StatusCode(500, "Error creating event group");
         }
     }
 
     [HttpPost("examination-types")]
     public async Task<ActionResult<ExaminationTypeResponse>> CreateExaminationType([FromBody] CreateOptionRequest request)
     {
-        var t = new Translation { EN = request.Name };
-        _context.Translations.Add(t);
-        await _context.SaveChangesAsync();
-        var examinationType = new ExaminationType { NameTranslationId = t.Id };
-        _context.ExaminationTypes.Add(examinationType);
-        await _context.SaveChangesAsync();
-        return Ok(new ExaminationTypeResponse { Id = examinationType.Id, Name = t.EN });
+        var created = await _eventOptionsService.CreateExaminationTypeAsync(request.Name);
+        return Ok(new ExaminationTypeResponse { Id = created.Id, Name = created.Name });
     }
 
     [HttpPost("symptoms")]
     public async Task<ActionResult<SymptomResponse>> CreateSymptom([FromBody] CreateOptionRequest request)
     {
-        var t = new Translation { EN = request.Name };
-        _context.Translations.Add(t);
-        await _context.SaveChangesAsync();
-        var symptom = new Symptom { NameTranslationId = t.Id };
-        _context.Symptoms.Add(symptom);
-        await _context.SaveChangesAsync();
-        return Ok(new SymptomResponse { Id = symptom.Id, Name = t.EN });
+        var created = await _eventOptionsService.CreateSymptomAsync(request.Name);
+        return Ok(new SymptomResponse { Id = created.Id, Name = created.Name });
     }
 
     [HttpPost("injury-types")]
     public async Task<ActionResult<InjuryTypeResponse>> CreateInjuryType([FromBody] CreateOptionRequest request)
     {
-        var t = new Translation { EN = request.Name };
-        _context.Translations.Add(t);
-        await _context.SaveChangesAsync();
-        var injuryType = new InjuryType { NameTranslationId = t.Id };
-        _context.InjuryTypes.Add(injuryType);
-        await _context.SaveChangesAsync();
-        return Ok(new InjuryTypeResponse { Id = injuryType.Id, Name = t.EN });
+        var created = await _eventOptionsService.CreateInjuryTypeAsync(request.Name);
+        return Ok(new InjuryTypeResponse { Id = created.Id, Name = created.Name });
     }
 
     [HttpPost("vaccine-types")]
     public async Task<ActionResult<VaccineTypeResponse>> CreateVaccineType([FromBody] CreateOptionRequest request)
     {
-        var t = new Translation { EN = request.Name };
-        _context.Translations.Add(t);
-        await _context.SaveChangesAsync();
-        var vaccineType = new VaccineType { NameTranslationId = t.Id };
-        _context.VaccineTypes.Add(vaccineType);
-        await _context.SaveChangesAsync();
-        return Ok(new VaccineTypeResponse { Id = vaccineType.Id, Name = t.EN });
+        var created = await _eventOptionsService.CreateVaccineTypeAsync(request.Name);
+        return Ok(new VaccineTypeResponse { Id = created.Id, Name = created.Name });
     }
 
     [HttpPost("drugs")]
     public async Task<ActionResult<DrugResponse>> CreateDrug([FromBody] CreateOptionRequest request)
     {
-        var t = new Translation { EN = request.Name };
-        _context.Translations.Add(t);
-        await _context.SaveChangesAsync();
-        var drug = new Drug { NameTranslationId = t.Id };
-        _context.Drugs.Add(drug);
-        await _context.SaveChangesAsync();
-        return Ok(new DrugResponse { Id = drug.Id, Name = t.EN });
+        var created = await _eventOptionsService.CreateDrugAsync(request.Name);
+        return Ok(new DrugResponse { Id = created.Id, Name = created.Name });
     }
 
     [HttpPost("drug-categories")]
     public async Task<ActionResult<DrugCategoryResponse>> CreateDrugCategory([FromBody] CreateOptionRequest request)
     {
-        var t = new Translation { EN = request.Name };
-        _context.Translations.Add(t);
-        await _context.SaveChangesAsync();
-        var drugCategory = new DrugCategory { NameTranslationId = t.Id };
-        _context.DrugCategories.Add(drugCategory);
-        await _context.SaveChangesAsync();
-        return Ok(new DrugCategoryResponse { Id = drugCategory.Id, Name = t.EN });
+        var created = await _eventOptionsService.CreateDrugCategoryAsync(request.Name);
+        return Ok(new DrugCategoryResponse { Id = created.Id, Name = created.Name });
     }
 
     [HttpPost("intake-form")]
@@ -499,53 +237,27 @@ public class EventsController : ControllerBase
     {
         try
         {
-            var person = await _context.Persons
-                .FirstOrDefaultAsync(p => p.Id == request.PersonId);
-
-            if (person == null)
-                return NotFound("Person not found");
-
-            if (request.ReservationId.HasValue)
-            {
-                var reservation = await _context.Reservations
-                    .FirstOrDefaultAsync(r => r.Id == request.ReservationId.Value);
-
-                if (reservation == null)
-                    return NotFound("Reservation not found");
-
-                if (reservation.PersonId != request.PersonId)
-                    return BadRequest("Reservation does not belong to this person");
-            }
-
-            var tokenBytes = RandomNumberGenerator.GetBytes(32);
-            var token = Convert.ToHexString(tokenBytes).ToLowerInvariant();
-            var tokenHash = ComputeTokenHash(token);
-
             var expiresInHours = request.ExpiresInHours.GetValueOrDefault(72);
-            if (expiresInHours <= 0)
-                expiresInHours = 72;
+            var created = await _intakeFormLinkService.CreateLinkAsync(request.PersonId, request.ReservationId, expiresInHours);
 
-            var link = new IntakeFormLink
-            {
-                TokenHash = tokenHash,
-                PersonId = person.Id,
-                ReservationId = request.ReservationId,
-                ExpiresAtUtc = DateTime.UtcNow.AddHours(expiresInHours)
-            };
+            if (created == null)
+                return NotFound("Person or reservation not found");
 
-            _context.IntakeFormLinks.Add(link);
-            await _context.SaveChangesAsync();
-
+            var (link, rawToken) = created.Value;
             return Ok(new IntakeFormLinkDto
             {
                 LinkId = link.Id,
-                Token = token,
-                IntakePath = $"/intake/{token}",
+                Token = rawToken,
+                IntakePath = $"/intake/{rawToken}",
                 ExpiresAtUtc = link.ExpiresAtUtc,
-                PersonId = person.Id,
-                PersonName = BuildPersonName(person.FirstName, person.LastName),
+                PersonId = link.PersonId,
+                PersonName = BuildPersonName(link.Person.FirstName, link.Person.LastName),
                 ReservationId = link.ReservationId
             });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
@@ -558,23 +270,14 @@ public class EventsController : ControllerBase
     {
         try
         {
-            var tokenHash = ComputeTokenHash(token);
-
-            var link = await _context.IntakeFormLinks
-                .Include(l => l.Person)
-                .FirstOrDefaultAsync(l => l.TokenHash == tokenHash);
+            var link = await _intakeFormLinkService.FindLinkAsync(token);
 
             if (link == null)
                 return NotFound("Intake link not found");
 
-            if (link.RevokedAtUtc.HasValue)
-                return BadRequest("Intake link has been revoked");
-
-            if (link.UsedAtUtc.HasValue)
-                return BadRequest("Intake link has already been used");
-
-            if (link.ExpiresAtUtc < DateTime.UtcNow)
-                return BadRequest("Intake link has expired");
+            var invalidReason = _intakeFormLinkService.GetInvalidityReason(link);
+            if (invalidReason != null)
+                return BadRequest(invalidReason);
 
             return Ok(new IntakeFormLinkInfoDto
             {
@@ -596,23 +299,14 @@ public class EventsController : ControllerBase
     {
         try
         {
-            var tokenHash = ComputeTokenHash(token);
-
-            var link = await _context.IntakeFormLinks
-                .Include(l => l.Person)
-                .FirstOrDefaultAsync(l => l.TokenHash == tokenHash);
+            var link = await _intakeFormLinkService.FindLinkAsync(token);
 
             if (link == null)
                 return NotFound("Intake link not found");
 
-            if (link.RevokedAtUtc.HasValue)
-                return BadRequest("Intake link has been revoked");
-
-            if (link.UsedAtUtc.HasValue)
-                return BadRequest("Intake link has already been used");
-
-            if (link.ExpiresAtUtc < DateTime.UtcNow)
-                return BadRequest("Intake link has expired");
+            var invalidReason = _intakeFormLinkService.GetInvalidityReason(link);
+            if (invalidReason != null)
+                return BadRequest(invalidReason);
 
             var patient = await _context.Patients
                 .FirstOrDefaultAsync(p => p.PersonId == link.PersonId);
@@ -624,31 +318,7 @@ public class EventsController : ControllerBase
 
                 if (!int.TryParse(uid, out _))
                 {
-                    var existingUids = await _context.Persons
-                        .Select(p => p.UID)
-                        .Where(existingUid => !string.IsNullOrWhiteSpace(existingUid))
-                        .ToListAsync();
-
-                    var numericUids = existingUids
-                        .Where(existingUid => int.TryParse(existingUid, out _))
-                        .Select(int.Parse)
-                        .OrderBy(existingUid => existingUid)
-                        .ToList();
-
-                    var nextUid = 1;
-                    foreach (var existingUid in numericUids)
-                    {
-                        if (existingUid == nextUid)
-                        {
-                            nextUid++;
-                        }
-                        else if (existingUid > nextUid)
-                        {
-                            break;
-                        }
-                    }
-
-                    uid = nextUid.ToString();
+                    uid = await _uidService.GetNextAvailableUidAsync();
                     link.Person.UID = uid;
                 }
 
@@ -672,8 +342,7 @@ public class EventsController : ControllerBase
                 return objectResult;
             }
 
-            link.UsedAtUtc = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _intakeFormLinkService.MarkUsedAsync(link);
 
             return intakeResult.Value ?? (intakeResult.Result as OkObjectResult)?.Value as IntakeFormEventDto ??
                    new IntakeFormEventDto
@@ -1151,12 +820,6 @@ public class EventsController : ControllerBase
             return (segments[0], string.Empty);
 
         return (segments[0], segments[1]);
-    }
-
-    private static string ComputeTokenHash(string token)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
-        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     private static string BuildPersonName(string firstName, string lastName)

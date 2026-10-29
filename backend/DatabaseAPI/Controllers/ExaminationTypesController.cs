@@ -68,6 +68,7 @@ public class ExaminationTypesController : ControllerBase
         try
         {
             var type = await _context.ExaminationTypes
+                .AsNoTracking()
                 .Include(e => e.NameTranslation)
                 .FirstOrDefaultAsync(e => e.Id == id);
             if (type == null)
@@ -113,6 +114,7 @@ public class ExaminationTypesController : ControllerBase
         try
         {
             var type = await _context.ExaminationTypes
+                .AsNoTracking()
                 .Include(e => e.NameTranslation)
                 .FirstOrDefaultAsync(e => e.Id == id);
             if (type == null)

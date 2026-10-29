@@ -1,44 +1,131 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './AdminEmployeesPage.css';
 import {
+  AdminScope,
   EmployeeListItem,
+  Hospital,
   Role,
   UpdateEmployeeRequest,
-  UpdateEmployeeResponse,
-  EndpointPermissionCatalogItem,
-  EmployeePermissionRulesResponse,
-  PermissionRule,
-  UpdateEmployeePermissionRulesRequest
+  UpdateEmployeeResponse
 } from '../types';
-import { apiClient } from '../utils/api';
-import { AppHeader } from '../components/AppHeader';
+import { apiClient, getAuthToken } from '../utils/api';
+import PermissionsModal from '../components/PermissionsModal';
+import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
+import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
-import { hasRole } from '../utils/roles';
+import {
+  countryScopeByCode,
+  countryCodeByScopeId,
+  countryOptions,
+  normalizeCountryCode
+} from '../utils/countryScope';
+
+const EMPLOYEES_PER_PAGE = 25;
 
 const AdminEmployeesPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeListItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [selectedRulesEmployee, setSelectedRulesEmployee] = useState<EmployeeListItem | null>(null);
-  const [permissionCatalog, setPermissionCatalog] = useState<EndpointPermissionCatalogItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
 
-  const isRestrictedCountryAdmin = hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
+  const handleExport = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch('/api/admin/employees/export', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download =
+        response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'employees.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (exportError) {
+      console.error(exportError);
+      setError(t('admin.dataLoadFailed'));
+    }
+  }, [t]);
 
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['admin', 'employees-and-roles'],
+    queryFn: async () => {
+      const [employees, roles, scope, hospitals] = await Promise.all([
+        apiClient.get<EmployeeListItem[]>('/api/admin/employees'),
+        apiClient.get<Role[]>('/api/admin/roles'),
+        apiClient.get<AdminScope>('/api/admin/employees/scope'),
+        apiClient.get<Hospital[]>('/api/hospitals')
+      ]);
+      return { employees, roles, scope, hospitals };
+    }
+  });
+
+  const loadData = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'employees-and-roles'] });
+  }, [queryClient]);
+
+  const scope = data?.scope ?? null;
+  const isScopedAdmin =
+    !!scope && !scope.hasFullAccess && (scope.isCountryAdmin || scope.isCenterAdmin);
+
+  // Mirrors the server-side EmployeeScopeService visibility rule so action
+  // buttons are only offered for employees the actor may actually manage.
   const canManageEmployee = (employee: EmployeeListItem) => {
-    if (!isRestrictedCountryAdmin) {
+    if (!isScopedAdmin || !scope) {
       return true;
     }
 
-    return employee.createdByEmployeeId === user?.id;
+    if (scope.isCenterAdmin && employee.hospitalIds?.some((id) => scope.hospitalIds.includes(id))) {
+      return true;
+    }
+
+    if (scope.isCountryAdmin) {
+      const employeeScopeId = countryScopeByCode[normalizeCountryCode(employee.countryCode)] ?? -1;
+      if (scope.administeredCountryScopeIds.includes(employeeScopeId)) {
+        return true;
+      }
+      if (employee.createdByEmployeeId === user?.id) {
+        return true;
+      }
+    }
+
+    return false;
   };
+
+  // Role checkboxes the actor may grant (full access → everything)
+  const assignableRoles = (data?.roles ?? []).filter(
+    (role) => !isScopedAdmin || !scope || scope.assignableRoleNames.includes(role.name)
+  );
+
+  // Country options the actor may assign
+  const allowedCountryCodes =
+    !isScopedAdmin || !scope
+      ? countryOptions
+      : scope.administeredCountryScopeIds
+          .map((scopeId) => countryCodeByScopeId[scopeId])
+          .filter((code): code is string => Boolean(code));
+
+  // Center assignment options the actor may grant
+  const allowedHospitals = (data?.hospitals ?? []).filter((hospital) => {
+    if (!isScopedAdmin || !scope) {
+      return true;
+    }
+    if (scope.isCenterAdmin && !scope.isCountryAdmin) {
+      return scope.hospitalIds.includes(hospital.id);
+    }
+    return scope.administeredCountryScopeIds.includes(hospital.countryScopeId ?? -1);
+  });
 
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
@@ -54,44 +141,12 @@ const AdminEmployeesPage: React.FC = () => {
   };
 
   const getPermissionLabel = (permissionKey: string, fallback?: string) => {
-    const translationKey = `admin.permissionLabels.${permissionKey.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+    const translationKey = `admin.permissionLabels.${permissionKey
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')}`;
     return t(translationKey, { defaultValue: fallback || permissionKey });
   };
-
-  const getResourceTypeLabel = (resourceType?: string) => {
-    if (!resourceType) {
-      return '';
-    }
-
-    return t(`admin.accessRules.resourceTypes.${resourceType.toLowerCase()}`, { defaultValue: resourceType });
-  };
-
-  const loadData = useCallback(async () => {
-    try {
-      const [employeesResponse, rolesResponse] = await Promise.all([
-        apiClient.get<EmployeeListItem[]>('/api/admin/employees'),
-        apiClient.get<Role[]>('/api/admin/roles')
-      ]);
-      setEmployees(employeesResponse);
-      setRoles(rolesResponse);
-
-      try {
-        const catalog = await apiClient.get<EndpointPermissionCatalogItem[]>('/api/admin/access/permissions');
-        setPermissionCatalog(catalog);
-      } catch {
-        setPermissionCatalog([]);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setError(t('admin.dataLoadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
 
   const handleRules = (employee: EmployeeListItem) => {
     setSelectedRulesEmployee(employee);
@@ -126,7 +181,10 @@ const AdminEmployeesPage: React.FC = () => {
     if (!selectedEmployee) return;
 
     try {
-      const response = await apiClient.put<UpdateEmployeeResponse>(`/api/admin/employees/${selectedEmployee.employeeId}`, updatedEmployee);
+      const response = await apiClient.put<UpdateEmployeeResponse>(
+        `/api/admin/employees/${selectedEmployee.employeeId}`,
+        updatedEmployee
+      );
       if (response.success) {
         setSuccess(response.message);
         setShowEditModal(false);
@@ -149,95 +207,164 @@ const AdminEmployeesPage: React.FC = () => {
     );
   }
 
+  const employees = data?.employees ?? [];
+
+  const totalPages = Math.max(1, Math.ceil(employees.length / EMPLOYEES_PER_PAGE));
+  const pagedEmployees = employees.slice(
+    page * EMPLOYEES_PER_PAGE,
+    (page + 1) * EMPLOYEES_PER_PAGE
+  );
+
   return (
     <div className="admin-employees-page">
-      <AppHeader sectionTitle={t('admin.employeeManagement')} />
+      <div className="page-heading">
+        <h1 className="page-title">{t('admin.employeeManagement')}</h1>
+        <div className="page-heading-actions">
+          <button className="btn btn-secondary" onClick={handleExport}>
+            {t('activityLog.exportCsv')}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+            + {t('createEmployee.buttonText')}
+          </button>
+        </div>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
       <div className="employees-table-container">
-        <table className="employees-table">
-          <thead>
-            <tr>
-              <th>{t('admin.fullName')}</th>
-              <th>{t('admin.email')}</th>
-              <th>{t('admin.uid')}</th>
-              <th>{t('admin.phone')}</th>
-              <th>{t('admin.roles')}</th>
-              <th>{t('admin.status')}</th>
-              <th>{t('admin.lastLogin')}</th>
-              <th>{t('admin.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((employee) => (
-              <tr key={employee.employeeId} className={!employee.active ? 'inactive' : ''}>
-                <td>
-                  <div className="employee-name">
-                    <strong>{employee.fullName}</strong>
-                    <small>{employee.gender}</small>
-                  </div>
-                </td>
-                <td>{employee.email}</td>
-                <td>{employee.uid}</td>
-                <td>{employee.phoneNumber}</td>
-                <td>
-                  <div className="roles">
-                    {employee.roles.map((role, index) => (
-                      <span key={index} className="role-badge">{translateRoleName(role)}</span>
-                    ))}
-                  </div>
-                </td>
-                <td>
-                  <span className={`status-badge ${employee.active ? 'active' : 'inactive'}`}>
-                    {employee.active ? t('admin.active') : t('admin.inactive')}
-                  </span>
-                </td>
-                <td>
-                  {employee.lastLoginAt 
-                    ? new Date(employee.lastLoginAt).toLocaleString()
-                    : t('admin.never')
-                  }
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleEdit(employee)}
+        <DataTable
+          columns={[
+            {
+              key: 'name',
+              header: t('admin.fullName'),
+              render: (employee) => (
+                <div className="employee-name">
+                  <strong>{employee.fullName}</strong>
+                  <small>{employee.gender}</small>
+                </div>
+              )
+            },
+            { key: 'email', header: t('admin.email'), render: (employee) => employee.email },
+            { key: 'uid', header: t('admin.uid'), render: (employee) => employee.uid },
+            { key: 'phone', header: t('admin.phone'), render: (employee) => employee.phoneNumber },
+            {
+              key: 'roles',
+              header: t('admin.roles'),
+              render: (employee) => (
+                <div className="roles">
+                  {employee.roles.map((role, index) => (
+                    <span key={index} className="role-badge">
+                      {translateRoleName(role)}
+                    </span>
+                  ))}
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              header: t('admin.status'),
+              render: (employee) => (
+                <span
+                  className={`status-badge status-${employee.active ? 'active' : 'unavailable'}`}
+                >
+                  {employee.active ? t('admin.active') : t('admin.inactive')}
+                </span>
+              )
+            },
+            {
+              key: 'lastLogin',
+              header: t('admin.lastLogin'),
+              render: (employee) =>
+                employee.lastLoginAt
+                  ? new Date(employee.lastLoginAt).toLocaleString()
+                  : t('admin.never')
+            },
+            {
+              key: 'actions',
+              header: t('admin.actions'),
+              render: (employee) => (
+                <div className="action-buttons">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleEdit(employee)}
+                    disabled={!canManageEmployee(employee)}
+                  >
+                    {t('admin.edit')}
+                  </button>
+                  {!isScopedAdmin && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleRules(employee)}
+                    >
+                      {t('admin.access')}
+                    </button>
+                  )}
+                  {employee.active && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeactivate(employee.employeeId)}
                       disabled={!canManageEmployee(employee)}
                     >
-                      {t('admin.edit')}
+                      {t('admin.deactivate')}
                     </button>
-                    {!isRestrictedCountryAdmin && (
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleRules(employee)}
-                      >
-                        {t('admin.access')}
-                      </button>
-                    )}
-                    {employee.active && (
-                      <button 
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDeactivate(employee.employeeId)}
-                        disabled={!canManageEmployee(employee)}
-                      >
-                        {t('admin.deactivate')}
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  )}
+                </div>
+              )
+            }
+          ]}
+          data={pagedEmployees}
+          rowKey={(employee) => employee.employeeId}
+        />
+        {totalPages > 1 && (
+          <div className="employees-pagination">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              {t('common.previous')}
+            </button>
+            <span className="pagination-info">
+              {page + 1} / {totalPages}
+            </span>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+            >
+              {t('common.next')}
+            </button>
+          </div>
+        )}
       </div>
+
+      {showCreateModal && (
+        <CreateEmployeeModal
+          isOpen
+          onClose={() => setShowCreateModal(false)}
+          onEmployeeCreated={() => {
+            setShowCreateModal(false);
+            void loadData();
+          }}
+          roles={assignableRoles}
+          hospitals={allowedHospitals}
+          allowedCountryCodes={allowedCountryCodes}
+          defaultCountryCode={normalizeCountryCode(user?.countryCode)}
+          defaultHospitalIds={
+            scope && !scope.hasFullAccess && scope.isCenterAdmin && !scope.isCountryAdmin
+              ? scope.hospitalIds
+              : []
+          }
+        />
+      )}
 
       {showEditModal && selectedEmployee && (
         <EmployeeEditModal
           employee={selectedEmployee}
-          roles={roles}
+          roles={assignableRoles}
+          hospitals={allowedHospitals}
+          allowedCountryCodes={allowedCountryCodes}
           onSave={handleSave}
           onCancel={() => {
             setShowEditModal(false);
@@ -248,9 +375,8 @@ const AdminEmployeesPage: React.FC = () => {
       )}
 
       {showRulesModal && selectedRulesEmployee && (
-        <AccessRulesModal
+        <PermissionsModal
           employee={selectedRulesEmployee}
-          catalog={permissionCatalog}
           onClose={() => {
             setShowRulesModal(false);
             setSelectedRulesEmployee(null);
@@ -258,9 +384,7 @@ const AdminEmployeesPage: React.FC = () => {
           onSaved={() => {
             setSuccess(t('admin.accessSaved'));
           }}
-          translateRoleName={translateRoleName}
           getPermissionLabel={getPermissionLabel}
-          getResourceTypeLabel={getResourceTypeLabel}
         />
       )}
     </div>
@@ -270,11 +394,20 @@ const AdminEmployeesPage: React.FC = () => {
 interface EmployeeEditModalProps {
   employee: EmployeeListItem;
   roles: Role[];
+  hospitals: Hospital[];
+  allowedCountryCodes: string[];
   onSave: (employee: UpdateEmployeeRequest) => void;
   onCancel: () => void;
 }
 
-const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, onSave, onCancel }) => {
+const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
+  employee,
+  roles,
+  hospitals,
+  allowedCountryCodes,
+  onSave,
+  onCancel
+}) => {
   const { t } = useTranslation();
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
@@ -299,15 +432,17 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
     titleBefore: employee.titleBefore || '',
     titleAfter: employee.titleAfter || '',
     active: employee.active,
-    roleIds: []
+    roleIds: [],
+    countryCode: normalizeCountryCode(employee.countryCode),
+    hospitalIds: employee.hospitalIds ?? []
   });
 
   useEffect(() => {
     // Set initial role IDs based on employee's current roles
     const currentRoleIds = roles
-      .filter(role => employee.roles.includes(role.name))
-      .map(role => role.id);
-    setFormData(prev => ({ ...prev, roleIds: currentRoleIds }));
+      .filter((role) => employee.roles.includes(role.name))
+      .map((role) => role.id);
+    setFormData((prev) => ({ ...prev, roleIds: currentRoleIds }));
   }, [employee.roles, roles]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -316,11 +451,18 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
   };
 
   const handleRoleChange = (roleId: number, checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      roleIds: checked 
-        ? [...prev.roleIds, roleId]
-        : prev.roleIds.filter(id => id !== roleId)
+      roleIds: checked ? [...prev.roleIds, roleId] : prev.roleIds.filter((id) => id !== roleId)
+    }));
+  };
+
+  const handleHospitalChange = (hospitalId: number, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      hospitalIds: checked
+        ? [...(prev.hospitalIds ?? []), hospitalId]
+        : (prev.hospitalIds ?? []).filter((id) => id !== hospitalId)
     }));
   };
 
@@ -329,9 +471,11 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
       <div className="modal-content">
         <div className="modal-header">
           <h2>{t('admin.editEmployee')}</h2>
-          <button className="close-button" onClick={onCancel}>&times;</button>
+          <button className="close-button" onClick={onCancel}>
+            &times;
+          </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="employee-form">
           <div className="form-row">
             <div className="form-group">
@@ -339,7 +483,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.titleBefore}
-                onChange={(e) => setFormData(prev => ({ ...prev, titleBefore: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, titleBefore: e.target.value }))}
               />
             </div>
             <div className="form-group">
@@ -347,7 +491,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.firstName}
-                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                 required
               />
             </div>
@@ -356,7 +500,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.lastName}
-                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
                 required
               />
             </div>
@@ -365,7 +509,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.titleAfter}
-                onChange={(e) => setFormData(prev => ({ ...prev, titleAfter: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, titleAfter: e.target.value }))}
               />
             </div>
           </div>
@@ -376,7 +520,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 required
               />
             </div>
@@ -385,7 +529,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="tel"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
                 required
               />
             </div>
@@ -397,7 +541,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="text"
                 value={formData.uid}
-                onChange={(e) => setFormData(prev => ({ ...prev, uid: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, uid: e.target.value }))}
                 required
               />
             </div>
@@ -405,7 +549,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <label>{t('admin.gender')} *</label>
               <select
                 value={formData.gender}
-                onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, gender: e.target.value }))}
                 required
               >
                 <option value="Male">{t('admin.male')}</option>
@@ -420,10 +564,42 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
               <input
                 type="checkbox"
                 checked={formData.active}
-                onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, active: e.target.checked }))}
               />
               {t('admin.active')}
             </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>{t('admin.country')}</label>
+              <select
+                value={formData.countryCode}
+                onChange={(e) => setFormData((prev) => ({ ...prev, countryCode: e.target.value }))}
+              >
+                {allowedCountryCodes.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>{t('admin.centersLabel')}</label>
+              <div className="roles-checkboxes">
+                {hospitals.length === 0 && <small>{t('admin.noCentersAvailable')}</small>}
+                {hospitals.map((hospital) => (
+                  <label key={hospital.id} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={(formData.hospitalIds ?? []).includes(hospital.id)}
+                      onChange={(e) => handleHospitalChange(hospital.id, e.target.checked)}
+                    />
+                    {hospital.name ?? `#${hospital.id}`}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="form-group">
@@ -451,214 +627,6 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({ employee, roles, 
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  );
-};
-
-interface AccessRulesModalProps {
-  employee: EmployeeListItem;
-  catalog: EndpointPermissionCatalogItem[];
-  onClose: () => void;
-  onSaved: () => void;
-  translateRoleName: (roleName: string) => string;
-  getPermissionLabel: (permissionKey: string, fallback?: string) => string;
-  getResourceTypeLabel: (resourceType?: string) => string;
-}
-
-interface EditableRuleState {
-  effect: '' | 'allow' | 'deny';
-  scopesText: string;
-  resourceType?: string;
-  hasPlaceholderScope?: boolean;
-}
-
-const AccessRulesModal: React.FC<AccessRulesModalProps> = ({ employee, catalog, onClose, onSaved, getPermissionLabel, getResourceTypeLabel }) => {
-  const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [rules, setRules] = useState<Record<string, EditableRuleState>>({});
-
-  const catalogByKey = useMemo(() => {
-    return new Map(catalog.map((item) => [item.permissionKey, item]));
-  }, [catalog]);
-
-  const renderedPermissionKeys = useMemo(() => {
-    const keys = catalog.map((item) => item.permissionKey);
-    Object.keys(rules).forEach((permissionKey) => {
-      if (!catalogByKey.has(permissionKey)) {
-        keys.push(permissionKey);
-      }
-    });
-
-    return keys;
-  }, [catalog, rules, catalogByKey]);
-
-  useEffect(() => {
-    const loadRules = async () => {
-      setLoading(true);
-      try {
-        const response = await apiClient.get<EmployeePermissionRulesResponse>(`/api/admin/access/employees/${employee.employeeId}/rules`);
-
-        const initialRules: Record<string, EditableRuleState> = {};
-        catalog.forEach((item) => {
-          initialRules[item.permissionKey] = {
-            effect: '',
-            scopesText: '',
-            resourceType: item.resourceType
-          };
-        });
-
-        response.rules.forEach((rule) => {
-          const positiveScopes = rule.scopes.filter((s) => s.resourceId > 0);
-          const hasPlaceholderScope = rule.scopes.some((s) => s.resourceId === 0);
-          const scopesText = positiveScopes.map((s) => s.resourceId).join(', ');
-          if (!initialRules[rule.permissionKey]) {
-            initialRules[rule.permissionKey] = {
-              effect: rule.effect,
-              scopesText,
-              resourceType: rule.scopes[0]?.resourceType,
-              hasPlaceholderScope
-            };
-          } else {
-            initialRules[rule.permissionKey].effect = rule.effect;
-            initialRules[rule.permissionKey].scopesText = scopesText;
-            initialRules[rule.permissionKey].resourceType = initialRules[rule.permissionKey].resourceType || rule.scopes[0]?.resourceType;
-            initialRules[rule.permissionKey].hasPlaceholderScope = hasPlaceholderScope;
-          }
-        });
-
-        setRules(initialRules);
-      } catch (err) {
-        console.error('Error loading access rules', err);
-        setError(t('admin.accessRules.loadFailed'));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadRules();
-  }, [catalog, employee.employeeId, t]);
-
-  const updateRule = (permissionKey: string, patch: Partial<EditableRuleState>) => {
-    setRules((prev) => ({
-      ...prev,
-      [permissionKey]: {
-        ...(prev[permissionKey] || { effect: '', scopesText: '' }),
-        ...patch
-      }
-    }));
-  };
-
-  const parseScopes = (scopesText: string, resourceType?: string, hasPlaceholderScope?: boolean) => {
-    if (!resourceType || !scopesText.trim()) {
-      return hasPlaceholderScope ? [{ resourceType: resourceType || 'Hospital', resourceId: 0 }] : [];
-    }
-
-    return scopesText
-      .split(',')
-      .map((item) => Number(item.trim()))
-      .filter((value) => Number.isInteger(value) && value > 0)
-      .map((resourceId) => ({ resourceType, resourceId }));
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-
-    try {
-      const compiledRules: PermissionRule[] = Object.entries(rules)
-        .filter(([, value]) => value.effect === 'allow' || value.effect === 'deny')
-        .map(([permissionKey, value]) => ({
-          permissionKey,
-          effect: value.effect as 'allow' | 'deny',
-          scopes: parseScopes(value.scopesText, value.resourceType, value.hasPlaceholderScope)
-        }));
-
-      const request: UpdateEmployeePermissionRulesRequest = { rules: compiledRules };
-      await apiClient.put(`/api/admin/access/employees/${employee.employeeId}/rules`, request);
-      onSaved();
-      onClose();
-    } catch (err) {
-      console.error('Error saving access rules', err);
-      setError(t('admin.accessRules.saveFailed'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content access-modal-content">
-        <div className="modal-header">
-          <h2>{t('admin.accessRules.title', { name: employee.fullName })}</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
-        </div>
-
-        {loading ? (
-          <div className="employee-form">{t('common.loading')}</div>
-        ) : (
-          <div className="employee-form">
-            {error && <div className="alert alert-error">{error}</div>}
-            <p className="access-rules-help">{t('admin.accessRules.employeeHelp')}</p>
-            <div className="access-rules-grid">
-              {renderedPermissionKeys.map((permissionKey) => {
-                const catalogItem = catalogByKey.get(permissionKey);
-                const value = rules[permissionKey] || {
-                  effect: '',
-                  scopesText: '',
-                  resourceType: catalogItem?.resourceType,
-                  hasPlaceholderScope: false
-                };
-                const displayName = getPermissionLabel(permissionKey, catalogItem?.displayName || permissionKey);
-                const endpoint = catalogItem?.endpoint || permissionKey;
-
-                return (
-                <div className="access-rule-row" key={permissionKey}>
-                  <div className="access-rule-key">
-                    <div className="permission-title">
-                      {displayName}
-                      <span className="permission-info" title={endpoint} aria-label={endpoint}>i</span>
-                    </div>
-                    {value.resourceType && (
-                      <div className="permission-scope-hint">
-                        {t('admin.accessRules.scope')}: {getResourceTypeLabel(value.resourceType)}
-                        {catalogItem?.resourceHint ? ` (${catalogItem.resourceHint})` : ''}
-                        {value.hasPlaceholderScope && !value.scopesText.trim() ? ` - ${t('admin.accessRules.assignIdsHint')}` : ''}
-                      </div>
-                    )}
-                  </div>
-                  <select
-                    value={value.effect}
-                    onChange={(e) => updateRule(permissionKey, { effect: e.target.value as '' | 'allow' | 'deny' })}
-                  >
-                    <option value="">{t('admin.accessRules.none')}</option>
-                    <option value="allow">{t('admin.accessRules.allow')}</option>
-                    <option value="deny">{t('admin.accessRules.deny')}</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder={value.resourceType ? `${getResourceTypeLabel(value.resourceType)} ID: 1,2,3` : t('admin.accessRules.none')}
-                    value={value.scopesText}
-                    onChange={(e) => updateRule(permissionKey, { scopesText: e.target.value })}
-                    disabled={!value.resourceType}
-                  />
-                </div>
-                );
-              })}
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>
-                {t('admin.accessRules.close')}
-              </button>
-              <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? t('admin.accessRules.savingRules') : t('admin.accessRules.saveRules')}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

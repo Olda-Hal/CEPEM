@@ -1,0 +1,49 @@
+.health-dashboard-page {
+  padding-bottom: 32px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 10px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+}
+
+.service-card h3 {
+  margin: 0;
+}
+
+.health-badge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.health-badge.healthy {
+  background: #dff5e3;
+  color: #1c6b31;
+}
+
+.health-badge.unreachable {
+  background: #fbe2e2;
+  color: #a32a2a;
+}
+
+.health-badge.loading {
+  background: rgb(128 128 128 / 15%);
+  color: var(--color-text-secondary, #666);
+}

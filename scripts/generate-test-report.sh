@@ -25,11 +25,9 @@ analyze_test_results() {
     local database_coverage=""
     local database_status="failed"
     
-    local ai_tests=0
     local ai_passed=0
     local ai_failed=0
     local ai_coverage=""
-    local ai_status="failed"
     
     local frontend_tests=0
     local frontend_passed=0
@@ -76,24 +74,7 @@ analyze_test_results() {
         fi
     done
     
-    # Analyze AI Service test-results.xml
-    if [ -f "./test-results/test-results.xml" ]; then
-        echo "Processing AI Service test-results.xml"
-        ai_tests=$(grep -o 'tests="[0-9]*"' "./test-results/test-results.xml" | grep -o '[0-9]*' || echo "0")
-        ai_failed=$(grep -o 'failures="[0-9]*"' "./test-results/test-results.xml" | grep -o '[0-9]*' || echo "0")
-        ai_errors=$(grep -o 'errors="[0-9]*"' "./test-results/test-results.xml" | grep -o '[0-9]*' || echo "0")
-        ai_passed=$((ai_tests - ai_failed - ai_errors))
-        if [ $ai_tests -gt 0 ]; then
-            ai_status="completed"
-        fi
-    fi
-    
-    # Look for AI Service coverage
-    if [ -f "./test-results/coverage.xml" ]; then
-        ai_coverage=$(grep -o 'line-rate="[0-9.]*"' "./test-results/coverage.xml" | head -1 | grep -o '[0-9.]*' || echo "0")
-        ai_coverage=$(echo "$ai_coverage * 100" | bc -l 2>/dev/null | xargs printf "%.1f" 2>/dev/null || echo "0.0")
-    fi
-    
+
     # Analyze Frontend junit.xml
     if [ -f "./test-results/junit.xml" ]; then
         echo "Processing Frontend junit.xml"
@@ -132,14 +113,6 @@ analyze_test_results() {
       "coverage": ${database_coverage:-0},
       "files": $(find ./test-results -name "*DatabaseAPI*" -o -name "*database*" | wc -l)
     },
-    "ai-service": {
-      "status": "$ai_status",
-      "tests": $ai_tests,
-      "passed": $ai_passed,
-      "failed": $ai_failed,
-      "coverage": ${ai_coverage:-0},
-      "files": $(find ./test-results -name "test-results.xml" -o -name "coverage.xml" | wc -l)
-    },
     "frontend": {
       "status": "$frontend_status",
       "tests": $frontend_tests,
@@ -150,10 +123,10 @@ analyze_test_results() {
     }
   },
   "summary": {
-    "total_tests": $((healthcare_tests + database_tests + ai_tests + frontend_tests)),
-    "total_passed": $((healthcare_passed + database_passed + ai_passed + frontend_passed)),
-    "total_failed": $((healthcare_failed + database_failed + ai_failed + frontend_failed)),
-    "services_completed": $(($([ "$healthcare_status" = "completed" ] && echo 1 || echo 0) + $([ "$database_status" = "completed" ] && echo 1 || echo 0) + $([ "$ai_status" = "completed" ] && echo 1 || echo 0) + $([ "$frontend_status" = "completed" ] && echo 1 || echo 0)))
+    "total_tests": $((healthcare_tests + database_tests + frontend_tests)),
+    "total_passed": $((healthcare_passed + database_passed + frontend_passed)),
+    "total_failed": $((healthcare_failed + database_failed + frontend_failed)),
+    "services_completed": $(( $([ "$healthcare_status" = "completed" ] && echo 1 || echo 0) + $([ "$database_status" = "completed" ] && echo 1 || echo 0) + $([ "$frontend_status" = "completed" ] && echo 1 || echo 0) ))
   }
 }
 EOF
@@ -177,9 +150,6 @@ copy_test_files() {
         ln -sf ../coverage/lcov-report ./test-results/reports/frontend-coverage 2>/dev/null || true
     fi
     
-    if [ -d "./test-results/htmlcov" ]; then
-        ln -sf ../htmlcov ./test-results/reports/ai-service-coverage 2>/dev/null || true
-    fi
     
     echo "✅ Files copied"
 }
@@ -545,7 +515,6 @@ sleep 5
 # Parse results for each service
 parse_dotnet_results "HealthcareAPI" "/results/healthcare-api"
 parse_dotnet_results "DatabaseAPI" "/results/database-api"
-parse_python_results "AIService" "/results/ai-service/test-results.xml"
 parse_frontend_results "Frontend" "/results/frontend/junit.xml"
 
 # Overall summary
@@ -557,7 +526,7 @@ total_services=4
 failed_services=0
 
 # Check each service for failures
-for service in healthcare-api database-api ai-service frontend; do
+for service in healthcare-api database-api frontend; do
     if [ ! "$(find /results/$service -name '*.xml' -o -name '*.trx' 2>/dev/null)" ]; then
         ((failed_services++))
     fi

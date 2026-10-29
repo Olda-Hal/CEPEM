@@ -279,13 +279,15 @@ def main() -> int:
 	key_string = (
 		os.getenv("DOCUMENT_ENCRYPTION_KEY")
 		or env_values.get("DOCUMENT_ENCRYPTION_KEY")
-		or "3ecd03d810e78227081299f6540681f94e01e210ef56dc6b0491264e5860c349"
 	)
+	if not key_string:
+		raise SystemExit("DOCUMENT_ENCRYPTION_KEY is not set (env or .env file)")
 	iv_string = (
 		os.getenv("DOCUMENT_ENCRYPTION_IV")
 		or env_values.get("DOCUMENT_ENCRYPTION_IV")
-		or "DefaultIV12345678"
 	)
+	if not iv_string:
+		raise SystemExit("DOCUMENT_ENCRYPTION_IV is not set (env or .env file)")
 
 	source_dir, used_fallback = resolve_source_dir(args.source_dir, env_values, project_root)
 	output_dir = Path(args.output_dir).expanduser().resolve()

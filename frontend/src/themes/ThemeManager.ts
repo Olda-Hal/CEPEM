@@ -1,4 +1,13 @@
-export type Theme = 'aurora' | 'nebula-blue' | 'emerald-dawn' | 'mystic-violet' | 'obsidian' | 'cyber-azure' | 'forest-shadow' | 'cosmic-purple' | 'crimson-night';
+export type Theme =
+  | 'aurora'
+  | 'nebula-blue'
+  | 'emerald-dawn'
+  | 'mystic-violet'
+  | 'obsidian'
+  | 'cyber-azure'
+  | 'forest-shadow'
+  | 'cosmic-purple'
+  | 'crimson-night';
 
 export interface ThemeInfo {
   id: Theme;
@@ -8,17 +17,24 @@ export interface ThemeInfo {
 
 export const availableThemes: ThemeInfo[] = [
   { id: 'aurora', category: 'light', translationKey: 'themes.aurora' },
-  { id: 'nebula-blue', category: 'light', translationKey: 'themes.nebulaBlue' }, 
+  { id: 'nebula-blue', category: 'light', translationKey: 'themes.nebulaBlue' },
   { id: 'emerald-dawn', category: 'light', translationKey: 'themes.emeraldDawn' },
   { id: 'mystic-violet', category: 'light', translationKey: 'themes.mysticViolet' },
   { id: 'obsidian', category: 'dark', translationKey: 'themes.obsidian' },
   { id: 'cyber-azure', category: 'dark', translationKey: 'themes.cyberAzure' },
-  { id: 'forest-shadow', category: 'dark', translationKey: 'themes.forestShadow' }, 
+  { id: 'forest-shadow', category: 'dark', translationKey: 'themes.forestShadow' },
   { id: 'cosmic-purple', category: 'dark', translationKey: 'themes.cosmicPurple' },
   { id: 'crimson-night', category: 'dark', translationKey: 'themes.crimsonNight' }
 ];
 
 const THEME_STORAGE_KEY = 'cepem-theme';
+
+/**
+ * The scheme picker is temporarily hidden and only "aurora" (Polární záře)
+ * is supported — the remaining schemes are visually broken. Re-enable by
+ * restoring the saved/system theme logic below.
+ */
+const PINNED_THEME: Theme = 'aurora';
 
 export class ThemeManager {
   private static instance: ThemeManager;
@@ -49,25 +65,27 @@ export class ThemeManager {
   }
 
   public getNextTheme(): Theme {
-    const currentIndex = availableThemes.findIndex(t => t.id === this.currentTheme);
+    const currentIndex = availableThemes.findIndex((t) => t.id === this.currentTheme);
     const nextIndex = (currentIndex + 1) % availableThemes.length;
-    return availableThemes[nextIndex].id;
+    return availableThemes[nextIndex]?.id ?? availableThemes[0]?.id ?? this.currentTheme;
   }
 
   public toggleThemeCategory(): void {
-    const currentThemeInfo = availableThemes.find(t => t.id === this.currentTheme);
+    const currentThemeInfo = availableThemes.find((t) => t.id === this.currentTheme);
     if (!currentThemeInfo) return;
 
     const oppositeCategory = currentThemeInfo.category === 'light' ? 'dark' : 'light';
-    const themesInCategory = availableThemes.filter(t => t.category === oppositeCategory);
-    
+    const themesInCategory = availableThemes.filter((t) => t.category === oppositeCategory);
+
     if (themesInCategory.length > 0) {
       // Try to find a similar theme in the opposite category
-      const similarTheme = themesInCategory.find(t => 
-        t.id.includes(currentThemeInfo.id.split('-')[1]) // Match color variant
-      ) || themesInCategory[0]; // Fallback to first theme in category
-      
-      this.setTheme(similarTheme.id);
+      const variant = currentThemeInfo.id.split('-')[1] ?? currentThemeInfo.id;
+      const similarTheme =
+        themesInCategory.find((t) => t.id.includes(variant)) || themesInCategory[0]; // Fallback to first theme in category
+
+      if (similarTheme) {
+        this.setTheme(similarTheme.id);
+      }
     }
   }
 
@@ -93,44 +111,25 @@ export class ThemeManager {
 
   private loadTheme(): void {
     try {
+      // Temporarily pinned: any previously saved alternative scheme is dropped.
       const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-      if (savedTheme && availableThemes.some(t => t.id === savedTheme)) {
-        this.currentTheme = savedTheme;
-        this.applyTheme(savedTheme);
+      if (savedTheme && savedTheme !== PINNED_THEME) {
+        localStorage.removeItem(THEME_STORAGE_KEY);
       }
     } catch (error) {
       console.warn('Failed to load theme preference:', error);
     }
+    this.currentTheme = PINNED_THEME;
+    this.applyTheme(PINNED_THEME);
   }
 
   private applySystemThemePreference(): void {
-    // Only apply system preference if no theme was saved
-    if (localStorage.getItem(THEME_STORAGE_KEY)) return;
-
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      this.setTheme('obsidian');
-    } else {
-      this.setTheme('aurora');
-    }
-
-    // Listen for system theme changes
-    if (window.matchMedia) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', (e) => {
-        // Only auto-switch if user hasn't manually selected a theme recently
-        const lastThemeChange = localStorage.getItem('cepem-theme-manual-change');
-        const now = Date.now();
-        const fiveMinutesAgo = now - (5 * 60 * 1000);
-        
-        if (!lastThemeChange || parseInt(lastThemeChange) < fiveMinutesAgo) {
-          this.setTheme(e.matches ? 'obsidian' : 'aurora');
-        }
-      });
-    }
+    // Temporarily pinned to the aurora scheme regardless of OS preference.
+    this.setTheme(PINNED_THEME);
   }
 
   private notifyListeners(theme: Theme): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(theme);
       } catch (error) {
@@ -166,5 +165,5 @@ export const getThemeUtils = () => ({
     themeManager.markManualThemeChange();
     themeManager.setTheme(themeManager.getNextTheme());
   },
-  availableThemes,
+  availableThemes
 });

@@ -12,24 +12,9 @@
   font-size: 0.9rem;
 }
 
-.auto-refresh-control input[type="checkbox"] {
+.auto-refresh-control input[type='checkbox'] {
   width: 1rem;
   height: 1rem;
-}
-
-.refresh-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.refresh-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
 }
 
 .test-dashboard-content {
@@ -56,8 +41,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .live-status-section {
@@ -97,7 +87,7 @@
 
 .test-summary-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
 }
@@ -143,7 +133,7 @@
 
 .service-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
@@ -179,8 +169,14 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .service-stats {
@@ -191,7 +187,7 @@
 
 .stat-row {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -237,7 +233,7 @@
 
 .details-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
 }
@@ -281,7 +277,7 @@
 
 .file-item {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
@@ -329,12 +325,11 @@
   color: var(--color-background);
   padding: 1.5rem;
   border-radius: 0.5rem;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
   font-size: 0.875rem;
   line-height: 1.6;
-  overflow-x: auto;
+  overflow: auto;
   max-height: 600px;
-  overflow-y: auto;
 }
 
 .coverage-content {
@@ -350,33 +345,33 @@
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .test-dashboard-header h1 {
     font-size: 2rem;
   }
-  
+
   .header-controls {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .services-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .details-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .file-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .file-meta {
     gap: 0.5rem;
   }

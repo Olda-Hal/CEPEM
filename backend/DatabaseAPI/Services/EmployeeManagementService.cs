@@ -7,10 +7,23 @@ namespace DatabaseAPI.Services
 {
     public interface IEmployeeManagementService
     {
-        Task<List<EmployeeListItem>> GetAllEmployeesAsync();
+        Task<List<EmployeeListItem>> GetAllEmployeesAsync(CancellationToken cancellationToken = default);
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
-        Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
-        Task<bool> DeactivateEmployeeAsync(int employeeId);
+        Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Deactivates the employee. Found=false when the employee doesn't
+        /// exist; ForbiddenMessage set when the actor's administrative scope
+        /// doesn't cover the target employee.
+        /// </summary>
+        Task<(bool Found, string? ForbiddenMessage)> DeactivateEmployeeAsync(int employeeId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reset an employee's password to a generated one-time value,
+        /// forcing a change on next login. Returns the plaintext once (or
+        /// null when the employee doesn't exist).
+        /// </summary>
+        Task<string?> ResetPasswordAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
     }
@@ -18,15 +31,25 @@ namespace DatabaseAPI.Services
     public class EmployeeManagementService : IEmployeeManagementService
     {
         private readonly DatabaseContext _context;
+        private readonly IEmployeeScopeService _employeeScopeService;
 
-        public EmployeeManagementService(DatabaseContext context)
+        public EmployeeManagementService(DatabaseContext context, IEmployeeScopeService employeeScopeService)
         {
             _context = context;
+            _employeeScopeService = employeeScopeService;
         }
 
-        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync()
+        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(CancellationToken cancellationToken = default)
         {
-            var employees = await _context.Employees
+            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+
+            var query = _context.Employees.AsQueryable();
+            if (visibleIds != null)
+            {
+                query = query.Where(e => visibleIds.Contains(e.Id));
+            }
+
+            var employees = await query
                 .Include(e => e.Person)
                     .ThenInclude(p => p.UserRoles)
                         .ThenInclude(ur => ur.Role)
@@ -62,11 +85,16 @@ namespace DatabaseAPI.Services
                     LastLoginAt = e.LastLoginAt,
                     PasswordExpiration = e.PasswordExpiration,
                     Roles = e.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList(),
-                    FullName = $"{e.Person.TitleBefore} {e.Person.FirstName} {e.Person.LastName} {e.Person.TitleAfter}".Trim()
+                    FullName = $"{e.Person.TitleBefore} {e.Person.FirstName} {e.Person.LastName} {e.Person.TitleAfter}".Trim(),
+                    CountryCode = e.Person.CountryCode,
+                    HospitalIds = _context.HospitalEmployees
+                        .Where(he => he.EmployeeId == e.Id)
+                        .Select(he => he.HospitalId)
+                        .ToList()
                 })
                 .OrderBy(e => e.LastName)
                 .ThenBy(e => e.FirstName)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             return employees;
         }
@@ -110,14 +138,19 @@ namespace DatabaseAPI.Services
                     LastLoginAt = e.LastLoginAt,
                     PasswordExpiration = e.PasswordExpiration,
                     Roles = e.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList(),
-                    FullName = $"{e.Person.TitleBefore} {e.Person.FirstName} {e.Person.LastName} {e.Person.TitleAfter}".Trim()
+                    FullName = $"{e.Person.TitleBefore} {e.Person.FirstName} {e.Person.LastName} {e.Person.TitleAfter}".Trim(),
+                    CountryCode = e.Person.CountryCode,
+                    HospitalIds = _context.HospitalEmployees
+                        .Where(he => he.EmployeeId == e.Id)
+                        .Select(he => he.HospitalId)
+                        .ToList()
                 })
                 .FirstOrDefaultAsync();
 
             return employee;
         }
 
-        public async Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request)
+        public async Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request, CancellationToken cancellationToken = default)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -142,6 +175,41 @@ namespace DatabaseAPI.Services
                         Success = false,
                         Message = "Employee not found"
                     };
+                }
+
+                // Administrative scope enforcement (Center/Country Admin)
+                var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+                if (visibleIds != null && !visibleIds.Contains(employeeId))
+                {
+                    return new UpdateEmployeeResponse
+                    {
+                        Success = false,
+                        Message = "Nemáte oprávnění upravovat tohoto zaměstnance"
+                    };
+                }
+
+                var roleError = await _employeeScopeService.ValidateAssignableRolesAsync(request.RoleIds, cancellationToken);
+                if (roleError != null)
+                {
+                    return new UpdateEmployeeResponse { Success = false, Message = roleError };
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.CountryCode))
+                {
+                    var countryError = await _employeeScopeService.ValidateCountryAssignmentAsync(request.CountryCode, cancellationToken);
+                    if (countryError != null)
+                    {
+                        return new UpdateEmployeeResponse { Success = false, Message = countryError };
+                    }
+                }
+
+                if (request.HospitalIds != null)
+                {
+                    var hospitalError = await _employeeScopeService.ValidateHospitalAssignmentAsync(request.HospitalIds, cancellationToken);
+                    if (hospitalError != null)
+                    {
+                        return new UpdateEmployeeResponse { Success = false, Message = hospitalError };
+                    }
                 }
 
                 // Check if UID already exists for other persons
@@ -177,6 +245,35 @@ namespace DatabaseAPI.Services
                 employee.Person.TitleBefore = request.TitleBefore;
                 employee.Person.TitleAfter = request.TitleAfter;
                 employee.Person.Active = request.Active;
+
+                // Přiřazení země a center
+                if (!string.IsNullOrWhiteSpace(request.CountryCode))
+                {
+                    employee.Person.CountryCode = DatabaseAPI.Utils.CountryScopeMapper.NormalizeCode(request.CountryCode);
+                }
+
+                if (request.HospitalIds != null)
+                {
+                    var existingAssignments = await _context.HospitalEmployees
+                        .Where(he => he.EmployeeId == employeeId)
+                        .ToListAsync(cancellationToken);
+                    _context.HospitalEmployees.RemoveRange(
+                        existingAssignments.Where(he => !request.HospitalIds.Contains(he.HospitalId)));
+
+                    var existingHospitalIds = existingAssignments.Select(he => he.HospitalId).ToHashSet();
+                    foreach (var hospitalId in request.HospitalIds.Distinct())
+                    {
+                        if (!existingHospitalIds.Contains(hospitalId) &&
+                            await _context.Hospitals.AnyAsync(h => h.Id == hospitalId, cancellationToken))
+                        {
+                            _context.HospitalEmployees.Add(new HospitalEmployee
+                            {
+                                EmployeeId = employeeId,
+                                HospitalId = hospitalId
+                            });
+                        }
+                    }
+                }
 
                 // Update Contact email and phone via ContactToObjects
                 var personContact = employee.Person.ContactToObjects.FirstOrDefault()
@@ -257,27 +354,57 @@ namespace DatabaseAPI.Services
             }
         }
 
-        public async Task<bool> DeactivateEmployeeAsync(int employeeId)
+        public async Task<string?> ResetPasswordAsync(int employeeId)
         {
-            try
-            {
-                var employee = await _context.Employees
-                    .Include(e => e.Person)
-                    .FirstOrDefaultAsync(e => e.Id == employeeId);
+            var employee = await _context.Employees
+                .Include(e => e.Person)
+                .FirstOrDefaultAsync(e => e.Id == employeeId);
 
-                if (employee == null)
+            if (employee == null)
+                return null;
+
+            // One-time password: random 12 mixed chars, stored only as a hash,
+            // and the user is forced to change it on first login.
+            const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+            var temporaryPassword = string.Create(12, alphabet, (chars, source) =>
+            {
+                for (var i = 0; i < chars.Length; i++)
                 {
-                    return false;
+                    chars[i] = source[System.Security.Cryptography.RandomNumberGenerator.GetInt32(source.Length)];
                 }
+            });
 
-                employee.Person.Active = false;
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
+            var salt = BCrypt.Net.BCrypt.GenerateSalt();
+            employee.PasswordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword, salt);
+            employee.Salt = salt;
+            employee.PasswordExpiration = DateTime.UtcNow.AddDays(-1);
+            employee.FailedLoginAttempts = 0;
+            employee.LockedUntil = null;
+
+            await _context.SaveChangesAsync();
+            return temporaryPassword;
+        }
+
+        public async Task<(bool Found, string? ForbiddenMessage)> DeactivateEmployeeAsync(int employeeId, CancellationToken cancellationToken = default)
+        {
+            var employee = await _context.Employees
+                .Include(e => e.Person)
+                .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+            if (employee == null)
             {
-                return false;
+                return (false, null);
             }
+
+            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+            if (visibleIds != null && !visibleIds.Contains(employeeId))
+            {
+                return (true, "Nemáte oprávnění deaktivovat tohoto zaměstnance");
+            }
+
+            employee.Person.Active = false;
+            await _context.SaveChangesAsync(cancellationToken);
+            return (true, null);
         }
 
         public async Task<List<RoleDto>> GetAllRolesAsync()

@@ -44,6 +44,8 @@ export interface EmployeeListItem {
   passwordExpiration: string;
   roles: string[];
   fullName: string;
+  countryCode: string;
+  hospitalIds: number[];
 }
 
 export interface UpdateEmployeeRequest {
@@ -57,6 +59,8 @@ export interface UpdateEmployeeRequest {
   titleAfter?: string;
   active: boolean;
   roleIds: number[];
+  countryCode?: string;
+  hospitalIds?: number[];
 }
 
 export interface UpdateEmployeeResponse {
@@ -70,49 +74,29 @@ export interface Role {
   name: string;
 }
 
-export interface PermissionRuleScope {
-  resourceType: string;
-  resourceId: number;
-}
-
-export interface PermissionRule {
-  permissionKey: string;
-  effect: 'allow' | 'deny';
-  scopes: PermissionRuleScope[];
-}
-
-export interface EmployeePermissionRulesResponse {
-  employeeId: number;
-  rules: PermissionRule[];
-  accessControlVersion: number;
-}
-
-export interface UpdateEmployeePermissionRulesRequest {
-  rules: PermissionRule[];
-}
-
-export interface RolePermissionRulesResponse {
-  roleId: number;
-  roleName: string;
-  rules: PermissionRule[];
-}
-
-export interface UpdateRolePermissionRulesRequest {
-  rules: PermissionRule[];
-}
-
 export interface CreateRoleRequest {
   name: string;
 }
 
-export interface EndpointPermissionCatalogItem {
-  permissionKey: string;
-  displayName?: string;
-  endpoint?: string;
-  method: string;
-  routeTemplate: string;
-  resourceType?: string;
-  resourceHint?: string;
+export interface Permission {
+  id: number;
+  code: string;
+  description?: string | null;
+}
+
+export interface EmployeePermission {
+  id: number;
+  userId: number;
+  permissionId: number;
+  effect: string;
+  scopeType?: string | null;
+  scopeId?: number | null;
+}
+
+export interface RolePermissionAssignment {
+  permissionId: number;
+  code: string;
+  effect: string;
 }
 
 export interface CreateEmployeeRequest {
@@ -126,6 +110,9 @@ export interface CreateEmployeeRequest {
   titleBefore?: string;
   titleAfter?: string;
   active: boolean;
+  roleIds?: number[];
+  countryCode?: string;
+  hospitalIds?: number[];
 }
 
 export interface CreateEmployeeResponse {
@@ -179,6 +166,9 @@ export interface Patient {
   alive: boolean;
   fullName: string;
   photoUrl?: string;
+  isDeleted?: boolean;
+  createdByEmployeeId?: number | null;
+  canDelete?: boolean;
 }
 
 export interface PatientSearchResponse {
@@ -684,9 +674,53 @@ export interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<{ success: boolean; error?: string }>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => Promise<{ success: boolean; error?: string }>;
   createEmployee: (employeeData: CreateEmployeeRequest) => Promise<CreateEmployeeResponse | null>;
   isAuthenticated: boolean;
   loading: boolean;
   requiresPasswordChange: boolean;
+}
+
+/** Resolved administrative scope of the signed-in employee (gateway /api/admin/employees/scope). */
+export interface AdminScope {
+  employeeId: number | null;
+  roles: string[];
+  hasFullAccess: boolean;
+  isCountryAdmin: boolean;
+  isCenterAdmin: boolean;
+  hospitalIds: number[];
+  administeredCountryScopeIds: number[];
+  assignableRoleNames: string[];
+}
+
+/** Visit ("návštěva") of a patient. */
+export interface VisitListItem {
+  id: number;
+  visitDate: string;
+  note?: string | null;
+  documentCount: number;
+  hasIntakeForm: boolean;
+  sourceEventId?: number | null;
+}
+
+export interface VisitDocumentItem {
+  documentId: number;
+  fileName: string;
+  originalFileName: string;
+  uploadedAt: string;
+  fileSize: number;
+}
+
+export interface VisitDetail {
+  id: number;
+  patientId: number;
+  visitDate: string;
+  note?: string | null;
+  sourceEventId?: number | null;
+  documents: VisitDocumentItem[];
+  intakeForm?: string | null;
 }

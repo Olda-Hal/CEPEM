@@ -74,7 +74,7 @@ public class ExaminationDocumentsController : ControllerBase
     {
         try
         {
-            var result = await _documentService.GetDocumentDataAsync(documentId);
+            var result = await _documentService.GetDocumentDataAsync(documentId, examinationId);
             if (result == null)
                 return NotFound(new { Error = "Document not found" });
 
@@ -92,7 +92,7 @@ public class ExaminationDocumentsController : ControllerBase
     {
         try
         {
-            var deleted = await _documentService.DeleteDocumentAsync(documentId);
+            var deleted = await _documentService.DeleteDocumentAsync(documentId, examinationId);
             if (!deleted)
                 return NotFound(new { Error = "Document not found" });
 

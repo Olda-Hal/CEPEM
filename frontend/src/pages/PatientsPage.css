@@ -5,26 +5,6 @@
   margin: 0;
 }
 
-.add-patient-button {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.add-patient-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
 .search-section {
   padding: 20px 30px;
   background-color: var(--color-background-page);
@@ -71,6 +51,37 @@
   color: var(--color-primary);
 }
 
+.show-deleted-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  background: var(--color-surface, #fff);
+  color: var(--color-text-secondary, #718096);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.show-deleted-toggle:hover {
+  border-color: var(--color-primary, #667eea);
+  color: var(--color-primary, #667eea);
+}
+
+.show-deleted-toggle.active {
+  background: var(--color-primary, #667eea);
+  border-color: var(--color-primary, #667eea);
+  color: #fff;
+}
+
 .patients-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -111,8 +122,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .patients-stats {
@@ -221,7 +237,7 @@
 }
 
 .patient-id {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary);
   color: white;
   padding: 4px 8px;
   border-radius: 12px;
@@ -277,15 +293,15 @@
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary);
   color: white;
 }
 
 .action-button.primary:hover {
-  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary-hover);
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 15%);
 }
 
 .action-button.secondary {
@@ -297,6 +313,29 @@
 .action-button.secondary:hover {
   background: var(--color-background-tertiary);
   border-color: var(--color-border-focus);
+}
+
+.action-button.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  background: transparent;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.action-button.icon.danger {
+  color: var(--color-error, #e53e3e);
+  border: 1px solid transparent;
+}
+
+.action-button.icon.danger:hover {
+  color: var(--color-error-dark, var(--color-error, #c53030));
+  background: var(--color-error-light, rgb(229 62 62 / 10%));
+  border-color: var(--color-error, #e53e3e);
+  transform: none;
+  box-shadow: none;
 }
 
 .loading-more {
@@ -346,7 +385,7 @@
   font-size: 1.1rem;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .patients-container {
     padding: 10px;
   }
@@ -363,11 +402,6 @@
 
   .patients-header h1 {
     font-size: 2rem;
-  }
-
-  .add-patient-button {
-    width: 100%;
-    text-align: center;
   }
 
   .patients-grid {
@@ -408,5 +442,44 @@
 
   .detail-value {
     text-align: left;
+  }
+}
+
+/* Skeleton loading placeholders (rendered while the first page loads) */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  margin: 6px 12px;
+  background: var(--color-surface-muted, rgb(128 128 128 / 25%));
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 20px;
+  margin: 16px 12px 10px;
+}
+
+.skeleton-short {
+  width: 55%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
   }
 }

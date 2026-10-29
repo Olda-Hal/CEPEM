@@ -31,13 +31,9 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             IQueryable<ReservationSlot> query = _context.ReservationSlots
+                .AsNoTracking()
                 .Where(slot => slot.HospitalId == hospitalId)
-                .Include(slot => slot.Hospital)
-                .Include(slot => slot.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(slot => slot.Person)
-                .Include(slot => slot.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation);
+                .IncludeSlotDetails();
 
             if (from.HasValue)
                 query = query.Where(slot => slot.StartDateTime >= from.Value);
@@ -46,7 +42,10 @@ public class ReservationSlotsController : ControllerBase
                 query = query.Where(slot => slot.EndDateTime <= to.Value);
 
             if (!string.IsNullOrWhiteSpace(status))
-                query = query.Where(slot => slot.Status == status);
+            {
+                var statusFilter = ParseSlotStatus(status);
+                query = query.Where(slot => slot.Status == statusFilter);
+            }
 
             var slots = await query
                 .OrderBy(slot => slot.StartDateTime)
@@ -80,6 +79,13 @@ public class ReservationSlotsController : ControllerBase
             var createdSlots = new List<ReservationSlot>();
             var pendingSlots = new List<(DateTime StartDateTime, DateTime EndDateTime)>();
 
+            // Serializable transaction: the overlap checks below use plain
+            // SELECTs, which only lock under SERIALIZABLE isolation. Without
+            // this, two concurrent requests could both pass the check and
+            // double-book the same time range.
+            await using var transaction = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
             foreach (var slotRequest in request.Slots)
             {
                 if (slotRequest.StartDateTime >= slotRequest.EndDateTime)
@@ -87,7 +93,7 @@ public class ReservationSlotsController : ControllerBase
 
                 var conflict = await _context.ReservationSlots.AnyAsync(slot =>
                     slot.HospitalId == request.HospitalId &&
-                    slot.Status != "UNAVAILABLE" &&
+                    slot.Status != SlotStatus.Unavailable &&
                     slot.StartDateTime < slotRequest.EndDateTime &&
                     slot.EndDateTime > slotRequest.StartDateTime);
 
@@ -106,7 +112,7 @@ public class ReservationSlotsController : ControllerBase
                     PublicNote = slotRequest.PublicNote,
                     InternalNote = slotRequest.InternalNote,
                     CountryCode = actorCountryCode,
-                    Status = string.IsNullOrWhiteSpace(slotRequest.Status) ? "AVAILABLE" : slotRequest.Status.Trim().ToUpperInvariant()
+                    Status = ParseSlotStatus(slotRequest.Status)
                 };
 
                 _context.ReservationSlots.Add(slot);
@@ -115,8 +121,15 @@ public class ReservationSlotsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return Ok(createdSlots.Select(MapToDto).ToList());
+        }
+        catch (MySqlConnector.MySqlException ex) when (ex.ErrorCode == MySqlConnector.MySqlErrorCode.LockDeadlock || ex.ErrorCode == MySqlConnector.MySqlErrorCode.LockWaitTimeout)
+        {
+            // Concurrent slot creation - the other transaction won the race
+            _logger.LogWarning("Slot creation conflict (deadlock/timeout): {Message}", ex.Message);
+            return Conflict(new { Error = "Time slot overlaps with an existing slot" });
         }
         catch (Exception ex)
         {
@@ -187,12 +200,7 @@ public class ReservationSlotsController : ControllerBase
             var copiedSlotIds = copiedSlots.Select(slot => slot.Id).ToList();
             var createdSlots = await _context.ReservationSlots
                 .Where(slot => copiedSlotIds.Contains(slot.Id))
-                .Include(slot => slot.Hospital)
-                .Include(slot => slot.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(slot => slot.Person)
-                .Include(slot => slot.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .OrderBy(slot => slot.StartDateTime)
                 .ToListAsync();
 
@@ -211,12 +219,7 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
@@ -235,7 +238,7 @@ public class ReservationSlotsController : ControllerBase
                 slot.InternalNote = string.IsNullOrWhiteSpace(request.InternalNote) ? null : request.InternalNote.Trim();
 
             if (!string.IsNullOrWhiteSpace(request.Status))
-                slot.Status = request.Status.Trim().ToUpperInvariant();
+                slot.Status = ParseSlotStatus(request.Status);
 
             slot.UpdatedAt = DateTime.UtcNow;
 
@@ -256,19 +259,14 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
-            if (!string.Equals(slot.Status, "BLOCKED", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(slot.Status, "RESERVED", StringComparison.OrdinalIgnoreCase))
+            if (slot.Status != SlotStatus.Blocked &&
+                slot.Status != SlotStatus.Reserved)
             {
                 return BadRequest("Only blocked or reserved slots can be released");
             }
@@ -276,7 +274,7 @@ public class ReservationSlotsController : ControllerBase
             slot.DoctorId = null;
             slot.PersonId = null;
             slot.ExaminationTypeId = null;
-            slot.Status = "AVAILABLE";
+            slot.Status = SlotStatus.Available;
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -318,18 +316,13 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
-            if (!string.Equals(slot.Status, "AVAILABLE", StringComparison.OrdinalIgnoreCase))
+            if (slot.Status != SlotStatus.Available)
                 return BadRequest("Only available slots can be blocked");
 
             var personId = request.PersonId;
@@ -409,7 +402,7 @@ public class ReservationSlotsController : ControllerBase
 
             slot.PersonId = personId.Value;
             slot.ExaminationTypeId = request.ExaminationTypeId;
-            slot.Status = "BLOCKED";
+            slot.Status = SlotStatus.Blocked;
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -429,18 +422,13 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
-            if (!string.Equals(slot.Status, "BLOCKED", StringComparison.OrdinalIgnoreCase))
+            if (slot.Status != SlotStatus.Blocked)
                 return BadRequest("Only blocked slots can be confirmed");
 
             var doctorExists = await _context.Employees.AnyAsync(e => e.Id == request.DoctorId);
@@ -448,7 +436,7 @@ public class ReservationSlotsController : ControllerBase
                 return NotFound("Doctor not found");
 
             slot.DoctorId = request.DoctorId;
-            slot.Status = "RESERVED";
+            slot.Status = SlotStatus.Reserved;
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -468,24 +456,19 @@ public class ReservationSlotsController : ControllerBase
         try
         {
             var slot = await _context.ReservationSlots
-                .Include(s => s.Hospital)
-                .Include(s => s.Doctor)
-                .ThenInclude(doctor => doctor!.Person)
-                .Include(s => s.Person)
-                .Include(s => s.ExaminationType)
-                .ThenInclude(type => type!.NameTranslation)
+                .IncludeSlotDetails()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
-            if (!string.Equals(slot.Status, "BLOCKED", StringComparison.OrdinalIgnoreCase))
+            if (slot.Status != SlotStatus.Blocked)
                 return BadRequest("Only blocked slots can be rejected");
 
             slot.DoctorId = null;
             slot.PersonId = null;
             slot.ExaminationTypeId = null;
-            slot.Status = "AVAILABLE";
+            slot.Status = SlotStatus.Available;
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -520,27 +503,39 @@ public class ReservationSlotsController : ControllerBase
             EndDateTime = slot.EndDateTime,
             PublicNote = slot.PublicNote,
             InternalNote = slot.InternalNote,
-            Status = slot.Status,
+            Status = slot.Status.ToString(),
             CreatedAt = slot.CreatedAt,
             UpdatedAt = slot.UpdatedAt
         };
     }
 
-    private static string ResolveCopiedStatus(string sourceStatus, bool preserveStatus)
+    private static SlotStatus ResolveCopiedStatus(SlotStatus sourceStatus, bool preserveStatus)
     {
-        if (preserveStatus)
+        if (preserveStatus && sourceStatus != SlotStatus.Blocked && sourceStatus != SlotStatus.Reserved)
         {
-            if (string.Equals(sourceStatus, "AVAILABLE", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(sourceStatus, "UNAVAILABLE", StringComparison.OrdinalIgnoreCase))
-            {
-                return sourceStatus.ToUpperInvariant();
-            }
+            return sourceStatus;
         }
 
-        if (string.Equals(sourceStatus, "UNAVAILABLE", StringComparison.OrdinalIgnoreCase))
-            return "UNAVAILABLE";
+        if (sourceStatus == SlotStatus.Unavailable)
+        {
+            return SlotStatus.Unavailable;
+        }
 
-        return "AVAILABLE";
+        return SlotStatus.Available;
+    }
+
+    /// <summary>
+    /// Parses a client-supplied status string; unknown values fall back to Available.
+    /// </summary>
+    private static SlotStatus ParseSlotStatus(string? status)
+    {
+        return status?.Trim().ToUpperInvariant() switch
+        {
+            "BLOCKED" => SlotStatus.Blocked,
+            "RESERVED" => SlotStatus.Reserved,
+            "UNAVAILABLE" => SlotStatus.Unavailable,
+            _ => SlotStatus.Available
+        };
     }
 }
 
@@ -613,4 +608,22 @@ public class ReservationSlotDto
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+public static class ReservationSlotQueryExtensions
+{
+    /// <summary>
+    /// The standard Include set for reservation slots: hospital, doctor (with
+    /// person), person and examination type (with translation).
+    /// </summary>
+    public static IQueryable<ReservationSlot> IncludeSlotDetails(this IQueryable<ReservationSlot> query)
+    {
+        return query
+            .Include(slot => slot.Hospital)
+            .Include(slot => slot.Doctor)
+            .ThenInclude(doctor => doctor!.Person)
+            .Include(slot => slot.Person)
+            .Include(slot => slot.ExaminationType)
+            .ThenInclude(type => type!.NameTranslation);
+    }
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
 import { ExaminationSearchResponse, ExaminationListItem, Hospital } from '../types';
 import './ExaminationsPage.css';
@@ -53,7 +52,7 @@ export const ExaminationsPage: React.FC = () => {
   const loadHospitals = async () => {
     try {
       const data = await apiClient.get<Hospital[]>('/api/hospitals');
-      setHospitals(data.filter(hospital => hospital.active !== false));
+      setHospitals(data.filter((hospital) => hospital.active !== false));
     } catch (loadError) {
       console.error('Error loading hospitals for examinations page:', loadError);
     }
@@ -67,9 +66,15 @@ export const ExaminationsPage: React.FC = () => {
 
     if (selectedFilters.search.trim()) query.set('search', selectedFilters.search.trim());
     if (selectedFilters.hospitalId) query.set('hospitalId', selectedFilters.hospitalId);
-    if (selectedFilters.hospitalCountryScopeId) query.set('hospitalCountryScopeId', selectedFilters.hospitalCountryScopeId);
-    if (selectedFilters.patientCountryCode.trim()) query.set('patientCountryCode', selectedFilters.patientCountryCode.trim().toUpperCase());
-    if (selectedFilters.examinationCountryCode.trim()) query.set('examinationCountryCode', selectedFilters.examinationCountryCode.trim().toUpperCase());
+    if (selectedFilters.hospitalCountryScopeId)
+      query.set('hospitalCountryScopeId', selectedFilters.hospitalCountryScopeId);
+    if (selectedFilters.patientCountryCode.trim())
+      query.set('patientCountryCode', selectedFilters.patientCountryCode.trim().toUpperCase());
+    if (selectedFilters.examinationCountryCode.trim())
+      query.set(
+        'examinationCountryCode',
+        selectedFilters.examinationCountryCode.trim().toUpperCase()
+      );
     if (selectedFilters.from) query.set('from', new Date(selectedFilters.from).toISOString());
     if (selectedFilters.to) query.set('to', new Date(selectedFilters.to).toISOString());
 
@@ -136,7 +141,7 @@ export const ExaminationsPage: React.FC = () => {
 
   return (
     <div className="examinations-container">
-      <AppHeader sectionTitle={t('examinations.title')} />
+      <h1 className="page-title">{t('examinations.title')}</h1>
 
       <div className="examinations-content">
         <div className="examinations-filters">
@@ -146,16 +151,18 @@ export const ExaminationsPage: React.FC = () => {
               className="filter-input"
               placeholder={t('examinations.filters.searchPlaceholder')}
               value={filters.search}
-              onChange={(event) => setFilters(prev => ({ ...prev, search: event.target.value }))}
+              onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
             />
 
             <select
               className="filter-input"
               value={filters.hospitalId}
-              onChange={(event) => setFilters(prev => ({ ...prev, hospitalId: event.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, hospitalId: event.target.value }))
+              }
             >
               <option value="">{t('examinations.filters.allCenters')}</option>
-              {hospitals.map(hospital => (
+              {hospitals.map((hospital) => (
                 <option key={hospital.id} value={hospital.id}>
                   {hospital.name || `${t('examinations.centerFallback')} #${hospital.id}`}
                 </option>
@@ -167,7 +174,9 @@ export const ExaminationsPage: React.FC = () => {
               className="filter-input"
               placeholder={t('examinations.filters.hospitalCountryScopeId')}
               value={filters.hospitalCountryScopeId}
-              onChange={(event) => setFilters(prev => ({ ...prev, hospitalCountryScopeId: event.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, hospitalCountryScopeId: event.target.value }))
+              }
             />
           </div>
 
@@ -178,7 +187,9 @@ export const ExaminationsPage: React.FC = () => {
               className="filter-input"
               placeholder={t('examinations.filters.patientCountryCode')}
               value={filters.patientCountryCode}
-              onChange={(event) => setFilters(prev => ({ ...prev, patientCountryCode: event.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, patientCountryCode: event.target.value }))
+              }
             />
             <input
               type="text"
@@ -186,19 +197,21 @@ export const ExaminationsPage: React.FC = () => {
               className="filter-input"
               placeholder={t('examinations.filters.examinationCountryCode')}
               value={filters.examinationCountryCode}
-              onChange={(event) => setFilters(prev => ({ ...prev, examinationCountryCode: event.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, examinationCountryCode: event.target.value }))
+              }
             />
             <input
               type="datetime-local"
               className="filter-input"
               value={filters.from}
-              onChange={(event) => setFilters(prev => ({ ...prev, from: event.target.value }))}
+              onChange={(event) => setFilters((prev) => ({ ...prev, from: event.target.value }))}
             />
             <input
               type="datetime-local"
               className="filter-input"
               value={filters.to}
-              onChange={(event) => setFilters(prev => ({ ...prev, to: event.target.value }))}
+              onChange={(event) => setFilters((prev) => ({ ...prev, to: event.target.value }))}
             />
           </div>
 
@@ -209,7 +222,11 @@ export const ExaminationsPage: React.FC = () => {
             <button className="page-button" onClick={handleResetFilters}>
               {t('examinations.filters.reset')}
             </button>
-            <button className="page-button export" onClick={handleExport} disabled={exporting || loading}>
+            <button
+              className="page-button export"
+              onClick={handleExport}
+              disabled={exporting || loading}
+            >
               {exporting ? t('examinations.exporting') : t('examinations.export')}
             </button>
           </div>
@@ -243,10 +260,12 @@ export const ExaminationsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map(item => (
+                  {items.map((item) => (
                     <tr key={item.id}>
                       <td>{formatDateTime(item.happenedAt)}</td>
-                      <td>{item.patientFirstName} {item.patientLastName}</td>
+                      <td>
+                        {item.patientFirstName} {item.patientLastName}
+                      </td>
                       <td>{item.examinationTypeName}</td>
                       <td>{item.hospitalName || '-'}</td>
                       <td>{item.hospitalCountryScopeId ?? '-'}</td>
@@ -257,7 +276,7 @@ export const ExaminationsPage: React.FC = () => {
                           <strong>{item.documentCount}</strong>
                           {item.documents.length > 0 && (
                             <div className="doc-names">
-                              {item.documents.map(doc => (
+                              {item.documents.map((doc) => (
                                 <span key={doc.id}>{doc.fileName}</span>
                               ))}
                             </div>
@@ -270,15 +289,13 @@ export const ExaminationsPage: React.FC = () => {
               </table>
             </div>
 
-            {items.length === 0 && (
-              <div className="empty-state">{t('examinations.empty')}</div>
-            )}
+            {items.length === 0 && <div className="empty-state">{t('examinations.empty')}</div>}
 
             <div className="pagination">
               <button
                 className="page-button"
                 disabled={page <= 0}
-                onClick={() => setPage(prev => Math.max(0, prev - 1))}
+                onClick={() => setPage((prev) => Math.max(0, prev - 1))}
               >
                 {t('examinations.pagination.previous')}
               </button>
@@ -288,7 +305,7 @@ export const ExaminationsPage: React.FC = () => {
               <button
                 className="page-button"
                 disabled={page + 1 >= totalPages}
-                onClick={() => setPage(prev => prev + 1)}
+                onClick={() => setPage((prev) => prev + 1)}
               >
                 {t('examinations.pagination.next')}
               </button>

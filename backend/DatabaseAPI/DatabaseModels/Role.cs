@@ -9,5 +9,4 @@ public class Role
 
     // Navigation properties
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-    public ICollection<RolePermissionRule> PermissionRules { get; set; } = new List<RolePermissionRule>();
 }

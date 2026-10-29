@@ -1,0 +1,21 @@
+.monitoring-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 16px);
+  height: 100%;
+}
+
+.monitoring-page .page-heading-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monitoring-grafana-frame {
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 480px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface, #fff);
+}

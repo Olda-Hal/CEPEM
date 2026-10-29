@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Theme, themeManager, availableThemes } from './ThemeManager';
 
 export const useTheme = () => {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(
-    themeManager.getCurrentTheme()
-  );
+  const [currentTheme, setCurrentTheme] = useState<Theme>(themeManager.getCurrentTheme());
 
   useEffect(() => {
     const handleThemeChange = (theme: Theme) => {
@@ -12,7 +10,7 @@ export const useTheme = () => {
     };
 
     themeManager.addThemeListener(handleThemeChange);
-    
+
     return () => {
       themeManager.removeThemeListener(handleThemeChange);
     };
@@ -34,6 +32,6 @@ export const useTheme = () => {
       themeManager.markManualThemeChange();
       themeManager.setTheme(themeManager.getNextTheme());
     },
-    availableThemes,
+    availableThemes
   };
 };

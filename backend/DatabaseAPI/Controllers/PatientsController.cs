@@ -17,19 +17,28 @@ namespace DatabaseAPI.Controllers
         private readonly PatientPhotoService _photoService;
         private readonly PatientDocumentService _documentService;
         private readonly IActorCountryContextService _actorCountryContextService;
+        private readonly IEmployeeScopeService _employeeScopeService;
+        private readonly IUidService _uidService;
+        private readonly IPatientService _patientService;
 
         public PatientsController(
-            DatabaseContext context, 
+            DatabaseContext context,
             ILogger<PatientsController> logger,
             PatientPhotoService photoService,
             PatientDocumentService documentService,
-            IActorCountryContextService actorCountryContextService)
+            IActorCountryContextService actorCountryContextService,
+            IEmployeeScopeService employeeScopeService,
+            IUidService uidService,
+            IPatientService patientService)
         {
             _context = context;
             _logger = logger;
             _photoService = photoService;
             _documentService = documentService;
             _actorCountryContextService = actorCountryContextService;
+            _employeeScopeService = employeeScopeService;
+            _uidService = uidService;
+            _patientService = patientService;
         }
 
         [HttpGet("search")]
@@ -38,12 +47,22 @@ namespace DatabaseAPI.Controllers
             [FromQuery] int limit = 20,
             [FromQuery] string search = "",
             [FromQuery] string sortBy = "LastName",
-            [FromQuery] string sortOrder = "asc")
+            [FromQuery] string sortOrder = "asc",
+            [FromQuery] bool includeDeleted = false)
         {
             try
             {
+                // Hidden (soft-deleted) patients are visible only to Center Admin and above
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!actorScope.CanSeeDeletedPatients)
+                {
+                    includeDeleted = false;
+                }
+
                 var query = _context.Patients
+                .AsNoTracking()
                     .Include(p => p.Person)
+                    .Where(p => includeDeleted || !p.IsDeleted)
                     .AsQueryable();
 
                 // Apply search filter
@@ -81,30 +100,46 @@ namespace DatabaseAPI.Controllers
 
                 var totalCount = await query.CountAsync();
                 var skip = page * limit;
-                
-                var patients = await query
+
+                var rows = await query
                     .Skip(skip)
                     .Take(limit)
-                    .Select(p => new PatientDto
+                    .Select(p => new
                     {
-                        Id = p.Id,
-                        PersonId = p.PersonId,
-                        FirstName = p.Person.FirstName,
-                        LastName = p.Person.LastName,
-                        BirthDate = p.BirthDate,
-                        PhoneNumber = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                        Email = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                        InsuranceNumber = p.InsuranceNumber,
-                        Gender = p.Person.Gender,
-                        CreatedAt = p.Person.CreatedAt,
-                        UID = p.Person.UID,
-                    TitleBefore = p.Person.TitleBefore,
-                    TitleAfter = p.Person.TitleAfter,
-                    Alive = p.Alive,
-                    FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p)
-                })
-                    .ToListAsync();                var hasMore = totalCount > skip + limit;
+                        Dto = new PatientDto
+                        {
+                            Id = p.Id,
+                            PersonId = p.PersonId,
+                            FirstName = p.Person.FirstName,
+                            LastName = p.Person.LastName,
+                            BirthDate = p.BirthDate,
+                            PhoneNumber = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+                            Email = p.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
+                            InsuranceNumber = p.InsuranceNumber,
+                            Gender = p.Person.Gender,
+                            CreatedAt = p.Person.CreatedAt,
+                            UID = p.Person.UID,
+                            TitleBefore = p.Person.TitleBefore,
+                            TitleAfter = p.Person.TitleAfter,
+                            Alive = p.Alive,
+                            FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
+                            PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p),
+                            IsDeleted = p.IsDeleted,
+                            CreatedByEmployeeId = p.CreatedByEmployeeId
+                        },
+                        CreatorSupervisorId = p.CreatedByEmployee != null ? p.CreatedByEmployee.CreatedByEmployeeId : null
+                    })
+                    .ToListAsync();
+
+                var patients = rows
+                    .Select(r =>
+                    {
+                        r.Dto.CanDelete = CanDeletePatient(actorScope, r.Dto.CreatedByEmployeeId, r.CreatorSupervisorId);
+                        return r.Dto;
+                    })
+                    .ToList();
+
+                var hasMore = totalCount > skip + limit;
 
                 var response = new PatientSearchResponse
                 {
@@ -128,86 +163,8 @@ namespace DatabaseAPI.Controllers
             try
             {
                 var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
-                var uid = request.Uid;
-                if (string.IsNullOrWhiteSpace(uid) || !int.TryParse(uid, out _))
-                {
-                    var existingUids = await _context.Persons
-                        .Select(p => p.UID)
-                        .Where(existingUid => !string.IsNullOrWhiteSpace(existingUid))
-                        .ToListAsync();
 
-                    var numericUids = existingUids
-                        .Where(existingUid => int.TryParse(existingUid, out _))
-                        .Select(int.Parse)
-                        .OrderBy(existingUid => existingUid)
-                        .ToList();
-
-                    var nextUid = 1;
-                    foreach (var existingUid in numericUids)
-                    {
-                        if (existingUid == nextUid)
-                        {
-                            nextUid++;
-                        }
-                        else if (existingUid > nextUid)
-                        {
-                            break;
-                        }
-                    }
-
-                    uid = nextUid.ToString();
-                }
-
-                // First create the Person
-                var person = new Person
-                {
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Gender = request.Gender,
-                    UID = uid,
-                    TitleBefore = request.TitleBefore,
-                    TitleAfter = request.TitleAfter,
-                    CountryCode = actorCountryCode,
-                    CreatedAt = DateTime.UtcNow,
-                    Active = true
-                };
-
-                _context.Persons.Add(person);
-                await _context.SaveChangesAsync();
-
-                // Create Contact with email and phone if provided
-                if (!string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.PhoneNumber))
-                {
-                    var contact = new Contact();
-                    _context.Contacts.Add(contact);
-                    await _context.SaveChangesAsync();
-
-                    if (!string.IsNullOrEmpty(request.Email))
-                        _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = request.Email });
-                    if (!string.IsNullOrEmpty(request.PhoneNumber))
-                        _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = request.PhoneNumber });
-
-                    _context.ContactToObjects.Add(new ContactToObject
-                    {
-                        ContactId = contact.Id,
-                        ObjectId = person.Id,
-                        ObjectType = ContactObjectType.Person
-                    });
-                    await _context.SaveChangesAsync();
-                }
-
-                // Then create the Patient
-                var patient = new Patient
-                {
-                    PersonId = person.Id,
-                    BirthDate = request.BirthDate,
-                    InsuranceNumber = request.InsuranceNumber ?? 0,
-                    CountryCode = actorCountryCode,
-                    Alive = true
-                };
-
-                _context.Patients.Add(patient);
-                await _context.SaveChangesAsync();
+                var patient = await _patientService.CreatePatientAsync(request, actorCountryCode);
 
                 var createdPatient = await _context.Patients
                     .Include(p => p.Person)
@@ -220,32 +177,89 @@ namespace DatabaseAPI.Controllers
                                 .ThenInclude(c => c.PhoneNumbers)
                     .FirstAsync(p => p.Id == patient.Id);
 
-                var patientDto = new PatientDto
-                {
-                    Id = createdPatient.Id,
-                    PersonId = createdPatient.PersonId,
-                    FirstName = createdPatient.Person.FirstName,
-                    LastName = createdPatient.Person.LastName,
-                    BirthDate = createdPatient.BirthDate,
-                    PhoneNumber = createdPatient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                    Email = createdPatient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                    InsuranceNumber = createdPatient.InsuranceNumber,
-                    Gender = createdPatient.Person.Gender,
-                    CreatedAt = createdPatient.Person.CreatedAt,
-                    UID = createdPatient.Person.UID,
-                    TitleBefore = createdPatient.Person.TitleBefore,
-                    TitleAfter = createdPatient.Person.TitleAfter,
-                    Alive = createdPatient.Alive,
-                    FullName = $"{createdPatient.Person.LastName}, {createdPatient.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(createdPatient.Id, createdPatient)
-                };
+                var patientDto = MapToDto(patient);
 
                 return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patientDto);
+            }
+            catch (ScopeViolationException ex)
+            {
+                // Actor without an assigned center may not create patients
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating patient");
                 return StatusCode(500, "An error occurred while creating patient");
+            }
+        }
+
+        /// <summary>
+        /// Soft-delete: the patient stays in the table (events, form
+        /// submissions and documents must remain auditable) but is hidden
+        /// from listings and detail reads unless includeDeleted is used.
+        /// Only the creating employee, their direct supervisor or a
+        /// (Sys)Admin may hide a patient.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePatient(int id)
+        {
+            try
+            {
+                var patient = await _context.Patients
+                    .Include(p => p.CreatedByEmployee)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+                if (patient == null || patient.IsDeleted)
+                {
+                    return NotFound("Patient not found");
+                }
+
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!CanDeletePatient(actorScope, patient.CreatedByEmployeeId, patient.CreatedByEmployee?.CreatedByEmployeeId))
+                {
+                    return StatusCode(403, "Pacienta může skrýt pouze ten, kdo jej založil, nebo jeho nadřízený.");
+                }
+
+                patient.IsDeleted = true;
+                patient.DeletedAtUtc = DateTime.UtcNow;
+                patient.DeletedBy = _actorCountryContextService.GetActorEmployeeId()?.ToString();
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting patient {PatientId}", id);
+                throw new InvalidOperationException($"DELETE FAIL: {ex.GetType().Name}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>Undo of the soft-delete.</summary>
+        [HttpPost("{id}/restore")]
+        public async Task<IActionResult> RestorePatient(int id)
+        {
+            try
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == id);
+                if (patient == null)
+                {
+                    return NotFound("Patient not found");
+                }
+                if (!patient.IsDeleted)
+                {
+                    return BadRequest("Patient is not deleted");
+                }
+
+                patient.IsDeleted = false;
+                patient.DeletedAtUtc = null;
+                patient.DeletedBy = null;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Patient restored" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring patient {PatientId}", id);
+                return StatusCode(500, "An error occurred while restoring patient");
             }
         }
 
@@ -255,6 +269,7 @@ namespace DatabaseAPI.Controllers
             try
             {
                 var patient = await _context.Patients
+                .AsNoTracking()
                     .Include(p => p.Person)
                         .ThenInclude(per => per.ContactToObjects)
                             .ThenInclude(cto => cto.Contact)
@@ -270,25 +285,7 @@ namespace DatabaseAPI.Controllers
                     return NotFound($"Patient with id {id} not found");
                 }
 
-                var patientDto = new PatientDto
-                {
-                    Id = patient.Id,
-                    PersonId = patient.PersonId,
-                    FirstName = patient.Person.FirstName,
-                    LastName = patient.Person.LastName,
-                    BirthDate = patient.BirthDate,
-                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                    InsuranceNumber = patient.InsuranceNumber,
-                    Gender = patient.Person.Gender,
-                    CreatedAt = patient.Person.CreatedAt,
-                    UID = patient.Person.UID,
-                    TitleBefore = patient.Person.TitleBefore,
-                    TitleAfter = patient.Person.TitleAfter,
-                    Alive = patient.Alive,
-                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
-                };
+                var patientDto = MapToDto(patient);
 
                 return Ok(patientDto);
             }
@@ -423,25 +420,7 @@ namespace DatabaseAPI.Controllers
 
                 await _context.SaveChangesAsync();
 
-                var updatedPatientDto = new PatientDto
-                {
-                    Id = patient.Id,
-                    PersonId = patient.PersonId,
-                    FirstName = patient.Person.FirstName,
-                    LastName = patient.Person.LastName,
-                    BirthDate = patient.BirthDate,
-                    PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
-                    Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
-                    InsuranceNumber = patient.InsuranceNumber,
-                    Gender = patient.Person.Gender,
-                    CreatedAt = patient.Person.CreatedAt,
-                    UID = patient.Person.UID,
-                    TitleBefore = patient.Person.TitleBefore,
-                    TitleAfter = patient.Person.TitleAfter,
-                    Alive = patient.Alive,
-                    FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
-                    PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient)
-                };
+                var updatedPatientDto = MapToDto(patient);
 
                 return Ok(updatedPatientDto);
             }
@@ -474,31 +453,6 @@ namespace DatabaseAPI.Controllers
                             .ThenInclude(et => et.NameTranslation)
                     .Include(p => p.Events)
                         .ThenInclude(e => e.Comment)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.DrugUses)
-                            .ThenInclude(du => du.Drug)
-                                .ThenInclude(d => d.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Examinations)
-                            .ThenInclude(ex => ex.ExaminationType)
-                                .ThenInclude(et => et.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Examinations)
-                            .ThenInclude(ex => ex.Documents)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.PatientSymptoms)
-                            .ThenInclude(ps => ps.Symptom)
-                                .ThenInclude(s => s.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Injuries)
-                            .ThenInclude(i => i.InjuryType)
-                                .ThenInclude(it => it.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Vaccines)
-                            .ThenInclude(v => v.VaccineType)
-                                .ThenInclude(vt => vt.NameTranslation)
-                    .Include(p => p.Events)
-                        .ThenInclude(e => e.Pregnancies)
                     .Include(p => p.FormSubmissions)
                         .ThenInclude(fs => fs.Medication)
                     .Include(p => p.FormSubmissions)
@@ -510,6 +464,64 @@ namespace DatabaseAPI.Controllers
                     .Include(p => p.FormSubmissions)
                         .ThenInclude(fs => fs.SicknessHistories)
                     .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (patient == null)
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
+                // Load the event child collections with separate queries instead of
+                // one giant Include chain: the single-query form multiplies the
+                // independent child rows per event (drugUses x examinations x
+                // symptoms x injuries x vaccines) and explodes on data-heavy
+                // patients. EF relationship fixup attaches these to the tracked
+                // event entities, so the mapping below is unchanged.
+                var eventIds = patient.Events.Select(e => e.Id).ToList();
+
+                if (eventIds.Count > 0)
+                {
+                    await _context.DrugUses
+                        .Include(du => du.Drug)
+                            .ThenInclude(d => d.NameTranslation)
+                        .Where(du => eventIds.Contains(du.EventId))
+                        .ToListAsync();
+
+                    var examinations = await _context.Examinations
+                        .Include(ex => ex.ExaminationType)
+                            .ThenInclude(et => et.NameTranslation)
+                        .Where(ex => eventIds.Contains(ex.EventId))
+                        .ToListAsync();
+
+                    var examinationIds = examinations.Select(ex => ex.Id).ToList();
+                    if (examinationIds.Count > 0)
+                    {
+                        await _context.ExaminationDocuments
+                            .Where(d => examinationIds.Contains(d.ExaminationId))
+                            .ToListAsync();
+                    }
+
+                    await _context.PatientSymptoms
+                        .Include(ps => ps.Symptom)
+                            .ThenInclude(s => s.NameTranslation)
+                        .Where(ps => eventIds.Contains(ps.EventId))
+                        .ToListAsync();
+
+                    await _context.Injuries
+                        .Include(i => i.InjuryType)
+                            .ThenInclude(it => it.NameTranslation)
+                        .Where(i => eventIds.Contains(i.EventId))
+                        .ToListAsync();
+
+                    await _context.Vaccines
+                        .Include(v => v.VaccineType)
+                            .ThenInclude(vt => vt.NameTranslation)
+                        .Where(v => eventIds.Contains(v.EventId))
+                        .ToListAsync();
+
+                    await _context.Pregnancies
+                        .Where(pregnancy => eventIds.Contains(pregnancy.EventId))
+                        .ToListAsync();
+                }
 
                 if (patient == null)
                 {
@@ -533,7 +545,7 @@ namespace DatabaseAPI.Controllers
                             .ThenInclude(h => h!.Address)
                     .Include(r => r.ExaminationType)
                         .ThenInclude(et => et!.NameTranslation)
-                    .Where(r => r.PersonId == patient.PersonId && r.Status != "Cancelled")
+                    .Where(r => r.PersonId == patient.PersonId && r.Status != ReservationStatus.Cancelled)
                     .ToListAsync();
 
                 var mergedAppointments = appointments.Select(a => new PatientAppointmentDto
@@ -901,7 +913,7 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var documentData = await _documentService.GetDocumentDataAsync(documentId);
+                var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
 
                 if (documentData == null)
                 {
@@ -922,7 +934,7 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var deleted = await _documentService.DeleteDocumentAsync(documentId);
+                var deleted = await _documentService.DeleteDocumentAsync(documentId, patientId);
 
                 if (!deleted)
                 {
@@ -943,6 +955,7 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                // Tracked on purpose: the comment entity is mutated below
                 var patient = await _context.Patients
                     .Include(p => p.Person)
                     .Include(p => p.Comment)
@@ -976,5 +989,37 @@ namespace DatabaseAPI.Controllers
                 return StatusCode(500, "An error occurred while updating comment");
             }
         }
+
+        /// <summary>
+        /// Delete permission: the creating employee, their direct supervisor
+        /// (the one who created their account), or a (Sys)Admin.
+        /// </summary>
+        private static bool CanDeletePatient(ActorScope actor, int? creatorId, int? creatorSupervisorId)
+            => actor.EmployeeId != null && (
+                actor.HasFullAccess
+                || actor.EmployeeId == creatorId
+                || (creatorSupervisorId != null && actor.EmployeeId == creatorSupervisorId));
+
+        private PatientDto MapToDto(Patient patient) => new PatientDto
+        {
+            Id = patient.Id,
+            PersonId = patient.PersonId,
+            FirstName = patient.Person.FirstName,
+            LastName = patient.Person.LastName,
+            BirthDate = patient.BirthDate,
+            PhoneNumber = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.PhoneNumbers).Select(n => n.PhoneNumber).FirstOrDefault(),
+            Email = patient.Person.ContactToObjects.SelectMany(cto => cto.Contact.Emails).Select(e => e.Email).FirstOrDefault(),
+            InsuranceNumber = patient.InsuranceNumber,
+            Gender = patient.Person.Gender,
+            CreatedAt = patient.Person.CreatedAt,
+            UID = patient.Person.UID,
+            TitleBefore = patient.Person.TitleBefore,
+            TitleAfter = patient.Person.TitleAfter,
+            Alive = patient.Alive,
+            FullName = $"{patient.Person.LastName}, {patient.Person.FirstName}",
+            PhotoUrl = _photoService.GetPatientPhotoUrl(patient.Id, patient),
+            IsDeleted = patient.IsDeleted,
+            CreatedByEmployeeId = patient.CreatedByEmployeeId
+        };
     }
 }

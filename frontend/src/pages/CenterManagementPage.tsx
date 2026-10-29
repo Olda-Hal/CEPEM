@@ -1,13 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../utils/api';
 import { hasRole } from '../utils/roles';
-import {
-  ExaminationType,
-  Hospital
-} from '../types';
+import { countryScopeByCode, countryOptions, normalizeCountryCode } from '../utils/countryScope';
+import { ExaminationType, Hospital } from '../types';
 import './CenterManagementPage.css';
 
 interface HospitalPayload {
@@ -20,24 +17,7 @@ interface HospitalPayload {
   active?: boolean;
 }
 
-const countryScopeByCode: Record<string, number> = {
-  CZ: 203,
-  DE: 276,
-  SK: 703,
-  AT: 40,
-  PL: 616,
-  NL: 528
-};
-
-const countryOptions = Object.keys(countryScopeByCode);
-
-const normalizeCountryCode = (countryCode?: string) => {
-  if (!countryCode) {
-    return 'CZ';
-  }
-
-  return countryCode.trim().toUpperCase().slice(0, 2);
-};
+// shared mapping lives in utils/countryScope
 
 const emptyCenterForm = {
   name: '',
@@ -51,8 +31,10 @@ const CenterManagementPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
 
-  const canManageCenters = hasRole(user, 'Country Admin') || hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
-  const isRestrictedCountryAdmin = hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
+  const canManageCenters =
+    hasRole(user, 'Country Admin') || hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
+  const isRestrictedCountryAdmin =
+    hasRole(user, 'Country Admin') && !hasRole(user, 'SysAdmin') && !hasRole(user, 'Admin');
   const actorCountryCode = normalizeCountryCode(user?.countryCode);
 
   const [loading, setLoading] = useState(true);
@@ -78,7 +60,9 @@ const CenterManagementPage: React.FC = () => {
 
   const getHospitalTitle = (hospital: Hospital) => {
     const name = hospital.name?.trim();
-    return name && name.length > 0 ? name : t('centerManagement.fallbackCenter', { id: hospital.id });
+    return name && name.length > 0
+      ? name
+      : t('centerManagement.fallbackCenter', { id: hospital.id });
   };
 
   const getHospitalAddress = (hospital: Hospital) => {
@@ -100,15 +84,21 @@ const CenterManagementPage: React.FC = () => {
       const hospitalsResponse = await apiClient.get<Hospital[]>('/api/hospitals');
       setHospitals(hospitalsResponse);
 
-      if (!selectedHospitalId && hospitalsResponse.length > 0) {
-        setSelectedHospitalId(hospitalsResponse[0].id);
+      const firstHospital = hospitalsResponse[0];
+      if (!selectedHospitalId && firstHospital) {
+        setSelectedHospitalId(firstHospital.id);
       }
 
       try {
-        const examinationTypes = await apiClient.get<ExaminationType[]>(`/api/examinationtypes?language=${i18n.language}`);
+        const examinationTypes = await apiClient.get<ExaminationType[]>(
+          `/api/examinationtypes?language=${i18n.language}`
+        );
         setAllExaminationTypes(examinationTypes);
       } catch (examinationTypeError) {
-        console.error('Error loading examination types for center management', examinationTypeError);
+        console.error(
+          'Error loading examination types for center management',
+          examinationTypeError
+        );
         setAllExaminationTypes([]);
       }
     } catch (loadError) {
@@ -126,7 +116,9 @@ const CenterManagementPage: React.FC = () => {
     }
 
     try {
-      const allowedTypesResponse = await apiClient.get<ExaminationType[]>(`/api/hospitals/${selectedHospitalId}/examination-types?language=${i18n.language}`);
+      const allowedTypesResponse = await apiClient.get<ExaminationType[]>(
+        `/api/hospitals/${selectedHospitalId}/examination-types?language=${i18n.language}`
+      );
       setAllowedExaminationTypeIds(allowedTypesResponse.map((item) => item.id));
     } catch (loadError) {
       console.error('Error loading center detail data', loadError);
@@ -267,7 +259,6 @@ const CenterManagementPage: React.FC = () => {
     }
   };
 
-
   const toggleAllowedType = (typeId: number) => {
     setAllowedExaminationTypeIds((current) => {
       if (current.includes(typeId)) {
@@ -302,7 +293,7 @@ const CenterManagementPage: React.FC = () => {
   if (!canManageCenters) {
     return (
       <div className="center-management-page">
-        <AppHeader sectionTitle={t('centerManagement.title')} />
+        <h1 className="page-title">{t('centerManagement.title')}</h1>
         <div className="center-management-layout">
           <div className="panel">
             <h3>{t('centerManagement.noAccessTitle')}</h3>
@@ -316,7 +307,7 @@ const CenterManagementPage: React.FC = () => {
   if (loading) {
     return (
       <div className="center-management-page">
-        <AppHeader sectionTitle={t('centerManagement.title')} />
+        <h1 className="page-title">{t('centerManagement.title')}</h1>
         <div className="center-management-layout">
           <div className="panel">{t('common.loading')}</div>
         </div>
@@ -326,7 +317,7 @@ const CenterManagementPage: React.FC = () => {
 
   return (
     <div className="center-management-page">
-      <AppHeader sectionTitle={t('centerManagement.title')} />
+      <h1 className="page-title">{t('centerManagement.title')}</h1>
 
       <div className="center-management-layout">
         {error && <div className="alert alert-error">{error}</div>}
@@ -343,7 +334,9 @@ const CenterManagementPage: React.FC = () => {
               <span>{t('centerManagement.selectedCenter')}</span>
               <select
                 value={selectedHospitalId ?? ''}
-                onChange={(event) => setSelectedHospitalId(event.target.value ? Number(event.target.value) : null)}
+                onChange={(event) =>
+                  setSelectedHospitalId(event.target.value ? Number(event.target.value) : null)
+                }
               >
                 <option value="">{t('centerManagement.selectCenterPlaceholder')}</option>
                 {hospitals.map((hospital) => (
@@ -367,7 +360,9 @@ const CenterManagementPage: React.FC = () => {
                 <span>{t('centerManagement.centerName')}</span>
                 <input
                   value={createCenterForm.name}
-                  onChange={(event) => setCreateCenterForm((current) => ({ ...current, name: event.target.value }))}
+                  onChange={(event) =>
+                    setCreateCenterForm((current) => ({ ...current, name: event.target.value }))
+                  }
                   placeholder={t('centerManagement.centerNamePlaceholder')}
                 />
               </label>
@@ -375,21 +370,30 @@ const CenterManagementPage: React.FC = () => {
                 <span>{t('centerManagement.street')}</span>
                 <input
                   value={createCenterForm.street}
-                  onChange={(event) => setCreateCenterForm((current) => ({ ...current, street: event.target.value }))}
+                  onChange={(event) =>
+                    setCreateCenterForm((current) => ({ ...current, street: event.target.value }))
+                  }
                 />
               </label>
               <label>
                 <span>{t('centerManagement.city')}</span>
                 <input
                   value={createCenterForm.city}
-                  onChange={(event) => setCreateCenterForm((current) => ({ ...current, city: event.target.value }))}
+                  onChange={(event) =>
+                    setCreateCenterForm((current) => ({ ...current, city: event.target.value }))
+                  }
                 />
               </label>
               <label>
                 <span>{t('centerManagement.postalCode')}</span>
                 <input
                   value={createCenterForm.postalCode}
-                  onChange={(event) => setCreateCenterForm((current) => ({ ...current, postalCode: event.target.value }))}
+                  onChange={(event) =>
+                    setCreateCenterForm((current) => ({
+                      ...current,
+                      postalCode: event.target.value
+                    }))
+                  }
                 />
               </label>
               <label>
@@ -406,7 +410,9 @@ const CenterManagementPage: React.FC = () => {
                   ))}
                 </select>
               </label>
-              <button type="submit" className="primary-button">{t('centerManagement.createCenterButton')}</button>
+              <button type="submit" className="primary-button">
+                {t('centerManagement.createCenterButton')}
+              </button>
             </form>
           </section>
 
@@ -414,34 +420,47 @@ const CenterManagementPage: React.FC = () => {
             <h3>{t('centerManagement.editCenterTitle')}</h3>
             {selectedHospital ? (
               <>
-                <p className="subtle-text">{getHospitalAddress(selectedHospital) || t('centerManagement.noAddress')}</p>
+                <p className="subtle-text">
+                  {getHospitalAddress(selectedHospital) || t('centerManagement.noAddress')}
+                </p>
                 <form className="form-grid" onSubmit={handleUpdateCenter}>
                   <label>
                     <span>{t('centerManagement.centerName')}</span>
                     <input
                       value={editCenterForm.name}
-                      onChange={(event) => setEditCenterForm((current) => ({ ...current, name: event.target.value }))}
+                      onChange={(event) =>
+                        setEditCenterForm((current) => ({ ...current, name: event.target.value }))
+                      }
                     />
                   </label>
                   <label>
                     <span>{t('centerManagement.street')}</span>
                     <input
                       value={editCenterForm.street}
-                      onChange={(event) => setEditCenterForm((current) => ({ ...current, street: event.target.value }))}
+                      onChange={(event) =>
+                        setEditCenterForm((current) => ({ ...current, street: event.target.value }))
+                      }
                     />
                   </label>
                   <label>
                     <span>{t('centerManagement.city')}</span>
                     <input
                       value={editCenterForm.city}
-                      onChange={(event) => setEditCenterForm((current) => ({ ...current, city: event.target.value }))}
+                      onChange={(event) =>
+                        setEditCenterForm((current) => ({ ...current, city: event.target.value }))
+                      }
                     />
                   </label>
                   <label>
                     <span>{t('centerManagement.postalCode')}</span>
                     <input
                       value={editCenterForm.postalCode}
-                      onChange={(event) => setEditCenterForm((current) => ({ ...current, postalCode: event.target.value }))}
+                      onChange={(event) =>
+                        setEditCenterForm((current) => ({
+                          ...current,
+                          postalCode: event.target.value
+                        }))
+                      }
                     />
                   </label>
                   <label>
@@ -459,8 +478,14 @@ const CenterManagementPage: React.FC = () => {
                     </select>
                   </label>
                   <div className="button-row">
-                    <button type="submit" className="primary-button">{t('centerManagement.updateCenterButton')}</button>
-                    <button type="button" className="danger-button" onClick={handleDeactivateCenter}>
+                    <button type="submit" className="primary-button">
+                      {t('centerManagement.updateCenterButton')}
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-button"
+                      onClick={handleDeactivateCenter}
+                    >
                       {t('centerManagement.deactivateCenterButton')}
                     </button>
                   </div>
@@ -497,7 +522,9 @@ const CenterManagementPage: React.FC = () => {
               onClick={handleSaveAllowedExaminationTypes}
               disabled={!selectedHospitalId || savingAllowedTypes}
             >
-              {savingAllowedTypes ? t('centerManagement.savingAllowedExaminations') : t('centerManagement.saveAllowedExaminationsButton')}
+              {savingAllowedTypes
+                ? t('centerManagement.savingAllowedExaminations')
+                : t('centerManagement.saveAllowedExaminationsButton')}
             </button>
           </div>
         </section>

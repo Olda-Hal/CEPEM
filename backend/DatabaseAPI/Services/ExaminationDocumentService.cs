@@ -69,11 +69,18 @@ public class ExaminationDocumentService
             .ToListAsync();
     }
 
-    public async Task<(byte[] Data, string FileName)?> GetDocumentDataAsync(int documentId)
+    public async Task<(byte[] Data, string FileName)?> GetDocumentDataAsync(int documentId, int? examinationId = null)
     {
         var document = await _context.ExaminationDocuments.FindAsync(documentId);
         if (document == null || document.IsDeleted)
             return null;
+
+        // Ownership check: the document must belong to the requested examination
+        if (examinationId.HasValue && document.ExaminationId != examinationId.Value)
+        {
+            _logger.LogWarning("Document {DocumentId} does not belong to examination {ExaminationId}", documentId, examinationId);
+            return null;
+        }
 
         var filePath = Path.Combine(_documentStoragePath, document.EncryptedPath);
         if (!File.Exists(filePath))
@@ -88,11 +95,18 @@ public class ExaminationDocumentService
         return (decryptedData, document.OriginalFileName);
     }
 
-    public async Task<bool> DeleteDocumentAsync(int documentId)
+    public async Task<bool> DeleteDocumentAsync(int documentId, int? examinationId = null)
     {
         var document = await _context.ExaminationDocuments.FindAsync(documentId);
         if (document == null)
             return false;
+
+        // Ownership check: the document must belong to the requested examination
+        if (examinationId.HasValue && document.ExaminationId != examinationId.Value)
+        {
+            _logger.LogWarning("Document {DocumentId} does not belong to examination {ExaminationId}", documentId, examinationId);
+            return false;
+        }
 
         document.IsDeleted = true;
         await _context.SaveChangesAsync();
