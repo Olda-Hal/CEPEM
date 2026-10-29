@@ -6,6 +6,35 @@ testů + všechny ne-provizní body z nasazení a vysoké/střední/nižší pri
 dokončeny a commitnuty jednotlivě. Zůstávají jen body závislé na samotném
 produkčním nasazení.
 
+## TOP 1 — pořadač po UI refactoru (zadáno 2026-10-29, implementovat po dokončení UI oprav/testů)
+
+- **Scoping rolí pro administrátory center a zemí**
+  - Administrátor centra: vidí a edituje **pouze zaměstnance svého centra** a může udělovat **pouze role Vyšetřující a Doktor**; navíc smí **deaktivovat účty** a **vytvářet nové zaměstnance** (rovnou se zařazením do svého centra). *[rozhodnuto 2026-10-29]*
+  - Administrátor země: vytváří centra **jen v zemích, ke kterým má přiřazené administrátorství**, a jen k nim vytváří/přiřazuje pracovníky jako administrátory středisek.
+  - Zasáhnout: DatabaseAPI/HealthcareAPI (filtrování + AUTHORIZAČNÍ kontroly na serveru, nejen skrývání ve FE) a AdminEmployeesPage/CenterManagementPage/CreateEmployeeModal v FE.
+- **Přiřazení zaměstnanců k zemi/centru v editaci zaměstnance** *[rozhodnuto 2026-10-29]*
+  - Do EmployeeEditModal přidat výběr země a centra zaměstnance, aby šlo opravit chybějící přiřazení (podmínka pro zakládání pacientů).
+- **Defaulty při vytváření pacienta**
+  - Home centrum nového pacienta = centrum přihlášeného pracovníka (ke kterému je přiřazen).
+  - Home země nového pacienta = země pracovníka, který pacienta zadal.
+  - Pracovník **bez přiřazeného centra/země NEMŮŽE pacienta založit** (server-side 400 + srozumitelná hláška a návod jít do editace zaměstnance). *[rozhodnuto 2026-10-29]*
+- **Stránka pacienta → Návštěvy (místo Termínů + Dokumentů + Událostí)**
+  - Odstranit tab Termíny ze stránky pacienta **úplně** (rezervační sloty v top menu zůstávají). *[rozhodnuto 2026-10-29]*
+  - Dokumenty a Události sloučit do seznamu „návštěv": každá návštěva má **datum**, **poznámku** a **N dokumentů**; k návštěvě lze připojit i **událost vstupního formuláře**, která se vede jako prohlížitelný dokument.
+  - Workflow: doktor přidá návštěvu → zvolí datum → nová stránka návštěvy (vlevo karta pacienta s fotkou a jménem, vpravo upload dokumentů / přidání intake formuláře).
+  - **Migrace existujících dat povinná a bez ztráty**: stávající události → návštěvy; dokumenty navázané na události jdou do jejich návštěv; **nenavázané dokumenty se rozřadí do návštěv podle dne nahrání** (jedna návštěva na pacienta+den, poznámka např. „Přeneseno při migraci"). Nic nemazat. *[rozhodnuto 2026-10-29: per-day varianta]*
+- **Hover submenu v horní navigaci**
+  - Při najetí na položky top menu (Administrativ/Admin…) zobrazit dropdown s podmožnostmi, pokud existují.
+
+### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
+
+- Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
+- `theme-overrides.css` postupně rozebrat — je to globální `!important` kladivo držící theming pohromadě; cíl: per-component theme tokeny.
+- Audit log: staré záznamy nemají uživatele/metodu/status (v tabulce jen „—") — datová díra v backendu, zvážit backfill nebo lepší render.
+- DB hygiena: v tabulkách zaměstnanců jsou záznamy s UUID UID („Admin User") a ve správě rolí bezjmenná role.
+- Nativní date/time inputy se renderují podle locale prohlížeče (v headless testech en-US formát) — sjednotit cs-CZ, případně vlastní pickery.
+- Health dashboard: po deploy ověřit nové routy `/health` a `/db-health` v produkčním nginxu (nginx.conf se peče do image, nutný rebuild frontendu).
+
 ## Nasazení (nejdřív tohle) — zbývá udělat na produkci
 
 - Nasadit větev refactor na produkci: `sudo docker compose -f docker-compose.prod.yml up -d --build` (aplikují se nové migrace a permission seedy samy)

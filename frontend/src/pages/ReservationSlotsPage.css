@@ -37,7 +37,7 @@
   font-size: 0.76rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #0e6a71;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -92,7 +92,7 @@
 .form-grid input:focus,
 .form-grid textarea:focus {
   outline: none;
-  border-color: #0e6a71;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgb(14 106 113 / 12%);
 }
 
@@ -181,7 +181,7 @@
 
 .primary-button {
   margin-top: 18px;
-  background: linear-gradient(135deg, #0e6a71 0%, #134e5a 100%);
+  background: var(--color-primary);
   color: white;
   box-shadow: 0 14px 28px rgb(14 106 113 / 24%);
 }

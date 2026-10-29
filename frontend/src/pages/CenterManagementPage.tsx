@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../utils/api';
 import { hasRole } from '../utils/roles';
@@ -310,7 +309,7 @@ const CenterManagementPage: React.FC = () => {
   if (!canManageCenters) {
     return (
       <div className="center-management-page">
-        <AppHeader sectionTitle={t('centerManagement.title')} />
+        <h1 className="page-title">{t('centerManagement.title')}</h1>
         <div className="center-management-layout">
           <div className="panel">
             <h3>{t('centerManagement.noAccessTitle')}</h3>
@@ -324,7 +323,7 @@ const CenterManagementPage: React.FC = () => {
   if (loading) {
     return (
       <div className="center-management-page">
-        <AppHeader sectionTitle={t('centerManagement.title')} />
+        <h1 className="page-title">{t('centerManagement.title')}</h1>
         <div className="center-management-layout">
           <div className="panel">{t('common.loading')}</div>
         </div>
@@ -334,7 +333,7 @@ const CenterManagementPage: React.FC = () => {
 
   return (
     <div className="center-management-page">
-      <AppHeader sectionTitle={t('centerManagement.title')} />
+      <h1 className="page-title">{t('centerManagement.title')}</h1>
 
       <div className="center-management-layout">
         {error && <div className="alert alert-error">{error}</div>}

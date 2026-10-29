@@ -9,13 +9,23 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:5000',
-        changeOrigin: true,
+        changeOrigin: true
       },
-    },
+      // Service health probes (mirrors nginx.conf in the production image)
+      '/health': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true
+      },
+      '/db-health': {
+        target: 'http://127.0.0.1:5001',
+        changeOrigin: true,
+        rewrite: () => '/api/health'
+      }
+    }
   },
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: false
   },
   test: {
     environment: 'jsdom',
@@ -25,8 +35,8 @@ export default defineConfig({
     environmentOptions: {
       jsdom: {
         // A real origin so localStorage is available
-        url: 'http://localhost:3000',
-      },
-    },
-  },
+        url: 'http://localhost:3000'
+      }
+    }
+  }
 } as Parameters<typeof defineConfig>[0]);

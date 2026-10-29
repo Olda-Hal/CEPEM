@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
-import { AppHeader } from '../components/AppHeader';
 import PatientRecordFields from '../components/patient/PatientRecordFields';
 import '../components/patient/PatientRecordFields.css';
 import { PatientDetail, UpdatePatientRequest } from '../types';
@@ -390,7 +389,7 @@ export const EditPatientPage: React.FC = () => {
   if (loading) {
     return (
       <div className="edit-patient-page">
-        <AppHeader sectionTitle={t('patients.editPatient')} />
+        <h1 className="page-title">{t('patients.editPatient')}</h1>
         <div className="edit-patient-state">{t('common.loading')}</div>
       </div>
     );
@@ -399,7 +398,7 @@ export const EditPatientPage: React.FC = () => {
   if (!patient) {
     return (
       <div className="edit-patient-page">
-        <AppHeader sectionTitle={t('patients.editPatient')} />
+        <h1 className="page-title">{t('patients.editPatient')}</h1>
         <div className="edit-patient-state error">{error || t('errors.patientNotFound')}</div>
       </div>
     );
@@ -407,14 +406,17 @@ export const EditPatientPage: React.FC = () => {
 
   return (
     <div className="edit-patient-page">
-      <AppHeader sectionTitle={t('patients.editPatient')}>
-        <button className="edit-patient-header-btn" onClick={() => navigate(`/patients/${id}`)}>
-          {t('patients.viewDetails')}
-        </button>
-        <button className="edit-patient-header-btn" onClick={() => navigate('/patients')}>
-          {t('patients.backToPatients')}
-        </button>
-      </AppHeader>
+      <div className="page-heading">
+        <h1 className="page-title">{t('patients.editPatient')}</h1>
+        <div className="page-heading-actions">
+          <button className="btn btn-secondary" onClick={() => navigate(`/patients/${id}`)}>
+            {t('patients.viewDetails')}
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/patients')}>
+            {t('patients.backToPatients')}
+          </button>
+        </div>
+      </div>
 
       <div className="edit-patient-container">
         <div className="edit-patient-meta">

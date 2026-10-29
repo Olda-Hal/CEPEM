@@ -29,6 +29,13 @@ export const availableThemes: ThemeInfo[] = [
 
 const THEME_STORAGE_KEY = 'cepem-theme';
 
+/**
+ * The scheme picker is temporarily hidden and only "aurora" (Polární záře)
+ * is supported — the remaining schemes are visually broken. Re-enable by
+ * restoring the saved/system theme logic below.
+ */
+const PINNED_THEME: Theme = 'aurora';
+
 export class ThemeManager {
   private static instance: ThemeManager;
   private currentTheme: Theme = 'aurora';
@@ -104,40 +111,21 @@ export class ThemeManager {
 
   private loadTheme(): void {
     try {
+      // Temporarily pinned: any previously saved alternative scheme is dropped.
       const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-      if (savedTheme && availableThemes.some((t) => t.id === savedTheme)) {
-        this.currentTheme = savedTheme;
-        this.applyTheme(savedTheme);
+      if (savedTheme && savedTheme !== PINNED_THEME) {
+        localStorage.removeItem(THEME_STORAGE_KEY);
       }
     } catch (error) {
       console.warn('Failed to load theme preference:', error);
     }
+    this.currentTheme = PINNED_THEME;
+    this.applyTheme(PINNED_THEME);
   }
 
   private applySystemThemePreference(): void {
-    // Only apply system preference if no theme was saved
-    if (localStorage.getItem(THEME_STORAGE_KEY)) return;
-
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      this.setTheme('obsidian');
-    } else {
-      this.setTheme('aurora');
-    }
-
-    // Listen for system theme changes
-    if (window.matchMedia) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', (e) => {
-        // Only auto-switch if user hasn't manually selected a theme recently
-        const lastThemeChange = localStorage.getItem('cepem-theme-manual-change');
-        const now = Date.now();
-        const fiveMinutesAgo = now - 5 * 60 * 1000;
-
-        if (!lastThemeChange || parseInt(lastThemeChange) < fiveMinutesAgo) {
-          this.setTheme(e.matches ? 'obsidian' : 'aurora');
-        }
-      });
-    }
+    // Temporarily pinned to the aurora scheme regardless of OS preference.
+    this.setTheme(PINNED_THEME);
   }
 
   private notifyListeners(theme: Theme): void {

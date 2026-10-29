@@ -40,7 +40,7 @@ textarea:focus {
   box-shadow: 0 0 0 2px var(--color-primary-light) !important;
 }
 
-/* Theme all buttons */
+/* Theme all buttons (solid look; primary = theme accent) */
 .btn,
 button:not([class*='close'], [class*='collapse']) {
   transition: all 0.2s ease !important;
@@ -49,13 +49,14 @@ button:not([class*='close'], [class*='collapse']) {
 .btn-primary,
 .login-button,
 .add-patient-button {
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
-  ) !important;
+  background: var(--color-primary) !important;
   color: white !important;
   border-color: var(--color-primary) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
 }
 
 .btn-secondary {

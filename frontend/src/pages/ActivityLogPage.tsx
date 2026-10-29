@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { BaseModal } from '../components/BaseModal';
 import { DataTable } from '../components/ui/DataTable';
 import { apiClient, getAuthToken } from '../utils/api';
@@ -124,7 +123,7 @@ const ActivityLogPage: React.FC = () => {
 
   return (
     <div className="activity-log-page">
-      <AppHeader sectionTitle={t('activityLog.title')} />
+      <h1 className="page-title">{t('activityLog.title')}</h1>
 
       <div className="activity-log-content">
         <form className="activity-log-filters" onSubmit={handleSearch}>

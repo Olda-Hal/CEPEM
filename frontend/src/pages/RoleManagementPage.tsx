@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
 import BaseModal from '../components/BaseModal';
 import { CreateRoleRequest, Permission, Role, RolePermissionAssignment } from '../types';
@@ -96,7 +95,7 @@ const RoleManagementPage: React.FC = () => {
   if (loading) {
     return (
       <div className="role-management-page">
-        <AppHeader sectionTitle={t('admin.roleEditor.title')} />
+        <h1 className="page-title">{t('admin.roleEditor.title')}</h1>
         <div className="role-management-content">{t('common.loading')}</div>
       </div>
     );
@@ -104,7 +103,7 @@ const RoleManagementPage: React.FC = () => {
 
   return (
     <div className="role-management-page">
-      <AppHeader sectionTitle={t('admin.roleEditor.title')} />
+      <h1 className="page-title">{t('admin.roleEditor.title')}</h1>
 
       <div className="role-management-content">
         {error && <div className="alert alert-error">{error}</div>}

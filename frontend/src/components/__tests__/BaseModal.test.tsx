@@ -7,11 +7,7 @@ const Harness: React.FC = () => {
   const [value, setValue] = useState('');
   return (
     <BaseModal title="Harness" onClose={() => {}}>
-      <input
-        data-testid="typed-input"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
+      <input data-testid="typed-input" value={value} onChange={(e) => setValue(e.target.value)} />
     </BaseModal>
   );
 };

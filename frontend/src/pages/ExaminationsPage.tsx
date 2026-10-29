@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
 import { ExaminationSearchResponse, ExaminationListItem, Hospital } from '../types';
 import './ExaminationsPage.css';
@@ -142,7 +141,7 @@ export const ExaminationsPage: React.FC = () => {
 
   return (
     <div className="examinations-container">
-      <AppHeader sectionTitle={t('examinations.title')} />
+      <h1 className="page-title">{t('examinations.title')}</h1>
 
       <div className="examinations-content">
         <div className="examinations-filters">

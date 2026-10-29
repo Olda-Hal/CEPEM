@@ -5,7 +5,6 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
-import { AppHeader } from '../components/AppHeader';
 import { BaseModal } from '../components/BaseModal';
 import './PatientsPage.css';
 
@@ -113,11 +112,14 @@ export const PatientsPage: React.FC = () => {
 
   return (
     <div className="patients-container">
-      <AppHeader sectionTitle={t('patients.title')}>
-        <button className="add-patient-button" onClick={() => navigate('/patients/add')}>
-          + {t('patients.addPatient')}
-        </button>
-      </AppHeader>
+      <div className="page-heading">
+        <h1 className="page-title">{t('patients.title')}</h1>
+        <div className="page-heading-actions">
+          <button className="btn btn-primary" onClick={() => navigate('/patients/add')}>
+            + {t('patients.addPatient')}
+          </button>
+        </div>
+      </div>
 
       <div className="search-section">
         <div className="search-bar">

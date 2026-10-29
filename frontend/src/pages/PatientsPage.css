@@ -5,26 +5,6 @@
   margin: 0;
 }
 
-.add-patient-button {
-  background: rgb(255 255 255 / 20%);
-  color: white;
-  border: 2px solid rgb(255 255 255 / 30%);
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.add-patient-button:hover {
-  background: rgb(255 255 255 / 30%);
-  border-color: rgb(255 255 255 / 50%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgb(0 0 0 / 20%);
-}
-
 .search-section {
   padding: 20px 30px;
   background-color: var(--color-background-page);
@@ -282,12 +262,12 @@
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary);
   color: white;
 }
 
 .action-button.primary:hover {
-  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary-hover);
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgb(0 0 0 / 15%);
@@ -368,11 +348,6 @@
 
   .patients-header h1 {
     font-size: 2rem;
-  }
-
-  .add-patient-button {
-    width: 100%;
-    text-align: center;
   }
 
   .patients-grid {

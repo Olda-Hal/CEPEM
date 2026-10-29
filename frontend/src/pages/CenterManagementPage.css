@@ -35,7 +35,7 @@
   text-transform: uppercase;
   letter-spacing: 0.13em;
   font-size: 0.76rem;
-  color: #0e6a71;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -100,8 +100,8 @@
 .form-grid select:focus,
 .hero-controls select:focus {
   outline: none;
-  border-color: #0e6a71;
-  box-shadow: 0 0 0 3px rgb(14 106 113 / 12%);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .primary-button,
@@ -119,18 +119,18 @@
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #0e6a71 0%, #134e5a 100%);
+  background: var(--color-primary);
   color: white;
 }
 
 .secondary-button {
-  background: rgb(14 106 113 / 10%);
-  color: #0e6a71;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 .danger-button {
-  background: rgb(173 101 17 / 12%);
-  color: #9b5614;
+  background: var(--color-error-light);
+  color: var(--color-error);
 }
 
 .primary-button:hover,

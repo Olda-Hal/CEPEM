@@ -5,7 +5,7 @@ import './AdminEmployeesPage.css';
 import { EmployeeListItem, Role, UpdateEmployeeRequest, UpdateEmployeeResponse } from '../types';
 import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
-import { AppHeader } from '../components/AppHeader';
+import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
 import { hasRole } from '../utils/roles';
@@ -18,6 +18,7 @@ const AdminEmployeesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeListItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [selectedRulesEmployee, setSelectedRulesEmployee] = useState<EmployeeListItem | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -162,11 +163,17 @@ const AdminEmployeesPage: React.FC = () => {
 
   return (
     <div className="admin-employees-page">
-      <AppHeader sectionTitle={t('admin.employeeManagement')}>
-        <button className="btn btn-secondary" onClick={handleExport}>
-          {t('activityLog.exportCsv')}
-        </button>
-      </AppHeader>
+      <div className="page-heading">
+        <h1 className="page-title">{t('admin.employeeManagement')}</h1>
+        <div className="page-heading-actions">
+          <button className="btn btn-secondary" onClick={handleExport}>
+            {t('activityLog.exportCsv')}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+            + {t('createEmployee.buttonText')}
+          </button>
+        </div>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
@@ -277,6 +284,17 @@ const AdminEmployeesPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showCreateModal && (
+        <CreateEmployeeModal
+          isOpen
+          onClose={() => setShowCreateModal(false)}
+          onEmployeeCreated={() => {
+            setShowCreateModal(false);
+            void loadData();
+          }}
+        />
+      )}
 
       {showEditModal && selectedEmployee && (
         <EmployeeEditModal

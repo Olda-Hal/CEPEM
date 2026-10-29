@@ -878,5 +878,44 @@
     "title": "Service health",
     "healthy": "Healthy",
     "unreachable": "Unreachable"
+  },
+  "shell": {
+    "mainNavigation": "Main navigation",
+    "administration": "Administration",
+    "admin": "Admin",
+    "settings": "Settings",
+    "logout": "Log out",
+    "versionUnknown": "version unknown"
+  },
+  "administration": {
+    "title": "Administration",
+    "lead": "Back-office tools for the clinic.",
+    "centersTitle": "Center management",
+    "centersDescription": "Manage centers, branches and their details.",
+    "employeesTitle": "Employee management",
+    "employeesDescription": "Employee accounts, roles and access.",
+    "noAccess": "You do not have access to this section."
+  },
+  "adminPage": {
+    "title": "Admin",
+    "lead": "System tools and oversight.",
+    "auditLogTitle": "Audit log",
+    "auditLogDescription": "Record of all actions performed in the system.",
+    "testsTitle": "Test dashboard",
+    "testsDescription": "Overview of test results.",
+    "rolesTitle": "Role management",
+    "rolesDescription": "Define roles and their permissions.",
+    "noAccess": "You do not have access to this section.",
+    "healthTitle": "System health",
+    "healthDescription": "Availability of the individual platform services."
+  },
+  "settings": {
+    "title": "Settings",
+    "lead": "Personal settings for your account.",
+    "changePasswordTitle": "Change password",
+    "changePasswordDescription": "Update the password you use to sign in."
+  },
+  "app": {
+    "defaultName": "CEPEM"
   }
 }

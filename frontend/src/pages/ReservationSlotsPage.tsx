@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppHeader } from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient, ApiError } from '../utils/api';
 import { hasRole } from '../utils/roles';
@@ -263,7 +262,7 @@ export const ReservationSlotsPage: React.FC = () => {
 
   return (
     <div className="reservation-slots-page">
-      <AppHeader sectionTitle={t('reservationSlots.title')} />
+      <h1 className="page-title">{t('reservationSlots.title')}</h1>
 
       <main className="reservation-slots-layout">
         <section className="hero-panel">

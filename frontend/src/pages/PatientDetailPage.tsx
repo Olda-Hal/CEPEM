@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { PatientDetail, QuickPreviewSettings } from '../types';
 import { parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
-import { AppHeader } from '../components/AppHeader';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
 import AddEventModal from '../components/AddEventModal';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
@@ -280,7 +279,7 @@ export const PatientDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="patient-detail-page">
-        <AppHeader sectionTitle={t('patients.patientDetail')} />
+        <h1 className="page-title">{t('patients.patientDetail')}</h1>
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>{t('common.loading')}</p>
@@ -292,10 +291,10 @@ export const PatientDetailPage: React.FC = () => {
   if (error || !patient) {
     return (
       <div className="patient-detail-page">
-        <AppHeader sectionTitle={t('patients.patientDetail')} />
+        <h1 className="page-title">{t('patients.patientDetail')}</h1>
         <div className="error-container">
           <p className="error-message">{error || t('errors.patientNotFound')}</p>
-          <button onClick={handleBackToPatients} className="back-button">
+          <button onClick={handleBackToPatients} className="btn btn-secondary">
             {t('common.back')}
           </button>
         </div>
@@ -305,14 +304,20 @@ export const PatientDetailPage: React.FC = () => {
 
   return (
     <div className="patient-detail-page">
-      <AppHeader sectionTitle={t('patients.patientDetail')}>
-        <button onClick={() => navigate(`/patients/${patient.id}/edit`)} className="back-button">
-          {t('patients.editPatient')}
-        </button>
-        <button onClick={handleBackToPatients} className="back-button">
-          {t('patients.backToPatients')}
-        </button>
-      </AppHeader>
+      <div className="page-heading">
+        <h1 className="page-title">{t('patients.patientDetail')}</h1>
+        <div className="page-heading-actions">
+          <button
+            onClick={() => navigate(`/patients/${patient.id}/edit`)}
+            className="btn btn-secondary"
+          >
+            {t('patients.editPatient')}
+          </button>
+          <button onClick={handleBackToPatients} className="btn btn-secondary">
+            {t('patients.backToPatients')}
+          </button>
+        </div>
+      </div>
 
       <div className="patient-detail-content">
         {/* Patient Basic Info */}

@@ -17,21 +17,6 @@
   height: 1rem;
 }
 
-.refresh-button {
-  background: rgb(255 255 255 / 20%);
-  border: 1px solid rgb(255 255 255 / 30%);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.refresh-button:hover {
-  background: rgb(255 255 255 / 30%);
-  transform: translateY(-1px);
-}
-
 .test-dashboard-content {
   max-width: 1200px;
   margin: 0 auto;

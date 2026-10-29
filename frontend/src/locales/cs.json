@@ -276,7 +276,7 @@
     "filters": {
       "searchPlaceholder": "Hledejte pacienta, vyšetření nebo centrum",
       "allCenters": "Všechna centra",
-      "hospitalCountryScopeId": "Country scope ID centra",
+      "hospitalCountryScopeId": "ID zemského rozsahu centra",
       "patientCountryCode": "Kód země pacienta (např. CZ)",
       "examinationCountryCode": "Kód země vyšetření (např. CZ)",
       "apply": "Použít filtry",
@@ -287,7 +287,7 @@
       "patient": "Pacient",
       "examinationType": "Vyšetření",
       "center": "Centrum",
-      "centerCountryScopeId": "Country scope centra",
+      "centerCountryScopeId": "Zemský rozsah centra",
       "patientCountry": "Země pacienta",
       "examinationCountry": "Země vyšetření",
       "documents": "Soubory"
@@ -889,5 +889,44 @@
     "title": "Stav služeb",
     "healthy": "Zdravé",
     "unreachable": "Nedostupné"
+  },
+  "shell": {
+    "mainNavigation": "Hlavní navigace",
+    "administration": "Administrativa",
+    "admin": "Admin",
+    "settings": "Nastavení",
+    "logout": "Odhlásit se",
+    "versionUnknown": "verze neznámá"
+  },
+  "administration": {
+    "title": "Administrativa",
+    "lead": "Přehled administrativních nástrojů kliniky.",
+    "centersTitle": "Správa center",
+    "centersDescription": "Evidence center, poboček a jejich údajů.",
+    "employeesTitle": "Správa zaměstnanců",
+    "employeesDescription": "Účty zaměstnanců, role a přístupy.",
+    "noAccess": "Pro tuto sekci nemáte oprávnění."
+  },
+  "adminPage": {
+    "title": "Admin",
+    "lead": "Systémové nástroje a dohled.",
+    "auditLogTitle": "Audit log",
+    "auditLogDescription": "Záznam akcí provedených v systému.",
+    "testsTitle": "Test dashboard",
+    "testsDescription": "Přehled testovacích výsledků.",
+    "rolesTitle": "Správa rolí",
+    "rolesDescription": "Definice rolí a jejich oprávnění.",
+    "noAccess": "Pro tuto sekci nemáte oprávnění.",
+    "healthTitle": "Zdraví systému",
+    "healthDescription": "Dostupnost jednotlivých služeb platformy."
+  },
+  "settings": {
+    "title": "Nastavení",
+    "lead": "Osobní nastavení vašeho účtu.",
+    "changePasswordTitle": "Změna hesla",
+    "changePasswordDescription": "Změňte si heslo pro přihlášení do systému."
+  },
+  "app": {
+    "defaultName": "CEPEM"
   }
 }

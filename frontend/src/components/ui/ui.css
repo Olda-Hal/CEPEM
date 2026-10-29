@@ -1,5 +1,88 @@
 /* Shared design-system primitives: buttons, cards, badges, tables, forms */
 
+/* ----------------------------------------------------------------------------
+ * Typographic & sizing tokens (one scale for the whole app).
+ * Display type for headings; body type for everything else. Sizes are rem-based
+ * so browser zoom keeps the hierarchy intact.
+ * -------------------------------------------------------------------------- */
+:root {
+  --font-display: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', arial, sans-serif;
+  --font-body: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', arial, sans-serif;
+  --text-xs: 0.75rem; /* meta, badges */
+  --text-sm: 0.875rem; /* table cells, labels */
+  --text-md: 1rem; /* body */
+  --text-lg: 1.125rem; /* lead, subtitles */
+  --text-xl: 1.375rem; /* card titles */
+  --text-2xl: 1.75rem; /* page titles */
+  --text-3xl: 2.25rem; /* hero numerals */
+  --line-tight: 1.15;
+  --line-body: 1.5;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --shadow-card: 0 1px 4px rgb(0 0 0 / 6%);
+  --shadow-raised: 0 10px 28px rgb(0 0 0 / 12%);
+  --z-header: 40;
+  --z-modal: 90;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--line-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  line-height: var(--line-tight);
+}
+
+/* ----------------------------------------------------------------------------
+ * Page headings: every screen starts with .page-heading (title left, actions
+ * right). .page-lead is the optional muted subtitle under page titles.
+ * -------------------------------------------------------------------------- */
+.page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.page-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--color-text, #1f2937);
+}
+
+.page-lead {
+  margin: 0 0 var(--space-lg);
+  color: var(--color-text-secondary, #5b6472);
+  font-size: var(--text-lg);
+}
+
+.page-heading .page-lead {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

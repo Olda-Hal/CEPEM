@@ -49,33 +49,6 @@
   margin-bottom: 1rem;
 }
 
-/* Back Button */
-.back-button {
-  background: var(--color-background);
-  color: var(--color-text-primary);
-  border: 2px solid var(--color-border);
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 120px;
-}
-
-.back-button:hover {
-  background: var(--color-background-secondary);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px var(--color-shadow-light);
-}
-
 /* Patient Info Card */
 .patient-info-card {
   background-color: var(--surface-color);

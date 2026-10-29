@@ -1,0 +1,196 @@
+/* Application shell: sticky header with brand/nav/account, content, version footer */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-background-page, var(--color-background, #f6f8fb));
+  color: var(--color-text, #1f2937);
+  font-family: var(--font-body);
+}
+
+.shell-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header, 40);
+  background: var(--color-surface, #fff);
+  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  box-shadow: 0 1px 6px rgb(15 23 42 / 6%);
+}
+
+.shell-header-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg, 24px);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg, 24px);
+  height: 60px;
+}
+
+.shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-primary, #2563eb);
+  flex-shrink: 0;
+}
+
+.shell-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--color-primary, #2563eb);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.shell-brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-text, #1f2937);
+}
+
+.shell-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  overflow-x: auto;
+}
+
+.shell-nav-link {
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 500;
+  color: var(--color-text-secondary, #5b6472);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.shell-nav-link:hover {
+  background: var(--color-primary-tint, rgb(37 99 235 / 8%));
+  color: var(--color-primary, #2563eb);
+}
+
+.shell-nav-link.active {
+  background: var(--color-primary, #2563eb);
+  color: #fff;
+}
+
+.shell-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.shell-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  background: var(--color-surface, #fff);
+  color: var(--color-text-secondary, #5b6472);
+  font-size: 18px;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.2s ease;
+}
+
+.shell-icon-button:hover {
+  background: var(--color-primary-tint, rgb(37 99 235 / 8%));
+  color: var(--color-primary, #2563eb);
+  transform: rotate(20deg);
+}
+
+.shell-icon-button:last-child:hover {
+  transform: none;
+}
+
+.shell-account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+  max-width: 240px;
+}
+
+.shell-account-name,
+.shell-account-meta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-account-name {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.shell-account-meta {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-secondary, #5b6472);
+}
+
+.shell-content {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-lg, 24px);
+}
+
+.shell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px var(--space-lg, 24px);
+  border-top: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  background: var(--color-surface, #fff);
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-secondary, #5b6472);
+}
+
+.shell-footer-version {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, #8a94a6);
+}
+
+@media (width <= 900px) {
+  .shell-header-inner {
+    gap: var(--space-md, 16px);
+    padding: 0 var(--space-md, 16px);
+  }
+
+  .shell-account-meta {
+    display: none;
+  }
+
+  .shell-account {
+    max-width: 32vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

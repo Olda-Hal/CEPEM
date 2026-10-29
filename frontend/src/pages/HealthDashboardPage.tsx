@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader } from '../components/AppHeader';
 import { apiClient } from '../utils/api';
 import './HealthDashboardPage.css';
 
@@ -15,7 +14,7 @@ interface ServiceStatus {
 
 const PROBED_SERVICES: Array<{ name: string; url: string }> = [
   { name: 'HealthcareAPI', url: '/health' },
-  { name: 'DatabaseAPI', url: '/api/health' }
+  { name: 'DatabaseAPI', url: '/db-health' }
 ];
 
 /**
@@ -35,10 +34,19 @@ const HealthDashboardPage: React.FC = () => {
       const results = await Promise.all(
         PROBED_SERVICES.map(async (service): Promise<ServiceStatus> => {
           try {
-            const response = await apiClient.get<{ status?: string; service?: string }>(
-              service.url
-            );
-            return { ...service, state: 'healthy', detail: response.status ?? 'OK' };
+            const response = await apiClient.get<{
+              status?: string;
+              Status?: string;
+              version?: string;
+              Version?: string;
+            }>(service.url);
+            const statusText = response.status ?? response.Status ?? 'OK';
+            const version = response.version ?? response.Version;
+            return {
+              ...service,
+              state: 'healthy',
+              detail: version ? `${statusText} · v${version}` : statusText
+            };
           } catch {
             return { ...service, state: 'unreachable' };
           }
@@ -59,7 +67,7 @@ const HealthDashboardPage: React.FC = () => {
 
   return (
     <div className="health-dashboard-page">
-      <AppHeader sectionTitle={t('health.title')} />
+      <h1 className="page-title">{t('health.title')}</h1>
 
       <div className="services-grid">
         {services.map((service) => (
