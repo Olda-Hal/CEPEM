@@ -166,6 +166,9 @@ export interface Patient {
   alive: boolean;
   fullName: string;
   photoUrl?: string;
+  isDeleted?: boolean;
+  createdByEmployeeId?: number | null;
+  canDelete?: boolean;
 }
 
 export interface PatientSearchResponse {

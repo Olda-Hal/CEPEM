@@ -51,6 +51,37 @@
   color: var(--color-primary);
 }
 
+.show-deleted-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  background: var(--color-surface, #fff);
+  color: var(--color-text-secondary, #718096);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.show-deleted-toggle:hover {
+  border-color: var(--color-primary, #667eea);
+  color: var(--color-primary, #667eea);
+}
+
+.show-deleted-toggle.active {
+  background: var(--color-primary, #667eea);
+  border-color: var(--color-primary, #667eea);
+  color: #fff;
+}
+
 .patients-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -206,7 +237,7 @@
 }
 
 .patient-id {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary);
   color: white;
   padding: 4px 8px;
   border-radius: 12px;
@@ -282,6 +313,29 @@
 .action-button.secondary:hover {
   background: var(--color-background-tertiary);
   border-color: var(--color-border-focus);
+}
+
+.action-button.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  background: transparent;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.action-button.icon.danger {
+  color: var(--color-error, #e53e3e);
+  border: 1px solid transparent;
+}
+
+.action-button.icon.danger:hover {
+  color: var(--color-error-dark, var(--color-error, #c53030));
+  background: var(--color-error-light, rgb(229 62 62 / 10%));
+  border-color: var(--color-error, #e53e3e);
+  transform: none;
+  box-shadow: none;
 }
 
 .loading-more {

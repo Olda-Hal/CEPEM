@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { MdDeleteOutline, MdGroups, MdRestoreFromTrash, MdSearch } from 'react-icons/md';
+import { useAuth } from '../contexts/AuthContext';
+import { hasRole, isAdmin } from '../utils/roles';
 import { PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
@@ -14,6 +17,8 @@ export const PatientsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canSeeDeleted = isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -130,16 +135,22 @@ export const PatientsPage: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
           />
-          <div className="search-icon">🔍</div>
+          <div className="search-icon">
+            <MdSearch size={22} />
+          </div>
         </div>
-        <label className="show-deleted-toggle">
-          <input
-            type="checkbox"
-            checked={showDeleted}
-            onChange={(e) => setShowDeleted(e.target.checked)}
-          />
-          {t('patients.showDeleted')}
-        </label>
+        {canSeeDeleted && (
+          <button
+            type="button"
+            className={`show-deleted-toggle${showDeleted ? ' active' : ''}`}
+            onClick={() => setShowDeleted((prev) => !prev)}
+            aria-pressed={showDeleted}
+            title={t('patients.showDeleted')}
+          >
+            <MdRestoreFromTrash size={19} />
+            <span>{t('patients.showDeleted')}</span>
+          </button>
+        )}
       </div>
 
       <div className="patients-content">
@@ -228,7 +239,7 @@ export const PatientsPage: React.FC = () => {
                     >
                       {t('patients.editPatient')}
                     </button>
-                    {(patient as any).isDeleted ? (
+                    {patient.isDeleted ? (
                       <button
                         className="action-button secondary restore"
                         onClick={() => handleRestore(patient.id)}
@@ -236,12 +247,16 @@ export const PatientsPage: React.FC = () => {
                         {t('patients.restore')}
                       </button>
                     ) : (
-                      <button
-                        className="action-button danger"
-                        onClick={() => setConfirmDeleteId(patient.id)}
-                      >
-                        {t('patients.delete')}
-                      </button>
+                      patient.canDelete && (
+                        <button
+                          className="action-button icon danger"
+                          onClick={() => setConfirmDeleteId(patient.id)}
+                          title={t('patients.deleteTitle')}
+                          aria-label={t('patients.deleteTitle')}
+                        >
+                          <MdDeleteOutline size={20} />
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -261,7 +276,9 @@ export const PatientsPage: React.FC = () => {
 
             {!isLoading && patients.length === 0 && (
               <div className="no-results">
-                <div className="no-results-icon">👥</div>
+                <div className="no-results-icon">
+                  <MdGroups size={64} />
+                </div>
                 <h3>{t('patients.noResults')}</h3>
                 <p>{t('patients.noResultsDescription')}</p>
               </div>
