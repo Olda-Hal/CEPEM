@@ -15,12 +15,14 @@ namespace HealthcareAPI.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;
+        private readonly IAuthService _authService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(IAdminService adminService, IHttpClientFactory httpClientFactory, ILogger<AdminController> logger)
+        public AdminController(IAdminService adminService, IAuthService authService, IHttpClientFactory httpClientFactory, ILogger<AdminController> logger)
         {
             _adminService = adminService;
+            _authService = authService;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
@@ -28,11 +30,11 @@ namespace HealthcareAPI.Controllers
         [RequirePermission("employees.read")]
         [HttpGet("employees")]
         [PermissionDisplayName("List Employees")]
-        public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees()
+        public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees([FromQuery] bool includeInactive = false)
         {
             try
             {
-                var employees = await _adminService.GetAllEmployeesAsync();
+                var employees = await _adminService.GetAllEmployeesAsync(includeInactive);
                 return Ok(employees);
             }
             catch (Exception ex)
@@ -131,6 +133,47 @@ namespace HealthcareAPI.Controllers
                 _logger.LogError(ex, $"Error triggering password reset for employee {employeeId}");
                 return StatusCode(500, "Internal server error");
             }
+        }
+
+        /// <summary>
+        /// SysAdmin-only "preview as employee": issues a short-lived token for
+        /// the target account so the administrator can see exactly what that
+        /// employee can do. Nested previews and previews of your own account
+        /// are refused.
+        /// </summary>
+        [RequireRole("SysAdmin")]
+        [HttpPost("employees/{employeeId}/impersonate")]
+        [PermissionDisplayName("Preview As Employee")]
+        public async Task<ActionResult<ImpersonationResponse>> ImpersonateEmployee(int employeeId)
+        {
+            // A token that is already a preview must not start another one.
+            if (User.FindFirst("impersonator_id") != null)
+            {
+                return BadRequest("Náhled nelze spustit z režimu náhledu.");
+            }
+
+            var actorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (actorIdClaim == null || !int.TryParse(actorIdClaim.Value, out var actorId))
+            {
+                return Unauthorized();
+            }
+
+            var actorName = User.FindFirst(ClaimTypes.Name)?.Value
+                ?? User.FindFirst(ClaimTypes.Email)?.Value
+                ?? "SysAdmin";
+
+            if (employeeId == actorId)
+            {
+                return BadRequest("Vlastní účet nelze otevřít v náhledu.");
+            }
+
+            var result = await _authService.ImpersonateAsync(employeeId, actorId, actorName);
+            if (result == null)
+            {
+                return NotFound("Zaměstnanec neexistuje nebo je deaktivován.");
+            }
+
+            return Ok(result);
         }
 
         [RequirePermission("employees.read")]

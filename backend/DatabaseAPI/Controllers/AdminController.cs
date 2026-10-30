@@ -20,9 +20,9 @@ namespace DatabaseAPI.Controllers
         }
 
         [HttpGet("employees")]
-        public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees()
+        public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees([FromQuery] bool includeInactive = false)
         {
-            var employees = await _employeeManagementService.GetAllEmployeesAsync();
+            var employees = await _employeeManagementService.GetAllEmployeesAsync(includeInactive);
             return Ok(employees);
         }
 
@@ -52,9 +52,9 @@ namespace DatabaseAPI.Controllers
 
         /// <summary>All employees as CSV (semicolon-separated, BOM for Excel).</summary>
         [HttpGet("employees/export")]
-        public async Task<IActionResult> ExportEmployeesCsv()
+        public async Task<IActionResult> ExportEmployeesCsv([FromQuery] bool includeInactive = false)
         {
-            var employees = await _employeeManagementService.GetAllEmployeesAsync();
+            var employees = await _employeeManagementService.GetAllEmployeesAsync(includeInactive);
 
             var builder = new System.Text.StringBuilder();
             builder.AppendLine("UID;FullName;Email;Phone;Roles;Active;LastLogin");

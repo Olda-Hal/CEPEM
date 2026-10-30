@@ -105,6 +105,10 @@ public static class ProxyConfig
         // Settings
         yield return Route("settings-get", "/api/settings/{**rest}", "GET", "settings.read");
         yield return Route("settings-put", "/api/settings/{**rest}", "PUT", "settings.write");
+
+        // Admin employee list export (CSV) — proxied so the download uses the
+        // same permission and actor-scope rules as the employee list itself.
+        yield return Route("admin-employees-export", "/api/admin/employees/export", "GET", "employees.read");
     }
 
     private static RouteConfig Route(string id, string path, string? method = null, string? permissionCode = null)

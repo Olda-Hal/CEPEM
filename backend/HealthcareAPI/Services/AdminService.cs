@@ -5,7 +5,7 @@ namespace HealthcareAPI.Services
 {
     public interface IAdminService
     {
-        Task<List<EmployeeListItem>> GetAllEmployeesAsync();
+        Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false);
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
         Task<(bool Success, string? ErrorBody)> DeactivateEmployeeAsync(int employeeId);
@@ -28,11 +28,14 @@ namespace HealthcareAPI.Services
             _logger = logger;
         }
 
-        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync()
+        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false)
         {
             try
             {
-                var response = await _httpClient.GetAsync("/api/admin/employees");
+                var path = includeInactive
+                    ? "/api/admin/employees?includeInactive=true"
+                    : "/api/admin/employees";
+                var response = await _httpClient.GetAsync(path);
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();

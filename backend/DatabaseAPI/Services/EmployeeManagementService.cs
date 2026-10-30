@@ -7,7 +7,11 @@ namespace DatabaseAPI.Services
 {
     public interface IEmployeeManagementService
     {
-        Task<List<EmployeeListItem>> GetAllEmployeesAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Employees visible to the acting admin. Inactive employees are
+        /// hidden unless <paramref name="includeInactive"/> is requested.
+        /// </summary>
+        Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request, CancellationToken cancellationToken = default);
 
@@ -52,7 +56,7 @@ namespace DatabaseAPI.Services
             _employeeScopeService = employeeScopeService;
         }
 
-        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
         {
             var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
 
@@ -60,6 +64,13 @@ namespace DatabaseAPI.Services
             if (visibleIds != null)
             {
                 query = query.Where(e => visibleIds.Contains(e.Id));
+            }
+
+            // Deactivated employees leave the working list by default; the
+            // admin UI can opt in to see (and re-activate) them.
+            if (!includeInactive)
+            {
+                query = query.Where(e => e.Person.Active);
             }
 
             var employees = await query
