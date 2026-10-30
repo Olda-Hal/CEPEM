@@ -46,6 +46,10 @@ services:
       - DATABASE_CORS_ORIGINS=http://${APP_HOST}:3000,http://127.0.0.1:3000,http://frontend:3000
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
+      - Smtp__Host=${SMTP_HOST:-mailpit}
+      - Smtp__Port=${SMTP_PORT:-1025}
+      - Smtp__FromAddress=${SMTP_FROM:-noreply@cepem.local}
+      - App__FrontendBaseUrl=${FRONTEND_PUBLIC_URL:-http://localhost:3000}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents
@@ -153,6 +157,18 @@ services:
       - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
     depends_on:
       - prometheus
+    networks:
+      - cepem_network
+
+  # Local development/CI SMTP sink — anything the app sends lands in the
+  # Mailpit mailbox instead of a real MTA (web UI on http://localhost:8025).
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: cepem_mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     networks:
       - cepem_network
 

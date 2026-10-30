@@ -56,6 +56,11 @@ builder.Services.AddScoped<ISeedService, SeedService>();
 // Register authentication service
 builder.Services.AddScoped<IEmployeeAuthService, EmployeeAuthService>();
 
+// E-mail + password reset (SMTP* / App__FrontendBaseUrl via configuration)
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddSingleton<IEmailService, EmailService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+
 // Register employee management service
 builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
 

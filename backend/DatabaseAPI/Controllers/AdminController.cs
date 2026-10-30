@@ -10,11 +10,13 @@ namespace DatabaseAPI.Controllers
     {
         private readonly IEmployeeManagementService _employeeManagementService;
         private readonly IEmployeeScopeService _employeeScopeService;
+        private readonly IPasswordResetService _passwordResetService;
 
-        public AdminController(IEmployeeManagementService employeeManagementService, IEmployeeScopeService employeeScopeService)
+        public AdminController(IEmployeeManagementService employeeManagementService, IEmployeeScopeService employeeScopeService, IPasswordResetService passwordResetService)
         {
             _employeeManagementService = employeeManagementService;
             _employeeScopeService = employeeScopeService;
+            _passwordResetService = passwordResetService;
         }
 
         [HttpGet("employees")]
@@ -76,19 +78,20 @@ namespace DatabaseAPI.Controllers
         }
 
         /// <summary>
-        /// Generates a one-time password for the employee, forcing a change on
-        /// the next login. The plaintext is returned once to the admin and is
-        /// never stored anywhere.
+        /// Sends a password-reset link to the employee's e-mail address
+        /// (supervisor-triggered). The link is single-use and short-lived.
         /// </summary>
         [HttpPost("employees/{employeeId}/reset-password")]
         public async Task<ActionResult> ResetEmployeePassword(int employeeId)
         {
-            var temporary = await _employeeManagementService.ResetPasswordAsync(employeeId);
-            if (temporary == null)
+            var (ok, error) = await _passwordResetService.RequestResetForEmployeeAsync(employeeId);
+            if (!ok)
             {
-                return NotFound("Employee not found");
+                return error == "Employee not found"
+                    ? NotFound(error)
+                    : BadRequest(error ?? "E-mail se nepodařilo odeslat");
             }
-            return Ok(new { temporaryPassword = temporary });
+            return Ok(new { message = "Resetový odkaz byl odeslán na e-mail zaměstnance." });
         }
 
         private static string CsvEscape(string value)

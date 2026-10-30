@@ -59,6 +59,7 @@ public class DatabaseContext : DbContext
     
     // System entities
     public DbSet<ActivityLog> ActivityLogs { get; set; }
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     
     // Translation entities
     public DbSet<Translation> Translations { get; set; }

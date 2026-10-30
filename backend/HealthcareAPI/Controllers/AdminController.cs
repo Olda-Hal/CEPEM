@@ -112,6 +112,27 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("employees.manage")]
+        [HttpPost("employees/{employeeId}/reset-password")]
+        [PermissionDisplayName("Trigger Password Reset E-mail")]
+        public async Task<IActionResult> TriggerEmployeePasswordReset(int employeeId)
+        {
+            try
+            {
+                var (success, errorBody) = await _adminService.TriggerPasswordResetAsync(employeeId);
+                if (!success)
+                {
+                    return errorBody == "Employee not found" ? NotFound(errorBody) : BadRequest(errorBody ?? "Reset e-mail se nepodařilo odeslat");
+                }
+                return Ok(new { message = "Resetový odkaz byl odeslán na e-mail zaměstnance." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error triggering password reset for employee {employeeId}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
         [RequirePermission("employees.read")]
         [HttpGet("employees/scope")]
         [PermissionDisplayName("View Own Admin Scope")]

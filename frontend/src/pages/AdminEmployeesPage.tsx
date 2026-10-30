@@ -177,6 +177,22 @@ const AdminEmployeesPage: React.FC = () => {
     }
   };
 
+  const handleResetPassword = async (employee: EmployeeListItem) => {
+    if (!window.confirm(t('admin.confirmPasswordReset', { name: employee.fullName }))) {
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiClient.post(`/api/admin/employees/${employee.employeeId}/reset-password`);
+      setSuccess(t('admin.passwordResetSent', { email: employee.email }));
+    } catch (error) {
+      console.error('Error triggering password reset:', error);
+      setError(t('admin.passwordResetFailed'));
+    }
+  };
+
   const handleSave = async (updatedEmployee: UpdateEmployeeRequest) => {
     if (!selectedEmployee) return;
 
@@ -298,6 +314,15 @@ const AdminEmployeesPage: React.FC = () => {
                       onClick={() => handleRules(employee)}
                     >
                       {t('admin.access')}
+                    </button>
+                  )}
+                  {employee.active && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleResetPassword(employee)}
+                      disabled={!canManageEmployee(employee)}
+                    >
+                      {t('admin.resetPassword')}
                     </button>
                   )}
                   {employee.active && (

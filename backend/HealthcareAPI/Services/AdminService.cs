@@ -9,6 +9,8 @@ namespace HealthcareAPI.Services
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
         Task<(bool Success, string? ErrorBody)> DeactivateEmployeeAsync(int employeeId);
+        /// <summary>Trigger the e-mail reset flow for an employee (supervisor-triggered).</summary>
+        Task<(bool Success, string? ErrorBody)> TriggerPasswordResetAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
         Task<(bool Success, string? ErrorBody)> DeleteRoleAsync(int roleId);
@@ -126,6 +128,26 @@ namespace HealthcareAPI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error deactivating employee {employeeId}");
+                return (false, null);
+            }
+        }
+
+        public async Task<(bool Success, string? ErrorBody)> TriggerPasswordResetAsync(int employeeId)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsync($"/api/admin/employees/{employeeId}/reset-password", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? response.StatusCode.ToString() : body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error triggering password reset for employee {EmployeeId}", employeeId);
                 return (false, null);
             }
         }

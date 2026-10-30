@@ -1121,6 +1121,36 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("LastNameHistories");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime?>("UsedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("PasswordResetTokens");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Patient", b =>
                 {
                     b.Property<int>("Id")
@@ -2214,6 +2244,17 @@ namespace DatabaseAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.PasswordResetToken", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Patient", b =>

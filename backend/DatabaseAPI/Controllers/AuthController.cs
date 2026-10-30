@@ -10,10 +10,12 @@ namespace DatabaseAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IEmployeeAuthService _authService;
+        private readonly IPasswordResetService _passwordResetService;
 
-        public AuthController(IEmployeeAuthService authService)
+        public AuthController(IEmployeeAuthService authService, IPasswordResetService passwordResetService)
         {
             _authService = authService;
+            _passwordResetService = passwordResetService;
         }
 
         [HttpPost("authenticate")]
@@ -38,6 +40,34 @@ namespace DatabaseAPI.Controllers
                 default:
                     return Unauthorized("Neplatné přihlašovací údaje");
             }
+        }
+
+        /// <summary>
+        /// Non-enumerating forgot-password trigger: when the e-mail belongs to
+        /// an employee, send the reset link (or report a delivery failure).
+        /// Always answers 200 for unknown addresses.
+        /// </summary>
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var (ok, _) = await _passwordResetService.RequestResetForEmailAsync(request.Email);
+            // Delivery failures surface as a generic 500 so the caller sees
+            // the e-mail could not be sent without leaking account existence.
+            return ok ? Ok(new { message = "Pokud účet existuje, odeslali jsme odkaz na obnovení hesla." })
+                      : StatusCode(500, "E-mail s odkazem se nepodařilo odeslat");
+        }
+
+        /// <summary>Consume a reset token and set the new password.</summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var (ok, error) = await _passwordResetService.ResetWithTokenAsync(request.Token, request.NewPassword);
+            if (!ok)
+            {
+                return BadRequest(error ?? "Neplatný požadavek");
+            }
+
+            return NoContent();
         }
 
         [HttpPost("change-password/{employeeId}")]

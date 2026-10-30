@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using HealthcareAPI.Models;
 using HealthcareAPI.Services;
 using HealthcareAPI.Middleware;
@@ -13,10 +15,12 @@ namespace HealthcareAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IHttpClientFactory httpClientFactory)
         {
             _authService = authService;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpPost("login")]
@@ -40,6 +44,42 @@ namespace HealthcareAPI.Controllers
                 // Return specific error message for deactivated accounts or invalid credentials
                 return Unauthorized(ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Forgot-pass flow: forwards to DatabaseAPI which sends a reset link
+        /// when the e-mail belongs to an employee (non-enumerating).
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("/api/auth/forgot-password", content);
+            var body = await response.Content.ReadAsStringAsync();
+            return StatusCode((int)response.StatusCode, body);
+        }
+
+        /// <summary>Consume a reset token (link from the reset e-mail).</summary>
+        [HttpPost("reset-password")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return BadRequest("Neplatné údaje pro obnovení hesla");
+            }
+
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("/api/auth/reset-password", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                return BadRequest(body);
+            }
+            return NoContent();
         }
 
         [HttpPost("change-password")]

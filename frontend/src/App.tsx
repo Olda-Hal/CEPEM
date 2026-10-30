@@ -15,6 +15,7 @@ const LoginPage = React.lazy(() =>
     return { default: m.LoginPage };
   })
 );
+const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
 const TestDashboard = React.lazy(() => import('./pages/TestDashboard'));
 const AdminEmployeesPage = React.lazy(() => import('./pages/AdminEmployeesPage'));
 const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'));
@@ -95,6 +96,7 @@ function App() {
               >
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/intake/:token" element={<IntakeFormByLinkPage />} />
                   <Route
                     element={
