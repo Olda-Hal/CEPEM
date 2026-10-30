@@ -51,6 +51,14 @@ produkčním nasazení.
 - **Pozn. k nasazení:** seed nyní granty i **odebírá** (jinak by staré DB držely dřívější přístupy). Po restartu database-api se matice srovná; role landing se nastaví jen tam, kde dosud nebyl.
 - Ověřeno: DatabaseAPI 218 testů, HealthcareAPI 71, frontend 45, tsc/eslint/prettier/build čisté.
 
+### 2026-10-30 — MEIK .tdb vizualizace ve Vyhodnocování
+
+- **Jak .tdb funguje** (ověřeno v `~/programovani/MEIK_remake/meikpro`): TOMODB v2.0; header nese conditions v CP1251 (strana/poloha), posledních 36 288 B jsou display planes `7×36×36 float32` (4–46 mm); originál přičte `-0.15`, udělá Lanczos-3 36→288, lineární okno přes globální min/max, 32stupňovou paletu (sudé položky 64tabulky), 18×18 siluetu a vertikální flip.
+- **Upload .tdb** (návštěva/pacient): magic + parsování před uložením, 7 řezů jako base64 float32 + histogramy (32 binů) do `EvaluationCase`; vzniká anonymní případ Vyhodnocování. API nevrací pro TDB jméno ani ID pacienta.
+- **UI Vyhodnocování**: 7 řezů, pod každým histogram naměřených hodnot; pilulky Levá/Pravá + Leží/Stojí/Sedí z conditions. Kliknutí do kteréhokoli řezu přidá marker s popisem; akce „Snímek v pořádku“ nebo „Ukončit vyšetření s nálezy“ (outcome `OK`/`Findings`).
+- **Ověření**: parser porovnán s meikpro na reálném vzorku (shodná okna i hodnoty), Lanczos i paleta pixel-shodné s `core/visual.render`; 228 DB / 71 HC / 49 FE testů, buildy čisté.
+- Pozn.: Doctor nemá `patients.read`, k měření se dostane jen přes Vyhodnocování; Country Admin vidí jen případy pacientů ve svých zemích.
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
