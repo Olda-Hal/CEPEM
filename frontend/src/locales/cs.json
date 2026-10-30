@@ -102,7 +102,9 @@
     "creatingHospital": "Chyba při vytváření nemocnice",
     "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu.",
     "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
-    "patientNotFound": "Pacient nebyl nalezen"
+    "patientNotFound": "Pacient nebyl nalezen",
+    "creatingExaminationType": "Chyba při vytváření typu vyšetření",
+    "deletingExaminationType": "Chyba při mazání typu vyšetření"
   },
   "reservations": {
     "title": "Rezervace",
@@ -442,6 +444,10 @@
   },
   "patients": {
     "backToPatients": "Zpět na pacienty",
+    "commentTitle": "Komentář o pacientovi",
+    "editComment": "Upravit komentář",
+    "commentPlaceholder": "Zadejte komentář o pacientovi...",
+    "noComment": "Žádný komentář",
     "title": "Pacienti",
     "searchPlaceholder": "Vyhledejte pacienta podle jména, příjmení, UID nebo emailu...",
     "loading": "Načítání pacientů...",
