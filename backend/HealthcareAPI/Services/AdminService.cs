@@ -11,6 +11,7 @@ namespace HealthcareAPI.Services
         Task<(bool Success, string? ErrorBody)> DeactivateEmployeeAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
+        Task<(bool Success, string? ErrorBody)> DeleteRoleAsync(int roleId);
     }
 
     public class AdminService : IAdminService
@@ -177,6 +178,26 @@ namespace HealthcareAPI.Services
             {
                 _logger.LogError(ex, "Error creating role");
                 return null;
+            }
+        }
+
+        public async Task<(bool Success, string? ErrorBody)> DeleteRoleAsync(int roleId)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"/api/admin/roles/{roleId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? response.StatusCode.ToString() : body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting role {RoleId}", roleId);
+                return (false, null);
             }
         }
 

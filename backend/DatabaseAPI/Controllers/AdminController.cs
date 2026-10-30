@@ -153,5 +153,21 @@ namespace DatabaseAPI.Controllers
 
             return Ok(role);
         }
+
+        /// <summary>
+        /// Delete a role. 409 when it is system-critical or still assigned to
+        /// employees — the body carries the human-readable reason.
+        /// </summary>
+        [HttpDelete("roles/{id}")]
+        public async Task<IActionResult> DeleteRole(int id)
+        {
+            var (success, error) = await _employeeManagementService.DeleteRoleAsync(id);
+            if (!success)
+            {
+                return error == "Role not found" ? NotFound(error) : Conflict(error);
+            }
+
+            return NoContent();
+        }
     }
 }

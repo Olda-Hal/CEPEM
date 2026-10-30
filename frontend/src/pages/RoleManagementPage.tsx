@@ -16,6 +16,8 @@ const RoleManagementPage: React.FC = () => {
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [creatingRole, setCreatingRole] = useState(false);
+  const [confirmDeleteRole, setConfirmDeleteRole] = useState<Role | null>(null);
+  const [deletingRole, setDeletingRole] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -63,6 +65,27 @@ const RoleManagementPage: React.FC = () => {
       setError(t('admin.roleEditor.createFailed'));
     } finally {
       setCreatingRole(false);
+    }
+  };
+
+  const handleDeleteRole = async () => {
+    if (!confirmDeleteRole) {
+      return;
+    }
+
+    setDeletingRole(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiClient.delete(`/api/admin/roles/${confirmDeleteRole.id}`);
+      setRoles((prev) => prev.filter((r) => r.id !== confirmDeleteRole.id));
+      setSuccess(t('admin.roleEditor.deleted', { name: translateRoleName(confirmDeleteRole.name) }));
+      setConfirmDeleteRole(null);
+    } catch (err) {
+      console.error('Error deleting role', err);
+      setError(t('admin.roleEditor.deleteFailed'));
+    } finally {
+      setDeletingRole(false);
     }
   };
 
@@ -151,6 +174,16 @@ const RoleManagementPage: React.FC = () => {
                     <button className="btn btn-secondary btn-sm" onClick={() => openRules(role)}>
                       {t('admin.roleEditor.configureButton')}
                     </button>
+                    {role.name !== 'SysAdmin' && (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        title={t('admin.roleEditor.deleteButton')}
+                        aria-label={t('admin.roleEditor.deleteButton')}
+                        onClick={() => setConfirmDeleteRole(role)}
+                      >
+                        {t('admin.roleEditor.deleteButton')}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -158,6 +191,35 @@ const RoleManagementPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {confirmDeleteRole && (
+        <BaseModal
+          title={t('admin.roleEditor.deleteTitle')}
+          onClose={() => setConfirmDeleteRole(null)}
+        >
+          <p>
+            {t('admin.roleEditor.deleteConfirm', { name: translateRoleName(confirmDeleteRole.name) })}
+          </p>
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setConfirmDeleteRole(null)}
+              disabled={deletingRole}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDeleteRole}
+              disabled={deletingRole}
+            >
+              {deletingRole ? t('admin.roleEditor.deleting') : t('admin.roleEditor.deleteButton')}
+            </button>
+          </div>
+        </BaseModal>
+      )}
 
       {showRulesModal && selectedRole && (
         <RoleRulesModal

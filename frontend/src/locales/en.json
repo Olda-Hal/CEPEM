@@ -652,7 +652,13 @@
       "loadFailed": "Failed to load role management",
       "createFailed": "Failed to create role",
       "created": "Role {{name}} was created",
-      "rulesSaved": "Access rules for role {{name}} were saved"
+      "rulesSaved": "Access rules for role {{name}} were saved",
+      "deleteButton": "Delete",
+      "deleteTitle": "Delete role",
+      "deleteConfirm": "Do you really want to delete the role {{name}}? A role that is assigned to employees cannot be deleted.",
+      "deleting": "Deleting...",
+      "deleted": "Role {{name}} was deleted",
+      "deleteFailed": "Failed to delete role"
     },
     "permissionLabels": {
       "post_api_auth_change_password": "Change Own Password",

@@ -26,6 +26,13 @@ namespace DatabaseAPI.Services
         Task<string?> ResetPasswordAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
+
+        /// <summary>
+        /// Delete a role. Refused when the role is the system "SysAdmin" role
+        /// or is assigned to any employee (UserRoles) — the caller gets the
+        /// human-readable reason back.
+        /// </summary>
+        Task<(bool Success, string? Error)> DeleteRoleAsync(int roleId);
     }
 
     public class EmployeeManagementService : IEmployeeManagementService
@@ -459,6 +466,35 @@ namespace DatabaseAPI.Services
                 Id = role.Id,
                 Name = roleName
             };
+        }
+
+        public async Task<(bool Success, string? Error)> DeleteRoleAsync(int roleId)
+        {
+            var role = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.Id == roleId);
+            if (role == null)
+            {
+                return (false, "Role not found");
+            }
+
+            // The built-in SysAdmin role anchors superuser access — deleting
+            // it would brick administration of the whole deployment.
+            var roleName = role.NameTranslation?.EN ?? string.Empty;
+            if (string.Equals(roleName, "SysAdmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "System role SysAdmin cannot be deleted");
+            }
+
+            var assigned = await _context.UserRoles.AnyAsync(ur => ur.RoleId == roleId);
+            if (assigned)
+            {
+                return (false, "Role is assigned to one or more employees and cannot be deleted");
+            }
+
+            _context.Roles.Remove(role);
+            await _context.SaveChangesAsync();
+            return (true, null);
         }
     }
 }

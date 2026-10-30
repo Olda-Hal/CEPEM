@@ -659,7 +659,13 @@
       "loadFailed": "Nepodařilo se načíst správu rolí",
       "createFailed": "Nepodařilo se vytvořit roli",
       "created": "Role {{name}} byla vytvořena",
-      "rulesSaved": "Přístupová pravidla pro roli {{name}} byla uložena"
+      "rulesSaved": "Přístupová pravidla pro roli {{name}} byla uložena",
+      "deleteButton": "Smazat",
+      "deleteTitle": "Smazat roli",
+      "deleteConfirm": "Opravdu chcete smazat roli {{name}}? Roli nelze smazat, pokud je přiřazena zaměstnancům.",
+      "deleting": "Mažu...",
+      "deleted": "Role {{name}} byla smazána",
+      "deleteFailed": "Nepodařilo se smazat roli"
     },
     "permissionLabels": {
       "post_api_auth_change_password": "Změnit vlastní heslo",

@@ -259,3 +259,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.btn-danger {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--color-error);
+  opacity: 0.9;
+}

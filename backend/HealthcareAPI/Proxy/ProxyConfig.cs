@@ -41,6 +41,8 @@ public static class ProxyConfig
         yield return Route("patients-post-visit-documents", "/api/patients/{id}/visits/{visitId}/documents", "POST", "patients.documents.write");
         yield return Route("patients-put", "/api/patients/{**rest}", "PUT", "patients.write");
         yield return Route("patients-patch", "/api/patients/{**rest}", "PATCH", "patients.write");
+        yield return Route("patients-restore", "/api/patients/{id}/restore", "POST", "patients.write");
+        yield return Route("patients-delete", "/api/patients/{id}", "DELETE", "patients.write");
         yield return Route("patients-delete-photo", "/api/patients/{id}/photo", "DELETE", "patients.photo.write");
         yield return Route("patients-delete-documents", "/api/patients/{patientId}/documents/{documentId}", "DELETE", "patients.documents.write");
 

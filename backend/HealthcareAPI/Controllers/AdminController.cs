@@ -163,6 +163,29 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("roles.manage")]
+        [HttpDelete("roles/{roleId}")]
+        [PermissionDisplayName("Delete Role")]
+        [RequireRole("SysAdmin")]
+        public async Task<IActionResult> DeleteRole(int roleId)
+        {
+            try
+            {
+                var (success, errorBody) = await _adminService.DeleteRoleAsync(roleId);
+                if (!success)
+                {
+                    return errorBody == "Role not found" ? NotFound(errorBody) : Conflict(errorBody);
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting role {RoleId}", roleId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
         [RequirePermission("permissions.manage")]
         [HttpGet("access/permissions")]
         public async Task<IActionResult> GetPermissionCatalog()
