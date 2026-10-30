@@ -226,7 +226,7 @@ export const AppShell: React.FC = () => {
             <strong>{t('shell.impersonationActive')}</strong>{' '}
             {t('shell.impersonationDetail', {
               name: impersonation.fullName,
-              admin: impersonation.adminName || user?.email || ''
+              admin: impersonation.adminName || t('admin.roleNames.sysAdmin')
             })}
           </span>
           <button
