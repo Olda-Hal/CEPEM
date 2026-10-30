@@ -4,6 +4,7 @@ import { CreateEmployeeRequest, Hospital, Role } from '../types';
 import { apiClient } from '../utils/api';
 import { normalizeCountryCode } from '../utils/countryScope';
 import BaseModal from './BaseModal';
+import SearchableMultiSelect from './SearchableMultiSelect';
 import './CreateEmployeeModal.css';
 
 interface CreateEmployeeModalProps {
@@ -114,24 +115,6 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
       hospitalIds: defaultHospitalIds
     });
     setError('');
-  };
-
-  const handleRoleChange = (roleId: number, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      roleIds: checked
-        ? [...(prev.roleIds ?? []), roleId]
-        : (prev.roleIds ?? []).filter((id) => id !== roleId)
-    }));
-  };
-
-  const handleHospitalChange = (hospitalId: number, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      hospitalIds: checked
-        ? [...(prev.hospitalIds ?? []), hospitalId]
-        : (prev.hospitalIds ?? []).filter((id) => id !== hospitalId)
-    }));
   };
 
   const translateRoleName = (roleName: string) => {
@@ -305,41 +288,34 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
           </select>
         </div>
 
-        {hospitals.length > 0 && (
-          <div className="form-group checkbox-group">
-            <label>{t('admin.centersLabel')}</label>
-            <div className="choice-list">
-              {hospitals.map((hospital) => (
-                <label key={hospital.id}>
-                  <input
-                    type="checkbox"
-                    checked={(formData.hospitalIds ?? []).includes(hospital.id)}
-                    onChange={(e) => handleHospitalChange(hospital.id, e.target.checked)}
-                  />
-                  {hospital.name ?? `#${hospital.id}`}
-                </label>
-              ))}
-            </div>
+        <div className="form-row">
+          <div className="form-group">
+            <SearchableMultiSelect
+              label={t('admin.centersLabel')}
+              placeholder={t('admin.searchCenters')}
+              emptyText={t('admin.noCentersAvailable')}
+              options={hospitals.map((hospital) => ({
+                id: hospital.id,
+                name: hospital.name ?? `#${hospital.id}`
+              }))}
+              selectedIds={formData.hospitalIds ?? []}
+              onChange={(hospitalIds) => setFormData((prev) => ({ ...prev, hospitalIds }))}
+            />
           </div>
-        )}
-
-        {roles.length > 0 && (
-          <div className="form-group checkbox-group">
-            <label>{t('admin.roles')}</label>
-            <div className="choice-list">
-              {roles.map((role) => (
-                <label key={role.id}>
-                  <input
-                    type="checkbox"
-                    checked={(formData.roleIds ?? []).includes(role.id)}
-                    onChange={(e) => handleRoleChange(role.id, e.target.checked)}
-                  />
-                  {translateRoleName(role.name)}
-                </label>
-              ))}
-            </div>
+          <div className="form-group">
+            <SearchableMultiSelect
+              label={t('admin.roles')}
+              placeholder={t('admin.searchRoles')}
+              emptyText={t('common.notProvided')}
+              options={roles.map((role) => ({
+                id: role.id,
+                name: translateRoleName(role.name)
+              }))}
+              selectedIds={formData.roleIds ?? []}
+              onChange={(roleIds) => setFormData((prev) => ({ ...prev, roleIds }))}
+            />
           </div>
-        )}
+        </div>
 
         <div className="form-group checkbox-group">
           <label>

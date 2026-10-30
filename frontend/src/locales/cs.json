@@ -802,7 +802,14 @@
     "activityLogButton": "Otevřít audit log",
     "country": "Země",
     "centersLabel": "Centra",
-    "noCentersAvailable": "Žádná dostupná centra"
+    "noCentersAvailable": "Žádná dostupná centra",
+    "searchCenters": "Hledat centrum…",
+    "searchRoles": "Hledat roli…",
+    "showInactive": "Zobrazit neaktivní",
+    "previewAs": "Náhled jako",
+    "previewAsHint": "Otevřít systém pod účtem tohoto zaměstnance (jen SysAdmin)",
+    "confirmImpersonation": "Otevřít systém jako {{name}}? Prohlížení bude omezeno právy tohoto účtu.",
+    "impersonationFailed": "Náhled se nepodařilo otevřít."
   },
   "centerManagement": {
     "title": "Správa center",
@@ -969,7 +976,10 @@
     "admin": "Admin",
     "settings": "Nastavení",
     "logout": "Odhlásit se",
-    "versionUnknown": "verze neznámá"
+    "versionUnknown": "verze neznámá",
+    "impersonationActive": "Náhled",
+    "impersonationDetail": "Prohlížíte systém jako {{name}} (přihlášen správce {{admin}}).",
+    "stopImpersonation": "Ukončit náhled"
   },
   "administration": {
     "title": "Administrativa",

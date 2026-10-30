@@ -110,7 +110,29 @@
 
 .action-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.inactive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.inactive-toggle input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Searchable multi-selects already carry their own spacing inside modals */
+.employee-form .searchable-multi-select {
+  margin-bottom: 0;
 }
 
 .btn {

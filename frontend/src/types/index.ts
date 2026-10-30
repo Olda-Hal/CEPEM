@@ -672,6 +672,23 @@ export interface IntakeFormLinkInfo {
   expiresAtUtc: string;
 }
 
+/** Active SysAdmin "preview as employee" session (UI-side bookkeeping). */
+export interface ImpersonationState {
+  employeeId: number;
+  fullName: string;
+  adminName: string;
+}
+
+/** Response of POST /api/admin/employees/{id}/impersonate. */
+export interface ImpersonationResponse {
+  token: string;
+  employeeId: number;
+  fullName: string;
+  email: string;
+  roles: string[];
+  impersonatorName: string;
+}
+
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;
@@ -683,6 +700,12 @@ export interface AuthContextType {
     confirmPassword: string
   ) => Promise<{ success: boolean; error?: string }>;
   createEmployee: (employeeData: CreateEmployeeRequest) => Promise<CreateEmployeeResponse | null>;
+  /** Current preview session, or null when signed in normally. */
+  impersonation: ImpersonationState | null;
+  /** Switch to the target employee's view (SysAdmin only; enforced server-side). */
+  startImpersonation: (employeeId: number) => Promise<{ success: boolean; error?: string }>;
+  /** Return to the administrator's own session. */
+  stopImpersonation: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
   requiresPasswordChange: boolean;

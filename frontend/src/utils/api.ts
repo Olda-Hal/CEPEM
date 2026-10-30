@@ -24,8 +24,16 @@ export const UNAUTHORIZED_EVENT = 'cepem:unauthorized';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-/** Single source of truth for the stored auth token. */
-export const getAuthToken = (): string | null => localStorage.getItem('authToken');
+/**
+ * Tab-scoped token used while a SysAdmin previews the system as another
+ * employee. Keeping it in sessionStorage means other tabs (and the admin's
+ * own localStorage session) keep working with the administrator's identity.
+ */
+export const IMPERSONATION_TOKEN_KEY = 'cepem:impersonationToken';
+
+/** Single source of truth for the active auth token. */
+export const getAuthToken = (): string | null =>
+  sessionStorage.getItem(IMPERSONATION_TOKEN_KEY) ?? localStorage.getItem('authToken');
 
 class ApiClient {
   private baseUrl: string;

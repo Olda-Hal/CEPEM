@@ -106,7 +106,7 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
  */
 export const AppShell: React.FC = () => {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, impersonation, stopImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [buildVersion, setBuildVersion] = useState<string | null>(null);
@@ -124,6 +124,11 @@ export const AppShell: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleStopImpersonation = async () => {
+    await stopImpersonation();
+    navigate('/admin/employees');
   };
 
   const activeSection = [...NAV_SECTIONS]
@@ -214,6 +219,25 @@ export const AppShell: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {impersonation && (
+        <div className="shell-impersonation-banner" role="status">
+          <span className="shell-impersonation-text">
+            <strong>{t('shell.impersonationActive')}</strong>{' '}
+            {t('shell.impersonationDetail', {
+              name: impersonation.fullName,
+              admin: impersonation.adminName || user?.email || ''
+            })}
+          </span>
+          <button
+            type="button"
+            className="shell-impersonation-exit"
+            onClick={handleStopImpersonation}
+          >
+            {t('shell.stopImpersonation')}
+          </button>
+        </div>
+      )}
 
       <main className="shell-content">
         <Outlet />

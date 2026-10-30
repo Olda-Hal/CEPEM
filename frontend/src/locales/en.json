@@ -802,7 +802,14 @@
     "activityLogButton": "Open audit log",
     "country": "Country",
     "centersLabel": "Centers",
-    "noCentersAvailable": "No centers available"
+    "noCentersAvailable": "No centers available",
+    "searchCenters": "Search centers…",
+    "searchRoles": "Search roles…",
+    "showInactive": "Show inactive",
+    "previewAs": "Preview as",
+    "previewAsHint": "Open the system under this employee's account (SysAdmin only)",
+    "confirmImpersonation": "Open the system as {{name}}? Browsing is limited to this account's permissions.",
+    "impersonationFailed": "Could not start the preview."
   },
   "centerManagement": {
     "title": "Center Management",
@@ -969,7 +976,10 @@
     "admin": "Admin",
     "settings": "Settings",
     "logout": "Log out",
-    "versionUnknown": "version unknown"
+    "versionUnknown": "version unknown",
+    "impersonationActive": "Preview",
+    "impersonationDetail": "You are browsing as {{name}} (signed in as administrator {{admin}}).",
+    "stopImpersonation": "End preview"
   },
   "administration": {
     "title": "Administration",
