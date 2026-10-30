@@ -59,6 +59,14 @@ produkčním nasazení.
 - **Ověření**: parser porovnán s meikpro na reálném vzorku (shodná okna i hodnoty), Lanczos i paleta pixel-shodné s `core/visual.render`; 228 DB / 71 HC / 49 FE testů, buildy čisté.
 - Pozn.: Doctor nemá `patients.read`, k měření se dostane jen přes Vyhodnocování; Country Admin vidí jen případy pacientů ve svých zemích.
 
+### 2026-10-30 — Vyhodnocování: jeden scan po druhém, dva lékaři, report v návštěvě
+
+- **Zobrazení jako v MEIK aplikaci** ✅ — řada 7 scanů vedle sebe (horizontální scroll), vybarvený celý čtverec (bez siluety), jemné 3×3 dohlazení a histogram naměřených hodnot pod každým řezem.
+- **Workflow jednoho měření** ✅ — `GET /api/evaluations/next` vrací vždy nejstarší neohodnocené měření; po jejich vyčerpání nejstarší jednou ohodnocené **bez zobrazení cizího hodnocení**. Vlastní již hodnocené měření se nikdy nevrátí; každé měření má max. 2 nezávislé recenze. Když není co hodnotit, zobrazí se „Všechna dostupná hodnocení jsou momentálně vyhodnocena.“
+- **Recenze** ✅ — nová tabulka `EvaluationReview` (lékař, markery, doporučení, outcome, čas), migrace `AddEvaluationReviews` backfilluje stará hodnocení a doplní `VisitId` podle návštěvy.
+- **Interaktivní report v návštěvě** ✅ — po prvním zhodnocení se měření objeví v návštěvě pacienta jako „Vyhodnocená měření“; otevře se 7 scanů se všemi markery (barva podle lékaře) a všemi komentáři obou lékařů.
+- **Ověřeno**: DatabaseAPI 237 testů, HealthcareAPI 71, frontend 50; tsc/eslint/prettier/stylelint/build čisté.
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
