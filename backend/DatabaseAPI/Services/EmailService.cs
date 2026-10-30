@@ -55,7 +55,7 @@ public class EmailService : IEmailService
         var body =
             $"Dobrý den,\n\n" +
             $"byla podána žádost o obnovení hesla k Vašemu účtu v systému CEPEM. " +
-            $"K pokračování otevřete oba následující odkaz (platnost 15 minut):\n\n" +
+            $"K pokračování otevřete následující odkaz (platí 15 minut):\n\n" +
             $"{resetUrl}\n\n" +
             $"Pokud jste o změnu hesla nepožádali, tento e-mail ignorujte.\n\n" +
             $"Hello,\n\n" +
