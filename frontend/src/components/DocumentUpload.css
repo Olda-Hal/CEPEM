@@ -8,7 +8,8 @@
   z-index: 1000;
 }
 
-.document-upload-modal {
+/* BaseModal already renders .modal-content — this only reshapes that card. */
+.modal-content.document-upload-modal {
   background: var(--color-background-secondary);
   border-radius: 16px;
   width: 90%;
@@ -63,7 +64,7 @@
   transition: fill 0.2s;
 }
 
-.document-upload-modal .modal-content {
+.document-upload-body {
   padding: 24px 28px 28px;
   overflow-y: auto;
   flex: 1;

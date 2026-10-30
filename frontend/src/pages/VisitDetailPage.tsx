@@ -12,7 +12,6 @@ import {
 } from '../types';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
-import { BaseModal } from '../components/BaseModal';
 import { useToast } from '../contexts/ToastContext';
 import './VisitDetailPage.css';
 
@@ -387,9 +386,7 @@ const VisitDetailPage: React.FC = () => {
       </div>
 
       {showUpload && (
-        <BaseModal title={t('patients.documents.upload')} onClose={() => setShowUpload(false)}>
-          <DocumentUpload onUpload={handleUpload} onCancel={() => setShowUpload(false)} />
-        </BaseModal>
+        <DocumentUpload onUpload={handleUpload} onCancel={() => setShowUpload(false)} />
       )}
 
       {showIntakeModal && (
