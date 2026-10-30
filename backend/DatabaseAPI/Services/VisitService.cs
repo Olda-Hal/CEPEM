@@ -52,7 +52,27 @@ public class VisitService : IVisitService
                 .ThenInclude(e => e.Comment)
             .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId);
 
-        return visit == null ? null : MapDetail(visit);
+        if (visit == null)
+        {
+            return null;
+        }
+
+        var detail = MapDetail(visit);
+        detail.Evaluations = await _context.EvaluationCases
+            .Where(c => c.VisitId == visitId && c.Reviews.Any())
+            .OrderBy(c => c.CreatedAtUtc)
+            .Select(c => new VisitEvaluationSummaryDto
+            {
+                CaseId = c.Id,
+                Title = c.Title,
+                Side = c.SourceSide,
+                Posture = c.SourcePosture,
+                ReviewCount = c.Reviews.Count(),
+                LastEvaluatedAtUtc = c.Reviews.Max(r => (DateTime?)r.EvaluatedAtUtc)
+            })
+            .ToListAsync();
+
+        return detail;
     }
 
     public async Task<VisitDetailDto?> CreateVisitAsync(int patientId, CreateVisitRequest request, int? createdByEmployeeId, string countryCode)
@@ -123,7 +143,8 @@ public class VisitService : IVisitService
         }
 
         // Reuse the patient document pipeline (encryption, size limits, dedupe)
-        var document = await _patientDocumentService.SavePatientDocumentAsync(patientId, data, originalFileName);
+        var document = await _patientDocumentService.SavePatientDocumentAsync(
+            patientId, data, originalFileName, visitId);
 
         var sortOrder = await _context.VisitDocuments
             .Where(vd => vd.VisitId == visitId)

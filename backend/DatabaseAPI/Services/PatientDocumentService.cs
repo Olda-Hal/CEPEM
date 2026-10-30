@@ -33,7 +33,11 @@ public class PatientDocumentService
         }
     }
 
-    public async Task<PatientDocument> SavePatientDocumentAsync(int patientId, byte[] documentData, string originalFileName)
+    public async Task<PatientDocument> SavePatientDocumentAsync(
+        int patientId,
+        byte[] documentData,
+        string originalFileName,
+        int? visitId = null)
     {
         var patient = await _context.Patients.FindAsync(patientId);
         if (patient == null)
@@ -80,7 +84,7 @@ public class PatientDocumentService
 
         if (tdbAnalysis != null)
         {
-            await CreateEvaluationCaseAsync(patientId, document.Id, tdbAnalysis);
+            await CreateEvaluationCaseAsync(patientId, document.Id, tdbAnalysis, visitId);
         }
 
         return document;
@@ -91,12 +95,17 @@ public class PatientDocumentService
     /// keeps the patient link for the record but the evaluation UI shows only
     /// the measurement (side/posture/slices), never patient identity.
     /// </summary>
-    private async Task CreateEvaluationCaseAsync(int patientId, int documentId, TdbAnalysis analysis)
+    private async Task CreateEvaluationCaseAsync(
+        int patientId,
+        int documentId,
+        TdbAnalysis analysis,
+        int? visitId)
     {
         var evaluationCase = new EvaluationCase
         {
             PatientId = patientId,
             PatientDocumentId = documentId,
+            VisitId = visitId,
             Title = "MEIK – TOMODB",
             ImageKey = "tdb",
             SourceSide = analysis.Side,

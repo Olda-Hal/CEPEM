@@ -61,6 +61,7 @@ public class DatabaseContext : DbContext
     public DbSet<ActivityLog> ActivityLogs { get; set; }
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public DbSet<EvaluationCase> EvaluationCases { get; set; }
+    public DbSet<EvaluationReview> EvaluationReviews { get; set; }
     
     // Translation entities
     public DbSet<Translation> Translations { get; set; }
@@ -199,6 +200,28 @@ public class DatabaseContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.PatientDocumentId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EvaluationCase>()
+            .HasOne(c => c.Visit)
+            .WithMany()
+            .HasForeignKey(c => c.VisitId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EvaluationReview>()
+            .HasOne(r => r.EvaluationCase)
+            .WithMany(c => c.Reviews)
+            .HasForeignKey(r => r.EvaluationCaseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EvaluationReview>()
+            .HasOne(r => r.Employee)
+            .WithMany()
+            .HasForeignKey(r => r.EmployeeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EvaluationReview>()
+            .HasIndex(r => new { r.EvaluationCaseId, r.EmployeeId })
+            .IsUnique();
     }
     
     private void ConfigureEventRelationships(ModelBuilder modelBuilder)

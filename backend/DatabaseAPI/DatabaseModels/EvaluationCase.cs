@@ -20,6 +20,13 @@ public class EvaluationCase
     public int? PatientDocumentId { get; set; }
     public PatientDocument? PatientDocument { get; set; }
 
+    /// <summary>Visit the measurement was uploaded to (interactive report lives there).</summary>
+    public int? VisitId { get; set; }
+    public Visit? Visit { get; set; }
+
+    /// <summary>Independent evaluations (up to two different doctors).</summary>
+    public ICollection<EvaluationReview> Reviews { get; set; } = new List<EvaluationReview>();
+
     /// <summary>Parsed measurement conditions from the .tdb header ("Left"/"Right").</summary>
     public string? SourceSide { get; set; }
 

@@ -8,14 +8,18 @@ using DatabaseAPI.Services;
 namespace DatabaseAPI.Controllers;
 
 /// <summary>
-/// Mock "Vyhodnocování" queue: open cases land here for the evaluating
-/// doctor. Authorization (evaluations.read/write) is enforced by the
-/// healthcare proxy; actor identity arrives via X-Actor-* headers.
+/// Vyhodnocování: measurements wait for a doctor; each measurement can be
+/// evaluated independently by two different doctors. Authorization
+/// (evaluations.read/write) is enforced by the healthcare proxy; actor
+/// identity arrives via X-Actor-* headers.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class EvaluationsController : ControllerBase
 {
+    /// <summary>Two independent reviews per measurement, by different doctors.</summary>
+    private const int MaxReviews = 2;
+
     private readonly DatabaseContext _context;
     private readonly IActorCountryContextService _actorCountryContextService;
     private readonly IEmployeeScopeService _employeeScopeService;
@@ -33,17 +37,65 @@ public class EvaluationsController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// The next measurement for the signed-in doctor: the oldest one with no
+    /// review yet; when none are left, the oldest one with a single review.
+    /// A doctor never receives a measurement they already reviewed.
+    /// </summary>
+    [HttpGet("next")]
+    public async Task<ActionResult<EvaluationCaseDto>> GetNext()
+    {
+        var actorId = _actorCountryContextService.GetActorEmployeeId();
+        if (actorId == null)
+        {
+            return Unauthorized();
+        }
+
+        var cases = await _context.EvaluationCases
+            .Include(c => c.Patient)
+                .ThenInclude(p => p!.Person)
+            .Include(c => c.Reviews)
+            .Where(c => c.ImageKey == "tdb")
+            .ToListAsync();
+
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        IEnumerable<EvaluationCase> candidates = cases
+            .Where(c => c.Reviews.Count < MaxReviews)
+            .Where(c => c.Reviews.All(r => r.EmployeeId != actorId));
+
+        if (actor.IsCountryAdmin && !actor.HasFullAccess)
+        {
+            candidates = candidates.Where(c => c.Patient == null ||
+                actor.AdministeredCountryScopeIds.Contains(
+                    DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(c.Patient.CountryCode)));
+        }
+
+        var next = candidates
+            .OrderBy(c => c.Reviews.Count)      // unreviewed first…
+            .ThenBy(c => c.CreatedAtUtc)        // …oldest first
+            .FirstOrDefault();
+
+        if (next == null)
+        {
+            return NoContent();
+        }
+
+        // A re-evaluation must not reveal the first doctor's findings.
+        return Ok(ToDto(next, includeSlices: true, includeReviews: false));
+    }
+
     [HttpGet("cases")]
     public async Task<ActionResult<List<EvaluationCaseDto>>> GetCases([FromQuery] bool includeEvaluated = false)
     {
         var query = _context.EvaluationCases
             .Include(c => c.Patient)
                 .ThenInclude(p => p!.Person)
+            .Include(c => c.Reviews)
             .AsQueryable();
 
         if (!includeEvaluated)
         {
-            query = query.Where(c => c.EvaluatedAtUtc == null);
+            query = query.Where(c => !c.Reviews.Any());
         }
 
         var actor = await _employeeScopeService.GetActorScopeAsync();
@@ -62,8 +114,7 @@ public class EvaluationsController : ControllerBase
                 .ToList();
         }
 
-        // The list stays light — slice payloads are only sent for the opened case.
-        return Ok(cases.Select(c => ToDto(c, includeSlices: false)).ToList());
+        return Ok(cases.Select(c => ToDto(c, includeSlices: false, includeReviews: false)).ToList());
     }
 
     [HttpGet("cases/{id}")]
@@ -72,6 +123,7 @@ public class EvaluationsController : ControllerBase
         var evaluationCase = await _context.EvaluationCases
             .Include(c => c.Patient)
                 .ThenInclude(p => p!.Person)
+            .Include(c => c.Reviews)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (evaluationCase == null)
@@ -84,12 +136,37 @@ public class EvaluationsController : ControllerBase
             return StatusCode(403, "K tomuto případu nemáte přístup.");
         }
 
-        return Ok(ToDto(evaluationCase, includeSlices: true));
+        return Ok(ToDto(evaluationCase, includeSlices: true, includeReviews: false));
+    }
+
+    /// <summary>
+    /// Interactive report stored with the visit: the measurement plus every
+    /// doctor's markers and comments.
+    /// </summary>
+    [HttpGet("cases/{id}/report")]
+    public async Task<ActionResult<EvaluationCaseDto>> GetReport(int id)
+    {
+        var evaluationCase = await _context.EvaluationCases
+            .Include(c => c.Patient)
+                .ThenInclude(p => p!.Person)
+            .Include(c => c.Reviews)
+                .ThenInclude(r => r.Employee!)
+                    .ThenInclude(e => e.Person)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (evaluationCase == null ||
+            evaluationCase.VisitId == null ||
+            evaluationCase.Reviews.Count == 0)
+        {
+            return NotFound("Vyhodnocení není dostupné.");
+        }
+
+        return Ok(ToDto(evaluationCase, includeSlices: true, includeReviews: true));
     }
 
     public class SaveEvaluationRequest
     {
-        /// <summary>JSON array of [{ x, y, note }] markers in normalized coords.</summary>
+        /// <summary>JSON array of [{ slice, x, y, note }] findings.</summary>
         public string AnnotationsJson { get; set; } = "[]";
         public string? Recommendation { get; set; }
 
@@ -100,9 +177,20 @@ public class EvaluationsController : ControllerBase
     [HttpPost("cases/{id}/evaluate")]
     public async Task<ActionResult<EvaluationCaseDto>> Evaluate(int id, [FromBody] SaveEvaluationRequest request)
     {
+        var actorId = _actorCountryContextService.GetActorEmployeeId();
+        if (actorId == null)
+        {
+            return Unauthorized();
+        }
+
+        // Serializable so two doctors cannot both take the second review slot.
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable);
+
         var evaluationCase = await _context.EvaluationCases
             .Include(c => c.Patient)
                 .ThenInclude(p => p!.Person)
+            .Include(c => c.Reviews)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (evaluationCase == null)
@@ -115,21 +203,69 @@ public class EvaluationsController : ControllerBase
             return StatusCode(403, "K tomuto případu nemáte přístup.");
         }
 
+        var isTdb = string.Equals(evaluationCase.ImageKey, "tdb", StringComparison.OrdinalIgnoreCase);
         var outcome = request.Outcome?.Trim();
         if (!string.IsNullOrEmpty(outcome) && outcome != "OK" && outcome != "Findings")
         {
             return BadRequest("Neplatný výsledek vyšetření.");
         }
 
-        evaluationCase.AnnotationsJson = request.AnnotationsJson;
-        evaluationCase.Recommendation = request.Recommendation;
-        evaluationCase.Outcome = string.IsNullOrEmpty(outcome) ? null : outcome;
-        evaluationCase.EvaluatedByEmployeeId = _actorCountryContextService.GetActorEmployeeId();
-        evaluationCase.EvaluatedAtUtc = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        if (isTdb && string.IsNullOrEmpty(outcome))
+        {
+            return BadRequest("Chybí výsledek vyšetření.");
+        }
 
-        _logger.LogInformation("Evaluation case {CaseId} evaluated by employee {EmployeeId}", id, evaluationCase.EvaluatedByEmployeeId);
-        return Ok(ToDto(evaluationCase, includeSlices: true));
+        if (evaluationCase.Reviews.Count >= MaxReviews)
+        {
+            return Conflict("Měření už vyhodnotili dva lékaři.");
+        }
+
+        if (evaluationCase.Reviews.Any(r => r.EmployeeId == actorId))
+        {
+            return Conflict("Toto měření jste už hodnotil.");
+        }
+
+        var now = DateTime.UtcNow;
+        var review = new EvaluationReview
+        {
+            EvaluationCaseId = evaluationCase.Id,
+            EmployeeId = actorId,
+            AnnotationsJson = request.AnnotationsJson,
+            Recommendation = request.Recommendation,
+            Outcome = string.IsNullOrEmpty(outcome) ? null : outcome,
+            EvaluatedAtUtc = now,
+            CreatedAtUtc = now
+        };
+        evaluationCase.Reviews.Add(review);
+        _context.EvaluationReviews.Add(review);
+
+        // Keep the legacy single-evaluation columns for old clients only;
+        // the TDB workflow reads reviews exclusively.
+        if (!isTdb)
+        {
+            evaluationCase.AnnotationsJson = request.AnnotationsJson;
+            evaluationCase.Recommendation = request.Recommendation;
+            evaluationCase.Outcome = string.IsNullOrEmpty(outcome) ? null : outcome;
+            evaluationCase.EvaluatedByEmployeeId = actorId;
+            evaluationCase.EvaluatedAtUtc = now;
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Unique index (EvaluationCaseId, EmployeeId) lost a concurrent race.
+            return Conflict("Toto měření jste už hodnotil.");
+        }
+
+        _logger.LogInformation(
+            "Evaluation case {CaseId} reviewed by employee {EmployeeId} (review {ReviewNumber}/{MaxReviews})",
+            id, actorId, evaluationCase.Reviews.Count + 1, MaxReviews);
+
+        return Ok(ToDto(evaluationCase, includeSlices: true, includeReviews: false));
     }
 
     /// <summary>
@@ -148,9 +284,11 @@ public class EvaluationsController : ControllerBase
             DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(evaluationCase.Patient.CountryCode));
     }
 
-    private static EvaluationCaseDto ToDto(EvaluationCase c, bool includeSlices)
+    private static EvaluationCaseDto ToDto(EvaluationCase c, bool includeSlices, bool includeReviews)
     {
         var isTdb = string.Equals(c.ImageKey, "tdb", StringComparison.OrdinalIgnoreCase);
+        var reviews = c.Reviews.OrderBy(r => r.EvaluatedAtUtc).ToList();
+        var latestReview = reviews.Count > 0 ? reviews[^1] : null;
 
         // TDB measurements are presented anonymously to the evaluator.
         var patientName = !isTdb && c.Patient?.Person is { } person
@@ -166,15 +304,39 @@ public class EvaluationsController : ControllerBase
             PatientName = patientName,
             Title = c.Title,
             ImageKey = c.ImageKey,
-            AnnotationsJson = c.AnnotationsJson,
-            Recommendation = c.Recommendation,
-            Outcome = c.Outcome,
+            // For TDB the case-level legacy fields stay hidden — they may
+            // hold the first evaluator's findings.
+            AnnotationsJson = isTdb ? null : c.AnnotationsJson,
+            Recommendation = isTdb ? null : c.Recommendation,
+            Outcome = isTdb ? null : c.Outcome,
             Side = c.SourceSide,
             Posture = c.SourcePosture,
             Conditions = c.SourceConditions,
             Tdb = includeSlices && isTdb ? DeserializeSlices(c.SlicesJson) : null,
-            EvaluatedAtUtc = c.EvaluatedAtUtc,
-            IsEvaluated = c.EvaluatedAtUtc != null
+            EvaluatedAtUtc = isTdb ? latestReview?.EvaluatedAtUtc : c.EvaluatedAtUtc,
+            IsEvaluated = isTdb ? reviews.Count > 0 : c.EvaluatedAtUtc != null,
+            ReviewCount = reviews.Count,
+            MaxReviews = MaxReviews,
+            Reviews = includeReviews
+                ? reviews.Select(ToReviewDto).ToList()
+                : null
+        };
+    }
+
+    private static EvaluationReviewDto ToReviewDto(EvaluationReview review)
+    {
+        var doctorName = review.Employee?.Person is { } person
+            ? $"{person.TitleBefore} {person.FirstName} {person.LastName} {person.TitleAfter}".Trim()
+            : null;
+
+        return new EvaluationReviewDto
+        {
+            Id = review.Id,
+            DoctorName = doctorName,
+            AnnotationsJson = review.AnnotationsJson,
+            Recommendation = review.Recommendation,
+            Outcome = review.Outcome,
+            EvaluatedAtUtc = review.EvaluatedAtUtc
         };
     }
 
@@ -214,6 +376,19 @@ public class EvaluationsController : ControllerBase
         public TdbSlicesDto? Tdb { get; set; }
         public DateTime? EvaluatedAtUtc { get; set; }
         public bool IsEvaluated { get; set; }
+        public int ReviewCount { get; set; }
+        public int MaxReviews { get; set; }
+        public List<EvaluationReviewDto>? Reviews { get; set; }
+    }
+
+    public class EvaluationReviewDto
+    {
+        public int Id { get; set; }
+        public string? DoctorName { get; set; }
+        public string? AnnotationsJson { get; set; }
+        public string? Recommendation { get; set; }
+        public string? Outcome { get; set; }
+        public DateTime EvaluatedAtUtc { get; set; }
     }
 
     public class TdbSlicesDto

@@ -98,8 +98,11 @@ public static class ProxyConfig
         // through the internal typed client, not the proxy
         yield return Route("activity-logs-get", "/api/activitylogs/{**rest}", "GET", "audit.read");
 
-        // Vyhodnocování (doctor evaluation of mock measurement images)
+        // Vyhodnocování (doctor evaluation of .tdb measurements)
         yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");
+        // The interactive report is part of the patient's visit record, so
+        // patient-facing staff (patients.read) can open it as well.
+        yield return Route("evaluations-report", "/api/evaluations/cases/{id}/report", "GET", "patients.read");
         yield return Route("evaluations-evaluate", "/api/evaluations/cases/{id}/evaluate", "POST", "evaluations.write");
 
         // Settings

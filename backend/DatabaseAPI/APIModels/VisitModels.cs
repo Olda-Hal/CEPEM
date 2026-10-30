@@ -19,6 +19,16 @@ public class VisitDocumentDto
     public long FileSize { get; set; }
 }
 
+public class VisitEvaluationSummaryDto
+{
+    public int CaseId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Side { get; set; }
+    public string? Posture { get; set; }
+    public int ReviewCount { get; set; }
+    public DateTime? LastEvaluatedAtUtc { get; set; }
+}
+
 public class VisitDetailDto
 {
     public int Id { get; set; }
@@ -27,6 +37,9 @@ public class VisitDetailDto
     public string? Note { get; set; }
     public int? SourceEventId { get; set; }
     public List<VisitDocumentDto> Documents { get; set; } = new();
+
+    /// <summary>Evaluated TDB measurements uploaded to this visit (interactive reports).</summary>
+    public List<VisitEvaluationSummaryDto> Evaluations { get; set; } = new();
 
     /// <summary>Filled when the visit links an intake-form event (viewable form data).</summary>
     public object? IntakeForm { get; set; }
