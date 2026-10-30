@@ -262,6 +262,39 @@ namespace DatabaseAPI.Services
                 });
                 await _context.SaveChangesAsync();
             }
+
+            // Demo Vyhodnocování cases bound to the demo patient (idempotent by title)
+            await SeedDemoEvaluationsAsync(hospital, adminEmployee);
+        }
+
+        private async Task SeedDemoEvaluationsAsync(Hospital hospital, Employee? adminEmployee)
+        {
+            var patient = await _context.Patients
+                .Include(p => p.Person)
+                .FirstOrDefaultAsync(p => p.Person!.UID == "DEMO-P-0001");
+
+            var demoCases = new (string Title, string ImageKey)[]
+            {
+                ("RTG hrudníku", "chest"),
+                ("RTG levé ruky", "hand")
+            };
+
+            foreach (var (title, imageKey) in demoCases)
+            {
+                if (await _context.EvaluationCases.AnyAsync(c => c.Title == title && c.PatientId == (patient != null ? patient.Id : (int?)null)))
+                {
+                    continue;
+                }
+
+                _context.EvaluationCases.Add(new EvaluationCase
+                {
+                    PatientId = patient?.Id,
+                    Title = title,
+                    ImageKey = imageKey,
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+            }
+            await _context.SaveChangesAsync();
         }
 
         private async Task SeedIntakeFormEventTypeAsync()
@@ -332,7 +365,9 @@ namespace DatabaseAPI.Services
             ("settings.read", "View application settings"),
             ("settings.write", "Change application settings"),
             ("tests.read", "View the test results dashboard"),
-            ("audit.read", "View the activity audit log")
+            ("audit.read", "View the activity audit log"),
+            ("evaluations.read", "View evaluation cases (Vyhodnocování)"),
+            ("evaluations.write", "Evaluate cases and write recommendations")
         };
 
         /// <summary>
@@ -403,7 +438,8 @@ namespace DatabaseAPI.Services
                 "dashboard.read",
                 "patients.read", "patients.documents.read",
                 "examinations.read", "examinations.export", "examinations.documents.read",
-                "hospitals.read"
+                "hospitals.read",
+                "evaluations.read", "evaluations.write"
             });
             await SeedRoleGrantsAsync("Center Admin", new[]
             {

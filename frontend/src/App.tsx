@@ -24,6 +24,7 @@ const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage')
 const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
 const HealthDashboardPage = React.lazy(() => import('./pages/HealthDashboardPage'));
 const AdministrationPage = React.lazy(() => import('./pages/AdministrationPage'));
+const EvaluationPage = React.lazy(() => import('./pages/EvaluationPage'));
 const AdminPage = React.lazy(() => import('./pages/AdminPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const PatientsPage = React.lazy(() =>
@@ -171,6 +172,7 @@ function App() {
                     <Route path="/patients/:id/edit" element={<EditPatientPage />} />
                     <Route path="/reservations" element={<ReservationSlotsPage />} />
                     <Route path="/examinations" element={<ExaminationsPage />} />
+                    <Route path="/vyhodnocovani" element={<EvaluationPage />} />
                   </Route>
                   <Route path="/dashboard" element={<Navigate to="/patients" replace />} />
                   <Route path="/" element={<Navigate to="/patients" replace />} />

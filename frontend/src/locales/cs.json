@@ -286,6 +286,26 @@
       "deleteFailed": "Chyba při mazání slotu."
     }
   },
+  "evaluation": {
+    "title": "Vyhodnocování",
+    "subtitle": "Prohlédněte si měření, označte problémy a zformulujte doporučení pro pacienta.",
+    "open": "Ke vyhodnocení",
+    "done": "Hotové",
+    "noneOpen": "Žádné čekající případy",
+    "noPatient": "Bez pacienta",
+    "pickCase": "Vyberte případ ze seznamu.",
+    "markHint": "Kliknutím do snímku přidáte značku problému; poznámku doplníte pod seznamem.",
+    "markerNotePlaceholder": "Poznámka ke značce",
+    "removeMarker": "Odebrat",
+    "recommendation": "Doporučení",
+    "recommendationPlaceholder": "„Dle nálezu doporučuji …\"",
+    "evaluate": "Odeslat vyhodnocení",
+    "saving": "Ukládám...",
+    "saved": "Vyhodnocení bylo uloženo.",
+    "loadFailed": "Nepodařilo se načíst případy pro vyhodnocování.",
+    "saveFailed": "Nepodařilo se uložit vyhodnocení.",
+    "evaluatedAt": "Vyhodnoceno {{date}}"
+  },
   "examinations": {
     "title": "Vyšetření",
     "centerFallback": "Centrum",

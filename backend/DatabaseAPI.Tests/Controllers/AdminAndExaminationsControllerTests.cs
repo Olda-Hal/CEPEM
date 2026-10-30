@@ -16,13 +16,14 @@ public class AdminControllerTests
 {
     private readonly Mock<IEmployeeManagementService> _service = new();
     private readonly Mock<IEmployeeScopeService> _scopeService = new();
+    private readonly Mock<IPasswordResetService> _passwordResetService = new();
     private readonly AdminController _controller;
 
     public AdminControllerTests()
     {
         _scopeService.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ActorScope(null, new List<string>(), new List<int>(), new List<int>()));
-        _controller = new AdminController(_service.Object, _scopeService.Object);
+        _controller = new AdminController(_service.Object, _scopeService.Object, _passwordResetService.Object);
     }
 
     [Fact]

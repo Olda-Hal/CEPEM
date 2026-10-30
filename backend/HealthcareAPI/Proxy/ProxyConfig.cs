@@ -98,6 +98,10 @@ public static class ProxyConfig
         // through the internal typed client, not the proxy
         yield return Route("activity-logs-get", "/api/activitylogs/{**rest}", "GET", "audit.read");
 
+        // Vyhodnocování (doctor evaluation of mock measurement images)
+        yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");
+        yield return Route("evaluations-evaluate", "/api/evaluations/cases/{id}/evaluate", "POST", "evaluations.write");
+
         // Settings
         yield return Route("settings-get", "/api/settings/{**rest}", "GET", "settings.read");
         yield return Route("settings-put", "/api/settings/{**rest}", "PUT", "settings.write");

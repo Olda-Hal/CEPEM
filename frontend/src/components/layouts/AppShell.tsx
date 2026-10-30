@@ -60,6 +60,12 @@ const NAV_SECTIONS: NavSection[] = [
     matchPrefixes: ['/examinations']
   },
   {
+    key: 'vyhodnocovani',
+    to: '/vyhodnocovani',
+    labelKey: 'evaluation.title',
+    matchPrefixes: ['/vyhodnocovani']
+  },
+  {
     key: 'administration',
     to: '/administration',
     labelKey: 'shell.administration',
@@ -85,6 +91,10 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
     }
     if (section.key === 'admin') {
       return isAdmin(user);
+    }
+    if (section.key === 'vyhodnocovani') {
+      // Vyhodnocování belongs to the evaluating doctor role (SysAdmin sees it too).
+      return isAdmin(user) || hasRole(user, 'Doctor');
     }
     return true;
   });

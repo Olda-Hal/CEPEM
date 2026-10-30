@@ -282,6 +282,26 @@
       "deleteFailed": "Error deleting slot."
     }
   },
+  "evaluation": {
+    "title": "Evaluation",
+    "subtitle": "Review the measurement, mark the findings and write a recommendation for the patient.",
+    "open": "To evaluate",
+    "done": "Done",
+    "noneOpen": "No pending cases",
+    "noPatient": "No patient",
+    "pickCase": "Pick a case from the list.",
+    "markHint": "Click onto the image to place a finding marker; add the note in the list below.",
+    "markerNotePlaceholder": "Marker note",
+    "removeMarker": "Remove",
+    "recommendation": "Recommendation",
+    "recommendationPlaceholder": "“Based on the findings I recommend …”",
+    "evaluate": "Submit evaluation",
+    "saving": "Saving...",
+    "saved": "Evaluation saved.",
+    "loadFailed": "Failed to load evaluation cases.",
+    "saveFailed": "Failed to save the evaluation.",
+    "evaluatedAt": "Evaluated at {{date}}"
+  },
   "examinations": {
     "title": "Examinations",
     "centerFallback": "Center",

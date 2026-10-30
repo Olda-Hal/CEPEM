@@ -17,7 +17,8 @@ public class AuthControllerTests
     public AuthControllerTests()
     {
         _mockAuthService = new Mock<IAuthService>();
-        _controller = new AuthController(_mockAuthService.Object);
+        var mockHttpClientFactory = new Mock<System.Net.Http.IHttpClientFactory>();
+        _controller = new AuthController(_mockAuthService.Object, mockHttpClientFactory.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

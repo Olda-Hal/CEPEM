@@ -443,6 +443,49 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("Equipment");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationCase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("AnnotationsJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EvaluatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("EvaluatedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int?>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluatedByEmployeeId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("EvaluationCases");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>
                 {
                     b.Property<int>("Id")
@@ -1953,6 +1996,21 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationCase", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "EvaluatedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("EvaluatedByEmployeeId");
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId");
+
+                    b.Navigation("EvaluatedByEmployee");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>
