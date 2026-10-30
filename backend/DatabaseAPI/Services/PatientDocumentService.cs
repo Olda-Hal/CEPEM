@@ -8,6 +8,7 @@ public class PatientDocumentService
 {
     private readonly DatabaseContext _context;
     private readonly DocumentEncryptionService _encryptionService;
+    private readonly ITdbAnalysisService _tdbAnalysisService;
     private readonly ILogger<PatientDocumentService> _logger;
     private readonly string _documentStoragePath;
     private const long MaxFileSizeBytes = 10 * 1024 * 1024;
@@ -15,11 +16,13 @@ public class PatientDocumentService
     public PatientDocumentService(
         DatabaseContext context,
         DocumentEncryptionService encryptionService,
+        ITdbAnalysisService tdbAnalysisService,
         IConfiguration configuration,
         ILogger<PatientDocumentService> logger)
     {
         _context = context;
         _encryptionService = encryptionService;
+        _tdbAnalysisService = tdbAnalysisService;
         _logger = logger;
         _documentStoragePath = configuration["DocumentStorage:Path"] ?? "/app/patient-documents";
         
@@ -43,6 +46,15 @@ public class PatientDocumentService
             throw new InvalidOperationException($"Document size must not exceed {MaxFileSizeBytes / 1024 / 1024}MB");
         }
 
+        // A .tdb upload additionally feeds the Vyhodnocování queue. Parse it
+        // before anything is persisted so a corrupt measurement is rejected
+        // instead of leaving an unusable document behind.
+        TdbAnalysis? tdbAnalysis = null;
+        if (_tdbAnalysisService.IsTdbFileName(originalFileName) || _tdbAnalysisService.IsTdb(documentData))
+        {
+            tdbAnalysis = _tdbAnalysisService.Parse(documentData);
+        }
+
         var encryptedData = await _encryptionService.EncryptDocumentAsync(documentData);
         
         var fileName = $"patient_{patientId}_{Guid.NewGuid()}.enc";
@@ -63,10 +75,43 @@ public class PatientDocumentService
         _context.PatientDocuments.Add(document);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Saved encrypted document {DocumentId} for patient {PatientId} at {Path}", 
+        _logger.LogInformation("Saved encrypted document {DocumentId} for patient {PatientId} at {Path}",
             document.Id, patientId, fileName);
 
+        if (tdbAnalysis != null)
+        {
+            await CreateEvaluationCaseAsync(patientId, document.Id, tdbAnalysis);
+        }
+
         return document;
+    }
+
+    /// <summary>
+    /// Creates the anonymised Vyhodnocování case for a .tdb upload. The case
+    /// keeps the patient link for the record but the evaluation UI shows only
+    /// the measurement (side/posture/slices), never patient identity.
+    /// </summary>
+    private async Task CreateEvaluationCaseAsync(int patientId, int documentId, TdbAnalysis analysis)
+    {
+        var evaluationCase = new EvaluationCase
+        {
+            PatientId = patientId,
+            PatientDocumentId = documentId,
+            Title = "MEIK – TOMODB",
+            ImageKey = "tdb",
+            SourceSide = analysis.Side,
+            SourcePosture = analysis.Posture,
+            SourceConditions = string.IsNullOrWhiteSpace(analysis.Conditions) ? null : analysis.Conditions,
+            SlicesJson = _tdbAnalysisService.ToJson(analysis),
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        _context.EvaluationCases.Add(evaluationCase);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Created TDB evaluation case {CaseId} from document {DocumentId} (side={Side}, posture={Posture})",
+            evaluationCase.Id, documentId, analysis.Side ?? "-", analysis.Posture ?? "-");
     }
 
     public async Task<List<PatientDocument>> GetPatientDocumentsAsync(int patientId)

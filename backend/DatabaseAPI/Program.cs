@@ -64,6 +64,9 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 // Register employee management service
 builder.Services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
 
+// MEIK .tdb measurements → Vyhodnocování case (slices + histograms)
+builder.Services.AddScoped<ITdbAnalysisService, TdbAnalysisService>();
+
 // Register access control services
 builder.Services.AddScoped<IActorCountryContextService, ActorCountryContextService>();
 builder.Services.AddScoped<IEmployeeScopeService, EmployeeScopeService>();

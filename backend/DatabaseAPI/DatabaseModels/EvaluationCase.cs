@@ -16,6 +16,25 @@ public class EvaluationCase
     public int? PatientId { get; set; }
     public Patient? Patient { get; set; }
 
+    /// <summary>Source .tdb document when the case came from an upload.</summary>
+    public int? PatientDocumentId { get; set; }
+    public PatientDocument? PatientDocument { get; set; }
+
+    /// <summary>Parsed measurement conditions from the .tdb header ("Left"/"Right").</summary>
+    public string? SourceSide { get; set; }
+
+    /// <summary>Parsed posture from the .tdb header ("Lying"/"Standing"/"Sitting").</summary>
+    public string? SourcePosture { get; set; }
+
+    /// <summary>Raw measurement conditions text (MEIK "Measurement conditions").</summary>
+    public string? SourceConditions { get; set; }
+
+    /// <summary>Serialized TDB slices (7 x 36 x 36 float32 grids + histograms).</summary>
+    public string? SlicesJson { get; set; }
+
+    /// <summary>Doctor's verdict: "OK" (no findings) or "Findings".</summary>
+    public string? Outcome { get; set; }
+
     /// <summary>Display label of the examination, e.g. "RTG hrudníku".</summary>
     [Required]
     [StringLength(200)]

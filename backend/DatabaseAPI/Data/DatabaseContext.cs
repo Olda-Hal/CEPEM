@@ -191,6 +191,14 @@ public class DatabaseContext : DbContext
             .WithMany(p => p.Documents)
             .HasForeignKey(pd => pd.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Evaluation case -> source .tdb document (nullable; document removal
+        // must not delete the clinical evaluation).
+        modelBuilder.Entity<EvaluationCase>()
+            .HasOne(c => c.PatientDocument)
+            .WithMany()
+            .HasForeignKey(c => c.PatientDocumentId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
     
     private void ConfigureEventRelationships(ModelBuilder modelBuilder)

@@ -466,10 +466,28 @@ namespace DatabaseAPI.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("varchar(64)");
 
+                    b.Property<string>("Outcome")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("PatientDocumentId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("PatientId")
                         .HasColumnType("int");
 
                     b.Property<string>("Recommendation")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SlicesJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourceConditions")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourcePosture")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourceSide")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Title")
@@ -480,6 +498,8 @@ namespace DatabaseAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EvaluatedByEmployeeId");
+
+                    b.HasIndex("PatientDocumentId");
 
                     b.HasIndex("PatientId");
 
@@ -2004,6 +2024,11 @@ namespace DatabaseAPI.Migrations
                         .WithMany()
                         .HasForeignKey("EvaluatedByEmployeeId");
 
+                    b.HasOne("DatabaseAPI.DatabaseModels.PatientDocument", "PatientDocument")
+                        .WithMany()
+                        .HasForeignKey("PatientDocumentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("DatabaseAPI.DatabaseModels.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId");
@@ -2011,6 +2036,8 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("EvaluatedByEmployee");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("PatientDocument");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>
