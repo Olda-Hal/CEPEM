@@ -62,6 +62,7 @@ produkčním nasazení.
 ### 2026-10-30 — Vyhodnocování: jeden scan po druhém, dva lékaři, report v návštěvě
 
 - **Zobrazení jako v MEIK aplikaci** ✅ — řada 7 scanů vedle sebe (horizontální scroll), vybarvený celý čtverec (bez siluety), jemné 3×3 dohlazení a histogram naměřených hodnot pod každým řezem.
+- **Histogramy** ✅ — textový popis odstraněn, histogram má mřížku a **pevnou osu X −0,30 … 1,10**. Rozsah vychází z celého korpusu 1650 souborů NORM (skutečné extrémy −0,279 … 1,091); původní MEIK histogram osu automaticky škáloval podle vrstvy, takže jde o empirické extrémy aplikace. Všech 7 histogramů je tak přímo srovnatelných.
 - **Workflow jednoho měření** ✅ — `GET /api/evaluations/next` vrací vždy nejstarší neohodnocené měření; po jejich vyčerpání nejstarší jednou ohodnocené **bez zobrazení cizího hodnocení**. Vlastní již hodnocené měření se nikdy nevrátí; každé měření má max. 2 nezávislé recenze. Když není co hodnotit, zobrazí se „Všechna dostupná hodnocení jsou momentálně vyhodnocena.“
 - **Recenze** ✅ — nová tabulka `EvaluationReview` (lékař, markery, doporučení, outcome, čas), migrace `AddEvaluationReviews` backfilluje stará hodnocení a doplní `VisitId` podle návštěvy.
 - **Interaktivní report v návštěvě** ✅ — po prvním zhodnocení se měření objeví v návštěvě pacienta jako „Vyhodnocená měření“; otevře se 7 scanů se všemi markery (barva podle lékaře) a všemi komentáři obou lékařů.
