@@ -24,6 +24,16 @@ produkčním nasazení.
 - ~~**Hover submenu v horní navigaci**~~ ✅
   - Administrativa a Admin v top menu mají hover/focus dropdown s podsekcemi; položky filtrované rolí uživatele.
 
+## Nálezy a navázání z noční směny 2026-10-30
+
+- ~~**CI zelené**~~ ✅ — Node 22 v CI, eslint.config.mjs, prettier/stylelint, Grafana port 3002 v CI, ADMIN_INITIAL_PASSWORD do compose, oprava migrace AddVisits (ONLY_FULL_GROUP_BY), demo seed (Dev) + login rate limit konfigurací, opravy E2E selectorů.
+- ~~**Smazání role adminem**~~ ✅ *(commit cc13a24)* — PUT/DELETE chrání SysAdmin roli a role s přiřazením (409).
+- ~~**Defaultní landing page podle role**~~ ✅ *(commit 692e07d)* — Role.DefaultPath (whitelist cest), dropdown v RoleManagementPage, LoginPage redirect.
+- ~~**Reset hesla mailem**~~ ✅ *(commit b3c16e7)* — forgot link + trigger nadřízeným, PasswordResetToken (SHA-256, single-use, 15 min), Mailpit v compose; ověřeno end-to-end přes Mailpit.
+- ~~**Mock stránka Vyhodnocování**~~ ✅ *(commit 522e69b)* — eval cases + mock RTG canvas + doporučení, permission evaluations.* pro Doctor; seed demo případy.
+- TODO — **Pokračování Vyhodnocování**: navazující flow podle specifikace (jednání podle doporučení: kdo, co, kdy — čekáme na zadání).
+- TODO — **Produkční SMTP:** v produkci dopořvat SMTP_HOST/PORT/USER/PASS/SSL + FRONTEND_PUBLIC_URL v .env (bez toho se reset-link jen zaloguje).
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
