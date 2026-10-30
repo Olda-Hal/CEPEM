@@ -12,6 +12,13 @@ namespace DatabaseAPI.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Self-heal from a partially applied attempt: MySQL DDL is not
+            // transactional, so an earlier failed run may have left the tables
+            // present while the backfill below never finished. They are
+            // exclusively owned by this migration and are rebuilt from Events
+            // + PatientDocuments on every (re)application.
+            migrationBuilder.Sql("DROP TABLE IF EXISTS `VisitDocuments`, `Visits`;");
+
             migrationBuilder.CreateTable(
                 name: "Visits",
                 columns: table => new
