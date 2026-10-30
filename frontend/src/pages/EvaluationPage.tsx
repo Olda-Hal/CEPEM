@@ -81,7 +81,9 @@ const EvaluationPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const all = await apiClient.get<EvaluationCase[]>('/api/evaluations/cases?includeEvaluated=true');
+        const all = await apiClient.get<EvaluationCase[]>(
+          '/api/evaluations/cases?includeEvaluated=true'
+        );
         setCases(all);
       } catch (err) {
         console.error('Failed to load evaluation cases', err);
@@ -126,10 +128,13 @@ const EvaluationPage: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
-      const saved = await apiClient.post<EvaluationCase>(`/api/evaluations/cases/${selected.id}/evaluate`, {
-        annotationsJson: JSON.stringify(markers),
-        recommendation: recommendation || null
-      });
+      const saved = await apiClient.post<EvaluationCase>(
+        `/api/evaluations/cases/${selected.id}/evaluate`,
+        {
+          annotationsJson: JSON.stringify(markers),
+          recommendation: recommendation || null
+        }
+      );
       setCases((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
       setSelected(saved);
       setMarkers(readMarkers(saved.annotationsJson));
@@ -161,7 +166,9 @@ const EvaluationPage: React.FC = () => {
 
       <div className="evaluation-layout">
         <aside className="evaluation-list">
-          <h3>{t('evaluation.open')} ({openCases.length})</h3>
+          <h3>
+            {t('evaluation.open')} ({openCases.length})
+          </h3>
           {openCases.length === 0 && <p className="muted">{t('evaluation.noneOpen')}</p>}
           {openCases.map((c) => (
             <button
@@ -176,7 +183,9 @@ const EvaluationPage: React.FC = () => {
 
           {doneCases.length > 0 && (
             <>
-              <h3>{t('evaluation.done')} ({doneCases.length})</h3>
+              <h3>
+                {t('evaluation.done')} ({doneCases.length})
+              </h3>
               {doneCases.map((c) => (
                 <button
                   key={c.id}
@@ -254,7 +263,9 @@ const EvaluationPage: React.FC = () => {
 
               {selected.isEvaluated ? (
                 <p className="muted small">
-                  {t('evaluation.evaluatedAt', { date: new Date(selected.evaluatedAtUtc ?? '').toLocaleString() })}
+                  {t('evaluation.evaluatedAt', {
+                    date: new Date(selected.evaluatedAtUtc ?? '').toLocaleString()
+                  })}
                 </p>
               ) : (
                 <button className="btn btn-primary" onClick={handleEvaluate} disabled={saving}>

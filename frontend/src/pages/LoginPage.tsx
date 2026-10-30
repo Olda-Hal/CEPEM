@@ -132,11 +132,7 @@ export const LoginPage: React.FC = () => {
             <button type="submit" className="login-button" disabled={loading}>
               {loading ? t('login.loggingIn') : t('login.loginButton')}
             </button>
-            <button
-              type="button"
-              className="login-link-button"
-              onClick={() => setShowForgot(true)}
-            >
+            <button type="button" className="login-link-button" onClick={() => setShowForgot(true)}>
               {t('login.forgotPassword')}
             </button>
           </form>

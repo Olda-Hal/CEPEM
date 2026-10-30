@@ -80,7 +80,9 @@ const RoleManagementPage: React.FC = () => {
     try {
       await apiClient.delete(`/api/admin/roles/${confirmDeleteRole.id}`);
       setRoles((prev) => prev.filter((r) => r.id !== confirmDeleteRole.id));
-      setSuccess(t('admin.roleEditor.deleted', { name: translateRoleName(confirmDeleteRole.name) }));
+      setSuccess(
+        t('admin.roleEditor.deleted', { name: translateRoleName(confirmDeleteRole.name) })
+      );
       setConfirmDeleteRole(null);
     } catch (err) {
       console.error('Error deleting role', err);
@@ -229,7 +231,9 @@ const RoleManagementPage: React.FC = () => {
           onClose={() => setConfirmDeleteRole(null)}
         >
           <p>
-            {t('admin.roleEditor.deleteConfirm', { name: translateRoleName(confirmDeleteRole.name) })}
+            {t('admin.roleEditor.deleteConfirm', {
+              name: translateRoleName(confirmDeleteRole.name)
+            })}
           </p>
           <div className="modal-actions">
             <button
