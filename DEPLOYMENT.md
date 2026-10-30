@@ -119,6 +119,55 @@ Note: Container ports are exposed only to localhost (127.0.0.1), not publicly. N
 2. Check SSL rating: `https://www.ssllabs.com/ssltest/`
 3. Test API endpoints through the frontend
 
+## SMTP / password-reset e-mail
+
+`docker-compose.prod.yml` forwards these values to `database-api`:
+
+```dotenv
+FRONTEND_PUBLIC_URL=https://your-domain.com   # base of the reset link
+SMTP_HOST=smtp.your-provider.com
+SMTP_PORT=587
+SMTP_ENABLE_SSL=true
+SMTP_USER=your-smtp-user
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=noreply@your-domain.com
+SMTP_FROM_NAME=CEPEM
+```
+
+Then recreate just the API container:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d database-api
+docker compose -f docker-compose.prod.yml logs --tail=100 database-api | grep -i smtp
+```
+
+Notes:
+- `.NET System.Net.Mail` supports **STARTTLS on 587**; it does **not** support implicit SSL on 465.
+- With `SMTP_HOST` empty the reset link is only written to the container log.
+- The sending address must be allowed by the provider (SPF/DKIM helps deliverability).
+- Test egress from the host: `openssl s_client -starttls smtp -connect smtp.your-provider.com:587 -crlf`.
+- Reset links use `FRONTEND_PUBLIC_URL`; if it is `localhost`, e-mails point to localhost.
+
+## Grafana
+
+Grafana and Prometheus are bound to `127.0.0.1` only. From your workstation use an SSH tunnel:
+
+```bash
+ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
+# then open http://localhost:3001
+```
+
+- `GRAFANA_ROOT_URL` must match the URL you use. For the tunnel use `http://localhost:3001`; for a public path use e.g. `https://your-domain.com/grafana/` **and** `GRAFANA_SERVE_FROM_SUB_PATH=true` plus an nginx `location /grafana/`. Without it Grafana redirects to its default `http://localhost:3000`.
+- Prometheus must find the provisioned datasource at `http://prometheus:9090` (not `localhost`). Check `deploy/grafana/provisioning/datasources/prometheus.yml` on the server; if it still says localhost, update it and recreate Grafana.
+- Check scrape targets and raw metrics:
+  ```bash
+  curl -s http://127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {scrapeUrl, health, lastError}'
+  curl -s http://127.0.0.1:5000/metrics | head
+  curl -s http://127.0.0.1:5001/metrics | head
+  docker compose -f docker-compose.prod.yml logs --tail=100 prometheus grafana
+  ```
+- In Grafana open **Connections → Data sources → Prometheus → Test**; a query `up` should return both targets as `1`.
+
 ## Maintenance
 
 ### View Logs

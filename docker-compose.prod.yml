@@ -69,6 +69,16 @@ services:
       - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
+      # Password-reset e-mail delivery (leave SMTP_HOST empty to log the link only)
+      - Smtp__Host=${SMTP_HOST:-}
+      - Smtp__Port=${SMTP_PORT:-587}
+      - Smtp__EnableSsl=${SMTP_ENABLE_SSL:-true}
+      - Smtp__UserName=${SMTP_USER:-}
+      - Smtp__Password=${SMTP_PASSWORD:-}
+      - Smtp__FromAddress=${SMTP_FROM:-noreply@cepem.local}
+      - Smtp__FromName=${SMTP_FROM_NAME:-CEPEM}
+      # Public SPA URL used in reset links (must not be localhost!)
+      - App__FrontendBaseUrl=${FRONTEND_PUBLIC_URL:-http://localhost:3000}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents
@@ -113,6 +123,13 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:?}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?}
       - GF_USERS_ALLOW_SIGN_UP=false
+      # Without this Grafana links to http://localhost:3000. For an SSH tunnel
+      # use http://localhost:3001; for a public URL use e.g.
+      # https://cepem.example.com/grafana/ and set
+      # GRAFANA_SERVE_FROM_SUB_PATH=true (plus an nginx location).
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+      - GF_SERVER_SERVE_FROM_SUB_PATH=${GRAFANA_SERVE_FROM_SUB_PATH:-false}
+      - GF_SECURITY_COOKIE_SECURE=${GRAFANA_COOKIE_SECURE:-false}
     volumes:
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
