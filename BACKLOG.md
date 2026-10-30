@@ -41,6 +41,16 @@ produkčním nasazení.
 - **Výběr rolí a center** ✅ — checkboxové mřížky v create/edit modalu nahrazeny `SearchableMultiSelect` (hledání, chips, prázdný stav); centra a role jsou ve dvou zarovnaných sloupcích a Enter ve vyhledávání už neodesílá formulář.
 - TODO — ověřit na živém stacku: SysAdmin → Náhled jako Doktor/Examiner (menu, data, oprávnění) → Ukončit náhled; a že deaktivovaný zaměstnanec zmizí a po zapnutí přepínače se dá znovu aktivovat.
 
+### 2026-10-30 — matice přístupů (sloty, zaměstnanci, Vyhodnocování)
+
+- **Rezervační sloty** ✅ — Center Admin jen centra, kam je přiřazen; Country Admin všechna centra ve spravovaných zemích; SysAdmin/Admin vše. Doctor a Examiner přístup nemají (menu, route i permission). Server vynucuje scope u výpisu, vytváření, kopírování dne i všech změnových akcí; výpis center `/api/hospitals` je pro scoped adminy omezený.
+- **Viditelnost zaměstnanců** ✅ — Country Admin už nevidí všechny osoby se svou zemí, ale jen zaměstnance přiřazené k centrům ve spravovaných zemích + ty, které sám založil. Center Admin vidí jen svá centra + vlastní založené. Detail zaměstnance má stejné omezení jako seznam.
+- **Examiner** ✅ — jen pacientská agenda; odebrány `employees.read/create`. Vidí všechny pacienty (bez center-omezení).
+- **Doctor** ✅ — bez pacientů a vyšetření (odebrány permissions, skryté menu i route guard); default landing `/vyhodnocovani` (seed + FE fallback). `/api/employees/me` nově vrací `defaultPath`, takže role landing skutečně funguje.
+- **Vyhodnocování** ✅ — přístup Doctor + Country Admin; Country Admin vidí jen případy pacientů ve spravovaných zemích; granty `evaluations.*` doplněny.
+- **Pozn. k nasazení:** seed nyní granty i **odebírá** (jinak by staré DB držely dřívější přístupy). Po restartu database-api se matice srovná; role landing se nastaví jen tam, kde dosud nebyl.
+- Ověřeno: DatabaseAPI 218 testů, HealthcareAPI 71, frontend 45, tsc/eslint/prettier/build čisté.
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
