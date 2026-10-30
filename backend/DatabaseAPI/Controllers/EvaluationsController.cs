@@ -17,12 +17,18 @@ public class EvaluationsController : ControllerBase
 {
     private readonly DatabaseContext _context;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IEmployeeScopeService _employeeScopeService;
     private readonly ILogger<EvaluationsController> _logger;
 
-    public EvaluationsController(DatabaseContext context, IActorCountryContextService actorCountryContextService, ILogger<EvaluationsController> logger)
+    public EvaluationsController(
+        DatabaseContext context,
+        IActorCountryContextService actorCountryContextService,
+        IEmployeeScopeService employeeScopeService,
+        ILogger<EvaluationsController> logger)
     {
         _context = context;
         _actorCountryContextService = actorCountryContextService;
+        _employeeScopeService = employeeScopeService;
         _logger = logger;
     }
 
@@ -39,12 +45,23 @@ public class EvaluationsController : ControllerBase
             query = query.Where(c => c.EvaluatedAtUtc == null);
         }
 
+        var actor = await _employeeScopeService.GetActorScopeAsync();
         var cases = await query
             .OrderBy(c => c.CreatedAtUtc)
-            .Select(c => ToDto(c))
             .ToListAsync();
 
-        return Ok(cases);
+        // A Country Admin only sees cases for patients in administered
+        // countries; doctors and full admins see the whole queue.
+        if (actor.IsCountryAdmin && !actor.HasFullAccess)
+        {
+            cases = cases
+                .Where(c => c.Patient == null ||
+                    actor.AdministeredCountryScopeIds.Contains(
+                        DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(c.Patient.CountryCode)))
+                .ToList();
+        }
+
+        return Ok(cases.Select(ToDto).ToList());
     }
 
     [HttpGet("cases/{id}")]
@@ -58,6 +75,11 @@ public class EvaluationsController : ControllerBase
         if (evaluationCase == null)
         {
             return NotFound("Evaluation case not found");
+        }
+
+        if (!await CanAccessCaseAsync(evaluationCase))
+        {
+            return StatusCode(403, "K tomuto případu nemáte přístup.");
         }
 
         return Ok(ToDto(evaluationCase));
@@ -83,6 +105,11 @@ public class EvaluationsController : ControllerBase
             return NotFound("Evaluation case not found");
         }
 
+        if (!await CanAccessCaseAsync(evaluationCase))
+        {
+            return StatusCode(403, "K tomuto případu nemáte přístup.");
+        }
+
         evaluationCase.AnnotationsJson = request.AnnotationsJson;
         evaluationCase.Recommendation = request.Recommendation;
         evaluationCase.EvaluatedByEmployeeId = _actorCountryContextService.GetActorEmployeeId();
@@ -91,6 +118,22 @@ public class EvaluationsController : ControllerBase
 
         _logger.LogInformation("Evaluation case {CaseId} evaluated by employee {EmployeeId}", id, evaluationCase.EvaluatedByEmployeeId);
         return Ok(ToDto(evaluationCase));
+    }
+
+    /// <summary>
+    /// Country Admin may only touch cases whose patient belongs to an
+    /// administered country. Other callers are gated by role permissions.
+    /// </summary>
+    private async Task<bool> CanAccessCaseAsync(EvaluationCase evaluationCase)
+    {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        if (!actor.IsCountryAdmin || actor.HasFullAccess || evaluationCase.Patient == null)
+        {
+            return true;
+        }
+
+        return actor.AdministeredCountryScopeIds.Contains(
+            DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(evaluationCase.Patient.CountryCode));
     }
 
     private static EvaluationCaseDto ToDto(EvaluationCase c) => new()

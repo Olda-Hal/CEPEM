@@ -55,6 +55,26 @@ namespace DatabaseAPI.Services
             await EnsureRoleExistsAsync("Doctor");
             await EnsureRoleExistsAsync("Center Admin");
             await EnsureRoleExistsAsync("Country Admin");
+
+            // The evaluating doctor lands on Vyhodnocování; center admins land
+            // on the administration hub (they have no patient agenda). Admins
+            // may still override both from the role editor.
+            await EnsureRoleDefaultPathAsync("Doctor", "/vyhodnocovani");
+            await EnsureRoleDefaultPathAsync("Center Admin", "/administration");
+        }
+
+        /// <summary>
+        /// Sets a role's landing page only when it has not been configured
+        /// yet, so an administrator's explicit choice is never overwritten.
+        /// </summary>
+        private async Task EnsureRoleDefaultPathAsync(string roleName, string defaultPath)
+        {
+            var role = await GetRoleByNameAsync(roleName);
+            if (role != null && string.IsNullOrWhiteSpace(role.DefaultPath))
+            {
+                role.DefaultPath = defaultPath;
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task EnsureRoleExistsAsync(string roleName)
@@ -425,20 +445,20 @@ namespace DatabaseAPI.Services
             await _context.SaveChangesAsync();
 
             await SeedRoleGrantsAsync("SysAdmin", PermissionCatalog.Select(p => p.Code).ToArray());
+            // Examiner works only with the patient agenda (no employee or
+            // evaluation administration).
             await SeedRoleGrantsAsync("Examiner", new[]
             {
-                "dashboard.read", "uid.read", "employees.read", "employees.create",
+                "dashboard.read", "uid.read",
                 "patients.read", "patients.write", "patients.photo.write",
                 "patients.documents.read", "patients.documents.write",
                 "events.read", "events.write",
                 "examinations.read", "examinations.export", "examinations.documents.write"
             });
+            // Doctor evaluates (Vyhodnocování) and has no patient agenda.
             await SeedRoleGrantsAsync("Doctor", new[]
             {
-                "dashboard.read",
-                "patients.read", "patients.documents.read",
-                "examinations.read", "examinations.export", "examinations.documents.read",
-                "hospitals.read",
+                "dashboard.read", "hospitals.read",
                 "evaluations.read", "evaluations.write"
             });
             await SeedRoleGrantsAsync("Center Admin", new[]
@@ -461,8 +481,42 @@ namespace DatabaseAPI.Services
                 "examinationrooms.read", "examinationrooms.write",
                 "doctorexaminationrooms.read", "doctorexaminationrooms.write",
                 "reservations.read", "reservations.write",
-                "examinations.read", "examinations.export"
+                "examinations.read", "examinations.export",
+                "evaluations.read", "evaluations.write"
             });
+
+            // Role grants are additive by design (to preserve manual grants),
+            // so permissions that moved out of a role must be revoked here.
+            await RevokeRoleGrantsAsync("Examiner", new[] { "employees.read", "employees.create" });
+            await RevokeRoleGrantsAsync("Doctor", new[]
+            {
+                "patients.read", "patients.documents.read",
+                "examinations.read", "examinations.export", "examinations.documents.read"
+            });
+        }
+
+        /// <summary>
+        /// Removes role-level grants that are no longer part of a role's
+        /// intended permission set. Employee-level overrides are untouched.
+        /// </summary>
+        private async Task RevokeRoleGrantsAsync(string roleName, string[] permissionCodes)
+        {
+            var role = await GetRoleByNameAsync(roleName);
+            if (role == null)
+            {
+                return;
+            }
+
+            var grants = await _context.RolePermissions
+                .Where(rp => rp.RoleId == role.Id &&
+                    rp.Permission != null && permissionCodes.Contains(rp.Permission.Code))
+                .ToListAsync();
+
+            if (grants.Count > 0)
+            {
+                _context.RolePermissions.RemoveRange(grants);
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task SeedRoleGrantsAsync(string roleName, string[] permissionCodes)

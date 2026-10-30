@@ -125,6 +125,14 @@ namespace DatabaseAPI.Services
 
         public async Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId)
         {
+            // The detail read is subject to the same visibility rules as the
+            // list, so a scoped admin cannot fetch an outsider by id.
+            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync();
+            if (visibleIds != null && !visibleIds.Contains(employeeId))
+            {
+                return null;
+            }
+
             var employee = await _context.Employees
                 .Include(e => e.Person)
                     .ThenInclude(p => p.UserRoles)

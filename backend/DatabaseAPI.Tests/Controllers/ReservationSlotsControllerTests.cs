@@ -18,6 +18,7 @@ namespace DatabaseAPI.Tests.Controllers;
 public class ReservationSlotsControllerTests : IDisposable
 {
     private readonly DatabaseContext _context;
+    private readonly Mock<IEmployeeScopeService> _scopeMock = new();
     private readonly ReservationSlotsController _controller;
 
     public ReservationSlotsControllerTests()
@@ -33,11 +34,29 @@ public class ReservationSlotsControllerTests : IDisposable
         actorCountryMock.Setup(service => service.GetActorCountryCodeAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync("CZ");
 
+        SetActorRoles("SysAdmin");
+
         _controller = new ReservationSlotsController(
             _context,
             NullLogger<ReservationSlotsController>.Instance,
-            actorCountryMock.Object);
+            actorCountryMock.Object,
+            _scopeMock.Object);
     }
+
+    private void SetActor(
+        IReadOnlyList<string> roles,
+        IReadOnlyList<int>? hospitalIds = null,
+        IReadOnlyList<int>? countryScopeIds = null)
+    {
+        _scopeMock.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(
+                1,
+                roles,
+                hospitalIds ?? new List<int>(),
+                countryScopeIds ?? new List<int>()));
+    }
+
+    private void SetActorRoles(params string[] roles) => SetActor(roles);
 
     public void Dispose()
     {
@@ -45,9 +64,9 @@ public class ReservationSlotsControllerTests : IDisposable
         _context.Dispose();
     }
 
-    private int SeedHospital(bool active = true)
+    private int SeedHospital(bool active = true, int countryScopeId = 203)
     {
-        var hospital = new Hospital { Name = "Test Hospital", Active = active };
+        var hospital = new Hospital { Name = "Test Hospital", Active = active, CountryScopeId = countryScopeId };
         _context.Hospitals.Add(hospital);
         _context.SaveChanges();
         return hospital.Id;
@@ -621,5 +640,76 @@ public class ReservationSlotsControllerTests : IDisposable
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var created = Assert.IsType<List<ReservationSlotDto>>(ok.Value);
         Assert.Equal("Available", created[0].Status);
+    }
+
+    // ---- Actor scope (Center Admin own centers / Country Admin countries) ----
+
+    [Fact]
+    public async Task CenterAdmin_CanReadOwnCenterSlots()
+    {
+        var ownCenter = SeedHospital();
+        SeedSlot(ownCenter, _base, _base.AddHours(1));
+        SetActor(new[] { "Center Admin" }, hospitalIds: new[] { ownCenter });
+
+        var result = await _controller.GetByHospital(ownCenter, null, null, null);
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CenterAdmin_CannotReadForeignCenterSlots()
+    {
+        var ownCenter = SeedHospital();
+        var foreignCenter = SeedHospital();
+        SetActor(new[] { "Center Admin" }, hospitalIds: new[] { ownCenter });
+
+        var result = await _controller.GetByHospital(foreignCenter, null, null, null);
+
+        var forbidden = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, forbidden.StatusCode);
+    }
+
+    [Fact]
+    public async Task CenterAdmin_CannotCreateSlotsForForeignCenter()
+    {
+        var ownCenter = SeedHospital();
+        var foreignCenter = SeedHospital();
+        SetActor(new[] { "Center Admin" }, hospitalIds: new[] { ownCenter });
+
+        var result = await _controller.CreateSlots(new CreateReservationSlotsRequest
+        {
+            HospitalId = foreignCenter,
+            Slots = new List<CreateReservationSlotItemRequest>
+            {
+                new() { StartDateTime = _base, EndDateTime = _base.AddHours(1) }
+            }
+        });
+
+        var forbidden = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, forbidden.StatusCode);
+    }
+
+    [Fact]
+    public async Task CountryAdmin_CanReadSlotsInAdministeredCountry()
+    {
+        var germanCenter = SeedHospital(countryScopeId: 276);
+        SeedSlot(germanCenter, _base, _base.AddHours(1));
+        SetActor(new[] { "Country Admin" }, countryScopeIds: new[] { 276 });
+
+        var result = await _controller.GetByHospital(germanCenter, null, null, null);
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CountryAdmin_CannotReadSlotsOutsideAdministeredCountries()
+    {
+        var czechCenter = SeedHospital(countryScopeId: 203);
+        SetActor(new[] { "Country Admin" }, countryScopeIds: new[] { 276 });
+
+        var result = await _controller.GetByHospital(czechCenter, null, null, null);
+
+        var forbidden = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, forbidden.StatusCode);
     }
 }
