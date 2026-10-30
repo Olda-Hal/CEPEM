@@ -41,6 +41,8 @@ public static class ProxyConfig
         yield return Route("patients-post-visit-documents", "/api/patients/{id}/visits/{visitId}/documents", "POST", "patients.documents.write");
         yield return Route("patients-put", "/api/patients/{**rest}", "PUT", "patients.write");
         yield return Route("patients-patch", "/api/patients/{**rest}", "PATCH", "patients.write");
+        yield return Route("patients-restore", "/api/patients/{id}/restore", "POST", "patients.write");
+        yield return Route("patients-delete", "/api/patients/{id}", "DELETE", "patients.write");
         yield return Route("patients-delete-photo", "/api/patients/{id}/photo", "DELETE", "patients.photo.write");
         yield return Route("patients-delete-documents", "/api/patients/{patientId}/documents/{documentId}", "DELETE", "patients.documents.write");
 
@@ -96,9 +98,20 @@ public static class ProxyConfig
         // through the internal typed client, not the proxy
         yield return Route("activity-logs-get", "/api/activitylogs/{**rest}", "GET", "audit.read");
 
+        // Vyhodnocování (doctor evaluation of .tdb measurements)
+        yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");
+        // The interactive report is part of the patient's visit record, so
+        // patient-facing staff (patients.read) can open it as well.
+        yield return Route("evaluations-report", "/api/evaluations/cases/{id}/report", "GET", "patients.read");
+        yield return Route("evaluations-evaluate", "/api/evaluations/cases/{id}/evaluate", "POST", "evaluations.write");
+
         // Settings
         yield return Route("settings-get", "/api/settings/{**rest}", "GET", "settings.read");
         yield return Route("settings-put", "/api/settings/{**rest}", "PUT", "settings.write");
+
+        // Admin employee list export (CSV) — proxied so the download uses the
+        // same permission and actor-scope rules as the employee list itself.
+        yield return Route("admin-employees-export", "/api/admin/employees/export", "GET", "employees.read");
     }
 
     private static RouteConfig Route(string id, string path, string? method = null, string? permissionCode = null)

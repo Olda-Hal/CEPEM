@@ -13,12 +13,49 @@ public class ReservationSlotsController : ControllerBase
     private readonly DatabaseContext _context;
     private readonly ILogger<ReservationSlotsController> _logger;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IEmployeeScopeService _employeeScopeService;
 
-    public ReservationSlotsController(DatabaseContext context, ILogger<ReservationSlotsController> logger, IActorCountryContextService actorCountryContextService)
+    public ReservationSlotsController(
+        DatabaseContext context,
+        ILogger<ReservationSlotsController> logger,
+        IActorCountryContextService actorCountryContextService,
+        IEmployeeScopeService employeeScopeService)
     {
         _context = context;
         _logger = logger;
         _actorCountryContextService = actorCountryContextService;
+        _employeeScopeService = employeeScopeService;
+    }
+
+    /// <summary>
+    /// Center Admin may manage slots only for their own centers; Country Admin
+    /// for every center in an administered country; SysAdmin/Admin for all.
+    /// </summary>
+    private async Task<bool> CanAccessHospitalAsync(int hospitalId)
+    {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        if (actor.HasFullAccess)
+        {
+            return true;
+        }
+
+        if (actor.IsCenterAdmin && actor.HospitalIds.Contains(hospitalId))
+        {
+            return true;
+        }
+
+        if (actor.IsCountryAdmin)
+        {
+            var countryScopeId = await _context.Hospitals
+                .Where(h => h.Id == hospitalId)
+                .Select(h => (int?)h.CountryScopeId)
+                .FirstOrDefaultAsync();
+
+            return countryScopeId.HasValue &&
+                actor.AdministeredCountryScopeIds.Contains(countryScopeId.Value);
+        }
+
+        return false;
     }
 
     [HttpGet("hospital/{hospitalId}")]
@@ -30,6 +67,11 @@ public class ReservationSlotsController : ControllerBase
     {
         try
         {
+            if (!await CanAccessHospitalAsync(hospitalId))
+            {
+                return StatusCode(403, "K tomuto centru nemáte přístup.");
+            }
+
             IQueryable<ReservationSlot> query = _context.ReservationSlots
                 .AsNoTracking()
                 .Where(slot => slot.HospitalId == hospitalId)
@@ -68,6 +110,11 @@ public class ReservationSlotsController : ControllerBase
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             if (request.HospitalId <= 0)
                 return BadRequest("HospitalId is required");
+
+            if (!await CanAccessHospitalAsync(request.HospitalId))
+            {
+                return StatusCode(403, "Do tohoto centra nemáte oprávnění zadávat sloty.");
+            }
 
             if (request.Slots == null || request.Slots.Count == 0)
                 return BadRequest("At least one slot must be provided");
@@ -143,6 +190,11 @@ public class ReservationSlotsController : ControllerBase
     {
         try
         {
+            if (!await CanAccessHospitalAsync(hospitalId))
+            {
+                return StatusCode(403, "K tomuto centru nemáte přístup.");
+            }
+
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             var sourceDayStart = request.SourceDate.Date;
             var sourceDayEnd = sourceDayStart.AddDays(1);
@@ -225,6 +277,9 @@ public class ReservationSlotsController : ControllerBase
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
+            if (!await CanAccessHospitalAsync(slot.HospitalId))
+                return StatusCode(403, "K tomuto slotu nemáte přístup.");
+
             if (request.StartDateTime.HasValue)
                 slot.StartDateTime = request.StartDateTime.Value;
 
@@ -265,6 +320,9 @@ public class ReservationSlotsController : ControllerBase
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
+            if (!await CanAccessHospitalAsync(slot.HospitalId))
+                return StatusCode(403, "K tomuto slotu nemáte přístup.");
+
             if (slot.Status != SlotStatus.Blocked &&
                 slot.Status != SlotStatus.Reserved)
             {
@@ -298,6 +356,9 @@ public class ReservationSlotsController : ControllerBase
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
+            if (!await CanAccessHospitalAsync(slot.HospitalId))
+                return StatusCode(403, "K tomuto slotu nemáte přístup.");
+
             _context.ReservationSlots.Remove(slot);
             await _context.SaveChangesAsync();
 
@@ -321,6 +382,9 @@ public class ReservationSlotsController : ControllerBase
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
+
+            if (!await CanAccessHospitalAsync(slot.HospitalId))
+                return StatusCode(403, "K tomuto slotu nemáte přístup.");
 
             if (slot.Status != SlotStatus.Available)
                 return BadRequest("Only available slots can be blocked");
@@ -428,6 +492,9 @@ public class ReservationSlotsController : ControllerBase
             if (slot == null)
                 return NotFound("Reservation slot not found");
 
+            if (!await CanAccessHospitalAsync(slot.HospitalId))
+                return StatusCode(403, "K tomuto slotu nemáte přístup.");
+
             if (slot.Status != SlotStatus.Blocked)
                 return BadRequest("Only blocked slots can be confirmed");
 
@@ -461,6 +528,9 @@ public class ReservationSlotsController : ControllerBase
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
+
+            if (!await CanAccessHospitalAsync(slot.HospitalId))
+                return StatusCode(403, "K tomuto slotu nemáte přístup.");
 
             if (slot.Status != SlotStatus.Blocked)
                 return BadRequest("Only blocked slots can be rejected");

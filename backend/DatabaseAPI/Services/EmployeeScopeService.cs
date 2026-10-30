@@ -140,16 +140,24 @@ public class EmployeeScopeService : IEmployeeScopeService
 
         if (actor.IsCountryAdmin)
         {
-            // Employees in administered countries (by their person country code)
-            var personCountries = await _context.Employees
-                .Select(e => new { e.Id, Scope = e.Person.CountryCode })
+            // Subordinates of a Country Admin are the employees attached to
+            // centers in the administered countries — not everyone whose
+            // person record happens to carry that country code.
+            var centerEmployeeIds = await _context.HospitalEmployees
+                .Join(
+                    _context.Hospitals.Where(h => actor.AdministeredCountryScopeIds.Contains(h.CountryScopeId)),
+                    he => he.HospitalId,
+                    h => h.Id,
+                    (he, _) => he.EmployeeId)
+                .Distinct()
                 .ToListAsync(cancellationToken);
-            foreach (var row in personCountries.Where(r => actor.AdministeredCountryScopeIds.Contains(CountryScopeMapper.ToScopeId(r.Scope))))
+            foreach (var id in centerEmployeeIds)
             {
-                visible.Add(row.Id);
+                visible.Add(id);
             }
 
-            // Employees created by this account (legacy manažerská vazba)
+            // Employees created by this account (covers staff not assigned to
+            // a center yet — legacy manažerská vazba).
             var created = await _context.Employees
                 .Where(e => e.CreatedByEmployeeId == actor.EmployeeId)
                 .Select(e => e.Id)

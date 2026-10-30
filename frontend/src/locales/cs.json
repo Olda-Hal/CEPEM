@@ -10,7 +10,27 @@
     "loginButton": "Přihlásit se",
     "loggingIn": "Přihlašování...",
     "invalidCredentials": "Neplatné přihlašovací údaje",
-    "accountDeactivated": "Váš účet byl deaktivován. Kontaktujte administrátora."
+    "accountDeactivated": "Váš účet byl deaktivován. Kontaktujte administrátora.",
+    "forgotPassword": "Zapomenuté heslo?",
+    "forgotSubmit": "Odeslat odkaz na obnovení",
+    "forgotSending": "Odesílám...",
+    "forgotSent": "Pokud účet s tímto e-mailem existuje, odeslali jsme odkaz k obnovení hesla. Platí 15 minut.",
+    "forgotFailed": "Odkaz se nepodařilo odeslat. Zkuste to prosím později.",
+    "backToLogin": "Zpět na přihlášení"
+  },
+  "resetPassword": {
+    "title": "Obnovení hesla",
+    "description": "Zadejte nové heslo pro svůj účet.",
+    "newPassword": "Nové heslo",
+    "confirmPassword": "Nové heslo znovu",
+    "submit": "Nastavit nové heslo",
+    "saving": "Ukládám...",
+    "success": "Heslo bylo změněno. Můžete se přihlásit.",
+    "backToLogin": "Přejít na přihlášení",
+    "mismatch": "Hesla se neshodují",
+    "passwordTooShort": "Heslo musí mít alespoň 6 znaků",
+    "missingToken": "Odkaz je neplatný — chybí resetový token. Požádejte o nový odkaz.",
+    "failed": "Reset se nezdařil. Odkaz mohl vypršet — požádejte o nový."
   },
   "dashboard": {
     "title": "Centrum Preventivní Medicíny",
@@ -82,7 +102,9 @@
     "creatingHospital": "Chyba při vytváření nemocnice",
     "loadingPatients": "Chyba při načítání pacientů. Zkuste to prosím znovu.",
     "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
-    "patientNotFound": "Pacient nebyl nalezen"
+    "patientNotFound": "Pacient nebyl nalezen",
+    "creatingExaminationType": "Chyba při vytváření typu vyšetření",
+    "deletingExaminationType": "Chyba při mazání typu vyšetření"
   },
   "reservations": {
     "title": "Rezervace",
@@ -266,6 +288,61 @@
       "deleteFailed": "Chyba při mazání slotu."
     }
   },
+  "evaluation": {
+    "title": "Vyhodnocování",
+    "subtitle": "Prohlédněte si měření, označte problémy a zformulujte doporučení pro pacienta.",
+    "open": "Ke vyhodnocení",
+    "done": "Hotové",
+    "noneOpen": "Žádné čekající případy",
+    "noPatient": "Bez pacienta",
+    "pickCase": "Vyberte případ ze seznamu.",
+    "markHint": "Kliknutím do snímku přidáte značku problému; poznámku doplníte pod seznamem.",
+    "markerNotePlaceholder": "Poznámka ke značce",
+    "removeMarker": "Odebrat",
+    "recommendation": "Doporučení",
+    "recommendationPlaceholder": "„Dle nálezu doporučuji …\"",
+    "evaluate": "Odeslat vyhodnocení",
+    "saving": "Ukládám...",
+    "saved": "Vyhodnocení bylo uloženo.",
+    "loadFailed": "Nepodařilo se načíst případy pro vyhodnocování.",
+    "saveFailed": "Nepodařilo se uložit vyhodnocení.",
+    "evaluatedAt": "Vyhodnoceno {{date}}",
+    "measurement": "MEIK měření",
+    "anonymisedHint": "Měření se zobrazuje anonymně – bez údajů o pacientovi.",
+    "conditions": "Podmínky měření",
+    "side": {
+      "left": "Levé prso",
+      "right": "Pravé prso",
+      "unknown": "Strana neuvedena"
+    },
+    "posture": {
+      "lying": "Leží",
+      "standing": "Stojí",
+      "sitting": "Sedí",
+      "unknown": "Poloha neuvedena"
+    },
+    "slice": "Řez {{index}}",
+    "sliceValues": "min {{min}} · průměr {{mean}} · max {{max}}",
+    "histogram": "Histogram naměřených hodnot",
+    "markHintSlice": "Kliknutím do kteréhokoli řezu označíte místo nálezu; popis doplníte pod seznamem.",
+    "markOk": "Snímek v pořádku",
+    "finishFindings": "Ukončit vyšetření s nálezy",
+    "okConfirmWithMarkers": "Máte označené nálezy. Opravdu označit snímek jako v pořádku?",
+    "needFindings": "Označte alespoň jedno místo nálezu nebo napište popis.",
+    "outcomeOk": "V pořádku",
+    "outcomeFindings": "Nález",
+    "outcomeOkLong": "Snímek označen jako v pořádku. Vyšetření ukončeno.",
+    "outcomeFindingsLong": "Nálezy zaznamenány. Vyšetření ukončeno.",
+    "allDone": "Všechna dostupná hodnocení jsou momentálně vyhodnocena.",
+    "tryAgain": "Zkusit znovu",
+    "reviewCount": "Hodnocení: {{count}}/2",
+    "reportTitle": "Vyhodnocení měření",
+    "reportOpen": "Otevřít vyhodnocení",
+    "reportLoadFailed": "Vyhodnocení se nepodařilo načíst.",
+    "unknownDoctor": "Neznámý lékař",
+    "noFindings": "Bez nálezů",
+    "noMarkerNote": "Bez popisu"
+  },
   "examinations": {
     "title": "Vyšetření",
     "centerFallback": "Centrum",
@@ -402,6 +479,10 @@
   },
   "patients": {
     "backToPatients": "Zpět na pacienty",
+    "commentTitle": "Komentář o pacientovi",
+    "editComment": "Upravit komentář",
+    "commentPlaceholder": "Zadejte komentář o pacientovi...",
+    "noComment": "Žádný komentář",
     "title": "Pacienti",
     "searchPlaceholder": "Vyhledejte pacienta podle jména, příjmení, UID nebo emailu...",
     "loading": "Načítání pacientů...",
@@ -510,7 +591,7 @@
       "noDocuments": "Žádné dokumenty",
       "uploadDocument": "Nahrát dokument",
       "selectUploadMethod": "Vyberte způsob nahrání dokumentu:",
-      "fileRequirements": "Podporované formáty: PDF (max. {{maxSize}} MB)",
+      "fileRequirements": "Podporované formáty: PDF nebo MEIK .tdb (max. {{maxSize}} MB)",
       "scanDocument": "Skenovat dokument",
       "uploadFile": "Nahrát soubor",
       "scannedDocument": "Naskenováno",
@@ -520,6 +601,7 @@
       "confirmDelete": "Opravdu chcete smazat tento dokument?",
       "errors": {
         "mustBePdf": "Soubor musí být ve formátu PDF",
+        "mustBePdfOrTdb": "Soubor musí být PDF nebo měření MEIK (.tdb)",
         "fileTooLarge": "Soubor nesmí být větší než {{maxSize}} MB",
         "scannerNotAvailable": "Skener není dostupný",
         "uploadFailed": "Chyba při nahrávání dokumentu",
@@ -587,6 +669,10 @@
     "edit": "Upravit",
     "deactivate": "Deaktivovat",
     "confirmDeactivate": "Opravdu chcete deaktivovat tohoto zaměstnance?",
+    "resetPassword": "Reset hesla",
+    "confirmPasswordReset": "Poslat zaměstnanci {{name}} e-mail s odkazem na obnovení hesla?",
+    "passwordResetSent": "Odkaz na obnovení hesla byl odeslán na {{email}}.",
+    "passwordResetFailed": "Nepodařilo se odeslat e-mail s odkazem na obnovení hesla.",
     "editEmployee": "Upravit zaměstnance",
     "firstName": "Jméno",
     "lastName": "Příjmení",
@@ -659,7 +745,16 @@
       "loadFailed": "Nepodařilo se načíst správu rolí",
       "createFailed": "Nepodařilo se vytvořit roli",
       "created": "Role {{name}} byla vytvořena",
-      "rulesSaved": "Přístupová pravidla pro roli {{name}} byla uložena"
+      "rulesSaved": "Přístupová pravidla pro roli {{name}} byla uložena",
+      "deleteButton": "Smazat",
+      "deleteTitle": "Smazat roli",
+      "deleteConfirm": "Opravdu chcete smazat roli {{name}}? Roli nelze smazat, pokud je přiřazena zaměstnancům.",
+      "deleting": "Mažu...",
+      "deleted": "Role {{name}} byla smazána",
+      "deleteFailed": "Nepodařilo se smazat roli",
+      "defaultPageColumn": "Výchozí stránka",
+      "defaultPageNone": "Výchozí aplikace (/patients)",
+      "defaultPathFailed": "Nepodařilo se nastavit výchozí stránku role"
     },
     "permissionLabels": {
       "post_api_auth_change_password": "Změnit vlastní heslo",
@@ -743,7 +838,14 @@
     "activityLogButton": "Otevřít audit log",
     "country": "Země",
     "centersLabel": "Centra",
-    "noCentersAvailable": "Žádná dostupná centra"
+    "noCentersAvailable": "Žádná dostupná centra",
+    "searchCenters": "Hledat centrum…",
+    "searchRoles": "Hledat roli…",
+    "showInactive": "Zobrazit neaktivní",
+    "previewAs": "Náhled jako",
+    "previewAsHint": "Otevřít systém pod účtem tohoto zaměstnance (jen SysAdmin)",
+    "confirmImpersonation": "Otevřít systém jako {{name}}? Prohlížení bude omezeno právy tohoto účtu.",
+    "impersonationFailed": "Náhled se nepodařilo otevřít."
   },
   "centerManagement": {
     "title": "Správa center",
@@ -910,7 +1012,10 @@
     "admin": "Admin",
     "settings": "Nastavení",
     "logout": "Odhlásit se",
-    "versionUnknown": "verze neznámá"
+    "versionUnknown": "verze neznámá",
+    "impersonationActive": "Náhled",
+    "impersonationDetail": "Prohlížíte systém jako {{name}} (přihlášen správce {{admin}}).",
+    "stopImpersonation": "Ukončit náhled"
   },
   "administration": {
     "title": "Administrativa",
@@ -955,6 +1060,7 @@
     "visitNote": "Poznámka",
     "visitNotePlaceholder": "Poznámka k návštěvě…",
     "documentsCount": "{{count}} dok.",
+    "evaluationsTitle": "Vyhodnocená měření",
     "intakeBadge": "Vstupní formulář",
     "empty": "Zatím žádné návštěvy.",
     "loadFailed": "Nepodařilo se načíst návštěvy",

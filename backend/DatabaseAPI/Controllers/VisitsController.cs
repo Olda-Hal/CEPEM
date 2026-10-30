@@ -86,6 +86,12 @@ public class VisitsController : ControllerBase
             }
             return CreatedAtAction(nameof(GetVisit), new { patientId, visitId }, document);
         }
+        catch (InvalidOperationException ex)
+        {
+            // e.g. an invalid/corrupt .tdb measurement
+            _logger.LogWarning(ex, "Rejected document for visit {VisitId}", visitId);
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error attaching document to visit {VisitId}", visitId);

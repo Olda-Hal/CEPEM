@@ -24,6 +24,50 @@ produkčním nasazení.
 - ~~**Hover submenu v horní navigaci**~~ ✅
   - Administrativa a Admin v top menu mají hover/focus dropdown s podsekcemi; položky filtrované rolí uživatele.
 
+## Nálezy a navázání z noční směny 2026-10-30
+
+- ~~**CI zelené**~~ ✅ — Node 22 v CI, eslint.config.mjs, prettier/stylelint, Grafana port 3002 v CI, ADMIN_INITIAL_PASSWORD do compose, oprava migrace AddVisits (ONLY_FULL_GROUP_BY), demo seed (Dev) + login rate limit konfigurací, opravy E2E selectorů.
+- ~~**Smazání role adminem**~~ ✅ *(commit cc13a24)* — PUT/DELETE chrání SysAdmin roli a role s přiřazením (409).
+- ~~**Defaultní landing page podle role**~~ ✅ *(commit 692e07d)* — Role.DefaultPath (whitelist cest), dropdown v RoleManagementPage, LoginPage redirect.
+- ~~**Reset hesla mailem**~~ ✅ *(commit b3c16e7)* — forgot link + trigger nadřízeným, PasswordResetToken (SHA-256, single-use, 15 min), Mailpit v compose; ověřeno end-to-end přes Mailpit.
+- ~~**Mock stránka Vyhodnocování**~~ ✅ *(commit 522e69b)* — eval cases + mock RTG canvas + doporučení, permission evaluations.* pro Doctor; seed demo případy.
+- TODO — **Pokračování Vyhodnocování**: navazující flow podle specifikace (jednání podle doporučení: kdo, co, kdy — čekáme na zadání).
+- TODO — **Produkční SMTP:** v produkci dopořvat SMTP_HOST/PORT/USER/PASS/SSL + FRONTEND_PUBLIC_URL v .env (bez toho se reset-link jen zaloguje).
+
+### 2026-10-30 — náhled za zaměstnance, skrývání neaktivních, výběr rolí/center
+
+- **SysAdmin „Náhled jako“** ✅ — tlačítko v seznamu zaměstnanců; `POST /api/admin/employees/{id}/impersonate` (jen SysAdmin, cíl musí být aktivní, vnořený náhled zakázán) vystaví 1h JWT s `impersonator_id`/`impersonator_name`. FE uloží původní admin token do sessionStorage, zobrazí banner „Prohlížíte jako …“ a náhled jde ukončit i při expiraci tokenu (vrátí se admin session). Zavřením tabu náhled zaniká.
+- **Neaktivní zaměstnanci skrytí ze seznamu** ✅ — výchozí výpis i CSV export filtrují `Person.Active`; přepínač „Zobrazit neaktivní“ (`?includeInactive=true`) je zobrazí pro reaktivaci. Gateway nově proxuje CSV export pod permission `employees.read` (dřív končil 404).
+- **Výběr rolí a center** ✅ — checkboxové mřížky v create/edit modalu nahrazeny `SearchableMultiSelect` (hledání, chips, prázdný stav); centra a role jsou ve dvou zarovnaných sloupcích a Enter ve vyhledávání už neodesílá formulář.
+- TODO — ověřit na živém stacku: SysAdmin → Náhled jako Doktor/Examiner (menu, data, oprávnění) → Ukončit náhled; a že deaktivovaný zaměstnanec zmizí a po zapnutí přepínače se dá znovu aktivovat.
+
+### 2026-10-30 — matice přístupů (sloty, zaměstnanci, Vyhodnocování)
+
+- **Rezervační sloty** ✅ — Center Admin jen centra, kam je přiřazen; Country Admin všechna centra ve spravovaných zemích; SysAdmin/Admin vše. Doctor a Examiner přístup nemají (menu, route i permission). Server vynucuje scope u výpisu, vytváření, kopírování dne i všech změnových akcí; výpis center `/api/hospitals` je pro scoped adminy omezený.
+- **Viditelnost zaměstnanců** ✅ — Country Admin už nevidí všechny osoby se svou zemí, ale jen zaměstnance přiřazené k centrům ve spravovaných zemích + ty, které sám založil. Center Admin vidí jen svá centra + vlastní založené. Detail zaměstnance má stejné omezení jako seznam.
+- **Examiner** ✅ — jen pacientská agenda; odebrány `employees.read/create`. Vidí všechny pacienty (bez center-omezení).
+- **Doctor** ✅ — bez pacientů a vyšetření (odebrány permissions, skryté menu i route guard); default landing `/vyhodnocovani` (seed + FE fallback). `/api/employees/me` nově vrací `defaultPath`, takže role landing skutečně funguje.
+- **Vyhodnocování** ✅ — přístup Doctor + Country Admin; Country Admin vidí jen případy pacientů ve spravovaných zemích; granty `evaluations.*` doplněny.
+- **Pozn. k nasazení:** seed nyní granty i **odebírá** (jinak by staré DB držely dřívější přístupy). Po restartu database-api se matice srovná; role landing se nastaví jen tam, kde dosud nebyl.
+- Ověřeno: DatabaseAPI 218 testů, HealthcareAPI 71, frontend 45, tsc/eslint/prettier/build čisté.
+
+### 2026-10-30 — MEIK .tdb vizualizace ve Vyhodnocování
+
+- **Jak .tdb funguje** (ověřeno v `~/programovani/MEIK_remake/meikpro`): TOMODB v2.0; header nese conditions v CP1251 (strana/poloha), posledních 36 288 B jsou display planes `7×36×36 float32` (4–46 mm); originál přičte `-0.15`, udělá Lanczos-3 36→288, lineární okno přes globální min/max, 32stupňovou paletu (sudé položky 64tabulky), 18×18 siluetu a vertikální flip.
+- **Upload .tdb** (návštěva/pacient): magic + parsování před uložením, 7 řezů jako base64 float32 + histogramy (32 binů) do `EvaluationCase`; vzniká anonymní případ Vyhodnocování. API nevrací pro TDB jméno ani ID pacienta.
+- **UI Vyhodnocování**: 7 řezů, pod každým histogram naměřených hodnot; pilulky Levá/Pravá + Leží/Stojí/Sedí z conditions. Kliknutí do kteréhokoli řezu přidá marker s popisem; akce „Snímek v pořádku“ nebo „Ukončit vyšetření s nálezy“ (outcome `OK`/`Findings`).
+- **Ověření**: parser porovnán s meikpro na reálném vzorku (shodná okna i hodnoty), Lanczos i paleta pixel-shodné s `core/visual.render`; 228 DB / 71 HC / 49 FE testů, buildy čisté.
+- Pozn.: Doctor nemá `patients.read`, k měření se dostane jen přes Vyhodnocování; Country Admin vidí jen případy pacientů ve svých zemích.
+
+### 2026-10-30 — Vyhodnocování: jeden scan po druhém, dva lékaři, report v návštěvě
+
+- **Zobrazení jako v MEIK aplikaci** ✅ — řada 7 scanů vedle sebe (horizontální scroll), vybarvený celý čtverec (bez siluety), jemné 3×3 dohlazení a histogram naměřených hodnot pod každým řezem.
+- **Histogramy** ✅ — textový popis odstraněn, histogram má mřížku a **pevnou osu X −0,30 … 1,10**. Rozsah vychází z celého korpusu 1650 souborů NORM (skutečné extrémy −0,279 … 1,091); původní MEIK histogram osu automaticky škáloval podle vrstvy, takže jde o empirické extrémy aplikace. Všech 7 histogramů je tak přímo srovnatelných.
+- **Workflow jednoho měření** ✅ — `GET /api/evaluations/next` vrací vždy nejstarší neohodnocené měření; po jejich vyčerpání nejstarší jednou ohodnocené **bez zobrazení cizího hodnocení**. Vlastní již hodnocené měření se nikdy nevrátí; každé měření má max. 2 nezávislé recenze. Když není co hodnotit, zobrazí se „Všechna dostupná hodnocení jsou momentálně vyhodnocena.“
+- **Recenze** ✅ — nová tabulka `EvaluationReview` (lékař, markery, doporučení, outcome, čas), migrace `AddEvaluationReviews` backfilluje stará hodnocení a doplní `VisitId` podle návštěvy.
+- **Interaktivní report v návštěvě** ✅ — po prvním zhodnocení se měření objeví v návštěvě pacienta jako „Vyhodnocená měření“; otevře se 7 scanů se všemi markery (barva podle lékaře) a všemi komentáři obou lékařů.
+- **Ověřeno**: DatabaseAPI 237 testů, HealthcareAPI 71, frontend 50; tsc/eslint/prettier/stylelint/build čisté.
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).

@@ -101,12 +101,16 @@ public class EmployeeScopeServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CountryAdmin_SeesOnlyOwnCountry_AndCreatedEmployees()
+    public async Task CountryAdmin_SeesEmployeesOfCentersInOwnCountry_AndCreatedEmployees()
     {
         var countryAdminRole = SeedRole("Country Admin");
         var countryAdmin = SeedEmployee("cadmin", "DE", countryAdminRole);
+        var germanCenter = SeedHospital("Berlin", 276);
         var german = SeedEmployee("de1", "DE");
+        _context.HospitalEmployees.Add(new HospitalEmployee { HospitalId = germanCenter.Id, EmployeeId = german.Id });
         var czech = SeedEmployee("cz1", "CZ");
+        var czechCenter = SeedHospital("Praha", 203);
+        _context.HospitalEmployees.Add(new HospitalEmployee { HospitalId = czechCenter.Id, EmployeeId = czech.Id });
         var createdByAdmin = SeedEmployee("cz2", "CZ");
         createdByAdmin.CreatedByEmployeeId = countryAdmin.Id;
         _context.SaveChanges();
@@ -120,6 +124,24 @@ public class EmployeeScopeServiceTests : IDisposable
         Assert.Contains(createdByAdmin.Id, visible!);
         Assert.Contains(countryAdmin.Id, visible!);
         Assert.DoesNotContain(czech.Id, visible!);
+    }
+
+    [Fact]
+    public async Task CountryAdmin_DoesNotSeeUnassignedEmployeeEvenInOwnCountry()
+    {
+        var countryAdminRole = SeedRole("Country Admin");
+        var countryAdmin = SeedEmployee("cadmin", "DE", countryAdminRole);
+        SeedHospital("Berlin", 276);
+        var unassigned = SeedEmployee("de-unassigned", "DE");
+        _context.SaveChanges();
+
+        _actorMock.Setup(s => s.GetActorEmployeeId()).Returns(countryAdmin.Id);
+
+        var visible = await CreateService().GetVisibleEmployeeIdsAsync();
+
+        Assert.NotNull(visible);
+        Assert.DoesNotContain(unassigned.Id, visible!);
+        Assert.Contains(countryAdmin.Id, visible!);
     }
 
     [Fact]
@@ -156,6 +178,7 @@ public class EmployeeScopeServiceTests : IDisposable
         var germanCenter = SeedHospital("Berlin", 276);
         _context.HospitalEmployees.Add(new HospitalEmployee { HospitalId = germanCenter.Id, EmployeeId = countryAdmin.Id });
         var germanEmployee = SeedEmployee("de1", "DE");
+        _context.HospitalEmployees.Add(new HospitalEmployee { HospitalId = germanCenter.Id, EmployeeId = germanEmployee.Id });
         _context.SaveChanges();
 
         _actorMock.Setup(s => s.GetActorEmployeeId()).Returns(countryAdmin.Id);

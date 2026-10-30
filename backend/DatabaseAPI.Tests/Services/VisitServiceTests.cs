@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Text;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
@@ -61,8 +63,65 @@ public class VisitServiceTests : IDisposable
         var encryption = new DocumentEncryptionService(
             configuration,
             NullLogger<DocumentEncryptionService>.Instance);
-        var documents = new PatientDocumentService(_context, encryption, configuration, NullLogger<PatientDocumentService>.Instance);
+        var documents = new PatientDocumentService(
+            _context,
+            encryption,
+            new TdbAnalysisService(),
+            configuration,
+            NullLogger<PatientDocumentService>.Instance);
         return new VisitService(_context, documents);
+    }
+
+    private static byte[] BuildTdbMeasurement()
+    {
+        var data = new byte[456909];
+        Encoding.ASCII.GetBytes("TOMODB v2.0").CopyTo(data, 0);
+        Encoding.ASCII.GetBytes("left lying").CopyTo(data, 0x0081);
+
+        var tail = data.Length - 7 * 36 * 36 * 4;
+        for (var i = 0; i < 7 * 36 * 36; i++)
+        {
+            BinaryPrimitives.WriteSingleLittleEndian(
+                data.AsSpan(tail + i * 4, 4), 1f + i / 5000f);
+        }
+
+        return data;
+    }
+
+    [Fact]
+    public async Task AttachDocument_Tdb_CreatesAnonymisedEvaluationCase()
+    {
+        var patient = SeedPatient();
+        var service = CreateService();
+        var visit = await service.CreateVisitAsync(
+            patient.Id, new CreateVisitRequest { VisitDate = DateTime.UtcNow.Date }, null, "CZ");
+
+        var document = await service.AttachDocumentAsync(
+            patient.Id, visit!.Id, BuildTdbMeasurement(), "mereni.tdb");
+
+        Assert.NotNull(document);
+        var evaluationCase = Assert.Single(_context.EvaluationCases);
+        Assert.Equal("tdb", evaluationCase.ImageKey);
+        Assert.Equal("Left", evaluationCase.SourceSide);
+        Assert.Equal("Lying", evaluationCase.SourcePosture);
+        Assert.False(string.IsNullOrWhiteSpace(evaluationCase.SlicesJson));
+        Assert.Equal(patient.Id, evaluationCase.PatientId);
+        Assert.Equal(document!.DocumentId, evaluationCase.PatientDocumentId);
+    }
+
+    [Fact]
+    public async Task AttachDocument_InvalidTdb_IsRejected()
+    {
+        var patient = SeedPatient();
+        var service = CreateService();
+        var visit = await service.CreateVisitAsync(
+            patient.Id, new CreateVisitRequest { VisitDate = DateTime.UtcNow.Date }, null, "CZ");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AttachDocumentAsync(patient.Id, visit!.Id, new byte[1024], "broken.tdb"));
+
+        Assert.Empty(_context.PatientDocuments);
+        Assert.Empty(_context.EvaluationCases);
     }
 
     [Fact]

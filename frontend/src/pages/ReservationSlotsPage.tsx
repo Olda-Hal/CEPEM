@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient, ApiError } from '../utils/api';
-import { hasRole } from '../utils/roles';
+import { hasRole, isAdmin } from '../utils/roles';
 import {
   BlockReservationSlotRequest,
   ConfirmReservationSlotRequest,
@@ -53,9 +53,12 @@ export const ReservationSlotsPage: React.FC = () => {
   const [editInternalNote, setEditInternalNote] = useState('');
   const [editStatus, setEditStatus] = useState<ReservationSlotStatus>('AVAILABLE');
 
-  const canReviewSlots =
-    hasRole(user, 'Doctor') || hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
-  const canCreateSlots = hasRole(user, 'SysAdmin') || hasRole(user, 'Admin');
+  // Reservation slots belong to center/country administration: Center Admin
+  // manages their own centers, Country Admin all centers in their countries.
+  const canManageSlots =
+    isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
+  const canReviewSlots = canManageSlots;
+  const canCreateSlots = canManageSlots;
 
   const { data: initialData } = useQuery({
     queryKey: ['reservation-slots-lookup', i18n.language],

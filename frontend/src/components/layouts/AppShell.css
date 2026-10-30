@@ -260,3 +260,44 @@
   background: var(--color-primary-tint, rgb(37 99 235 / 8%));
   color: var(--color-primary, #2563eb);
 }
+
+/* SysAdmin preview ("náhled jako zaměstnanec") banner */
+.shell-impersonation-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md, 16px);
+  flex-wrap: wrap;
+  padding: 8px var(--space-lg, 24px);
+  background: var(--color-warning-light, #fffbeb);
+  border-bottom: 1px solid var(--color-warning, #d69e2e);
+  color: var(--color-text-primary, #2d3748);
+  font-size: var(--text-sm, 0.875rem);
+  text-align: center;
+}
+
+.shell-impersonation-text strong {
+  color: var(--color-warning, #b7791f);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+}
+
+.shell-impersonation-exit {
+  padding: 6px 14px;
+  border: 1px solid var(--color-warning, #d69e2e);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-background, #fff);
+  color: var(--color-text-primary, #2d3748);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.shell-impersonation-exit:hover {
+  background: var(--color-warning, #d69e2e);
+  color: #fff;
+}

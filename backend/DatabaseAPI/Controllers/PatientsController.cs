@@ -847,9 +847,10 @@ namespace DatabaseAPI.Controllers
                     return BadRequest("No document provided");
                 }
 
-                if (document.ContentType != "application/pdf")
+                var isTdb = document.FileName.EndsWith(".tdb", StringComparison.OrdinalIgnoreCase);
+                if (!isTdb && document.ContentType != "application/pdf")
                 {
-                    return BadRequest("File must be a PDF document");
+                    return BadRequest("File must be a PDF document or a MEIK .tdb measurement");
                 }
 
                 var maxSize = _documentService.GetMaxFileSizeBytes();

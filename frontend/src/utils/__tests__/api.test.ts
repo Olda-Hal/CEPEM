@@ -1,10 +1,11 @@
 import { vi } from 'vitest';
-import { apiClient } from '../api';
+import { apiClient, IMPERSONATION_TOKEN_KEY } from '../api';
 
 describe('API Client', () => {
   beforeEach(() => {
-    // Clear localStorage before each test
+    // Clear both storages before each test
     localStorage.clear();
+    sessionStorage.clear();
     // Reset fetch mock
     globalThis.fetch = vi.fn();
   });
@@ -32,6 +33,30 @@ describe('API Client', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: `Bearer ${mockToken}`
+        })
+      })
+    );
+  });
+
+  test('prefers the tab-scoped preview token over the stored admin token', async () => {
+    localStorage.setItem('authToken', 'admin-token');
+    sessionStorage.setItem(IMPERSONATION_TOKEN_KEY, 'preview-token');
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: 'test' }),
+      headers: {
+        get: vi.fn().mockReturnValue('application/json')
+      }
+    });
+
+    await apiClient.get('/test-endpoint');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/test-endpoint'),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer preview-token'
         })
       })
     );

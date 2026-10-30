@@ -15,6 +15,8 @@ interface SearchableMultiSelectProps {
   onAddNew?: (name: string) => Promise<Option>;
   label?: string;
   helpText?: string;
+  /** Shown inside the dropdown when the search has no matches. */
+  emptyText?: string;
 }
 
 const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
@@ -24,7 +26,8 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
   placeholder,
   onAddNew,
   label,
-  helpText
+  helpText,
+  emptyText
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +68,8 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      // Never submit the surrounding form from the search box; Enter either
+      // picks the single remaining match or adds a new value.
       e.preventDefault();
 
       const onlyOption = filteredOptions[0];
@@ -73,6 +78,10 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
       } else if (showAddButton) {
         handleAddNew();
       }
+    }
+
+    if (e.key === 'Escape') {
+      setIsOpen(false);
     }
   };
   const selectedOptions = options.filter((option) => selectedIds.includes(option.id));
@@ -113,6 +122,10 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder || t('common.search')}
           className="search-input"
+          autoComplete="off"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-autocomplete="list"
         />
         {searchQuery && (
           <button type="button" onClick={() => setSearchQuery('')} className="clear-search">
@@ -122,7 +135,10 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="dropdown-menu">
+        <div className="dropdown-menu" role="listbox" aria-multiselectable="true">
+          {filteredOptions.length === 0 && !showAddButton && emptyText && (
+            <div className="dropdown-empty">{emptyText}</div>
+          )}
           {filteredOptions.map((option) => (
             <label key={option.id} className="dropdown-item">
               <input

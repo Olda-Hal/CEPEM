@@ -59,6 +59,12 @@ public class UpdateRolePermissionRulesRequest
 public class CreateRoleRequest
 {
     public string Name { get; set; } = string.Empty;
+    public string? DefaultPath { get; set; }
+}
+
+public class UpdateRoleDefaultPathRequest
+{
+    public string? DefaultPath { get; set; }
 }
 
 public class EndpointPermissionCatalogItem

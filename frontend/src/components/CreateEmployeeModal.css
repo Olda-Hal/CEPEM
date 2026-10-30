@@ -212,6 +212,11 @@
   }
 }
 
+/* Role/center multi-selects sit inside .form-group (which owns the spacing) */
+.create-employee-form .searchable-multi-select {
+  margin-bottom: 0;
+}
+
 /* Multi-checkbox lists (centers, roles) */
 .choice-list {
   display: grid;

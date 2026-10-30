@@ -10,17 +10,19 @@ namespace DatabaseAPI.Controllers
     {
         private readonly IEmployeeManagementService _employeeManagementService;
         private readonly IEmployeeScopeService _employeeScopeService;
+        private readonly IPasswordResetService _passwordResetService;
 
-        public AdminController(IEmployeeManagementService employeeManagementService, IEmployeeScopeService employeeScopeService)
+        public AdminController(IEmployeeManagementService employeeManagementService, IEmployeeScopeService employeeScopeService, IPasswordResetService passwordResetService)
         {
             _employeeManagementService = employeeManagementService;
             _employeeScopeService = employeeScopeService;
+            _passwordResetService = passwordResetService;
         }
 
         [HttpGet("employees")]
-        public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees()
+        public async Task<ActionResult<List<EmployeeListItem>>> GetAllEmployees([FromQuery] bool includeInactive = false)
         {
-            var employees = await _employeeManagementService.GetAllEmployeesAsync();
+            var employees = await _employeeManagementService.GetAllEmployeesAsync(includeInactive);
             return Ok(employees);
         }
 
@@ -50,9 +52,9 @@ namespace DatabaseAPI.Controllers
 
         /// <summary>All employees as CSV (semicolon-separated, BOM for Excel).</summary>
         [HttpGet("employees/export")]
-        public async Task<IActionResult> ExportEmployeesCsv()
+        public async Task<IActionResult> ExportEmployeesCsv([FromQuery] bool includeInactive = false)
         {
-            var employees = await _employeeManagementService.GetAllEmployeesAsync();
+            var employees = await _employeeManagementService.GetAllEmployeesAsync(includeInactive);
 
             var builder = new System.Text.StringBuilder();
             builder.AppendLine("UID;FullName;Email;Phone;Roles;Active;LastLogin");
@@ -76,19 +78,20 @@ namespace DatabaseAPI.Controllers
         }
 
         /// <summary>
-        /// Generates a one-time password for the employee, forcing a change on
-        /// the next login. The plaintext is returned once to the admin and is
-        /// never stored anywhere.
+        /// Sends a password-reset link to the employee's e-mail address
+        /// (supervisor-triggered). The link is single-use and short-lived.
         /// </summary>
         [HttpPost("employees/{employeeId}/reset-password")]
         public async Task<ActionResult> ResetEmployeePassword(int employeeId)
         {
-            var temporary = await _employeeManagementService.ResetPasswordAsync(employeeId);
-            if (temporary == null)
+            var (ok, error) = await _passwordResetService.RequestResetForEmployeeAsync(employeeId);
+            if (!ok)
             {
-                return NotFound("Employee not found");
+                return error == "Employee not found"
+                    ? NotFound(error)
+                    : BadRequest(error ?? "E-mail se nepodařilo odeslat");
             }
-            return Ok(new { temporaryPassword = temporary });
+            return Ok(new { message = "Resetový odkaz byl odeslán na e-mail zaměstnance." });
         }
 
         private static string CsvEscape(string value)
@@ -152,6 +155,38 @@ namespace DatabaseAPI.Controllers
             }
 
             return Ok(role);
+        }
+
+        /// <summary>
+        /// Set or clear the role's post-login landing page (whitelisted SPA
+        /// paths only — see RoleDefaultPaths).
+        /// </summary>
+        [HttpPut("roles/{id}/default-path")]
+        public async Task<IActionResult> UpdateRoleDefaultPath(int id, [FromBody] UpdateRoleDefaultPathRequest request)
+        {
+            var (success, error) = await _employeeManagementService.UpdateRoleDefaultPathAsync(id, request.DefaultPath);
+            if (!success)
+            {
+                return error == "Role not found" ? NotFound(error) : BadRequest(error);
+            }
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Delete a role. 409 when it is system-critical or still assigned to
+        /// employees — the body carries the human-readable reason.
+        /// </summary>
+        [HttpDelete("roles/{id}")]
+        public async Task<IActionResult> DeleteRole(int id)
+        {
+            var (success, error) = await _employeeManagementService.DeleteRoleAsync(id);
+            if (!success)
+            {
+                return error == "Role not found" ? NotFound(error) : Conflict(error);
+            }
+
+            return NoContent();
         }
     }
 }

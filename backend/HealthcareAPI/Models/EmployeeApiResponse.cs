@@ -17,6 +17,9 @@ namespace HealthcareAPI.Models
         public DateTime? LastLoginAt { get; set; }
         public DateTime? PasswordExpiration { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
+
+        /// <summary>Post-login landing page resolved from the employee's roles.</summary>
+        public string? DefaultPath { get; set; }
         
         public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();
     }

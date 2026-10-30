@@ -44,7 +44,8 @@ namespace HealthcareAPI.Services
                             UID = employeeAuthInfo.UID,
                             Active = employeeAuthInfo.Active,
                             LastLoginAt = employeeAuthInfo.LastLoginAt,
-                            Roles = employeeAuthInfo.Roles ?? new List<string>()
+                            Roles = employeeAuthInfo.Roles ?? new List<string>(),
+                            DefaultPath = employeeAuthInfo.DefaultPath
                         };
                     }
                 }

@@ -54,6 +54,21 @@ public class HospitalsController : ControllerBase
                 .Where(h => h.Active == true)
                 .AsQueryable();
 
+            // Scoped admins only see centers within their remit: Center Admin
+            // their assigned centers, Country Admin the administered countries.
+            var actor = await _employeeScopeService.GetActorScopeAsync();
+            if (actor.IsScopedAdmin)
+            {
+                if (actor.IsCenterAdmin && !actor.IsCountryAdmin)
+                {
+                    query = query.Where(h => actor.HospitalIds.Contains(h.Id));
+                }
+                else
+                {
+                    query = query.Where(h => actor.AdministeredCountryScopeIds.Contains(h.CountryScopeId));
+                }
+            }
+
             if (countryScopeId.HasValue && countryScopeId.Value > 0)
             {
                 query = query.Where(h => h.CountryScopeId == countryScopeId.Value);
@@ -101,6 +116,17 @@ public class HospitalsController : ControllerBase
             var hospital = await _context.Hospitals.FindAsync(id);
             if (hospital == null)
                 return NotFound("Hospital not found");
+
+            var actor = await _employeeScopeService.GetActorScopeAsync();
+            if (actor.IsScopedAdmin)
+            {
+                var allowed = actor.IsCenterAdmin && !actor.IsCountryAdmin
+                    ? actor.HospitalIds.Contains(hospital.Id)
+                    : actor.AdministeredCountryScopeIds.Contains(hospital.CountryScopeId);
+
+                if (!allowed)
+                    return StatusCode(403, "K tomuto centru nemáte přístup.");
+            }
 
             return Ok(hospital);
         }

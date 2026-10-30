@@ -443,6 +443,111 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("Equipment");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationCase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("AnnotationsJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EvaluatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("EvaluatedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("Outcome")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("PatientDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SlicesJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourceConditions")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourcePosture")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourceSide")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int?>("VisitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluatedByEmployeeId");
+
+                    b.HasIndex("PatientDocumentId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("VisitId");
+
+                    b.ToTable("EvaluationCases");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("AnnotationsJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EvaluatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EvaluationCaseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Outcome")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EvaluationCaseId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("EvaluationReviews");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>
                 {
                     b.Property<int>("Id")
@@ -1121,6 +1226,36 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("LastNameHistories");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime?>("UsedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("PasswordResetTokens");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Patient", b =>
                 {
                     b.Property<int>("Id")
@@ -1493,6 +1628,9 @@ namespace DatabaseAPI.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    b.Property<string>("DefaultPath")
+                        .HasColumnType("longtext");
 
                     b.Property<int?>("NameTranslationId")
                         .HasColumnType("int");
@@ -1922,6 +2060,53 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationCase", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "EvaluatedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("EvaluatedByEmployeeId");
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.PatientDocument", "PatientDocument")
+                        .WithMany()
+                        .HasForeignKey("PatientDocumentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId");
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Visit", "Visit")
+                        .WithMany()
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("EvaluatedByEmployee");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("PatientDocument");
+
+                    b.Navigation("Visit");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationReview", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.EvaluationCase", "EvaluationCase")
+                        .WithMany("Reviews")
+                        .HasForeignKey("EvaluationCaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("EvaluationCase");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>
                 {
                     b.HasOne("DatabaseAPI.DatabaseModels.Comment", "Comment")
@@ -2211,6 +2396,17 @@ namespace DatabaseAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.PasswordResetToken", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Patient", b =>
@@ -2563,6 +2759,11 @@ namespace DatabaseAPI.Migrations
                     b.Navigation("Appointments");
 
                     b.Navigation("HospitalEquipments");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.EvaluationCase", b =>
+                {
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Event", b =>

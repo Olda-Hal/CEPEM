@@ -102,7 +102,65 @@ namespace HealthcareAPI.Services
             }
         }
 
-        private string GenerateJwtToken(EmployeeAuthInfo employeeInfo)
+        public async Task<ImpersonationResponse?> ImpersonateAsync(int targetEmployeeId, int impersonatorEmployeeId, string impersonatorName)
+        {
+            // Never allow a preview of your own account (and never nest a
+            // preview inside another preview — the controller guards this too).
+            if (targetEmployeeId == impersonatorEmployeeId)
+            {
+                return null;
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync($"/api/employees/{targetEmployeeId}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var employeeInfo = JsonSerializer.Deserialize<EmployeeAuthInfo>(responseContent, options);
+
+                // Deactivated accounts are not reachable for preview either.
+                if (employeeInfo == null || !employeeInfo.Active)
+                {
+                    return null;
+                }
+
+                // Preview tokens are intentionally short-lived (1 hour).
+                var token = GenerateJwtToken(
+                    employeeInfo,
+                    impersonatorEmployeeId,
+                    impersonatorName,
+                    lifetimeHours: 1);
+
+                return new ImpersonationResponse
+                {
+                    Token = token,
+                    EmployeeId = employeeInfo.EmployeeId,
+                    FullName = employeeInfo.FullName,
+                    Email = employeeInfo.Email,
+                    Roles = employeeInfo.Roles ?? new List<string>(),
+                    ImpersonatorName = impersonatorName
+                };
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private string GenerateJwtToken(
+            EmployeeAuthInfo employeeInfo,
+            int? impersonatorEmployeeId = null,
+            string? impersonatorName = null,
+            int lifetimeHours = 8)
         {
             var jwtSettings = _configuration.GetSection("JWT");
             var secretKey = jwtSettings["SecretKey"]
@@ -135,11 +193,19 @@ namespace HealthcareAPI.Services
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
+            // Preview ("náhled jako zaměstnanec"): the token still identifies
+            // the target employee, but records who is really behind the wheel.
+            if (impersonatorEmployeeId.HasValue)
+            {
+                claims.Add(new Claim("impersonator_id", impersonatorEmployeeId.Value.ToString()));
+                claims.Add(new Claim("impersonator_name", impersonatorName ?? string.Empty));
+            }
+
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(8),
+                expires: DateTime.UtcNow.AddHours(lifetimeHours),
                 signingCredentials: credentials
             );
 

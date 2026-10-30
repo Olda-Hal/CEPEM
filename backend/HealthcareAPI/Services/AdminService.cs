@@ -5,12 +5,16 @@ namespace HealthcareAPI.Services
 {
     public interface IAdminService
     {
-        Task<List<EmployeeListItem>> GetAllEmployeesAsync();
+        Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false);
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request);
         Task<(bool Success, string? ErrorBody)> DeactivateEmployeeAsync(int employeeId);
+        /// <summary>Trigger the e-mail reset flow for an employee (supervisor-triggered).</summary>
+        Task<(bool Success, string? ErrorBody)> TriggerPasswordResetAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
+        Task<(bool Success, string? ErrorBody)> DeleteRoleAsync(int roleId);
+        Task<(bool Success, string? ErrorBody)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath);
     }
 
     public class AdminService : IAdminService
@@ -24,11 +28,14 @@ namespace HealthcareAPI.Services
             _logger = logger;
         }
 
-        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync()
+        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false)
         {
             try
             {
-                var response = await _httpClient.GetAsync("/api/admin/employees");
+                var path = includeInactive
+                    ? "/api/admin/employees?includeInactive=true"
+                    : "/api/admin/employees";
+                var response = await _httpClient.GetAsync(path);
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -128,6 +135,26 @@ namespace HealthcareAPI.Services
             }
         }
 
+        public async Task<(bool Success, string? ErrorBody)> TriggerPasswordResetAsync(int employeeId)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsync($"/api/admin/employees/{employeeId}/reset-password", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? response.StatusCode.ToString() : body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error triggering password reset for employee {EmployeeId}", employeeId);
+                return (false, null);
+            }
+        }
+
         public async Task<List<RoleDto>> GetAllRolesAsync()
         {
             try
@@ -177,6 +204,52 @@ namespace HealthcareAPI.Services
             {
                 _logger.LogError(ex, "Error creating role");
                 return null;
+            }
+        }
+
+        public async Task<(bool Success, string? ErrorBody)> DeleteRoleAsync(int roleId)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"/api/admin/roles/{roleId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? response.StatusCode.ToString() : body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting role {RoleId}", roleId);
+                return (false, null);
+            }
+        }
+
+        public async Task<(bool Success, string? ErrorBody)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(new UpdateRoleDefaultPathRequest { DefaultPath = defaultPath }, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync($"/api/admin/roles/{roleId}/default-path", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? response.StatusCode.ToString() : body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating default path of role {RoleId}", roleId);
+                return (false, null);
             }
         }
 

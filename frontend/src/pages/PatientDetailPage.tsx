@@ -380,12 +380,12 @@ export const PatientDetailPage: React.FC = () => {
         {/* Patient Comment */}
         <div className="patient-comment-section">
           <div className="comment-header">
-            <h3>Komentář o pacientovi</h3>
+            <h3>{t('patients.commentTitle')}</h3>
             {!editingComment && (
               <button
                 className="edit-comment-btn"
                 onClick={() => setEditingComment(true)}
-                title="Upravit komentář"
+                title={t('patients.editComment')}
               >
                 <svg viewBox="0 0 24 24" width="18" height="18">
                   <path
@@ -403,14 +403,14 @@ export const PatientDetailPage: React.FC = () => {
                 onChange={(e) => setCommentText(e.target.value)}
                 rows={10}
                 className="comment-textarea"
-                placeholder="Zadejte komentář o pacientovi..."
+                placeholder={t('patients.commentPlaceholder')}
               />
               <div className="comment-actions">
                 <button onClick={handleCancelEditComment} className="btn-cancel">
-                  Zrušit
+                  {t('common.cancel')}
                 </button>
                 <button onClick={handleSaveComment} className="btn-save">
-                  Uložit
+                  {t('common.save')}
                 </button>
               </div>
             </div>
@@ -419,7 +419,7 @@ export const PatientDetailPage: React.FC = () => {
               {commentText ? (
                 <p className="comment-text">{commentText}</p>
               ) : (
-                <p className="comment-empty">Žádný komentář</p>
+                <p className="comment-empty">{t('patients.noComment')}</p>
               )}
             </div>
           )}

@@ -13,20 +13,17 @@ import {
 import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
 import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
+import SearchableMultiSelect from '../components/SearchableMultiSelect';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  countryScopeByCode,
-  countryCodeByScopeId,
-  countryOptions,
-  normalizeCountryCode
-} from '../utils/countryScope';
+import { hasRole } from '../utils/roles';
+import { countryCodeByScopeId, countryOptions, normalizeCountryCode } from '../utils/countryScope';
 
 const EMPLOYEES_PER_PAGE = 25;
 
 const AdminEmployeesPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, startImpersonation } = useAuth();
   const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeListItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -36,11 +33,14 @@ const AdminEmployeesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [showInactive, setShowInactive] = useState(false);
+  const [impersonatingId, setImpersonatingId] = useState<number | null>(null);
 
   const handleExport = useCallback(async () => {
     try {
       const token = getAuthToken();
-      const response = await fetch('/api/admin/employees/export', {
+      const query = showInactive ? '?includeInactive=true' : '';
+      const response = await fetch(`/api/admin/employees/export${query}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!response.ok) throw new Error(`Export failed: ${response.status}`);
@@ -56,13 +56,15 @@ const AdminEmployeesPage: React.FC = () => {
       console.error(exportError);
       setError(t('admin.dataLoadFailed'));
     }
-  }, [t]);
+  }, [showInactive, t]);
 
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['admin', 'employees-and-roles'],
+    queryKey: ['admin', 'employees-and-roles', showInactive],
     queryFn: async () => {
       const [employees, roles, scope, hospitals] = await Promise.all([
-        apiClient.get<EmployeeListItem[]>('/api/admin/employees'),
+        apiClient.get<EmployeeListItem[]>(
+          `/api/admin/employees${showInactive ? '?includeInactive=true' : ''}`
+        ),
         apiClient.get<Role[]>('/api/admin/roles'),
         apiClient.get<AdminScope>('/api/admin/employees/scope'),
         apiClient.get<Hospital[]>('/api/hospitals')
@@ -91,8 +93,16 @@ const AdminEmployeesPage: React.FC = () => {
     }
 
     if (scope.isCountryAdmin) {
-      const employeeScopeId = countryScopeByCode[normalizeCountryCode(employee.countryCode)] ?? -1;
-      if (scope.administeredCountryScopeIds.includes(employeeScopeId)) {
+      // A Country Admin only manages employees attached to centers in the
+      // countries they administer, plus employees they created themselves.
+      const managedHospitalIds = new Set(
+        (data?.hospitals ?? [])
+          .filter((hospital) =>
+            scope.administeredCountryScopeIds.includes(hospital.countryScopeId ?? -1)
+          )
+          .map((hospital) => hospital.id)
+      );
+      if (employee.hospitalIds?.some((id) => managedHospitalIds.has(id))) {
         return true;
       }
       if (employee.createdByEmployeeId === user?.id) {
@@ -177,6 +187,40 @@ const AdminEmployeesPage: React.FC = () => {
     }
   };
 
+  const handleImpersonate = async (employee: EmployeeListItem) => {
+    if (!window.confirm(t('admin.confirmImpersonation', { name: employee.fullName }))) {
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    setImpersonatingId(employee.employeeId);
+    try {
+      const result = await startImpersonation(employee.employeeId);
+      if (!result.success) {
+        setError(result.error ?? t('admin.impersonationFailed'));
+      }
+    } finally {
+      setImpersonatingId(null);
+    }
+  };
+
+  const handleResetPassword = async (employee: EmployeeListItem) => {
+    if (!window.confirm(t('admin.confirmPasswordReset', { name: employee.fullName }))) {
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiClient.post(`/api/admin/employees/${employee.employeeId}/reset-password`);
+      setSuccess(t('admin.passwordResetSent', { email: employee.email }));
+    } catch (error) {
+      console.error('Error triggering password reset:', error);
+      setError(t('admin.passwordResetFailed'));
+    }
+  };
+
   const handleSave = async (updatedEmployee: UpdateEmployeeRequest) => {
     if (!selectedEmployee) return;
 
@@ -220,6 +264,17 @@ const AdminEmployeesPage: React.FC = () => {
       <div className="page-heading">
         <h1 className="page-title">{t('admin.employeeManagement')}</h1>
         <div className="page-heading-actions">
+          <label className="inactive-toggle">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => {
+                setShowInactive(e.target.checked);
+                setPage(0);
+              }}
+            />
+            {t('admin.showInactive')}
+          </label>
           <button className="btn btn-secondary" onClick={handleExport}>
             {t('activityLog.exportCsv')}
           </button>
@@ -292,12 +347,35 @@ const AdminEmployeesPage: React.FC = () => {
                   >
                     {t('admin.edit')}
                   </button>
+                  {hasRole(user, 'SysAdmin') &&
+                    employee.active &&
+                    employee.employeeId !== user?.id && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleImpersonate(employee)}
+                        disabled={impersonatingId === employee.employeeId}
+                        title={t('admin.previewAsHint')}
+                      >
+                        {impersonatingId === employee.employeeId
+                          ? t('common.loading')
+                          : t('admin.previewAs')}
+                      </button>
+                    )}
                   {!isScopedAdmin && (
                     <button
                       className="btn btn-secondary btn-sm"
                       onClick={() => handleRules(employee)}
                     >
                       {t('admin.access')}
+                    </button>
+                  )}
+                  {employee.active && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleResetPassword(employee)}
+                      disabled={!canManageEmployee(employee)}
+                    >
+                      {t('admin.resetPassword')}
                     </button>
                   )}
                   {employee.active && (
@@ -450,22 +528,6 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     onSave(formData);
   };
 
-  const handleRoleChange = (roleId: number, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      roleIds: checked ? [...prev.roleIds, roleId] : prev.roleIds.filter((id) => id !== roleId)
-    }));
-  };
-
-  const handleHospitalChange = (hospitalId: number, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      hospitalIds: checked
-        ? [...(prev.hospitalIds ?? []), hospitalId]
-        : (prev.hospitalIds ?? []).filter((id) => id !== hospitalId)
-    }));
-  };
-
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -584,37 +646,34 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                 ))}
               </select>
             </div>
-            <div className="form-group">
-              <label>{t('admin.centersLabel')}</label>
-              <div className="roles-checkboxes">
-                {hospitals.length === 0 && <small>{t('admin.noCentersAvailable')}</small>}
-                {hospitals.map((hospital) => (
-                  <label key={hospital.id} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={(formData.hospitalIds ?? []).includes(hospital.id)}
-                      onChange={(e) => handleHospitalChange(hospital.id, e.target.checked)}
-                    />
-                    {hospital.name ?? `#${hospital.id}`}
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
 
-          <div className="form-group">
-            <label>{t('admin.roles')}</label>
-            <div className="roles-checkboxes">
-              {roles.map((role) => (
-                <label key={role.id} className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.roleIds.includes(role.id)}
-                    onChange={(e) => handleRoleChange(role.id, e.target.checked)}
-                  />
-                  {translateRoleName(role.name)}
-                </label>
-              ))}
+          <div className="form-row">
+            <div className="form-group">
+              <SearchableMultiSelect
+                label={t('admin.centersLabel')}
+                placeholder={t('admin.searchCenters')}
+                emptyText={t('admin.noCentersAvailable')}
+                options={hospitals.map((hospital) => ({
+                  id: hospital.id,
+                  name: hospital.name ?? `#${hospital.id}`
+                }))}
+                selectedIds={formData.hospitalIds ?? []}
+                onChange={(hospitalIds) => setFormData((prev) => ({ ...prev, hospitalIds }))}
+              />
+            </div>
+            <div className="form-group">
+              <SearchableMultiSelect
+                label={t('admin.roles')}
+                placeholder={t('admin.searchRoles')}
+                emptyText={t('common.notProvided')}
+                options={roles.map((role) => ({
+                  id: role.id,
+                  name: translateRoleName(role.name)
+                }))}
+                selectedIds={formData.roleIds}
+                onChange={(roleIds) => setFormData((prev) => ({ ...prev, roleIds }))}
+              />
             </div>
           </div>
 

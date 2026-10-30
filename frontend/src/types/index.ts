@@ -25,6 +25,7 @@ export interface Employee {
   fullName: string;
   passwordExpiration?: string;
   roles?: string[];
+  defaultPath?: string | null;
 }
 
 export interface EmployeeListItem {
@@ -72,10 +73,12 @@ export interface UpdateEmployeeResponse {
 export interface Role {
   id: number;
   name: string;
+  defaultPath?: string | null;
 }
 
 export interface CreateRoleRequest {
   name: string;
+  defaultPath?: string | null;
 }
 
 export interface Permission {
@@ -669,6 +672,23 @@ export interface IntakeFormLinkInfo {
   expiresAtUtc: string;
 }
 
+/** Active SysAdmin "preview as employee" session (UI-side bookkeeping). */
+export interface ImpersonationState {
+  employeeId: number;
+  fullName: string;
+  adminName: string;
+}
+
+/** Response of POST /api/admin/employees/{id}/impersonate. */
+export interface ImpersonationResponse {
+  token: string;
+  employeeId: number;
+  fullName: string;
+  email: string;
+  roles: string[];
+  impersonatorName: string;
+}
+
 export interface AuthContextType {
   user: Employee | null;
   token: string | null;
@@ -680,6 +700,12 @@ export interface AuthContextType {
     confirmPassword: string
   ) => Promise<{ success: boolean; error?: string }>;
   createEmployee: (employeeData: CreateEmployeeRequest) => Promise<CreateEmployeeResponse | null>;
+  /** Current preview session, or null when signed in normally. */
+  impersonation: ImpersonationState | null;
+  /** Switch to the target employee's view (SysAdmin only; enforced server-side). */
+  startImpersonation: (employeeId: number) => Promise<{ success: boolean; error?: string }>;
+  /** Return to the administrator's own session. */
+  stopImpersonation: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
   requiresPasswordChange: boolean;
@@ -695,6 +721,77 @@ export interface AdminScope {
   hospitalIds: number[];
   administeredCountryScopeIds: number[];
   assignableRoleNames: string[];
+}
+
+/** One measured slice of a MEIK .tdb measurement (Vyhodnocování). */
+export interface TdbSlice {
+  index: number;
+  depthMm: number;
+  width: number;
+  height: number;
+  min: number;
+  max: number;
+  mean: number;
+  /** Base64 of width*height little-endian float32 samples. */
+  values: string;
+  histogram: {
+    counts: number[];
+    edges: number[];
+  };
+}
+
+/** Anonymised TDB measurement attached to an evaluation case. */
+export interface TdbMeasurement {
+  width: number;
+  height: number;
+  windowLow: number;
+  windowHigh: number;
+  /** Shared X-axis range of the slice histograms (MEIK panel extremes). */
+  histogramLow: number;
+  histogramHigh: number;
+  noiseLevel: number;
+  slices: TdbSlice[];
+}
+
+/** One doctor's independent evaluation of a measurement. */
+export interface EvaluationReview {
+  id: number;
+  doctorName?: string | null;
+  annotationsJson?: string | null;
+  recommendation?: string | null;
+  outcome?: string | null;
+  evaluatedAtUtc: string;
+}
+
+/** A Vyhodnocování case (one measured .tdb). */
+export interface EvaluationCase {
+  id: number;
+  patientId: number | null;
+  patientName?: string | null;
+  title: string;
+  imageKey: string;
+  annotationsJson?: string | null;
+  recommendation?: string | null;
+  outcome?: string | null;
+  side?: string | null;
+  posture?: string | null;
+  conditions?: string | null;
+  tdb?: TdbMeasurement | null;
+  evaluatedAtUtc?: string | null;
+  isEvaluated: boolean;
+  reviewCount: number;
+  maxReviews: number;
+  reviews?: EvaluationReview[] | null;
+}
+
+/** Evaluated measurement stored in a visit (interactive report). */
+export interface VisitEvaluationSummary {
+  caseId: number;
+  title: string;
+  side?: string | null;
+  posture?: string | null;
+  reviewCount: number;
+  lastEvaluatedAtUtc?: string | null;
 }
 
 /** Visit ("návštěva") of a patient. */
@@ -722,5 +819,6 @@ export interface VisitDetail {
   note?: string | null;
   sourceEventId?: number | null;
   documents: VisitDocumentItem[];
+  evaluations: VisitEvaluationSummary[];
   intakeForm?: string | null;
 }

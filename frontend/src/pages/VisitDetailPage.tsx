@@ -12,7 +12,7 @@ import {
 } from '../types';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
-import { BaseModal } from '../components/BaseModal';
+import { EvaluationReportModal } from '../components/evaluation/EvaluationReportModal';
 import { useToast } from '../contexts/ToastContext';
 import './VisitDetailPage.css';
 
@@ -38,6 +38,7 @@ const VisitDetailPage: React.FC = () => {
   const [savingNote, setSavingNote] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [reportCaseId, setReportCaseId] = useState<number | null>(null);
 
   const [patientSearch, setPatientSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
@@ -222,6 +223,22 @@ const VisitDetailPage: React.FC = () => {
       .replace(/\s+/g, ' ')
       .trim();
 
+  const sideLabel = (side?: string | null) =>
+    side === 'Left'
+      ? t('evaluation.side.left')
+      : side === 'Right'
+        ? t('evaluation.side.right')
+        : t('evaluation.side.unknown');
+
+  const postureLabel = (posture?: string | null) =>
+    posture === 'Lying'
+      ? t('evaluation.posture.lying')
+      : posture === 'Standing'
+        ? t('evaluation.posture.standing')
+        : posture === 'Sitting'
+          ? t('evaluation.posture.sitting')
+          : t('evaluation.posture.unknown');
+
   return (
     <div className="visit-detail-page">
       <div className="page-heading">
@@ -368,6 +385,40 @@ const VisitDetailPage: React.FC = () => {
             )}
           </section>
 
+          {(visit.evaluations?.length ?? 0) > 0 && (
+            <section className="visit-card">
+              <div className="visit-card-header">
+                <h3>
+                  {t('visits.evaluationsTitle')} ({visit.evaluations.length})
+                </h3>
+              </div>
+              <ul className="visit-evaluation-list">
+                {visit.evaluations.map((evaluation) => (
+                  <li key={evaluation.caseId}>
+                    <button
+                      type="button"
+                      className="visit-evaluation-open"
+                      onClick={() => setReportCaseId(evaluation.caseId)}
+                    >
+                      <strong>
+                        {sideLabel(evaluation.side)} · {postureLabel(evaluation.posture)}
+                      </strong>
+                      <span className="visit-doc-meta">
+                        {t('evaluation.reviewCount', { count: evaluation.reviewCount })}
+                        {evaluation.lastEvaluatedAtUtc
+                          ? ` · ${new Date(evaluation.lastEvaluatedAtUtc).toLocaleString(
+                              i18n.language
+                            )}`
+                          : ''}
+                      </span>
+                      <span className="visit-evaluation-link">{t('evaluation.reportOpen')}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="visit-card">
             <div className="visit-card-header">
               <h3>{t('visits.intakeTitle')}</h3>
@@ -387,9 +438,11 @@ const VisitDetailPage: React.FC = () => {
       </div>
 
       {showUpload && (
-        <BaseModal title={t('patients.documents.upload')} onClose={() => setShowUpload(false)}>
-          <DocumentUpload onUpload={handleUpload} onCancel={() => setShowUpload(false)} />
-        </BaseModal>
+        <DocumentUpload onUpload={handleUpload} onCancel={() => setShowUpload(false)} />
+      )}
+
+      {reportCaseId !== null && (
+        <EvaluationReportModal caseId={reportCaseId} onClose={() => setReportCaseId(null)} />
       )}
 
       {showIntakeModal && (

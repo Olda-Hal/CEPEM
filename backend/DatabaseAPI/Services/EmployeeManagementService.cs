@@ -7,7 +7,11 @@ namespace DatabaseAPI.Services
 {
     public interface IEmployeeManagementService
     {
-        Task<List<EmployeeListItem>> GetAllEmployeesAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Employees visible to the acting admin. Inactive employees are
+        /// hidden unless <paramref name="includeInactive"/> is requested.
+        /// </summary>
+        Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request, CancellationToken cancellationToken = default);
 
@@ -26,6 +30,19 @@ namespace DatabaseAPI.Services
         Task<string?> ResetPasswordAsync(int employeeId);
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
+
+        /// <summary>
+        /// Delete a role. Refused when the role is the system "SysAdmin" role
+        /// or is assigned to any employee (UserRoles) — the caller gets the
+        /// human-readable reason back.
+        /// </summary>
+        Task<(bool Success, string? Error)> DeleteRoleAsync(int roleId);
+
+        /// <summary>
+        /// Set or clear the role's landing page shown after login. Only
+        /// whitelisted SPA paths are accepted (RoleDefaultPaths).
+        /// </summary>
+        Task<(bool Success, string? Error)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath);
     }
 
     public class EmployeeManagementService : IEmployeeManagementService
@@ -39,7 +56,7 @@ namespace DatabaseAPI.Services
             _employeeScopeService = employeeScopeService;
         }
 
-        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
         {
             var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
 
@@ -47,6 +64,13 @@ namespace DatabaseAPI.Services
             if (visibleIds != null)
             {
                 query = query.Where(e => visibleIds.Contains(e.Id));
+            }
+
+            // Deactivated employees leave the working list by default; the
+            // admin UI can opt in to see (and re-activate) them.
+            if (!includeInactive)
+            {
+                query = query.Where(e => e.Person.Active);
             }
 
             var employees = await query
@@ -101,6 +125,14 @@ namespace DatabaseAPI.Services
 
         public async Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId)
         {
+            // The detail read is subject to the same visibility rules as the
+            // list, so a scoped admin cannot fetch an outsider by id.
+            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync();
+            if (visibleIds != null && !visibleIds.Contains(employeeId))
+            {
+                return null;
+            }
+
             var employee = await _context.Employees
                 .Include(e => e.Person)
                     .ThenInclude(p => p.UserRoles)
@@ -414,7 +446,8 @@ namespace DatabaseAPI.Services
                 .Select(r => new RoleDto
                 {
                     Id = r.Id,
-                    Name = r.NameTranslation != null ? r.NameTranslation.EN : string.Empty
+                    Name = r.NameTranslation != null ? r.NameTranslation.EN : string.Empty,
+                    DefaultPath = r.DefaultPath
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();
@@ -426,6 +459,11 @@ namespace DatabaseAPI.Services
         {
             var roleName = request.Name?.Trim();
             if (string.IsNullOrWhiteSpace(roleName))
+            {
+                return null;
+            }
+
+            if (!RoleDefaultPaths.IsAllowed(request.DefaultPath))
             {
                 return null;
             }
@@ -449,7 +487,8 @@ namespace DatabaseAPI.Services
 
             var role = new Role
             {
-                NameTranslationId = translation.Id
+                NameTranslationId = translation.Id,
+                DefaultPath = request.DefaultPath
             };
             _context.Roles.Add(role);
             await _context.SaveChangesAsync();
@@ -457,8 +496,56 @@ namespace DatabaseAPI.Services
             return new RoleDto
             {
                 Id = role.Id,
-                Name = roleName
+                Name = roleName,
+                DefaultPath = role.DefaultPath
             };
+        }
+
+        public async Task<(bool Success, string? Error)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath)
+        {
+            if (!RoleDefaultPaths.IsAllowed(defaultPath))
+            {
+                return (false, "Path is not an allowed landing page");
+            }
+
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null)
+            {
+                return (false, "Role not found");
+            }
+
+            role.DefaultPath = defaultPath;
+            await _context.SaveChangesAsync();
+            return (true, null);
+        }
+
+        public async Task<(bool Success, string? Error)> DeleteRoleAsync(int roleId)
+        {
+            var role = await _context.Roles
+                .Include(r => r.NameTranslation)
+                .FirstOrDefaultAsync(r => r.Id == roleId);
+            if (role == null)
+            {
+                return (false, "Role not found");
+            }
+
+            // The built-in SysAdmin role anchors superuser access — deleting
+            // it would brick administration of the whole deployment.
+            var roleName = role.NameTranslation?.EN ?? string.Empty;
+            if (string.Equals(roleName, "SysAdmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "System role SysAdmin cannot be deleted");
+            }
+
+            var assigned = await _context.UserRoles.AnyAsync(ur => ur.RoleId == roleId);
+            if (assigned)
+            {
+                return (false, "Role is assigned to one or more employees and cannot be deleted");
+            }
+
+            _context.Roles.Remove(role);
+            await _context.SaveChangesAsync();
+            return (true, null);
         }
     }
 }

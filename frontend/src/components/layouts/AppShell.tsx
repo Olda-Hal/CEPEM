@@ -60,6 +60,12 @@ const NAV_SECTIONS: NavSection[] = [
     matchPrefixes: ['/examinations']
   },
   {
+    key: 'vyhodnocovani',
+    to: '/vyhodnocovani',
+    labelKey: 'evaluation.title',
+    matchPrefixes: ['/vyhodnocovani']
+  },
+  {
     key: 'administration',
     to: '/administration',
     labelKey: 'shell.administration',
@@ -86,6 +92,29 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
     if (section.key === 'admin') {
       return isAdmin(user);
     }
+    if (section.key === 'reservations') {
+      // Slots are center/country administration, not part of the doctor or
+      // examiner agenda.
+      return isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
+    }
+    if (section.key === 'patients') {
+      // Patients belong to the clinical staff (Examiner) and Country Admin;
+      // the evaluating doctor and center administration have other agendas.
+      return (
+        isAdmin(user) ||
+        hasRole(user, 'Country Admin') ||
+        (!hasRole(user, 'Doctor') && !hasRole(user, 'Center Admin'))
+      );
+    }
+    if (section.key === 'examinations') {
+      // Examinations overview belongs to administration, not to the examiner
+      // (whose whole agenda is the Patients section) or evaluating doctor.
+      return isAdmin(user) || (!hasRole(user, 'Doctor') && !hasRole(user, 'Examiner'));
+    }
+    if (section.key === 'vyhodnocovani') {
+      // Vyhodnocování is the evaluating doctor's home; country admins oversee it.
+      return isAdmin(user) || hasRole(user, 'Doctor') || hasRole(user, 'Country Admin');
+    }
     return true;
   });
 
@@ -96,7 +125,7 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
  */
 export const AppShell: React.FC = () => {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, impersonation, stopImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [buildVersion, setBuildVersion] = useState<string | null>(null);
@@ -114,6 +143,11 @@ export const AppShell: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleStopImpersonation = async () => {
+    await stopImpersonation();
+    navigate('/admin/employees');
   };
 
   const activeSection = [...NAV_SECTIONS]
@@ -204,6 +238,25 @@ export const AppShell: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {impersonation && (
+        <div className="shell-impersonation-banner" role="status">
+          <span className="shell-impersonation-text">
+            <strong>{t('shell.impersonationActive')}</strong>{' '}
+            {t('shell.impersonationDetail', {
+              name: impersonation.fullName,
+              admin: impersonation.adminName || t('admin.roleNames.sysAdmin')
+            })}
+          </span>
+          <button
+            type="button"
+            className="shell-impersonation-exit"
+            onClick={handleStopImpersonation}
+          >
+            {t('shell.stopImpersonation')}
+          </button>
+        </div>
+      )}
 
       <main className="shell-content">
         <Outlet />
