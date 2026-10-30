@@ -61,6 +61,11 @@ class ApiClient {
       throw new ApiError(response.status, extractErrorMessage(body, response.status), body);
     }
 
+    // 204 means "nothing to return" (e.g. no next evaluation measurement).
+    if (response.status === 204) {
+      return null as T;
+    }
+
     const contentType = response.headers.get('Content-Type');
     if (contentType && contentType.includes('application/json')) {
       return response.json();

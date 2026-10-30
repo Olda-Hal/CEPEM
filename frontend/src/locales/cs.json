@@ -332,7 +332,16 @@
     "outcomeOk": "V pořádku",
     "outcomeFindings": "Nález",
     "outcomeOkLong": "Snímek označen jako v pořádku. Vyšetření ukončeno.",
-    "outcomeFindingsLong": "Nálezy zaznamenány. Vyšetření ukončeno."
+    "outcomeFindingsLong": "Nálezy zaznamenány. Vyšetření ukončeno.",
+    "allDone": "Všechna dostupná hodnocení jsou momentálně vyhodnocena.",
+    "tryAgain": "Zkusit znovu",
+    "reviewCount": "Hodnocení: {{count}}/2",
+    "reportTitle": "Vyhodnocení měření",
+    "reportOpen": "Otevřít vyhodnocení",
+    "reportLoadFailed": "Vyhodnocení se nepodařilo načíst.",
+    "unknownDoctor": "Neznámý lékař",
+    "noFindings": "Bez nálezů",
+    "noMarkerNote": "Bez popisu"
   },
   "examinations": {
     "title": "Vyšetření",
@@ -1051,6 +1060,7 @@
     "visitNote": "Poznámka",
     "visitNotePlaceholder": "Poznámka k návštěvě…",
     "documentsCount": "{{count}} dok.",
+    "evaluationsTitle": "Vyhodnocená měření",
     "intakeBadge": "Vstupní formulář",
     "empty": "Zatím žádné návštěvy.",
     "loadFailed": "Nepodařilo se načíst návštěvy",

@@ -750,6 +750,47 @@ export interface TdbMeasurement {
   slices: TdbSlice[];
 }
 
+/** One doctor's independent evaluation of a measurement. */
+export interface EvaluationReview {
+  id: number;
+  doctorName?: string | null;
+  annotationsJson?: string | null;
+  recommendation?: string | null;
+  outcome?: string | null;
+  evaluatedAtUtc: string;
+}
+
+/** A Vyhodnocování case (one measured .tdb). */
+export interface EvaluationCase {
+  id: number;
+  patientId: number | null;
+  patientName?: string | null;
+  title: string;
+  imageKey: string;
+  annotationsJson?: string | null;
+  recommendation?: string | null;
+  outcome?: string | null;
+  side?: string | null;
+  posture?: string | null;
+  conditions?: string | null;
+  tdb?: TdbMeasurement | null;
+  evaluatedAtUtc?: string | null;
+  isEvaluated: boolean;
+  reviewCount: number;
+  maxReviews: number;
+  reviews?: EvaluationReview[] | null;
+}
+
+/** Evaluated measurement stored in a visit (interactive report). */
+export interface VisitEvaluationSummary {
+  caseId: number;
+  title: string;
+  side?: string | null;
+  posture?: string | null;
+  reviewCount: number;
+  lastEvaluatedAtUtc?: string | null;
+}
+
 /** Visit ("návštěva") of a patient. */
 export interface VisitListItem {
   id: number;
@@ -775,5 +816,6 @@ export interface VisitDetail {
   note?: string | null;
   sourceEventId?: number | null;
   documents: VisitDocumentItem[];
+  evaluations: VisitEvaluationSummary[];
   intakeForm?: string | null;
 }

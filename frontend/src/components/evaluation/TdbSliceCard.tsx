@@ -9,6 +9,8 @@ export interface SliceMarker {
   note: string;
   /** Global marker number (shared with the findings list). */
   number?: number;
+  /** Marker colour, used by the multi-doctor report. */
+  color?: string;
 }
 
 interface TdbSliceCardProps {
@@ -81,7 +83,11 @@ export const TdbSliceCard: React.FC<TdbSliceCardProps> = ({
           <span
             key={`${marker.x}-${marker.y}-${index}`}
             className="evaluation-marker"
-            style={{ left: `${marker.x * 100}%`, top: `${marker.y * 100}%` }}
+            style={{
+              left: `${marker.x * 100}%`,
+              top: `${marker.y * 100}%`,
+              ...(marker.color ? { background: marker.color } : {})
+            }}
             title={marker.note || `#${marker.number ?? index + 1}`}
           >
             {marker.number ?? index + 1}

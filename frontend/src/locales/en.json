@@ -332,7 +332,16 @@
     "outcomeOk": "Normal",
     "outcomeFindings": "Findings",
     "outcomeOkLong": "Marked as normal. Examination finished.",
-    "outcomeFindingsLong": "Findings recorded. Examination finished."
+    "outcomeFindingsLong": "Findings recorded. Examination finished.",
+    "allDone": "All available evaluations are currently completed.",
+    "tryAgain": "Try again",
+    "reviewCount": "Reviews: {{count}}/2",
+    "reportTitle": "Measurement evaluation",
+    "reportOpen": "Open evaluation",
+    "reportLoadFailed": "The evaluation could not be loaded.",
+    "unknownDoctor": "Unknown doctor",
+    "noFindings": "No findings",
+    "noMarkerNote": "No description"
   },
   "examinations": {
     "title": "Examinations",
@@ -1051,6 +1060,7 @@
     "visitNote": "Note",
     "visitNotePlaceholder": "Note for this visit…",
     "documentsCount": "{{count}} doc.",
+    "evaluationsTitle": "Evaluated measurements",
     "intakeBadge": "Intake form",
     "empty": "No visits yet.",
     "loadFailed": "Failed to load visits",

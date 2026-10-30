@@ -75,5 +75,21 @@ describe('tdbRender', () => {
     expect(rgbAt(287, 120)).toEqual([255, 15, 0]);
     expect(rgbAt(0, 120)).toEqual([0, 127, 255]);
     expect(rgbAt(280, 144)).toEqual([191, 255, 79]);
+
+    // The web view colours the whole square (no silhouette mask).
+    expect(rgbAt(0, 0)).not.toEqual([11, 10, 10]);
+  });
+
+  test('optional smoothing keeps colours inside the palette', () => {
+    const source = 36;
+    const values = new Float32Array(source * source).fill(0.2);
+    const pixels = renderSlicePixels(
+      { values: toBase64(values), width: source, height: source },
+      { windowLow: 0, windowHigh: 1 },
+      { smooth: true }
+    );
+
+    expect(pixels.length).toBe(288 * 288 * 4);
+    expect(pixels[3]).toBe(255);
   });
 });

@@ -12,8 +12,6 @@ import { TdbMeasurement, TdbSlice } from '../types';
  */
 
 const IMAGE_SIZE = 288;
-const CELL_GRID = 18;
-const CELL_SIZE = IMAGE_SIZE / CELL_GRID;
 
 // pal64[::2] — the table the original draws with (32 effective colours).
 const PALETTE: ReadonlyArray<readonly [number, number, number]> = [
@@ -50,29 +48,6 @@ const PALETTE: ReadonlyArray<readonly [number, number, number]> = [
   [0, 0, 191],
   [0, 0, 159]
 ] as const;
-
-const SILHOUETTE_ROWS = [
-  'XXXXXX......XXXXXX',
-  'XXXX..........XXXX',
-  'XXX............XXX',
-  'XX..............XX',
-  'X................X',
-  'X................X',
-  '..................',
-  '..................',
-  '..................',
-  '..................',
-  '..................',
-  '..................',
-  'X................X',
-  'X................X',
-  'XX..............XX',
-  'XXX............XXX',
-  'XXXX..........XXXX',
-  'XXXXXX......XXXXXX'
-];
-
-const SILHOUETTE = SILHOUETTE_ROWS.map((row) => row.split('').map((ch) => ch === '.'));
 
 const kernelCache = new Map<string, number[][]>();
 
@@ -182,17 +157,42 @@ function nearestSquare(values: Float32Array, source: number): Float32Array {
   return out;
 }
 
-/** RGBA pixels of one rendered slice (288x288, row-flipped, masked). */
+/** Light 3x3 Gaussian, matching the slightly softer panels of the desktop app. */
+function smoothPlane(plane: Float32Array): Float32Array {
+  const out = new Float32Array(plane.length);
+  const size = IMAGE_SIZE;
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      let sum = 0;
+      let weight = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        const r = Math.min(size - 1, Math.max(0, row + dr));
+        for (let dc = -1; dc <= 1; dc++) {
+          const c = Math.min(size - 1, Math.max(0, col + dc));
+          const w = (dr === 0 ? 2 : 1) * (dc === 0 ? 2 : 1);
+          sum += (plane[r * size + c] ?? 0) * w;
+          weight += w;
+        }
+      }
+      out[row * size + col] = sum / weight;
+    }
+  }
+  return out;
+}
+
+/** RGBA pixels of one rendered slice (288x288, row-flipped, full square). */
 export function renderSlicePixels(
   slice: Pick<TdbSlice, 'values' | 'width' | 'height'>,
-  measurement: Pick<TdbMeasurement, 'windowLow' | 'windowHigh'>
+  measurement: Pick<TdbMeasurement, 'windowLow' | 'windowHigh'>,
+  options: { smooth?: boolean } = {}
 ): Uint8ClampedArray {
   const values = decodeFloat32Base64(slice.values);
   const source = slice.width;
-  const plane =
+  const upscaled =
     slice.width === slice.height && slice.width > 0
       ? upscalePlane(values, source)
       : nearestSquare(values, source);
+  const plane = options.smooth ? smoothPlane(upscaled) : upscaled;
 
   const low = measurement.windowLow;
   let high = measurement.windowHigh;
@@ -204,19 +204,8 @@ export function renderSlicePixels(
   for (let displayRow = 0; displayRow < IMAGE_SIZE; displayRow++) {
     // The original writes bottom-up bitmaps, i.e. flips the rows.
     const row = IMAGE_SIZE - 1 - displayRow;
-    const cellRow = Math.min(Math.floor(displayRow / CELL_SIZE), CELL_GRID - 1);
     for (let col = 0; col < IMAGE_SIZE; col++) {
-      const cellCol = Math.min(Math.floor(col / CELL_SIZE), CELL_GRID - 1);
       const offset = (displayRow * IMAGE_SIZE + col) * 4;
-
-      if (!SILHOUETTE[cellRow]?.[cellCol]) {
-        data[offset] = 11;
-        data[offset + 1] = 10;
-        data[offset + 2] = 10;
-        data[offset + 3] = 255;
-        continue;
-      }
-
       const value = plane[row * IMAGE_SIZE + col] ?? 0;
       let u = Number.isFinite(value) ? (value - low) / (high - low) : 0;
       u = Math.min(1, Math.max(0, u));
@@ -238,13 +227,14 @@ export function renderSlicePixels(
 export function drawTdbSlice(
   canvas: HTMLCanvasElement,
   slice: TdbSlice,
-  measurement: Pick<TdbMeasurement, 'windowLow' | 'windowHigh'>
+  measurement: Pick<TdbMeasurement, 'windowLow' | 'windowHigh'>,
+  smooth = true
 ): void {
   const context = canvas.getContext('2d');
   if (!context) return;
   canvas.width = IMAGE_SIZE;
   canvas.height = IMAGE_SIZE;
   const image = context.createImageData(IMAGE_SIZE, IMAGE_SIZE);
-  image.data.set(renderSlicePixels(slice, measurement));
+  image.data.set(renderSlicePixels(slice, measurement, { smooth }));
   context.putImageData(image, 0, 0);
 }
