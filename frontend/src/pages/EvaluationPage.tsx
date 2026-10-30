@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
+import { TdbMeasurement } from '../types';
+import TdbSliceCard, { SliceMarker } from '../components/evaluation/TdbSliceCard';
 import './EvaluationPage.css';
 
 interface EvaluationCase {
@@ -11,21 +13,32 @@ interface EvaluationCase {
   imageKey: string;
   annotationsJson: string | null;
   recommendation: string | null;
+  outcome?: string | null;
+  side?: string | null;
+  posture?: string | null;
+  conditions?: string | null;
+  tdb?: TdbMeasurement | null;
   evaluatedAtUtc: string | null;
   isEvaluated: boolean;
 }
 
-interface Marker {
-  x: number;
-  y: number;
-  note: string;
+interface Marker extends SliceMarker {
+  slice: number;
 }
 
 const readMarkers = (json: string | null): Marker[] => {
   if (!json) return [];
   try {
-    const parsed = JSON.parse(json) as Marker[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(json) as Partial<Marker>[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => typeof item?.x === 'number' && typeof item?.y === 'number')
+      .map((item) => ({
+        slice: typeof item.slice === 'number' ? item.slice : 0,
+        x: Number(item.x),
+        y: Number(item.y),
+        note: typeof item.note === 'string' ? item.note : ''
+      }));
   } catch {
     return [];
   }
@@ -72,6 +85,7 @@ const EvaluationPage: React.FC = () => {
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [recommendation, setRecommendation] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingCase, setLoadingCase] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -98,20 +112,40 @@ const EvaluationPage: React.FC = () => {
   const openCases = useMemo(() => cases.filter((c) => !c.isEvaluated), [cases]);
   const doneCases = useMemo(() => cases.filter((c) => c.isEvaluated), [cases]);
 
-  const selectCase = (c: EvaluationCase) => {
+  const selectCase = async (c: EvaluationCase) => {
     setSelected(c);
     setMarkers(readMarkers(c.annotationsJson));
     setRecommendation(c.recommendation ?? '');
     setSuccess(null);
     setError(null);
+
+    if (c.imageKey === 'tdb' && !c.tdb) {
+      setLoadingCase(true);
+      try {
+        const detail = await apiClient.get<EvaluationCase>(`/api/evaluations/cases/${c.id}`);
+        setSelected(detail);
+        setMarkers(readMarkers(detail.annotationsJson));
+        setRecommendation(detail.recommendation ?? '');
+      } catch (err) {
+        console.error('Failed to load evaluation case detail', err);
+        setError(t('evaluation.loadFailed'));
+      } finally {
+        setLoadingCase(false);
+      }
+    }
   };
 
-  const addMarker = (e: React.MouseEvent<HTMLDivElement>) => {
+  const addMarker = (slice: number, x: number, y: number) => {
+    if (!selected || selected.isEvaluated) return;
+    setMarkers((prev) => [...prev, { slice, x, y, note: '' }]);
+  };
+
+  const addMockMarker = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!selected || selected.isEvaluated) return;
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
-    setMarkers((prev) => [...prev, { x: Number(x.toFixed(3)), y: Number(y.toFixed(3)), note: '' }]);
+    addMarker(0, Number(x.toFixed(3)), Number(y.toFixed(3)));
   };
 
   const updateMarkerNote = (index: number, note: string) => {
@@ -122,8 +156,20 @@ const EvaluationPage: React.FC = () => {
     setMarkers((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleEvaluate = async () => {
+  const handleEvaluate = async (outcome: 'OK' | 'Findings' | null) => {
     if (!selected) return;
+
+    if (outcome === 'OK' && markers.length > 0) {
+      if (!window.confirm(t('evaluation.okConfirmWithMarkers'))) {
+        return;
+      }
+    }
+
+    if (outcome === 'Findings' && markers.length === 0 && !recommendation.trim()) {
+      setError(t('evaluation.needFindings'));
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -132,7 +178,8 @@ const EvaluationPage: React.FC = () => {
         `/api/evaluations/cases/${selected.id}/evaluate`,
         {
           annotationsJson: JSON.stringify(markers),
-          recommendation: recommendation || null
+          recommendation: recommendation || null,
+          ...(outcome ? { outcome } : {})
         }
       );
       setCases((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
@@ -147,6 +194,29 @@ const EvaluationPage: React.FC = () => {
     }
   };
 
+  const caseSubtitle = (c: EvaluationCase): string => {
+    if (c.imageKey === 'tdb') {
+      const parts = [sideLabel(c.side), postureLabel(c.posture)].filter((part): part is string =>
+        Boolean(part)
+      );
+      return parts.length > 0 ? parts.join(' · ') : t('evaluation.measurement');
+    }
+    return c.patientName ?? t('evaluation.noPatient');
+  };
+
+  const sideLabel = (side?: string | null): string | null => {
+    if (side === 'Left') return t('evaluation.side.left');
+    if (side === 'Right') return t('evaluation.side.right');
+    return null;
+  };
+
+  const postureLabel = (posture?: string | null): string | null => {
+    if (posture === 'Lying') return t('evaluation.posture.lying');
+    if (posture === 'Standing') return t('evaluation.posture.standing');
+    if (posture === 'Sitting') return t('evaluation.posture.sitting');
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="evaluation-page">
@@ -155,6 +225,9 @@ const EvaluationPage: React.FC = () => {
       </div>
     );
   }
+
+  const tdb = selected?.imageKey === 'tdb' ? selected.tdb : null;
+  const isTdb = Boolean(tdb);
 
   return (
     <div className="evaluation-page">
@@ -174,10 +247,10 @@ const EvaluationPage: React.FC = () => {
             <button
               key={c.id}
               className={`evaluation-card${selected?.id === c.id ? ' active' : ''}`}
-              onClick={() => selectCase(c)}
+              onClick={() => void selectCase(c)}
             >
               <strong>{c.title}</strong>
-              <span className="muted">{c.patientName ?? t('evaluation.noPatient')}</span>
+              <span className="muted">{caseSubtitle(c)}</span>
             </button>
           ))}
 
@@ -190,10 +263,21 @@ const EvaluationPage: React.FC = () => {
                 <button
                   key={c.id}
                   className={`evaluation-card done${selected?.id === c.id ? ' active' : ''}`}
-                  onClick={() => selectCase(c)}
+                  onClick={() => void selectCase(c)}
                 >
-                  <strong>{c.title}</strong>
-                  <span className="muted">{c.patientName ?? t('evaluation.noPatient')}</span>
+                  <strong>
+                    {c.title}
+                    {c.outcome && (
+                      <span
+                        className={`tdb-outcome-badge ${c.outcome === 'OK' ? 'ok' : 'findings'}`}
+                      >
+                        {c.outcome === 'OK'
+                          ? t('evaluation.outcomeOk')
+                          : t('evaluation.outcomeFindings')}
+                      </span>
+                    )}
+                  </strong>
+                  <span className="muted">{caseSubtitle(c)}</span>
                 </button>
               ))}
             </>
@@ -203,6 +287,111 @@ const EvaluationPage: React.FC = () => {
         <section className="evaluation-detail">
           {!selected ? (
             <p className="muted">{t('evaluation.pickCase')}</p>
+          ) : loadingCase ? (
+            <p className="muted">{t('common.loading')}</p>
+          ) : isTdb && tdb ? (
+            <>
+              <h2>{selected.title}</h2>
+              <div className="tdb-meta">
+                <span className="tdb-pill">
+                  {sideLabel(selected.side) ?? t('evaluation.side.unknown')}
+                </span>
+                <span className="tdb-pill">
+                  {postureLabel(selected.posture) ?? t('evaluation.posture.unknown')}
+                </span>
+                {selected.conditions && (
+                  <span className="muted small">
+                    {t('evaluation.conditions')}: {selected.conditions}
+                  </span>
+                )}
+              </div>
+              <p className="muted small">{t('evaluation.anonymisedHint')}</p>
+
+              <div className="tdb-slice-grid">
+                {tdb.slices.map((slice) => (
+                  <TdbSliceCard
+                    key={slice.index}
+                    slice={slice}
+                    measurement={tdb}
+                    markers={markers
+                      .map((marker, index) => ({ ...marker, number: index + 1 }))
+                      .filter((marker) => marker.slice === slice.index)}
+                    readonly={selected.isEvaluated}
+                    onAddMarker={(x, y) => addMarker(slice.index, x, y)}
+                  />
+                ))}
+              </div>
+
+              <p className="muted small">{t('evaluation.markHintSlice')}</p>
+
+              {markers.length > 0 && (
+                <ul className="evaluation-markers">
+                  {markers.map((m, i) => (
+                    <li key={i}>
+                      <span className="marker-index">
+                        #{i + 1} · {t('evaluation.slice', { index: m.slice + 1 })}
+                      </span>
+                      <input
+                        type="text"
+                        value={m.note}
+                        placeholder={t('evaluation.markerNotePlaceholder')}
+                        onChange={(e) => updateMarkerNote(i, e.target.value)}
+                        disabled={selected.isEvaluated}
+                      />
+                      {!selected.isEvaluated && (
+                        <button className="btn btn-sm btn-danger" onClick={() => removeMarker(i)}>
+                          {t('evaluation.removeMarker')}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <label className="evaluation-recommendation-label" htmlFor="recommendation">
+                {t('evaluation.recommendation')}
+              </label>
+              <textarea
+                id="recommendation"
+                rows={4}
+                value={recommendation}
+                onChange={(e) => setRecommendation(e.target.value)}
+                disabled={selected.isEvaluated}
+                placeholder={t('evaluation.recommendationPlaceholder')}
+              />
+
+              {selected.isEvaluated ? (
+                <>
+                  <p className={`tdb-outcome ${selected.outcome === 'OK' ? 'ok' : 'findings'}`}>
+                    {selected.outcome === 'OK'
+                      ? t('evaluation.outcomeOkLong')
+                      : t('evaluation.outcomeFindingsLong')}
+                  </p>
+                  <p className="muted small">
+                    {t('evaluation.evaluatedAt', {
+                      date: new Date(selected.evaluatedAtUtc ?? '').toLocaleString()
+                    })}
+                  </p>
+                </>
+              ) : (
+                <div className="tdb-actions">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => void handleEvaluate('OK')}
+                    disabled={saving}
+                  >
+                    {t('evaluation.markOk')}
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => void handleEvaluate('Findings')}
+                    disabled={saving}
+                  >
+                    {saving ? t('evaluation.saving') : t('evaluation.finishFindings')}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <>
               <h2>{selected.title}</h2>
@@ -210,7 +399,7 @@ const EvaluationPage: React.FC = () => {
 
               <div
                 className={`evaluation-canvas${selected.isEvaluated ? ' readonly' : ''}`}
-                onClick={addMarker}
+                onClick={addMockMarker}
                 role="presentation"
               >
                 <MockImage imageKey={selected.imageKey} />
@@ -268,7 +457,11 @@ const EvaluationPage: React.FC = () => {
                   })}
                 </p>
               ) : (
-                <button className="btn btn-primary" onClick={handleEvaluate} disabled={saving}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => void handleEvaluate(null)}
+                  disabled={saving}
+                >
                   {saving ? t('evaluation.saving') : t('evaluation.evaluate')}
                 </button>
               )}

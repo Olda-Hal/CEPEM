@@ -723,6 +723,33 @@ export interface AdminScope {
   assignableRoleNames: string[];
 }
 
+/** One measured slice of a MEIK .tdb measurement (Vyhodnocování). */
+export interface TdbSlice {
+  index: number;
+  depthMm: number;
+  width: number;
+  height: number;
+  min: number;
+  max: number;
+  mean: number;
+  /** Base64 of width*height little-endian float32 samples. */
+  values: string;
+  histogram: {
+    counts: number[];
+    edges: number[];
+  };
+}
+
+/** Anonymised TDB measurement attached to an evaluation case. */
+export interface TdbMeasurement {
+  width: number;
+  height: number;
+  windowLow: number;
+  windowHigh: number;
+  noiseLevel: number;
+  slices: TdbSlice[];
+}
+
 /** Visit ("návštěva") of a patient. */
 export interface VisitListItem {
   id: number;

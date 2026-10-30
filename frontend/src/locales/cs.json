@@ -306,7 +306,33 @@
     "saved": "Vyhodnocení bylo uloženo.",
     "loadFailed": "Nepodařilo se načíst případy pro vyhodnocování.",
     "saveFailed": "Nepodařilo se uložit vyhodnocení.",
-    "evaluatedAt": "Vyhodnoceno {{date}}"
+    "evaluatedAt": "Vyhodnoceno {{date}}",
+    "measurement": "MEIK měření",
+    "anonymisedHint": "Měření se zobrazuje anonymně – bez údajů o pacientovi.",
+    "conditions": "Podmínky měření",
+    "side": {
+      "left": "Levé prso",
+      "right": "Pravé prso",
+      "unknown": "Strana neuvedena"
+    },
+    "posture": {
+      "lying": "Leží",
+      "standing": "Stojí",
+      "sitting": "Sedí",
+      "unknown": "Poloha neuvedena"
+    },
+    "slice": "Řez {{index}}",
+    "sliceValues": "min {{min}} · průměr {{mean}} · max {{max}}",
+    "histogram": "Histogram naměřených hodnot",
+    "markHintSlice": "Kliknutím do kteréhokoli řezu označíte místo nálezu; popis doplníte pod seznamem.",
+    "markOk": "Snímek v pořádku",
+    "finishFindings": "Ukončit vyšetření s nálezy",
+    "okConfirmWithMarkers": "Máte označené nálezy. Opravdu označit snímek jako v pořádku?",
+    "needFindings": "Označte alespoň jedno místo nálezu nebo napište popis.",
+    "outcomeOk": "V pořádku",
+    "outcomeFindings": "Nález",
+    "outcomeOkLong": "Snímek označen jako v pořádku. Vyšetření ukončeno.",
+    "outcomeFindingsLong": "Nálezy zaznamenány. Vyšetření ukončeno."
   },
   "examinations": {
     "title": "Vyšetření",
@@ -556,7 +582,7 @@
       "noDocuments": "Žádné dokumenty",
       "uploadDocument": "Nahrát dokument",
       "selectUploadMethod": "Vyberte způsob nahrání dokumentu:",
-      "fileRequirements": "Podporované formáty: PDF (max. {{maxSize}} MB)",
+      "fileRequirements": "Podporované formáty: PDF nebo MEIK .tdb (max. {{maxSize}} MB)",
       "scanDocument": "Skenovat dokument",
       "uploadFile": "Nahrát soubor",
       "scannedDocument": "Naskenováno",
@@ -566,6 +592,7 @@
       "confirmDelete": "Opravdu chcete smazat tento dokument?",
       "errors": {
         "mustBePdf": "Soubor musí být ve formátu PDF",
+        "mustBePdfOrTdb": "Soubor musí být PDF nebo měření MEIK (.tdb)",
         "fileTooLarge": "Soubor nesmí být větší než {{maxSize}} MB",
         "scannerNotAvailable": "Skener není dostupný",
         "uploadFailed": "Chyba při nahrávání dokumentu",

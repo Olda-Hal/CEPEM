@@ -28,8 +28,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUpload, onCanc
   const validateAndSetFile = (file: File) => {
     setError(null);
 
-    if (file.type !== 'application/pdf') {
-      setError(t('patients.documents.errors.mustBePdf'));
+    const isTdb = file.name.toLowerCase().endsWith('.tdb');
+    if (file.type !== 'application/pdf' && !isTdb) {
+      setError(t('patients.documents.errors.mustBePdfOrTdb'));
       return;
     }
 
@@ -119,7 +120,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUpload, onCanc
             <input
               ref={fileInputRef}
               type="file"
-              accept="application/pdf"
+              accept=".pdf,.tdb,application/pdf"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />

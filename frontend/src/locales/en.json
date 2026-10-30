@@ -306,7 +306,33 @@
     "saved": "Evaluation saved.",
     "loadFailed": "Failed to load evaluation cases.",
     "saveFailed": "Failed to save the evaluation.",
-    "evaluatedAt": "Evaluated at {{date}}"
+    "evaluatedAt": "Evaluated at {{date}}",
+    "measurement": "MEIK measurement",
+    "anonymisedHint": "The measurement is shown anonymously — no patient details.",
+    "conditions": "Measurement conditions",
+    "side": {
+      "left": "Left breast",
+      "right": "Right breast",
+      "unknown": "Side not stated"
+    },
+    "posture": {
+      "lying": "Lying",
+      "standing": "Standing",
+      "sitting": "Sitting",
+      "unknown": "Posture not stated"
+    },
+    "slice": "Slice {{index}}",
+    "sliceValues": "min {{min}} · mean {{mean}} · max {{max}}",
+    "histogram": "Histogram of measured values",
+    "markHintSlice": "Click any slice to place a finding marker; describe it under the list.",
+    "markOk": "Images are normal",
+    "finishFindings": "Finish examination with findings",
+    "okConfirmWithMarkers": "You have marked findings. Mark the images as normal anyway?",
+    "needFindings": "Mark at least one finding or write a description.",
+    "outcomeOk": "Normal",
+    "outcomeFindings": "Findings",
+    "outcomeOkLong": "Marked as normal. Examination finished.",
+    "outcomeFindingsLong": "Findings recorded. Examination finished."
   },
   "examinations": {
     "title": "Examinations",
@@ -556,7 +582,7 @@
       "noDocuments": "No documents",
       "uploadDocument": "Upload Document",
       "selectUploadMethod": "Select upload method:",
-      "fileRequirements": "Supported formats: PDF (max. {{maxSize}} MB)",
+      "fileRequirements": "Supported formats: PDF or MEIK .tdb (max. {{maxSize}} MB)",
       "scanDocument": "Scan Document",
       "uploadFile": "Upload File",
       "scannedDocument": "Scanned",
@@ -566,6 +592,7 @@
       "confirmDelete": "Are you sure you want to delete this document?",
       "errors": {
         "mustBePdf": "File must be a PDF document",
+        "mustBePdfOrTdb": "File must be a PDF document or a MEIK .tdb measurement",
         "fileTooLarge": "File must not exceed {{maxSize}} MB",
         "scannerNotAvailable": "Scanner is not available",
         "uploadFailed": "Error uploading document",
