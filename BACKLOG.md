@@ -34,6 +34,13 @@ produkčním nasazení.
 - TODO — **Pokračování Vyhodnocování**: navazující flow podle specifikace (jednání podle doporučení: kdo, co, kdy — čekáme na zadání).
 - TODO — **Produkční SMTP:** v produkci dopořvat SMTP_HOST/PORT/USER/PASS/SSL + FRONTEND_PUBLIC_URL v .env (bez toho se reset-link jen zaloguje).
 
+### 2026-10-30 — náhled za zaměstnance, skrývání neaktivních, výběr rolí/center
+
+- **SysAdmin „Náhled jako“** ✅ — tlačítko v seznamu zaměstnanců; `POST /api/admin/employees/{id}/impersonate` (jen SysAdmin, cíl musí být aktivní, vnořený náhled zakázán) vystaví 1h JWT s `impersonator_id`/`impersonator_name`. FE uloží původní admin token do sessionStorage, zobrazí banner „Prohlížíte jako …“ a náhled jde ukončit i při expiraci tokenu (vrátí se admin session). Zavřením tabu náhled zaniká.
+- **Neaktivní zaměstnanci skrytí ze seznamu** ✅ — výchozí výpis i CSV export filtrují `Person.Active`; přepínač „Zobrazit neaktivní“ (`?includeInactive=true`) je zobrazí pro reaktivaci. Gateway nově proxuje CSV export pod permission `employees.read` (dřív končil 404).
+- **Výběr rolí a center** ✅ — checkboxové mřížky v create/edit modalu nahrazeny `SearchableMultiSelect` (hledání, chips, prázdný stav); centra a role jsou ve dvou zarovnaných sloupcích a Enter ve vyhledávání už neodesílá formulář.
+- TODO — ověřit na živém stacku: SysAdmin → Náhled jako Doktor/Examiner (menu, data, oprávnění) → Ukončit náhled; a že deaktivovaný zaměstnanec zmizí a po zapnutí přepínače se dá znovu aktivovat.
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
