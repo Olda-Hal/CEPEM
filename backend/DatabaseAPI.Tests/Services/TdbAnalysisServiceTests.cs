@@ -31,7 +31,7 @@ public class TdbAnalysisServiceTests
         {
             for (var cell = 0; cell < 36 * 36; cell++)
             {
-                var value = 100f + layer + cell / 1000f;
+                var value = 0.1f + layer * 0.05f + cell / 100000f;
                 BinaryPrimitives.WriteSingleLittleEndian(
                     data.AsSpan(tail + (layer * 36 * 36 + cell) * 4, 4), value);
             }
@@ -68,9 +68,11 @@ public class TdbAnalysisServiceTests
         var first = analysis.Slices[0];
         Assert.Equal(36, first.Width);
         Assert.Equal(36 * 36, first.Values.Length);
-        Assert.Equal(99.85, first.Values[0], 2); // 100 - 0.15 correction
+        Assert.Equal(-0.05, first.Values[0], 2); // 0.1 - 0.15 correction
         Assert.Equal(first.HistogramCounts.Sum(), first.Values.Count(v => v != 0f));
         Assert.Equal(33, first.HistogramEdges.Length);
+        Assert.Equal(-0.30, analysis.HistogramLow, 3);
+        Assert.Equal(1.10, analysis.HistogramHigh, 3);
 
         Assert.True(analysis.WindowHigh > analysis.WindowLow);
     }

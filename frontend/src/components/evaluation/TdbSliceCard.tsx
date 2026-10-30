@@ -15,7 +15,7 @@ export interface SliceMarker {
 
 interface TdbSliceCardProps {
   slice: TdbSlice;
-  measurement: Pick<TdbMeasurement, 'windowLow' | 'windowHigh'>;
+  measurement: Pick<TdbMeasurement, 'windowLow' | 'windowHigh' | 'histogramLow' | 'histogramHigh'>;
   markers: SliceMarker[];
   readonly: boolean;
   onAddMarker: (x: number, y: number) => void;
@@ -57,6 +57,18 @@ export const TdbSliceCard: React.FC<TdbSliceCardProps> = ({
   const counts = slice.histogram.counts;
   const peak = Math.max(1, ...counts);
 
+  // All seven histograms share the measurement-wide axis. Fall back to the
+  // slice edges for cases stored before the shared axis existed.
+  const hasSharedAxis =
+    Number.isFinite(measurement.histogramLow) &&
+    Number.isFinite(measurement.histogramHigh) &&
+    measurement.histogramHigh > measurement.histogramLow;
+  const axisLow = hasSharedAxis ? measurement.histogramLow : (slice.histogram.edges[0] ?? 0);
+  const axisHigh = hasSharedAxis
+    ? measurement.histogramHigh
+    : (slice.histogram.edges[slice.histogram.edges.length - 1] ?? axisLow + 1);
+  const axisTicks = [axisLow, (axisLow + axisHigh) / 2, axisHigh];
+
   return (
     <article className="tdb-slice-card">
       <header className="tdb-slice-header">
@@ -95,22 +107,40 @@ export const TdbSliceCard: React.FC<TdbSliceCardProps> = ({
         ))}
       </div>
 
-      <div className="tdb-histogram" aria-label={t('evaluation.histogram')}>
-        {counts.map((count, index) => (
-          <span
-            key={index}
-            className="tdb-histogram-bar"
-            style={{ height: `${Math.max((count / peak) * 100, count > 0 ? 4 : 0)}%` }}
-            title={`${formatValue(slice.histogram.edges[index] ?? 0)} – ${formatValue(
-              slice.histogram.edges[index + 1] ?? 0
-            )}: ${count}`}
-          />
-        ))}
+      <div className="tdb-histogram" role="img" aria-label={t('evaluation.histogram')}>
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="tdb-histogram-svg">
+          {[0, 25, 50, 75, 100].map((x) => (
+            <line key={`v${x}`} x1={x} y1={0} x2={x} y2={40} className="tdb-hist-grid" />
+          ))}
+          {[0, 10, 20, 30, 40].map((y) => (
+            <line key={`h${y}`} x1={0} y1={y} x2={100} y2={y} className="tdb-hist-grid" />
+          ))}
+          {counts.map((count, index) => {
+            const width = 100 / Math.max(counts.length, 1);
+            const height = (count / peak) * 38;
+            return (
+              <rect
+                key={index}
+                x={index * width + 0.15}
+                y={40 - height}
+                width={Math.max(width - 0.3, 0.3)}
+                height={height}
+                className="tdb-histogram-bar"
+              >
+                <title>
+                  {`${formatValue(slice.histogram.edges[index] ?? 0)} – ${formatValue(
+                    slice.histogram.edges[index + 1] ?? 0
+                  )}: ${count}`}
+                </title>
+              </rect>
+            );
+          })}
+        </svg>
       </div>
       <div className="tdb-histogram-axis muted small">
-        <span>{formatValue(slice.histogram.edges[0] ?? 0)}</span>
-        <span>{t('evaluation.histogram')}</span>
-        <span>{formatValue(slice.histogram.edges[slice.histogram.edges.length - 1] ?? 0)}</span>
+        {axisTicks.map((tick, index) => (
+          <span key={index}>{formatValue(tick)}</span>
+        ))}
       </div>
     </article>
   );

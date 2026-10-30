@@ -746,6 +746,9 @@ export interface TdbMeasurement {
   height: number;
   windowLow: number;
   windowHigh: number;
+  /** Shared X-axis range of the slice histograms (MEIK panel extremes). */
+  histogramLow: number;
+  histogramHigh: number;
   noiseLevel: number;
   slices: TdbSlice[];
 }

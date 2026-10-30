@@ -217,21 +217,29 @@
 }
 
 .tdb-histogram {
-  display: flex;
-  align-items: flex-end;
-  gap: 1px;
   height: 56px;
   margin-top: 0.6rem;
-  padding: 2px 2px 0;
+  padding: 2px;
+  overflow: hidden;
   background: var(--color-background-secondary, #f7fafc);
   border-radius: 4px;
 }
 
+.tdb-histogram-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tdb-hist-grid {
+  stroke: var(--color-border, #cbd5e0);
+  stroke-width: 0.35;
+  vector-effect: non-scaling-stroke;
+}
+
 .tdb-histogram-bar {
-  flex: 1;
-  min-height: 0;
-  background: var(--color-primary, #667eea);
-  border-radius: 1px 1px 0 0;
+  fill: var(--color-primary, #667eea);
+  opacity: 0.9;
 }
 
 .tdb-histogram-axis {

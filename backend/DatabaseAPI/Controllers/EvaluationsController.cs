@@ -397,6 +397,9 @@ public class EvaluationsController : ControllerBase
         public int Height { get; set; }
         public double WindowLow { get; set; }
         public double WindowHigh { get; set; }
+        /// <summary>Shared X-axis range of the slice histograms.</summary>
+        public double HistogramLow { get; set; }
+        public double HistogramHigh { get; set; }
         public double NoiseLevel { get; set; }
         public List<TdbSliceDto> Slices { get; set; } = new();
     }

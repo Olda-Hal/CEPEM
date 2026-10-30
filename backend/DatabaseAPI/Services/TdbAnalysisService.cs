@@ -39,6 +39,9 @@ public sealed class TdbAnalysis
     public double NoiseLevel { get; set; }
     public double WindowLow { get; set; }
     public double WindowHigh { get; set; }
+    /// <summary>Fixed X-axis range for the slice histograms (MEIK panel data).</summary>
+    public double HistogramLow { get; set; }
+    public double HistogramHigh { get; set; }
     public List<TdbSlice> Slices { get; set; } = new();
 }
 
@@ -74,6 +77,14 @@ public class TdbAnalysisService : ITdbAnalysisService
     private const float DisplayCorrection = -0.15f;
     private const int HistogramBins = 32;
 
+    // Full observed range of the corrected 36x36 display planes across the
+    // 1650-file MEIK NORM corpus (-0.279 .. 1.091). A fixed axis makes the
+    // seven histograms directly comparable; the desktop app auto-ranges each
+    // layer, so these are its empirical extremes rather than a configured
+    // constant.
+    private const double DisplayHistogramLow = -0.30;
+    private const double DisplayHistogramHigh = 1.10;
+
     private static readonly int[] LayerDepthsMm = { 4, 11, 18, 25, 32, 39, 46 };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -101,7 +112,8 @@ public class TdbAnalysisService : ITdbAnalysisService
             ? BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(0x0100, 2)) / 100.0
             : 0.0;
 
-        var slices = TryReadStoredPlanes(data) ?? ReadPlanesFromScanlines(data);
+        var storedPlanes = TryReadStoredPlanes(data);
+        var slices = storedPlanes ?? ReadPlanesFromScanlines(data);
         if (slices.Count == 0)
         {
             throw new InvalidOperationException("V souboru .tdb nejsou žádná naměřená data.");
@@ -124,9 +136,19 @@ public class TdbAnalysisService : ITdbAnalysisService
             }
         }
 
+        // Stored display planes use the fixed corpus-wide axis. The rare
+        // scanline fallback carries raw microsiemens, so it keeps its own
+        // data range instead of the conductivity scale.
+        var histogramLow = storedPlanes != null ? DisplayHistogramLow : low;
+        var histogramHigh = storedPlanes != null ? DisplayHistogramHigh : high;
+        if (histogramHigh <= histogramLow)
+        {
+            histogramHigh = histogramLow + 1.0;
+        }
+
         foreach (var slice in slices)
         {
-            FillStats(slice);
+            FillStats(slice, histogramLow, histogramHigh);
         }
 
         return new TdbAnalysis
@@ -137,6 +159,8 @@ public class TdbAnalysisService : ITdbAnalysisService
             NoiseLevel = noise,
             WindowLow = low,
             WindowHigh = high,
+            HistogramLow = histogramLow,
+            HistogramHigh = histogramHigh,
             Slices = slices
         };
     }
@@ -149,6 +173,8 @@ public class TdbAnalysisService : ITdbAnalysisService
             height = GridSize,
             windowLow = analysis.WindowLow,
             windowHigh = analysis.WindowHigh,
+            histogramLow = analysis.HistogramLow,
+            histogramHigh = analysis.HistogramHigh,
             noiseLevel = analysis.NoiseLevel,
             slices = analysis.Slices.Select(s => new
             {
@@ -291,7 +317,7 @@ public class TdbAnalysisService : ITdbAnalysisService
         return result;
     }
 
-    private static void FillStats(TdbSlice slice)
+    private static void FillStats(TdbSlice slice, double histogramLow, double histogramHigh)
     {
         var values = slice.Values
             .Where(v => float.IsFinite(v) && v != 0f)
@@ -304,7 +330,7 @@ public class TdbAnalysisService : ITdbAnalysisService
             slice.Max = 0;
             slice.Mean = 0;
             slice.HistogramCounts = new int[HistogramBins];
-            slice.HistogramEdges = BuildEdges(0, 1);
+            slice.HistogramEdges = BuildEdges(histogramLow, histogramHigh);
             return;
         }
 
@@ -312,17 +338,10 @@ public class TdbAnalysisService : ITdbAnalysisService
         slice.Max = values.Max();
         slice.Mean = values.Average();
 
-        var low = slice.Min;
-        var high = slice.Max;
-        if (high <= low)
-        {
-            high = low + 1.0;
-        }
-
         var counts = new int[HistogramBins];
         foreach (var value in values)
         {
-            var position = (value - low) / (high - low);
+            var position = (value - histogramLow) / (histogramHigh - histogramLow);
             var bin = (int)Math.Floor(position * HistogramBins);
             if (bin < 0) bin = 0;
             if (bin >= HistogramBins) bin = HistogramBins - 1;
@@ -330,7 +349,7 @@ public class TdbAnalysisService : ITdbAnalysisService
         }
 
         slice.HistogramCounts = counts;
-        slice.HistogramEdges = BuildEdges(low, high);
+        slice.HistogramEdges = BuildEdges(histogramLow, histogramHigh);
     }
 
     private static double[] BuildEdges(double low, double high)
