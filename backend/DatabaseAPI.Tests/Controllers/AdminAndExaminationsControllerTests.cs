@@ -29,7 +29,7 @@ public class AdminControllerTests
     [Fact]
     public async Task GetAllEmployees_ReturnsOk()
     {
-        _service.Setup(s => s.GetAllEmployeesAsync(It.IsAny<CancellationToken>()))
+        _service.Setup(s => s.GetAllEmployeesAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<EmployeeListItem> { new() { EmployeeId = 1 } });
 
         var result = await _controller.GetAllEmployees();

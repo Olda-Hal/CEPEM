@@ -14,6 +14,7 @@ namespace HealthcareAPI.Tests.Controllers;
 public class AdminControllerTests
 {
     private readonly Mock<IAdminService> _mockAdminService;
+    private readonly Mock<IAuthService> _mockAuthService;
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly Mock<ILogger<AdminController>> _mockLogger;
     private readonly AdminController _controller;
@@ -21,9 +22,10 @@ public class AdminControllerTests
     public AdminControllerTests()
     {
         _mockAdminService = new Mock<IAdminService>();
+        _mockAuthService = new Mock<IAuthService>();
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockLogger = new Mock<ILogger<AdminController>>();
-        _controller = new AdminController(_mockAdminService.Object, _mockHttpClientFactory.Object, _mockLogger.Object);
+        _controller = new AdminController(_mockAdminService.Object, _mockAuthService.Object, _mockHttpClientFactory.Object, _mockLogger.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext
@@ -48,7 +50,7 @@ public class AdminControllerTests
             new EmployeeListItem { EmployeeId = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockAdminService.Setup(s => s.GetAllEmployeesAsync())
+        _mockAdminService.Setup(s => s.GetAllEmployeesAsync(It.IsAny<bool>()))
             .ReturnsAsync(employees);
 
         // Act
@@ -64,7 +66,7 @@ public class AdminControllerTests
     public async Task GetAllEmployees_ReturnsEmptyList_WhenNoEmployees()
     {
         // Arrange
-        _mockAdminService.Setup(s => s.GetAllEmployeesAsync())
+        _mockAdminService.Setup(s => s.GetAllEmployeesAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<EmployeeListItem>());
 
         // Act
@@ -207,6 +209,60 @@ public class AdminControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedRoles = Assert.IsType<List<RoleDto>>(okResult.Value);
         Assert.Equal(3, returnedRoles.Count);
+    }
+
+    [Fact]
+    public async Task ImpersonateEmployee_ForOwnAccount_ReturnsBadRequest()
+    {
+        // Act — the controller's test identity is employee 1
+        var result = await _controller.ImpersonateEmployee(1);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        _mockAuthService.Verify(
+            s => s.ImpersonateAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ImpersonateEmployee_ReturnsOk_WithPreviewToken()
+    {
+        // Arrange
+        var response = new ImpersonationResponse
+        {
+            Token = "preview-token",
+            EmployeeId = 42,
+            FullName = "Jane Doe",
+            Email = "jane@example.com",
+            ImpersonatorName = "Admin"
+        };
+        _mockAuthService
+            .Setup(s => s.ImpersonateAsync(42, 1, It.IsAny<string>()))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _controller.ImpersonateEmployee(42);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returned = Assert.IsType<ImpersonationResponse>(okResult.Value);
+        Assert.Equal("preview-token", returned.Token);
+        Assert.Equal(42, returned.EmployeeId);
+    }
+
+    [Fact]
+    public async Task ImpersonateEmployee_ForUnknownTarget_ReturnsNotFound()
+    {
+        // Arrange
+        _mockAuthService
+            .Setup(s => s.ImpersonateAsync(999, 1, It.IsAny<string>()))
+            .ReturnsAsync((ImpersonationResponse?)null);
+
+        // Act
+        var result = await _controller.ImpersonateEmployee(999);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result.Result);
     }
 
     [Fact]
