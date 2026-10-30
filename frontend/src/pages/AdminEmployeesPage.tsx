@@ -17,12 +17,7 @@ import SearchableMultiSelect from '../components/SearchableMultiSelect';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
 import { hasRole } from '../utils/roles';
-import {
-  countryScopeByCode,
-  countryCodeByScopeId,
-  countryOptions,
-  normalizeCountryCode
-} from '../utils/countryScope';
+import { countryCodeByScopeId, countryOptions, normalizeCountryCode } from '../utils/countryScope';
 
 const EMPLOYEES_PER_PAGE = 25;
 
@@ -98,8 +93,16 @@ const AdminEmployeesPage: React.FC = () => {
     }
 
     if (scope.isCountryAdmin) {
-      const employeeScopeId = countryScopeByCode[normalizeCountryCode(employee.countryCode)] ?? -1;
-      if (scope.administeredCountryScopeIds.includes(employeeScopeId)) {
+      // A Country Admin only manages employees attached to centers in the
+      // countries they administer, plus employees they created themselves.
+      const managedHospitalIds = new Set(
+        (data?.hospitals ?? [])
+          .filter((hospital) =>
+            scope.administeredCountryScopeIds.includes(hospital.countryScopeId ?? -1)
+          )
+          .map((hospital) => hospital.id)
+      );
+      if (employee.hospitalIds?.some((id) => managedHospitalIds.has(id))) {
         return true;
       }
       if (employee.createdByEmployeeId === user?.id) {

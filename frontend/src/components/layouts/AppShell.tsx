@@ -92,9 +92,28 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
     if (section.key === 'admin') {
       return isAdmin(user);
     }
+    if (section.key === 'reservations') {
+      // Slots are center/country administration, not part of the doctor or
+      // examiner agenda.
+      return isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
+    }
+    if (section.key === 'patients') {
+      // Patients belong to the clinical staff (Examiner) and Country Admin;
+      // the evaluating doctor and center administration have other agendas.
+      return (
+        isAdmin(user) ||
+        hasRole(user, 'Country Admin') ||
+        (!hasRole(user, 'Doctor') && !hasRole(user, 'Center Admin'))
+      );
+    }
+    if (section.key === 'examinations') {
+      // Examinations overview belongs to administration, not to the examiner
+      // (whose whole agenda is the Patients section) or evaluating doctor.
+      return isAdmin(user) || (!hasRole(user, 'Doctor') && !hasRole(user, 'Examiner'));
+    }
     if (section.key === 'vyhodnocovani') {
-      // Vyhodnocování belongs to the evaluating doctor role (SysAdmin sees it too).
-      return isAdmin(user) || hasRole(user, 'Doctor');
+      // Vyhodnocování is the evaluating doctor's home; country admins oversee it.
+      return isAdmin(user) || hasRole(user, 'Doctor') || hasRole(user, 'Country Admin');
     }
     return true;
   });
