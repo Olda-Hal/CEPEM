@@ -1494,6 +1494,9 @@ namespace DatabaseAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    b.Property<string>("DefaultPath")
+                        .HasColumnType("longtext");
+
                     b.Property<int?>("NameTranslationId")
                         .HasColumnType("int");
 

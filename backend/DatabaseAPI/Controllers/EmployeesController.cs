@@ -57,7 +57,11 @@ namespace DatabaseAPI.Controllers
                 TitleAfter = employee.Person.TitleAfter,
                 CountryCode = employee.Person.CountryCode,
                 LastLoginAt = employee.LastLoginAt,
-                Roles = employee.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList()
+                Roles = employee.Person.UserRoles.Select(ur => ur.Role.NameTranslation != null ? ur.Role.NameTranslation.EN : string.Empty).ToList(),
+                DefaultPath = employee.Person.UserRoles
+                    .OrderBy(ur => ur.Role.Id)
+                    .Select(ur => ur.Role.DefaultPath)
+                    .FirstOrDefault(path => !string.IsNullOrEmpty(path))
             };
 
             return Ok(employeeAuthInfo);

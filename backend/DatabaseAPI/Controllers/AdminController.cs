@@ -155,6 +155,22 @@ namespace DatabaseAPI.Controllers
         }
 
         /// <summary>
+        /// Set or clear the role's post-login landing page (whitelisted SPA
+        /// paths only — see RoleDefaultPaths).
+        /// </summary>
+        [HttpPut("roles/{id}/default-path")]
+        public async Task<IActionResult> UpdateRoleDefaultPath(int id, [FromBody] UpdateRoleDefaultPathRequest request)
+        {
+            var (success, error) = await _employeeManagementService.UpdateRoleDefaultPathAsync(id, request.DefaultPath);
+            if (!success)
+            {
+                return error == "Role not found" ? NotFound(error) : BadRequest(error);
+            }
+
+            return NoContent();
+        }
+
+        /// <summary>
         /// Delete a role. 409 when it is system-critical or still assigned to
         /// employees — the body carries the human-readable reason.
         /// </summary>

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { getLandingPath } from '../utils/landing';
 import './LoginPage.css';
 
 export const LoginPage: React.FC = () => {
@@ -11,11 +12,12 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    // Landing page may be configured per role; falls back to the app default.
+    return <Navigate to={getLandingPath(user)} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

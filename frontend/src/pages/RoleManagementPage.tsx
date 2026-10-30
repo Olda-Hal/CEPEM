@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import BaseModal from '../components/BaseModal';
 import { CreateRoleRequest, Permission, Role, RolePermissionAssignment } from '../types';
+import { APP_LANDING_PATHS } from '../utils/landing';
 import './RoleManagementPage.css';
 
 const RoleManagementPage: React.FC = () => {
@@ -115,6 +116,22 @@ const RoleManagementPage: React.FC = () => {
     setShowRulesModal(true);
   };
 
+  const handleDefaultPathChange = async (role: Role, defaultPath: string) => {
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiClient.put(`/api/admin/roles/${role.id}/default-path`, {
+        defaultPath: defaultPath || null
+      });
+      setRoles((prev) =>
+        prev.map((r) => (r.id === role.id ? { ...r, defaultPath: defaultPath || null } : r))
+      );
+    } catch (err) {
+      console.error('Error updating role default page', err);
+      setError(t('admin.roleEditor.defaultPathFailed'));
+    }
+  };
+
   if (loading) {
     return (
       <div className="role-management-page">
@@ -163,6 +180,7 @@ const RoleManagementPage: React.FC = () => {
             <thead>
               <tr>
                 <th>{t('admin.roleEditor.rolesColumn')}</th>
+                <th>{t('admin.roleEditor.defaultPageColumn')}</th>
                 <th>{t('admin.roleEditor.actionsColumn')}</th>
               </tr>
             </thead>
@@ -170,6 +188,19 @@ const RoleManagementPage: React.FC = () => {
               {roles.map((role) => (
                 <tr key={role.id}>
                   <td>{translateRoleName(role.name)}</td>
+                  <td>
+                    <select
+                      value={role.defaultPath ?? ''}
+                      onChange={(e) => void handleDefaultPathChange(role, e.target.value)}
+                    >
+                      <option value="">{t('admin.roleEditor.defaultPageNone')}</option>
+                      {APP_LANDING_PATHS.map((path) => (
+                        <option key={path} value={path}>
+                          {path}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td>
                     <button className="btn btn-secondary btn-sm" onClick={() => openRules(role)}>
                       {t('admin.roleEditor.configureButton')}

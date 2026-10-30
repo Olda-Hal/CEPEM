@@ -40,6 +40,12 @@ namespace DatabaseAPI.APIModels
         public int AccessControlVersion { get; set; }
         public string CountryCode { get; set; } = "CZ";
         public List<string> Roles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Post-login landing page resolved from the employee's earliest role
+        /// that has one configured; null = the SPA default.
+        /// </summary>
+        public string? DefaultPath { get; set; }
         
         public string FullName => $"{TitleBefore} {FirstName} {LastName} {TitleAfter}".Trim();
     }

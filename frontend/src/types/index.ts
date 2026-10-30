@@ -25,6 +25,7 @@ export interface Employee {
   fullName: string;
   passwordExpiration?: string;
   roles?: string[];
+  defaultPath?: string | null;
 }
 
 export interface EmployeeListItem {
@@ -72,10 +73,12 @@ export interface UpdateEmployeeResponse {
 export interface Role {
   id: number;
   name: string;
+  defaultPath?: string | null;
 }
 
 export interface CreateRoleRequest {
   name: string;
+  defaultPath?: string | null;
 }
 
 export interface Permission {

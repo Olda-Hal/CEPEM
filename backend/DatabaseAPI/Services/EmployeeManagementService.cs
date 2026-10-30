@@ -33,6 +33,12 @@ namespace DatabaseAPI.Services
         /// human-readable reason back.
         /// </summary>
         Task<(bool Success, string? Error)> DeleteRoleAsync(int roleId);
+
+        /// <summary>
+        /// Set or clear the role's landing page shown after login. Only
+        /// whitelisted SPA paths are accepted (RoleDefaultPaths).
+        /// </summary>
+        Task<(bool Success, string? Error)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath);
     }
 
     public class EmployeeManagementService : IEmployeeManagementService
@@ -421,7 +427,8 @@ namespace DatabaseAPI.Services
                 .Select(r => new RoleDto
                 {
                     Id = r.Id,
-                    Name = r.NameTranslation != null ? r.NameTranslation.EN : string.Empty
+                    Name = r.NameTranslation != null ? r.NameTranslation.EN : string.Empty,
+                    DefaultPath = r.DefaultPath
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();
@@ -433,6 +440,11 @@ namespace DatabaseAPI.Services
         {
             var roleName = request.Name?.Trim();
             if (string.IsNullOrWhiteSpace(roleName))
+            {
+                return null;
+            }
+
+            if (!RoleDefaultPaths.IsAllowed(request.DefaultPath))
             {
                 return null;
             }
@@ -456,7 +468,8 @@ namespace DatabaseAPI.Services
 
             var role = new Role
             {
-                NameTranslationId = translation.Id
+                NameTranslationId = translation.Id,
+                DefaultPath = request.DefaultPath
             };
             _context.Roles.Add(role);
             await _context.SaveChangesAsync();
@@ -464,8 +477,27 @@ namespace DatabaseAPI.Services
             return new RoleDto
             {
                 Id = role.Id,
-                Name = roleName
+                Name = roleName,
+                DefaultPath = role.DefaultPath
             };
+        }
+
+        public async Task<(bool Success, string? Error)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath)
+        {
+            if (!RoleDefaultPaths.IsAllowed(defaultPath))
+            {
+                return (false, "Path is not an allowed landing page");
+            }
+
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null)
+            {
+                return (false, "Role not found");
+            }
+
+            role.DefaultPath = defaultPath;
+            await _context.SaveChangesAsync();
+            return (true, null);
         }
 
         public async Task<(bool Success, string? Error)> DeleteRoleAsync(int roleId)

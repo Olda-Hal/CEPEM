@@ -665,7 +665,10 @@
       "deleteConfirm": "Opravdu chcete smazat roli {{name}}? Roli nelze smazat, pokud je přiřazena zaměstnancům.",
       "deleting": "Mažu...",
       "deleted": "Role {{name}} byla smazána",
-      "deleteFailed": "Nepodařilo se smazat roli"
+      "deleteFailed": "Nepodařilo se smazat roli",
+      "defaultPageColumn": "Výchozí stránka",
+      "defaultPageNone": "Výchozí aplikace (/patients)",
+      "defaultPathFailed": "Nepodařilo se nastavit výchozí stránku role"
     },
     "permissionLabels": {
       "post_api_auth_change_password": "Změnit vlastní heslo",

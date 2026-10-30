@@ -12,6 +12,7 @@ namespace HealthcareAPI.Services
         Task<List<RoleDto>> GetAllRolesAsync();
         Task<RoleDto?> CreateRoleAsync(CreateRoleRequest request);
         Task<(bool Success, string? ErrorBody)> DeleteRoleAsync(int roleId);
+        Task<(bool Success, string? ErrorBody)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath);
     }
 
     public class AdminService : IAdminService
@@ -197,6 +198,32 @@ namespace HealthcareAPI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting role {RoleId}", roleId);
+                return (false, null);
+            }
+        }
+
+        public async Task<(bool Success, string? ErrorBody)> UpdateRoleDefaultPathAsync(int roleId, string? defaultPath)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(new UpdateRoleDefaultPathRequest { DefaultPath = defaultPath }, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync($"/api/admin/roles/{roleId}/default-path", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return (false, string.IsNullOrWhiteSpace(body) ? response.StatusCode.ToString() : body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating default path of role {RoleId}", roleId);
                 return (false, null);
             }
         }

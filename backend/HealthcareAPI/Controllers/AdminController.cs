@@ -186,6 +186,29 @@ namespace HealthcareAPI.Controllers
             }
         }
 
+        [RequirePermission("roles.manage")]
+        [HttpPut("roles/{roleId}/default-path")]
+        [PermissionDisplayName("Set Role Default Page")]
+        [RequireRole("SysAdmin")]
+        public async Task<IActionResult> UpdateRoleDefaultPath(int roleId, [FromBody] UpdateRoleDefaultPathRequest request)
+        {
+            try
+            {
+                var (success, errorBody) = await _adminService.UpdateRoleDefaultPathAsync(roleId, request.DefaultPath);
+                if (!success)
+                {
+                    return errorBody == "Role not found" ? NotFound(errorBody) : BadRequest(errorBody);
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating default path of role {RoleId}", roleId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
         [RequirePermission("permissions.manage")]
         [HttpGet("access/permissions")]
         public async Task<IActionResult> GetPermissionCatalog()
