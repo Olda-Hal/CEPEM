@@ -1,0 +1,35 @@
+# Optional: country attribution for the Grafana "Requests by country" map.
+#
+# The HealthcareAPI reads X-Country-Code and exposes
+# cepem_http_requests_by_country_total{country,method,status_class}.
+# Without this header requests are counted as "unknown" and the map is empty.
+#
+# Install the nginx GeoIP2 module and a MaxMind GeoLite2-Country database, e.g.
+# on Debian/Ubuntu:
+#   sudo apt install libnginx-mod-http-geoip2
+#   # put GeoLite2-Country.mmdb under /usr/share/GeoIP/
+#
+# Put this block in the http {} section of /etc/nginx/nginx.conf (or include it
+# from there), then add the proxy_set_header line to the /api/ location in
+# nginx-reverse-proxy.conf.
+
+geoip2 /usr/share/GeoIP/GeoLite2-Country.mmdb {
+    auto_reload 60m;
+    $geoip2_data_country_code country iso_code;
+}
+
+map $geoip2_data_country_code $cepem_country_code {
+    default $geoip2_data_country_code;
+    ""      "unknown";
+}
+
+# In nginx-reverse-proxy.conf, inside location /api/:
+#
+#     proxy_set_header X-Country-Code $cepem_country_code;
+#
+# Then:
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# Legacy alternative when only the old GeoIP database is available:
+#   geoip_country /usr/share/GeoIP/GeoIP.dat;
+#   map $geoip_country_code $cepem_country_code { default $geoip_country_code; "" "unknown"; }

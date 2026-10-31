@@ -135,6 +135,65 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 7,
+      "type": "geomap",
+      "title": "Requests by country",
+      "description": "Countries with the most requests. Requires nginx to set X-Country-Code from GeoIP.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "options": {
+        "view": { "id": "fit", "lat": 0, "lon": 0, "zoom": 1 },
+        "controls": {
+          "showZoom": true,
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showScale": false,
+          "showDebug": false
+        },
+        "basemap": { "type": "default", "name": "Basemap", "config": {} },
+        "tooltip": { "mode": "details" },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Requests",
+            "location": {
+              "mode": "lookup",
+              "gazetteer": "public/gazetteer/countries.json",
+              "lookup": "country"
+            },
+            "config": {
+              "style": {
+                "size": { "fixed": 6, "min": 2, "max": 18 },
+                "color": { "fixed": "#dc2626" },
+                "opacity": 0.65,
+                "symbol": { "mode": "fixed", "fixed": "img/icons/marker/circle.svg" },
+                "symbolAlign": { "horizontal": "center", "vertical": "center" },
+                "textConfig": {
+                  "fontSize": 12,
+                  "textAlign": "center",
+                  "textBaseline": "middle",
+                  "offsetX": 0,
+                  "offsetY": 0
+                },
+                "rotation": { "fixed": 0, "mode": "mod", "min": -360, "max": 360 }
+              },
+              "showLegend": true
+            },
+            "tooltip": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "sum by (country) (increase(cepem_http_requests_by_country_total{country!=\"\",country!=\"unknown\"}[$__range]))",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ]
     }
   ],
   "uid": "cepem-http",

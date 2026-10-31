@@ -18,6 +18,14 @@ namespace HealthcareAPI.Middleware
             "HTTP requests by client IP, method and status class",
             new CounterConfiguration { LabelNames = new[] { "remote_ip", "method", "status_class" } });
 
+        // Low-cardinality geo aggregate for the Grafana world map. The country
+        // comes from nginx (X-Country-Code, GeoIP2) or Cloudflare (CF-IPCountry);
+        // direct clients without either header are counted as "unknown".
+        private static readonly Counter RequestsByCountry = Metrics.CreateCounter(
+            "cepem_http_requests_by_country_total",
+            "HTTP requests by country, method and status class",
+            new CounterConfiguration { LabelNames = new[] { "country", "method", "status_class" } });
+
         public ActivityLoggingMiddleware(RequestDelegate next)
         {
             _next = next;
@@ -36,6 +44,8 @@ namespace HealthcareAPI.Middleware
                 await _next(context);
                 return;
             }
+
+            var country = ResolveCountry(context);
 
             var log = new ActivityLog
             {
@@ -60,8 +70,36 @@ namespace HealthcareAPI.Middleware
                         context.Request.Method,
                         $"{context.Response.StatusCode / 100}xx")
                     .Inc();
+                RequestsByCountry
+                    .WithLabels(country,
+                        context.Request.Method,
+                        $"{context.Response.StatusCode / 100}xx")
+                    .Inc();
                 await activityLogService.LogActivityAsync(log);
             }
+        }
+
+        /// <summary>
+        /// ISO-3166-1 alpha-2 country supplied by the reverse proxy's GeoIP
+        /// module (or Cloudflare). Anything else is aggregated as "unknown".
+        /// </summary>
+        private static string ResolveCountry(HttpContext context)
+        {
+            var raw = context.Request.Headers["X-Country-Code"].FirstOrDefault()
+                ?? context.Request.Headers["CF-IPCountry"].FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return "unknown";
+            }
+
+            var code = raw.Trim().ToUpperInvariant();
+            if (code.Length != 2 || code[0] < 'A' || code[0] > 'Z' || code[1] < 'A' || code[1] > 'Z')
+            {
+                return "unknown";
+            }
+
+            return code;
         }
     }
 }

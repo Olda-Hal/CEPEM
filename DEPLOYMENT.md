@@ -167,6 +167,11 @@ ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
   docker compose -f docker-compose.prod.yml logs --tail=100 prometheus grafana
   ```
 - In Grafana open **Connections → Data sources → Prometheus → Test**; a query `up` should return both targets as `1`.
+- The dashboard also has a **Requests by country** Geomap. It reads `cepem_http_requests_by_country_total{country,method,status_class}`. Country comes from the `X-Country-Code` request header, which nginx must set from GeoIP2 (or Cloudflare's `CF-IPCountry`). Without that header the panel shows no data because requests are counted as `unknown`.
+  - Follow `deploy/nginx/geoip-country.conf.example` (install `libnginx-mod-http-geoip2` + `GeoLite2-Country.mmdb`, add the `map`/`geoip2` block to `http {}`, and `proxy_set_header X-Country-Code $cepem_country_code;` inside `location /api/`).
+  - Reload nginx and recreate `healthcare-api`: `sudo nginx -t && sudo systemctl reload nginx && docker compose -f docker-compose.prod.yml up -d healthcare-api`.
+  - Verify the label: `curl -s http://127.0.0.1:5000/metrics | grep cepem_http_requests_by_country_total`.
+  - The dashboard is re-provisioned every 30 s; if the panel is still missing, run `docker compose -f docker-compose.prod.yml up -d --force-recreate grafana`. The map only fills from requests made after the updated HealthcareAPI/nginx are running.
 
 ## Maintenance
 
