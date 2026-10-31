@@ -68,6 +68,14 @@ produkčním nasazení.
 - **Interaktivní report v návštěvě** ✅ — po prvním zhodnocení se měření objeví v návštěvě pacienta jako „Vyhodnocená měření“; otevře se 7 scanů se všemi markery (barva podle lékaře) a všemi komentáři obou lékařů.
 - **Ověřeno**: DatabaseAPI 237 testů, HealthcareAPI 71, frontend 50; tsc/eslint/prettier/stylelint/build čisté.
 
+### 2026-11-01 — nizozemština + Grafana mapa zemí
+
+- **NL lokalizace** ✅ — kompletní `nl.json` (961 klíčů) přeložený přes lokální translategemma, jazykový přepínač 🇳🇱, registrace v i18n (`nl`, `languageOnly`), scanner a README. Ověřeno, že všech 961 klíčů a placeholdery sedí.
+- **Grafana mapa zemí** ✅ — nový panel **Requests by country** (Geomap) v `cepem-http` dashboardu, krmený novým low-cardinality counterem `cepem_http_requests_by_country_total{country,method,status_class}`.
+  - HealthcareAPI bere zemi z `X-Country-Code` (nebo Cloudflare `CF-IPCountry`), jinak `unknown`.
+  - Nginx GeoIP2 nastavení je v `deploy/nginx/geoip-country.conf.example` + návod v `DEPLOYMENT.md`; bez hlavičky zůstane mapa prázdná.
+- **Ověřeno**: HealthcareAPI 71 testů, frontend 51 testů, buildy/lint čisté.
+
 ### Další nálezy ze smoke testu 2026-10-29 (naplánovat v rámci výše uvedeného)
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
