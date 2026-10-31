@@ -6,6 +6,7 @@ import Backend from 'i18next-http-backend';
 // Import JSON translations for better i18next-scanner support
 import enTranslations from '../locales/en.json';
 import csTranslations from '../locales/cs.json';
+import nlTranslations from '../locales/nl.json';
 
 const resources = {
   en: {
@@ -13,6 +14,9 @@ const resources = {
   },
   cs: {
     translation: csTranslations
+  },
+  nl: {
+    translation: nlTranslations
   }
 };
 
@@ -27,6 +31,9 @@ i18n
   .init({
     resources,
     fallbackLng: 'cs',
+    supportedLngs: ['cs', 'en', 'nl'],
+    nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
     defaultNS: 'translation',
 
     // Language detection options

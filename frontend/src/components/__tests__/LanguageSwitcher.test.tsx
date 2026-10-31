@@ -14,6 +14,7 @@ describe('LanguageSwitcher', () => {
 
     expect(screen.getByText(/Čeština/)).toBeInTheDocument();
     expect(screen.getByText(/English/)).toBeInTheDocument();
+    expect(screen.getByText(/Dutch|Nederlands|Nizozemština/)).toBeInTheDocument();
   });
 
   test('changes language when option is selected', () => {
@@ -23,6 +24,16 @@ describe('LanguageSwitcher', () => {
     fireEvent.change(select, { target: { value: 'en' } });
 
     expect(i18n.language).toBe('en');
+  });
+
+  test('switches to Dutch', () => {
+    renderWithI18n(<LanguageSwitcher />);
+
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'nl' } });
+
+    expect(i18n.language).toBe('nl');
+    expect(i18n.t('evaluation.markOk')).toBe('Afbeeldingen zijn in orde');
   });
 
   test('shows current language as selected', () => {

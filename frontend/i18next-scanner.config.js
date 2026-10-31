@@ -42,7 +42,7 @@ module.exports = {
         },
       },
     },
-    lngs: ['en', 'cs'],
+    lngs: ['en', 'cs', 'nl'],
     ns: ['translation'],
     defaultLng: 'cs',
     defaultNs: 'translation',

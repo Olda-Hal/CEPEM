@@ -6,6 +6,7 @@ React i18next setup for multilingual support.
 
 - Czech (cs) - default
 - English (en)
+- Dutch (nl)
 
 ## Usage
 

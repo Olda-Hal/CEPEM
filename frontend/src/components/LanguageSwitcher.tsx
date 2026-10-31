@@ -2,14 +2,15 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import './LanguageSwitcher.css';
 
-type SupportedLanguages = 'cs' | 'en';
+type SupportedLanguages = 'cs' | 'en' | 'nl';
 
 export const LanguageSwitcher: React.FC = () => {
   const { i18n, t } = useTranslation();
 
   const languages: { code: SupportedLanguages; name: string; flag: string }[] = [
     { code: 'cs', name: t('common.czech'), flag: '🇨🇿' },
-    { code: 'en', name: t('common.english'), flag: '🇺🇸' }
+    { code: 'en', name: t('common.english'), flag: '🇺🇸' },
+    { code: 'nl', name: t('common.dutch'), flag: '🇳🇱' }
   ];
 
   const handleLanguageChange = (languageCode: SupportedLanguages) => {
