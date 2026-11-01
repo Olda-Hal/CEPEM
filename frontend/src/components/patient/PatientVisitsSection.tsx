@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '../../utils/api';
 import { VisitListItem } from '../../types';
 import { BaseModal } from '../BaseModal';
+import './PatientVisitsSection.css';
 
 interface PatientVisitsSectionProps {
   patientId: number;

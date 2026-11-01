@@ -1,0 +1,62 @@
+/* Visits list on the patient page. These rules live next to the component so
+   they load with the patient page instead of the lazy-loaded visit detail
+   chunk — otherwise the rows render unstyled until a visit has been opened. */
+.visits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visit-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  background: var(--color-surface, #fff);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.visit-item:hover {
+  border-color: var(--color-primary, #667eea);
+  box-shadow: var(--shadow-card, 0 1px 4px rgb(0 0 0 / 6%));
+}
+
+.visit-date {
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+  min-width: 110px;
+}
+
+.visit-note {
+  flex: 1;
+  color: var(--color-text-secondary, #718096);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visit-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (width <= 600px) {
+  .visit-item {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .visit-note {
+    flex-basis: 100%;
+    order: 3;
+    white-space: normal;
+  }
+}
