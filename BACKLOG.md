@@ -2,10 +2,17 @@
 
 Seřazeno podle důležitosti. Začněte shora.
 Stav k 2026-11-01: všechny dokončené body byly z dokumentu odstraněny — níže
-zůstávají pouze otevřené úkoly, ověření a nápady.
+zůstávají pouze otevřené úkoly a nápady.
 
 ## Chybí dodělat
 
+- **Jeden intake formulář pro každou návštěvu** — intake dotazník a patient-record formuláře sjednotit do jednoho formuláře. U každé návštěvy je potřeba vyplnit data pro zaznamenání historie.
+  - Při vytvoření rezervace osoba zadá jméno, e-mail a telefon.
+  - Systém se pokusí matchnout existujícího pacienta podle **e-mailu a telefonního čísla** (musí sedět obojí).
+  - **Match:** pár dní před rezervací pošle na e-mail odkaz na formulář předvyplněný známými údaji — uživatel jen upraví, co je nové.
+  - **Bez matche:** dostane prázdný formulář; po odeslání se z něj založí nový pacient.
+  - **Varianta na místě:** pro seniory a méně technické lidi vyplnění na tabletu lékaře — lékař musí umět otevřít intake formulář pacienta. Cílem je přesunout vyplňování mimo dobu návštěvy, aby se na místě nečekalo.
+  - **Přístup k datům:** odkaz jde na e-mail, takže k údajům se dostane jen ten, kdo zná e-mail i telefon dané osoby a má přístup k jejímu e-mailu.
 - **Pokračování Vyhodnocování** — navazující flow podle specifikace (jednání podle doporučení: kdo, co, kdy). Čeká na zadání.
 - **Rezervace → Návštěva** — rezervační slot propojit s návštěvou (karta slotu → „zahájit návštěvu“ vytvoří návštěvu na dnešek s předvyplněným pacientem; na návštěvě vidět, ze kterého slotu vznikla).
 - **Vstupní formulář jako PDF** — preview intake formuláře v návštěvě je teď text z komentáře; zvážit generování/ukládání reálného PDF dokumentu (konzistentní s ostatními přílohami, tisk).
@@ -28,8 +35,3 @@ zůstávají pouze otevřené úkoly, ověření a nápady.
 - `IntakeFormLinkService.MarkUsedAsync` není atomický (race vracející „already used“): doplnit DB-level check `UsedAtUtc IS NULL` přímo v UPDATE.
 - `UidService` stále může v race zdědit duplicitní UID při souběžném vytvoření dvou pacientů (gap-filling nelze serializovat); pragmaticky doplnit UNIQUE constraint + retry.
 - `TestResultsController` má kód seriálovitě na disk (test-results mount) — zvážit symlink-escape + path traversal review po sloučení do gateway (dnes za perm `tests.read`).
-
-## Známá omezení (kontext pro tým, není to úkol)
-
-- **Migrační historie dev DB:** v dev databázi se část migrací aplikovala ručně (případně se ručně označila jako hotová), takže její `__EFMigrationsHistory` nemusí odpovídat čisté DB. Produkční databáze je čistá a tato „záplata“ se jí netýká — jde jen o upozornění, že dev DB není vzor pro ověření migrací a při prvním produkčním startu se staví od nuly.
-- **Intake dotazník vs. patient-record formuláře:** jsou to dva samostatné systémy s vlastními tabulkami a tokem (intake vyplňuje pacient přes odkaz, patient-record spravuje personál). Není to duplicita ani bug; data se mezi nimi automaticky nepřenášejí a nemá smysl je slučovat bez zadání.
