@@ -82,7 +82,8 @@ public class ReservationSlotsControllerTests : IDisposable
         DateTime end,
         SlotStatus status = SlotStatus.Available,
         int? personId = null,
-        int? examinationTypeId = null)
+        int? examinationTypeId = null,
+        int? doctorId = null)
     {
         var slot = new ReservationSlot
         {
@@ -92,6 +93,7 @@ public class ReservationSlotsControllerTests : IDisposable
             Status = status,
             PersonId = personId,
             ExaminationTypeId = examinationTypeId,
+            DoctorId = doctorId,
             CountryCode = "CZ"
         };
         _context.ReservationSlots.Add(slot);
@@ -722,6 +724,95 @@ public class ReservationSlotsControllerTests : IDisposable
         var result = await _controller.UpdateSlot(99999, new UpdateReservationSlotRequest());
 
         Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateSlot_OverlappingAnotherSlot_ReturnsBadRequest()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1));
+        SeedSlot(hospitalId, _base.AddHours(2), _base.AddHours(3));
+
+        var result = await _controller.UpdateSlot(slot.Id, new UpdateReservationSlotRequest
+        {
+            StartDateTime = _base.AddHours(2).AddMinutes(30),
+            EndDateTime = _base.AddHours(3).AddMinutes(30)
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        var stored = await _context.ReservationSlots.SingleAsync(s => s.Id == slot.Id);
+        Assert.Equal(_base, stored.StartDateTime);
+    }
+
+    [Fact]
+    public async Task UpdateSlot_AdjacentToAnotherSlot_IsAllowed()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1));
+        SeedSlot(hospitalId, _base.AddHours(2), _base.AddHours(3));
+
+        var result = await _controller.UpdateSlot(slot.Id, new UpdateReservationSlotRequest
+        {
+            StartDateTime = _base.AddHours(1),
+            EndDateTime = _base.AddHours(2)
+        });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateSlot_WithInvertedTimes_ReturnsBadRequest()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1));
+
+        var result = await _controller.UpdateSlot(slot.Id, new UpdateReservationSlotRequest
+        {
+            StartDateTime = _base.AddHours(2),
+            EndDateTime = _base.AddHours(1)
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateSlot_ToReservedWithoutDoctor_ReturnsBadRequest()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(
+            hospitalId, _base, _base.AddHours(1),
+            status: SlotStatus.Blocked, personId: 42);
+
+        var result = await _controller.UpdateSlot(slot.Id, new UpdateReservationSlotRequest
+        {
+            Status = "RESERVED"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(SlotStatus.Blocked,
+            (await _context.ReservationSlots.SingleAsync(s => s.Id == slot.Id)).Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlot_ToAvailable_ClearsBooking()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(
+            hospitalId, _base, _base.AddHours(1),
+            status: SlotStatus.Blocked, personId: 42,
+            examinationTypeId: 7, doctorId: 9);
+
+        var result = await _controller.UpdateSlot(slot.Id, new UpdateReservationSlotRequest
+        {
+            Status = "AVAILABLE"
+        });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        var stored = await _context.ReservationSlots.SingleAsync(s => s.Id == slot.Id);
+        Assert.Equal(SlotStatus.Available, stored.Status);
+        Assert.Null(stored.PersonId);
+        Assert.Null(stored.DoctorId);
+        Assert.Null(stored.ExaminationTypeId);
     }
 
     [Fact]

@@ -290,11 +290,49 @@ public class ReservationSlotsController : ControllerBase
             if (!await CanAccessHospitalAsync(slot.HospitalId))
                 return StatusCode(403, "K tomuto slotu nemáte přístup.");
 
-            if (request.StartDateTime.HasValue)
-                slot.StartDateTime = request.StartDateTime.Value;
+            var newStart = request.StartDateTime ?? slot.StartDateTime;
+            var newEnd = request.EndDateTime ?? slot.EndDateTime;
+            if (newStart >= newEnd)
+                return BadRequest("Start time must be before end time");
 
-            if (request.EndDateTime.HasValue)
-                slot.EndDateTime = request.EndDateTime.Value;
+            var newStatus = !string.IsNullOrWhiteSpace(request.Status)
+                ? ParseSlotStatus(request.Status)
+                : slot.Status;
+
+            if (newStatus == SlotStatus.Blocked && !slot.PersonId.HasValue)
+                return BadRequest("Blocked slot requires a booked person");
+
+            if (newStatus == SlotStatus.Reserved && (!slot.PersonId.HasValue || !slot.DoctorId.HasValue))
+                return BadRequest("Reserved slot requires a booked person and a doctor");
+
+            // Serializable transaction: the overlap check below is a plain
+            // SELECT and only protects against concurrent edits under
+            // SERIALIZABLE isolation (same rationale as CreateSlots).
+            await using var transaction = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+            var timesChanged = newStart != slot.StartDateTime || newEnd != slot.EndDateTime;
+            // Only re-check collisions when the edit can introduce one: a
+            // note-only edit of legacy data must not fail.
+            var shouldCheckOverlap = timesChanged ||
+                (slot.Status == SlotStatus.Unavailable && newStatus != SlotStatus.Unavailable);
+
+            if (newStatus != SlotStatus.Unavailable && shouldCheckOverlap)
+            {
+                var overlaps = await _context.ReservationSlots.AnyAsync(other =>
+                    other.Id != slot.Id &&
+                    other.HospitalId == slot.HospitalId &&
+                    other.Status != SlotStatus.Unavailable &&
+                    other.StartDateTime < newEnd &&
+                    other.EndDateTime > newStart);
+
+                if (overlaps)
+                    return BadRequest("Time slot overlaps with an existing slot");
+            }
+
+            slot.StartDateTime = newStart;
+            slot.EndDateTime = newEnd;
+            slot.Status = newStatus;
 
             if (request.PublicNote != null)
                 slot.PublicNote = string.IsNullOrWhiteSpace(request.PublicNote) ? null : request.PublicNote.Trim();
@@ -302,18 +340,31 @@ public class ReservationSlotsController : ControllerBase
             if (request.InternalNote != null)
                 slot.InternalNote = string.IsNullOrWhiteSpace(request.InternalNote) ? null : request.InternalNote.Trim();
 
-            if (!string.IsNullOrWhiteSpace(request.Status))
-                slot.Status = ParseSlotStatus(request.Status);
+            if (newStatus is SlotStatus.Available or SlotStatus.Unavailable)
+            {
+                // Same semantics as release: a free/blocked-out slot no longer
+                // carries a booking, doctor or examination type.
+                slot.DoctorId = null;
+                slot.PersonId = null;
+                slot.ExaminationTypeId = null;
+            }
+
+            if (timesChanged || newStatus is SlotStatus.Available or SlotStatus.Unavailable)
+            {
+                slot.IntakeReminderSentAtUtc = null;
+            }
 
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-            if (slot.Status == SlotStatus.Available)
+            if (timesChanged || newStatus == SlotStatus.Available)
             {
                 await RevokeSlotIntakeLinksAsync(slot.Id);
             }
-            else if (slot.Status == SlotStatus.Reserved)
+
+            if (newStatus == SlotStatus.Reserved)
             {
                 try
                 {
