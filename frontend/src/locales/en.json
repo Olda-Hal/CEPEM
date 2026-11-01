@@ -1039,7 +1039,13 @@
     "noAccess": "You do not have access to this section."
   },
   "emailLog": {
-    "title": "E-mails",
+    "title": "Communication log",
+    "emailTab": "E-mails",
+    "smsTab": "SMS",
+    "smsTitle": "SMS messages",
+    "smsLead": "SMS delivery attempts, including the template code and gateway error.",
+    "smsLoadFailed": "Failed to load the SMS log",
+    "smsNoEntries": "No SMS messages yet",
     "loadFailed": "Failed to load the e-mail log",
     "exportFailed": "E-mail log export failed",
     "searchPlaceholder": "Search recipient, subject…",
@@ -1050,6 +1056,7 @@
     "totalEntries": "{{count}} entries",
     "time": "Time",
     "recipient": "Recipient",
+    "template": "Template",
     "subject": "Subject",
     "kind": "Type",
     "status": "Status",
@@ -1092,6 +1099,9 @@
       "reservation_cancelled": "Reservation cancelled",
       "appointment_reminder": "Appointment reminder (SMS)"
     },
+    "languages": "Languages",
+    "newLanguageVariant": "new",
+    "languageHint": "One template, multiple language variants. Pick a language above to display and edit its wording; saving adds or updates that language.",
     "language": "Language",
     "allLanguages": "All languages",
     "scope": "Scope",
@@ -1123,7 +1133,7 @@
     "deleted": "Template deleted.",
     "subjectRequired": "A subject is required for e-mail templates.",
     "bodyRequired": "The template body is required.",
-    "confirmDelete": "Delete template {{code}}? If a global version exists, it will be used instead."
+    "confirmDelete": "Delete template {{code}} and all its language variants?"
   },
   "analytics": {
     "title": "Operations dashboard",
@@ -1249,8 +1259,8 @@
     "title": "Admin",
     "lead": "System tools and oversight.",
     "auditLogTitle": "Audit log",
-    "emailLogTitle": "E-mails",
-    "emailLogDescription": "Outgoing e-mails — recipient, type, status and errors.",
+    "emailLogTitle": "Communication log",
+    "emailLogDescription": "E-mail and SMS delivery log — recipient, template, status and errors.",
     "communicationTitle": "Communication templates",
     "communicationDescription": "Edit e-mails and SMS, add country/center overrides and review the SMS log.",
     "gdprTitle": "GDPR",
@@ -1273,6 +1283,8 @@
     "title": "Settings",
     "lead": "Personal settings for your account.",
     "changePasswordTitle": "Change password",
+    "languageTitle": "Language",
+    "languageDescription": "Choose the language of the application interface.",
     "changePasswordDescription": "Update the password you use to sign in."
   },
   "app": {

@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasRole, isAdmin } from '../../utils/roles';
-import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { GlobalSearch } from '../../components/GlobalSearch';
 import './AppShell.css';
 
@@ -180,7 +179,6 @@ export const AppShell: React.FC = () => {
           <GlobalSearch />
 
           <div className="shell-header-right">
-            <LanguageSwitcher />
             <Link
               to="/settings"
               className="shell-icon-button"

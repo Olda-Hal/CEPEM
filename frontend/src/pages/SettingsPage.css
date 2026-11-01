@@ -32,6 +32,19 @@
   box-shadow: var(--shadow-raised);
 }
 
+.settings-card-static {
+  cursor: default;
+}
+
+.settings-card-static:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
+}
+
+.settings-card-static .language-switcher {
+  margin-left: auto;
+}
+
 .settings-card-icon {
   display: inline-flex;
   align-items: center;

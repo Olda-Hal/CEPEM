@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BaseModal } from '../components/BaseModal';
 import { DataTable } from '../components/ui/DataTable';
+import { SmsLogTable } from '../components/SmsLogTable';
 import { apiClient, getAuthToken } from '../utils/api';
 import { useToast } from '../contexts/ToastContext';
 import './ActivityLogPage.css';
@@ -65,6 +66,7 @@ const EmailLogPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<EmailLogEntry | null>(null);
+  const [activeTab, setActiveTab] = useState<'email' | 'sms'>('email');
 
   const buildParams = useCallback(
     (pageToLoad: number) => {
@@ -153,130 +155,155 @@ const EmailLogPage: React.FC = () => {
     <div className="activity-log-page">
       <h1 className="page-title">{t('emailLog.title')}</h1>
 
-      <div className="activity-log-content">
-        <form className="activity-log-filters" onSubmit={handleSearch}>
-          <input
-            type="text"
-            placeholder={t('emailLog.searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <select
-            aria-label={t('emailLog.kindFilter')}
-            value={kindFilter}
-            onChange={(e) => {
-              setKindFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            <option value="">
-              {t('emailLog.kindFilter')}: {t('emailLog.all')}
-            </option>
-            {KINDS.map((kind) => (
-              <option key={kind} value={kind}>
-                {t(`emailLog.kinds.${kindKey(kind)}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={t('emailLog.statusFilter')}
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            <option value="">
-              {t('emailLog.statusFilter')}: {t('emailLog.all')}
-            </option>
-            {STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {t(`emailLog.statuses.${statusKey(status)}`)}
-              </option>
-            ))}
-          </select>
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {t('common.search')}
-          </button>
-          <button className="btn btn-secondary" type="button" onClick={handleExport}>
-            {t('emailLog.exportCsv')}
-          </button>
-        </form>
-
-        <div className="activity-log-meta">
-          {loading ? t('common.loading') : t('emailLog.totalEntries', { count: totalCount })}
-        </div>
-
-        <DataTable
-          columns={[
-            {
-              key: 'time',
-              header: t('emailLog.time'),
-              render: (log) => formatTime(log.createdAtUtc),
-              width: '18%'
-            },
-            {
-              key: 'recipient',
-              header: t('emailLog.recipient'),
-              render: (log) => (
-                <span>
-                  <strong>{log.recipientName || log.toAddress}</strong>
-                  {log.recipientName ? (
-                    <span className="email-log-address"> {log.toAddress}</span>
-                  ) : null}
-                </span>
-              )
-            },
-            {
-              key: 'subject',
-              header: t('emailLog.subject'),
-              render: (log) => <span className="email-log-subject">{log.subject}</span>
-            },
-            {
-              key: 'kind',
-              header: t('emailLog.kind'),
-              render: (log) => t(`emailLog.kinds.${kindKey(log.kind)}`),
-              width: '12%'
-            },
-            {
-              key: 'status',
-              header: t('emailLog.status'),
-              render: (log) => (
-                <span className={statusClass(log.status)}>
-                  {t(`emailLog.statuses.${statusKey(log.status)}`)}
-                </span>
-              ),
-              align: 'center',
-              width: '10%'
-            }
-          ]}
-          data={logs}
-          rowKey={(log) => log.id}
-          onRowClick={(log) => setSelectedLog(log)}
-          loading={loading}
-          emptyMessage={t('emailLog.noEntries')}
-        />
-
-        <div className="activity-log-pagination">
-          <button
-            className="btn btn-secondary"
-            disabled={page === 0 || loading}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            {t('common.previous')}
-          </button>
-          <span className="pagination-info">
-            {page + 1} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
-          </span>
-          <button
-            className="btn btn-secondary"
-            disabled={!hasMore || loading}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            {t('common.next')}
-          </button>
-        </div>
+      <div className="communication-log-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'email'}
+          className={activeTab === 'email' ? 'active' : ''}
+          onClick={() => setActiveTab('email')}
+        >
+          {t('emailLog.emailTab')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'sms'}
+          className={activeTab === 'sms' ? 'active' : ''}
+          onClick={() => setActiveTab('sms')}
+        >
+          {t('emailLog.smsTab')}
+        </button>
       </div>
+
+      {activeTab === 'email' ? (
+        <div className="activity-log-content">
+          <form className="activity-log-filters" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder={t('emailLog.searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              aria-label={t('emailLog.kindFilter')}
+              value={kindFilter}
+              onChange={(e) => {
+                setKindFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">
+                {t('emailLog.kindFilter')}: {t('emailLog.all')}
+              </option>
+              {KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {t(`emailLog.kinds.${kindKey(kind)}`)}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label={t('emailLog.statusFilter')}
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">
+                {t('emailLog.statusFilter')}: {t('emailLog.all')}
+              </option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {t(`emailLog.statuses.${statusKey(status)}`)}
+                </option>
+              ))}
+            </select>
+            <button className="btn btn-primary" type="submit" disabled={loading}>
+              {t('common.search')}
+            </button>
+            <button className="btn btn-secondary" type="button" onClick={handleExport}>
+              {t('emailLog.exportCsv')}
+            </button>
+          </form>
+
+          <div className="activity-log-meta">
+            {loading ? t('common.loading') : t('emailLog.totalEntries', { count: totalCount })}
+          </div>
+
+          <DataTable
+            columns={[
+              {
+                key: 'time',
+                header: t('emailLog.time'),
+                render: (log) => formatTime(log.createdAtUtc),
+                width: '18%'
+              },
+              {
+                key: 'recipient',
+                header: t('emailLog.recipient'),
+                render: (log) => (
+                  <span>
+                    <strong>{log.recipientName || log.toAddress}</strong>
+                    {log.recipientName ? (
+                      <span className="email-log-address"> {log.toAddress}</span>
+                    ) : null}
+                  </span>
+                )
+              },
+              {
+                key: 'subject',
+                header: t('emailLog.subject'),
+                render: (log) => <span className="email-log-subject">{log.subject}</span>
+              },
+              {
+                key: 'kind',
+                header: t('emailLog.kind'),
+                render: (log) => t(`emailLog.kinds.${kindKey(log.kind)}`),
+                width: '12%'
+              },
+              {
+                key: 'status',
+                header: t('emailLog.status'),
+                render: (log) => (
+                  <span className={statusClass(log.status)}>
+                    {t(`emailLog.statuses.${statusKey(log.status)}`)}
+                  </span>
+                ),
+                align: 'center',
+                width: '10%'
+              }
+            ]}
+            data={logs}
+            rowKey={(log) => log.id}
+            onRowClick={(log) => setSelectedLog(log)}
+            loading={loading}
+            emptyMessage={t('emailLog.noEntries')}
+          />
+
+          <div className="activity-log-pagination">
+            <button
+              className="btn btn-secondary"
+              disabled={page === 0 || loading}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              {t('common.previous')}
+            </button>
+            <span className="pagination-info">
+              {page + 1} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+            </span>
+            <button
+              className="btn btn-secondary"
+              disabled={!hasMore || loading}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              {t('common.next')}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <SmsLogTable />
+      )}
 
       {selectedLog && (
         <BaseModal title={t('emailLog.detailTitle')} onClose={() => setSelectedLog(null)}>

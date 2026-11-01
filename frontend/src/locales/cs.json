@@ -1039,7 +1039,13 @@
     "noAccess": "Pro tuto sekci nemáte oprávnění."
   },
   "emailLog": {
-    "title": "E-maily",
+    "title": "Komunikační log",
+    "emailTab": "E-maily",
+    "smsTab": "SMS",
+    "smsTitle": "SMS zprávy",
+    "smsLead": "Pokusy o doručení SMS včetně kódu šablony a chyby brány.",
+    "smsLoadFailed": "Nepodařilo se načíst SMS log",
+    "smsNoEntries": "Zatím žádné SMS zprávy",
     "loadFailed": "Nepodařilo se načíst log e-mailů",
     "exportFailed": "Export e-mailového logu se nepodařil",
     "searchPlaceholder": "Hledat příjemce, předmět…",
@@ -1050,6 +1056,7 @@
     "totalEntries": "{{count}} záznamů",
     "time": "Čas",
     "recipient": "Příjemce",
+    "template": "Šablona",
     "subject": "Předmět",
     "kind": "Typ",
     "status": "Stav",
@@ -1092,6 +1099,9 @@
       "reservation_cancelled": "Rezervace zrušena",
       "appointment_reminder": "Připomínka termínu (SMS)"
     },
+    "languages": "Jazyky",
+    "newLanguageVariant": "nový",
+    "languageHint": "Jedna šablona, více jazykových variant. Nahoře vyberte jazyk, jehož text chcete zobrazit a upravit; uložením se tato jazyková varianta přidá nebo aktualizuje.",
     "language": "Jazyk",
     "allLanguages": "Všechny jazyky",
     "scope": "Rozsah",
@@ -1123,7 +1133,7 @@
     "deleted": "Šablona byla smazána.",
     "subjectRequired": "Předmět je u e-mailu povinný.",
     "bodyRequired": "Text šablony je povinný.",
-    "confirmDelete": "Smazat šablonu {{code}}? Pokud existuje globální verze, začne se používat ta."
+    "confirmDelete": "Smazat šablonu {{code}} a všechny její jazykové varianty?"
   },
   "analytics": {
     "title": "Provozní přehled",
@@ -1249,8 +1259,8 @@
     "title": "Admin",
     "lead": "Systémové nástroje a dohled.",
     "auditLogTitle": "Audit log",
-    "emailLogTitle": "E-maily",
-    "emailLogDescription": "Odeslané e-maily — příjemce, typ, stav a chyby.",
+    "emailLogTitle": "Komunikační log",
+    "emailLogDescription": "Log e-mailů a SMS — příjemce, šablona, stav a chyby.",
     "communicationTitle": "Komunikační šablony",
     "communicationDescription": "Úprava e-mailů a SMS, přepisy pro zemi nebo centrum a SMS log.",
     "gdprTitle": "GDPR",
@@ -1273,6 +1283,8 @@
     "title": "Nastavení",
     "lead": "Osobní nastavení vašeho účtu.",
     "changePasswordTitle": "Změna hesla",
+    "languageTitle": "Jazyk",
+    "languageDescription": "Vyberte jazyk uživatelského rozhraní aplikace.",
     "changePasswordDescription": "Změňte si heslo pro přihlášení do systému."
   },
   "app": {

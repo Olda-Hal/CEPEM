@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MdAdd, MdDelete, MdEdit, MdRefresh, MdSms } from 'react-icons/md';
+import { MdAdd, MdDelete, MdEdit, MdRefresh } from 'react-icons/md';
 import { BaseModal } from '../components/BaseModal';
 import { DataTable } from '../components/ui/DataTable';
 import { apiClient, ApiError } from '../utils/api';
@@ -22,6 +22,22 @@ interface CommunicationTemplate {
   updatedAtUtc: string;
 }
 
+/**
+ * Logical template: one code/channel/scope with language variants behind it.
+ * The table shows one row per logical template and the editor lets the admin
+ * pick which language variant to display or edit.
+ */
+interface TemplateGroup {
+  key: string;
+  code: string;
+  channel: string;
+  scopeType: string;
+  scopeId: number;
+  scopeName: string;
+  variants: CommunicationTemplate[];
+  primary: CommunicationTemplate;
+}
+
 interface TemplateForm {
   id: number | null;
   code: string;
@@ -32,17 +48,7 @@ interface TemplateForm {
   subject: string;
   body: string;
   isActive: boolean;
-}
-
-interface SmsLogRow {
-  id: number;
-  createdAtUtc: string;
-  toNumber: string;
-  templateCode: string;
-  status: string;
-  error: string | null;
-  recipientName: string | null;
-  reservationSlotId: number | null;
+  variants: CommunicationTemplate[];
 }
 
 const CODES = [
@@ -92,25 +98,61 @@ const emptyForm = (): TemplateForm => ({
   scopeId: 0,
   subject: '',
   body: '',
-  isActive: true
+  isActive: true,
+  variants: []
 });
 
 const renderPreview = (text: string): string =>
   text.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => SAMPLE_VALUES[key] ?? match);
 
-const formatTime = (value: string, locale: string) => {
-  const normalized = value.endsWith('Z') ? value : `${value}Z`;
-  return new Date(normalized).toLocaleString(locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+const preferPrimaryVariant = (variants: CommunicationTemplate[]): CommunicationTemplate | null =>
+  variants.find((variant) => variant.language === 'cs' && variant.isActive) ??
+  variants.find((variant) => variant.language === 'en' && variant.isActive) ??
+  variants.find((variant) => variant.language === 'cs') ??
+  variants.find((variant) => variant.language === 'en') ??
+  variants[0] ??
+  null;
+
+const groupTemplates = (templates: CommunicationTemplate[]): TemplateGroup[] => {
+  const groups = new Map<string, TemplateGroup>();
+
+  for (const template of templates) {
+    const key = `${template.code}|${template.channel}|${template.scopeType}|${template.scopeId}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.variants.push(template);
+      continue;
+    }
+    groups.set(key, {
+      key,
+      code: template.code,
+      channel: template.channel,
+      scopeType: template.scopeType,
+      scopeId: template.scopeId,
+      scopeName: template.scopeName,
+      variants: [template],
+      primary: template
+    });
+  }
+
+  return Array.from(groups.values())
+    .map((group) => {
+      const variants = [...group.variants].sort((a, b) => a.language.localeCompare(b.language));
+      const primary = preferPrimaryVariant(variants);
+      return primary ? { ...group, variants, primary } : null;
+    })
+    .filter((group): group is TemplateGroup => group !== null)
+    .sort(
+      (a, b) =>
+        a.code.localeCompare(b.code) ||
+        a.channel.localeCompare(b.channel) ||
+        a.scopeType.localeCompare(b.scopeType) ||
+        a.scopeName.localeCompare(b.scopeName)
+    );
 };
 
 const CommunicationTemplatesPage: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const toast = useToast();
 
   const [templates, setTemplates] = useState<CommunicationTemplate[]>([]);
@@ -122,11 +164,8 @@ const CommunicationTemplatesPage: React.FC = () => {
   const [languageFilter, setLanguageFilter] = useState('');
   const [scopeFilter, setScopeFilter] = useState('');
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'templates' | 'smsLog'>('templates');
   const [form, setForm] = useState<TemplateForm | null>(null);
   const [saving, setSaving] = useState(false);
-  const [smsLog, setSmsLog] = useState<SmsLogRow[]>([]);
-  const [smsLogLoading, setSmsLogLoading] = useState(false);
 
   const loadTemplates = useCallback(async () => {
     setLoading(true);
@@ -135,19 +174,20 @@ const CommunicationTemplatesPage: React.FC = () => {
       const params = new URLSearchParams();
       if (channelFilter) params.set('channel', channelFilter);
       if (codeFilter) params.set('code', codeFilter);
-      if (languageFilter) params.set('language', languageFilter);
       if (scopeFilter) params.set('scopeType', scopeFilter);
       if (search.trim()) params.set('search', search.trim());
       const result = await apiClient.get<CommunicationTemplate[]>(
         `/api/communicationtemplates?${params.toString()}`
       );
+      // All language variants are loaded together so the editor can switch
+      // between them; the language filter is applied to the grouped rows.
       setTemplates(Array.isArray(result) ? result : []);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('communicationTemplates.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [channelFilter, codeFilter, languageFilter, scopeFilter, search, t]);
+  }, [channelFilter, codeFilter, scopeFilter, search, t]);
 
   useEffect(() => {
     void loadTemplates();
@@ -160,46 +200,56 @@ const CommunicationTemplatesPage: React.FC = () => {
       .catch(() => setHospitals([]));
   }, []);
 
-  const loadSmsLog = useCallback(async () => {
-    setSmsLogLoading(true);
-    try {
-      const rows = await apiClient.get<SmsLogRow[]>(
-        '/api/communicationtemplates/sms-log?limit=100'
-      );
-      setSmsLog(Array.isArray(rows) ? rows : []);
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : t('communicationTemplates.loadFailed'));
-    } finally {
-      setSmsLogLoading(false);
-    }
-  }, [t, toast]);
+  const groups = useMemo(() => groupTemplates(templates), [templates]);
 
-  useEffect(() => {
-    if (activeTab === 'smsLog') {
-      void loadSmsLog();
-    }
-  }, [activeTab, loadSmsLog]);
+  const visibleGroups = useMemo(
+    () =>
+      languageFilter
+        ? groups.filter((group) =>
+            group.variants.some((variant) => variant.language === languageFilter)
+          )
+        : groups,
+    [groups, languageFilter]
+  );
 
   const variables = useMemo(() => CODE_VARIABLES[form?.code ?? ''] ?? [], [form?.code]);
 
   const openCreate = () => setForm(emptyForm());
 
-  const openEdit = (template: CommunicationTemplate) => {
+  const openEdit = (group: TemplateGroup) => {
+    const primary = group.primary;
     setForm({
-      id: template.id,
-      code: template.code,
-      channel: template.channel,
-      language: template.language,
-      scopeType: template.scopeType,
-      scopeId: template.scopeId,
-      subject: template.subject ?? '',
-      body: template.body,
-      isActive: template.isActive
+      id: primary.id,
+      code: primary.code,
+      channel: primary.channel,
+      language: primary.language,
+      scopeType: primary.scopeType,
+      scopeId: primary.scopeId,
+      subject: primary.subject ?? '',
+      body: primary.body,
+      isActive: primary.isActive,
+      variants: group.variants
     });
   };
 
   const updateForm = (patch: Partial<TemplateForm>) => {
     setForm((current) => (current ? { ...current, ...patch } : current));
+  };
+
+  const handleLanguageChange = (language: string) => {
+    if (!form) return;
+    const existing = form.variants.find((variant) => variant.language === language);
+    if (existing) {
+      updateForm({
+        id: existing.id,
+        language,
+        subject: existing.subject ?? '',
+        body: existing.body,
+        isActive: existing.isActive
+      });
+      return;
+    }
+    updateForm({ id: null, language, subject: '', body: '', isActive: true });
   };
 
   const handleScopeTypeChange = (scopeType: string) => {
@@ -251,12 +301,16 @@ const CommunicationTemplatesPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (template: CommunicationTemplate) => {
-    if (!window.confirm(t('communicationTemplates.confirmDelete', { code: template.code }))) {
+  const handleDelete = async (group: TemplateGroup) => {
+    if (!window.confirm(t('communicationTemplates.confirmDelete', { code: group.code }))) {
       return;
     }
     try {
-      await apiClient.delete(`/api/communicationtemplates/${template.id}`);
+      await Promise.all(
+        group.variants.map((variant) =>
+          apiClient.delete(`/api/communicationtemplates/${variant.id}`)
+        )
+      );
       toast.success(t('communicationTemplates.deleted'));
       await loadTemplates();
     } catch (err) {
@@ -264,15 +318,13 @@ const CommunicationTemplatesPage: React.FC = () => {
     }
   };
 
-  const scopeLabel = (template: CommunicationTemplate) => {
-    if (template.scopeType === 'Global') return t('communicationTemplates.scopes.Global');
-    if (template.scopeType === 'Country') {
-      return `${t('communicationTemplates.scopes.Country')} · ${template.scopeName}`;
+  const scopeLabel = (group: TemplateGroup) => {
+    if (group.scopeType === 'Global') return t('communicationTemplates.scopes.Global');
+    if (group.scopeType === 'Country') {
+      return `${t('communicationTemplates.scopes.Country')} · ${group.scopeName}`;
     }
-    return `${t('communicationTemplates.scopes.Center')} · ${template.scopeName}`;
+    return `${t('communicationTemplates.scopes.Center')} · ${group.scopeName}`;
   };
-
-  const isOverridden = (template: CommunicationTemplate) => template.scopeType !== 'Global';
 
   return (
     <div className="communication-templates-page">
@@ -291,282 +343,200 @@ const CommunicationTemplatesPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="communication-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'templates'}
-          className={activeTab === 'templates' ? 'active' : ''}
-          onClick={() => setActiveTab('templates')}
+      <form
+        className="communication-filters"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void loadTemplates();
+        }}
+      >
+        <input
+          type="search"
+          placeholder={t('communicationTemplates.searchPlaceholder')}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <select
+          aria-label={t('communicationTemplates.channel')}
+          value={channelFilter}
+          onChange={(event) => setChannelFilter(event.target.value)}
         >
-          {t('communicationTemplates.tabTemplates')}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'smsLog'}
-          className={activeTab === 'smsLog' ? 'active' : ''}
-          onClick={() => setActiveTab('smsLog')}
+          <option value="">{t('communicationTemplates.allChannels')}</option>
+          <option value="Email">E-mail</option>
+          <option value="Sms">SMS</option>
+        </select>
+        <select
+          aria-label={t('communicationTemplates.code')}
+          value={codeFilter}
+          onChange={(event) => setCodeFilter(event.target.value)}
         >
-          {t('communicationTemplates.tabSmsLog')}
+          <option value="">{t('communicationTemplates.allCodes')}</option>
+          {CODES.map((code) => (
+            <option key={code} value={code}>
+              {t(`communicationTemplates.codes.${code}`, code)}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label={t('communicationTemplates.language')}
+          value={languageFilter}
+          onChange={(event) => setLanguageFilter(event.target.value)}
+        >
+          <option value="">{t('communicationTemplates.allLanguages')}</option>
+          {LANGUAGES.map((language) => (
+            <option key={language} value={language}>
+              {language.toUpperCase()}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label={t('communicationTemplates.scope')}
+          value={scopeFilter}
+          onChange={(event) => setScopeFilter(event.target.value)}
+        >
+          <option value="">{t('communicationTemplates.allScopes')}</option>
+          <option value="Global">{t('communicationTemplates.scopes.Global')}</option>
+          <option value="Country">{t('communicationTemplates.scopes.Country')}</option>
+          <option value="Center">{t('communicationTemplates.scopes.Center')}</option>
+        </select>
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {t('common.search')}
         </button>
-      </div>
+      </form>
 
-      {activeTab === 'templates' ? (
-        <>
-          <form
-            className="communication-filters"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void loadTemplates();
-            }}
-          >
-            <input
-              type="search"
-              placeholder={t('communicationTemplates.searchPlaceholder')}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <select
-              aria-label={t('communicationTemplates.channel')}
-              value={channelFilter}
-              onChange={(event) => setChannelFilter(event.target.value)}
-            >
-              <option value="">{t('communicationTemplates.allChannels')}</option>
-              <option value="Email">E-mail</option>
-              <option value="Sms">SMS</option>
-            </select>
-            <select
-              aria-label={t('communicationTemplates.code')}
-              value={codeFilter}
-              onChange={(event) => setCodeFilter(event.target.value)}
-            >
-              <option value="">{t('communicationTemplates.allCodes')}</option>
-              {CODES.map((code) => (
-                <option key={code} value={code}>
-                  {t(`communicationTemplates.codes.${code}`, code)}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label={t('communicationTemplates.language')}
-              value={languageFilter}
-              onChange={(event) => setLanguageFilter(event.target.value)}
-            >
-              <option value="">{t('communicationTemplates.allLanguages')}</option>
-              {LANGUAGES.map((language) => (
-                <option key={language} value={language}>
-                  {language.toUpperCase()}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label={t('communicationTemplates.scope')}
-              value={scopeFilter}
-              onChange={(event) => setScopeFilter(event.target.value)}
-            >
-              <option value="">{t('communicationTemplates.allScopes')}</option>
-              <option value="Global">{t('communicationTemplates.scopes.Global')}</option>
-              <option value="Country">{t('communicationTemplates.scopes.Country')}</option>
-              <option value="Center">{t('communicationTemplates.scopes.Center')}</option>
-            </select>
-            <button className="btn btn-primary" type="submit" disabled={loading}>
-              {t('common.search')}
-            </button>
-          </form>
+      {error && <div className="communication-error">{error}</div>}
 
-          {error && <div className="communication-error">{error}</div>}
-
-          <DataTable
-            columns={[
-              {
-                key: 'code',
-                header: t('communicationTemplates.code'),
-                render: (template) => (
-                  <div className="communication-code-cell">
-                    <strong>
-                      {t(`communicationTemplates.codes.${template.code}`, template.code)}
-                    </strong>
-                    <code>{template.code}</code>
-                  </div>
-                ),
-                width: '18%'
-              },
-              {
-                key: 'channel',
-                header: t('communicationTemplates.channel'),
-                render: (template) =>
-                  template.channel === 'Sms'
-                    ? t('communicationTemplates.channels.sms')
-                    : t('communicationTemplates.channels.email'),
-                width: '8%'
-              },
-              {
-                key: 'language',
-                header: t('communicationTemplates.language'),
-                render: (template) => template.language.toUpperCase(),
-                width: '6%'
-              },
-              {
-                key: 'scope',
-                header: t('communicationTemplates.scope'),
-                render: (template) => (
+      <DataTable
+        columns={[
+          {
+            key: 'code',
+            header: t('communicationTemplates.code'),
+            render: (group) => (
+              <div className="communication-code-cell">
+                <strong>{t(`communicationTemplates.codes.${group.code}`, group.code)}</strong>
+                <code>{group.code}</code>
+              </div>
+            ),
+            width: '18%'
+          },
+          {
+            key: 'channel',
+            header: t('communicationTemplates.channel'),
+            render: (group) =>
+              group.channel === 'Sms'
+                ? t('communicationTemplates.channels.sms')
+                : t('communicationTemplates.channels.email'),
+            width: '8%'
+          },
+          {
+            key: 'languages',
+            header: t('communicationTemplates.languages'),
+            render: (group) => (
+              <div className="communication-languages">
+                {group.variants.map((variant) => (
                   <span
-                    className={`communication-scope ${
-                      isOverridden(template) ? 'communication-scope-override' : ''
+                    key={variant.id}
+                    className={`communication-language${
+                      variant.isActive ? '' : ' communication-language-inactive'
                     }`}
-                  >
-                    {scopeLabel(template)}
-                  </span>
-                ),
-                width: '18%'
-              },
-              {
-                key: 'subject',
-                header: t('communicationTemplates.subject'),
-                render: (template) => (
-                  <span className="communication-subject">
-                    {template.subject || template.body.slice(0, 80)}
-                  </span>
-                )
-              },
-              {
-                key: 'status',
-                header: t('communicationTemplates.status'),
-                render: (template) => (
-                  <span className={template.isActive ? 'status-ok' : 'status-error'}>
-                    {template.isActive
-                      ? t('communicationTemplates.active')
-                      : t('communicationTemplates.inactive')}
-                  </span>
-                ),
-                align: 'center',
-                width: '8%'
-              },
-              {
-                key: 'actions',
-                header: '',
-                render: (template) => (
-                  <div className="communication-row-actions">
-                    <button
-                      type="button"
-                      className="icon-button"
-                      title={t('common.edit')}
-                      aria-label={t('common.edit')}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openEdit(template);
-                      }}
-                    >
-                      <MdEdit />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button danger"
-                      title={t('common.delete')}
-                      aria-label={t('common.delete')}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void handleDelete(template);
-                      }}
-                    >
-                      <MdDelete />
-                    </button>
-                  </div>
-                ),
-                align: 'right',
-                width: '8%'
-              }
-            ]}
-            data={templates}
-            rowKey={(template) => template.id}
-            onRowClick={openEdit}
-            loading={loading}
-            emptyMessage={t('communicationTemplates.noTemplates')}
-          />
-        </>
-      ) : (
-        <div className="communication-sms-log">
-          <div className="communication-sms-log-header">
-            <div>
-              <h2>{t('communicationTemplates.smsLogTitle')}</h2>
-              <p>{t('communicationTemplates.smsLogLead')}</p>
-            </div>
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={() => void loadSmsLog()}
-              disabled={smsLogLoading}
-            >
-              <MdRefresh /> {t('communicationTemplates.refresh')}
-            </button>
-          </div>
-          <DataTable
-            columns={[
-              {
-                key: 'time',
-                header: t('communicationTemplates.time'),
-                render: (row) => formatTime(row.createdAtUtc, i18n.language),
-                width: '18%'
-              },
-              {
-                key: 'recipient',
-                header: t('communicationTemplates.recipient'),
-                render: (row) => (
-                  <div>
-                    <strong>{row.recipientName || row.toNumber}</strong>
-                    {row.recipientName && <div className="communication-muted">{row.toNumber}</div>}
-                  </div>
-                )
-              },
-              {
-                key: 'template',
-                header: t('communicationTemplates.code'),
-                render: (row) => (
-                  <span>
-                    <MdSms />{' '}
-                    {t(`communicationTemplates.codes.${row.templateCode}`, row.templateCode)}
-                  </span>
-                ),
-                width: '18%'
-              },
-              {
-                key: 'status',
-                header: t('communicationTemplates.status'),
-                render: (row) => (
-                  <span
-                    className={
-                      row.status === 'Failed'
-                        ? 'status-error'
-                        : row.status === 'LoggedOnly'
-                          ? 'status-logged-only'
-                          : 'status-ok'
+                    title={
+                      variant.isActive
+                        ? t('communicationTemplates.active')
+                        : t('communicationTemplates.inactive')
                     }
                   >
-                    {row.status}
+                    {variant.language.toUpperCase()}
                   </span>
-                ),
-                align: 'center',
-                width: '10%'
-              },
-              {
-                key: 'error',
-                header: t('communicationTemplates.error'),
-                render: (row) => <span className="communication-muted">{row.error || '—'}</span>
-              }
-            ]}
-            data={smsLog}
-            rowKey={(row) => row.id}
-            loading={smsLogLoading}
-            emptyMessage={t('communicationTemplates.noSmsLog')}
-          />
-        </div>
-      )}
+                ))}
+              </div>
+            ),
+            width: '14%'
+          },
+          {
+            key: 'scope',
+            header: t('communicationTemplates.scope'),
+            render: (group) => (
+              <span
+                className={`communication-scope ${
+                  group.scopeType !== 'Global' ? 'communication-scope-override' : ''
+                }`}
+              >
+                {scopeLabel(group)}
+              </span>
+            ),
+            width: '17%'
+          },
+          {
+            key: 'subject',
+            header: t('communicationTemplates.subject'),
+            render: (group) => (
+              <span className="communication-subject">
+                {group.primary.subject || group.primary.body.slice(0, 80)}
+              </span>
+            )
+          },
+          {
+            key: 'status',
+            header: t('communicationTemplates.status'),
+            render: (group) => {
+              const active = group.variants.some((variant) => variant.isActive);
+              return (
+                <span className={active ? 'status-ok' : 'status-error'}>
+                  {active
+                    ? t('communicationTemplates.active')
+                    : t('communicationTemplates.inactive')}
+                </span>
+              );
+            },
+            align: 'center',
+            width: '8%'
+          },
+          {
+            key: 'actions',
+            header: '',
+            render: (group) => (
+              <div className="communication-row-actions">
+                <button
+                  type="button"
+                  className="icon-button"
+                  title={t('common.edit')}
+                  aria-label={t('common.edit')}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openEdit(group);
+                  }}
+                >
+                  <MdEdit />
+                </button>
+                <button
+                  type="button"
+                  className="icon-button danger"
+                  title={t('common.delete')}
+                  aria-label={t('common.delete')}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleDelete(group);
+                  }}
+                >
+                  <MdDelete />
+                </button>
+              </div>
+            ),
+            align: 'right',
+            width: '8%'
+          }
+        ]}
+        data={visibleGroups}
+        rowKey={(group) => group.key}
+        onRowClick={openEdit}
+        loading={loading}
+        emptyMessage={t('communicationTemplates.noTemplates')}
+      />
 
       {form && (
         <BaseModal
           title={
-            form.id == null
+            form.variants.length === 0
               ? t('communicationTemplates.newTemplate')
               : t('communicationTemplates.editTemplate')
           }
@@ -603,17 +573,21 @@ const CommunicationTemplatesPage: React.FC = () => {
               </label>
               <label>
                 <span>{t('communicationTemplates.language')}</span>
-                <input
-                  list="communication-template-languages"
+                <select
                   value={form.language}
-                  onChange={(event) => updateForm({ language: event.target.value })}
-                  required
-                />
-                <datalist id="communication-template-languages">
-                  {LANGUAGES.map((language) => (
-                    <option key={language} value={language} />
+                  onChange={(event) => handleLanguageChange(event.target.value)}
+                >
+                  {Array.from(
+                    new Set([...form.variants.map((variant) => variant.language), ...LANGUAGES])
+                  ).map((language) => (
+                    <option key={language} value={language}>
+                      {language.toUpperCase()}
+                      {form.variants.some((variant) => variant.language === language)
+                        ? ''
+                        : ` — ${t('communicationTemplates.newLanguageVariant')}`}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </label>
               <label>
                 <span>{t('communicationTemplates.scope')}</span>
@@ -661,6 +635,10 @@ const CommunicationTemplatesPage: React.FC = () => {
                 </label>
               )}
             </div>
+
+            <p className="communication-language-hint">
+              {t('communicationTemplates.languageHint')}
+            </p>
 
             <label className="communication-checkbox">
               <input

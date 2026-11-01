@@ -49,6 +49,7 @@ describe('AppShell layout', () => {
     expect(topRow).toContainElement(search);
     expect(navRow).toContainElement(admin);
     expect(topRow!.compareDocumentPosition(navRow!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(document.querySelector('.shell-header .language-switcher')).toBeNull();
   });
 
   test('admin menu is still present next to the other navigation items', () => {

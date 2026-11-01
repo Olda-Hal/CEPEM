@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PasswordChangeModal } from '../components/PasswordChangeModal';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import './SettingsPage.css';
 
 interface SettingsSection {
@@ -44,6 +45,15 @@ const SettingsPage: React.FC = () => {
             </span>
           </button>
         ))}
+
+        <div className="settings-card settings-card-static">
+          <span className="settings-card-icon">🌐</span>
+          <span className="settings-card-text">
+            <strong>{t('settings.languageTitle')}</strong>
+            <small>{t('settings.languageDescription')}</small>
+          </span>
+          <LanguageSwitcher />
+        </div>
       </div>
 
       {showPasswordModal && (

@@ -1,0 +1,45 @@
+.sms-log-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.sms-log-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+
+.sms-log-header p {
+  margin: 0;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.sms-log-header .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sms-log-muted {
+  color: var(--text-muted, #6b7280);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.sms-log-table .status-ok {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.sms-log-table .status-error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.sms-log-table .status-logged-only {
+  color: #a16207;
+  font-weight: 600;
+}

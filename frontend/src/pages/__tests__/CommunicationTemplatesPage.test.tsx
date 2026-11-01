@@ -77,12 +77,12 @@ describe('CommunicationTemplatesPage', () => {
     renderPage();
     await screen.findByText('intake_reminder');
 
-    const editButtons = screen.getAllByRole('button', { name: /edit/i });
-    fireEvent.click(editButtons[0]!);
+    const row = screen.getByText('intake_reminder').closest('tr');
+    fireEvent.click(within(row!).getByRole('button', { name: /edit/i }));
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /body/i })).toBeInTheDocument();
-    expect(screen.getByText('{{patientName}}')).toBeInTheDocument();
+    expect(within(dialog).getByRole('textbox', { name: /body/i })).toBeInTheDocument();
+    expect(within(dialog).getByText('{{patientName}}')).toBeInTheDocument();
   });
 
   test('creating a template posts the form and reloads', async () => {
@@ -147,35 +147,71 @@ describe('CommunicationTemplatesPage', () => {
     );
   });
 
-  test('SMS log tab loads delivery rows', async () => {
-    mockApiClient.get.mockImplementation((endpoint: string) => {
-      if (endpoint.includes('/sms-log')) {
-        return Promise.resolve([
-          {
-            id: 1,
-            createdAtUtc: '2026-11-01T10:00:00Z',
-            toNumber: '+420777123456',
-            templateCode: 'appointment_reminder',
-            status: 'Sent',
-            error: null,
-            recipientName: 'Eva Kralova',
-            reservationSlotId: 9
-          }
-        ]);
+  test('groups language variants into one template row', async () => {
+    const variants = [
+      {
+        id: 11,
+        code: 'intake_reminder',
+        channel: 'Email',
+        language: 'cs',
+        scopeType: 'Global',
+        scopeId: 0,
+        scopeName: 'Global',
+        subject: 'Cesky predmet',
+        body: 'Ceske telo',
+        isActive: true,
+        updatedAtUtc: '2026-11-01T10:00:00Z'
+      },
+      {
+        id: 12,
+        code: 'intake_reminder',
+        channel: 'Email',
+        language: 'en',
+        scopeType: 'Global',
+        scopeId: 0,
+        scopeName: 'Global',
+        subject: 'English subject',
+        body: 'English body',
+        isActive: true,
+        updatedAtUtc: '2026-11-01T10:00:00Z'
+      },
+      {
+        id: 13,
+        code: 'intake_reminder',
+        channel: 'Email',
+        language: 'nl',
+        scopeType: 'Global',
+        scopeId: 0,
+        scopeName: 'Global',
+        subject: 'Nederlands onderwerp',
+        body: 'Nederlandse tekst',
+        isActive: true,
+        updatedAtUtc: '2026-11-01T10:00:00Z'
       }
+    ];
+    mockApiClient.get.mockImplementation((endpoint: string) => {
       if (endpoint.startsWith('/api/hospitals')) {
         return Promise.resolve([]);
       }
-      return Promise.resolve(templates);
+      return Promise.resolve(variants);
     });
     renderPage();
-    await screen.findByText('intake_reminder');
 
-    fireEvent.click(screen.getByRole('tab', { name: /sms log/i }));
+    expect(await screen.findByText('intake_reminder')).toBeInTheDocument();
+    expect(screen.getAllByText('CS').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('EN').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NL').length).toBeGreaterThan(0);
+    expect(screen.getByText('Cesky predmet')).toBeInTheDocument();
 
-    expect(await screen.findByText('Eva Kralova')).toBeInTheDocument();
-    expect(screen.getByText('+420777123456')).toBeInTheDocument();
-    expect(mockApiClient.get).toHaveBeenCalledWith('/api/communicationtemplates/sms-log?limit=100');
+    const editButtons = screen.getAllByRole('button', { name: /edit/i });
+    fireEvent.click(editButtons[0]!);
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText(/^language$/i), {
+      target: { value: 'en' }
+    });
+
+    expect(within(dialog).getByLabelText(/^subject$/i)).toHaveValue('English subject');
+    expect(within(dialog).getByLabelText(/^body$/i)).toHaveValue('English body');
   });
 
   test('filter change reloads templates with the channel parameter', async () => {

@@ -1039,7 +1039,13 @@
     "noAccess": "U heeft geen toegang tot dit onderdeel."
   },
   "emailLog": {
-    "title": "E-mails",
+    "title": "Communicatielogboek",
+    "emailTab": "E-mails",
+    "smsTab": "Sms",
+    "smsTitle": "Sms-berichten",
+    "smsLead": "Sms-verzendpogingen, inclusief sjablooncode en fout van de gateway.",
+    "smsLoadFailed": "Het sms-logboek kon niet worden geladen",
+    "smsNoEntries": "Nog geen sms-berichten",
     "loadFailed": "Het e-maillogboek kon niet worden geladen",
     "exportFailed": "Exporteren van het e-maillogboek is mislukt",
     "searchPlaceholder": "Zoek ontvanger, onderwerp…",
@@ -1050,6 +1056,7 @@
     "totalEntries": "{{count}} regels",
     "time": "Tijd",
     "recipient": "Ontvanger",
+    "template": "Sjabloon",
     "subject": "Onderwerp",
     "kind": "Type",
     "status": "Status",
@@ -1092,6 +1099,9 @@
       "reservation_cancelled": "Reservering geannuleerd",
       "appointment_reminder": "Herinnering afspraak (sms)"
     },
+    "languages": "Talen",
+    "newLanguageVariant": "nieuw",
+    "languageHint": "Eén sjabloon, meerdere taalvarianten. Kies hierboven een taal om de tekst te bekijken en te bewerken; opslaan voegt die taal toe of werkt hem bij.",
     "language": "Taal",
     "allLanguages": "Alle talen",
     "scope": "Bereik",
@@ -1123,7 +1133,7 @@
     "deleted": "Sjabloon verwijderd.",
     "subjectRequired": "Een onderwerp is verplicht voor e-mailsjablonen.",
     "bodyRequired": "De tekst van het sjabloon is verplicht.",
-    "confirmDelete": "Sjabloon {{code}} verwijderen? Als er een globale versie bestaat, wordt die gebruikt."
+    "confirmDelete": "Sjabloon {{code}} en alle taalvarianten verwijderen?"
   },
   "analytics": {
     "title": "Operationeel overzicht",
@@ -1249,8 +1259,8 @@
     "title": "Beheer",
     "lead": "Systeemtools en overzicht.",
     "auditLogTitle": "Auditlogboek",
-    "emailLogTitle": "E-mails",
-    "emailLogDescription": "Verzonden e-mails — ontvanger, type, status en fouten.",
+    "emailLogTitle": "Communicatielogboek",
+    "emailLogDescription": "Logboek van e-mails en sms’jes — ontvanger, sjabloon, status en fouten.",
     "communicationTitle": "Communicatiesjablonen",
     "communicationDescription": "E-mails en sms'jes bewerken, land-/centrumoverschrijvingen toevoegen en het sms-logboek bekijken.",
     "gdprTitle": "GDPR",
@@ -1273,6 +1283,8 @@
     "title": "Instellingen",
     "lead": "Persoonlijke instellingen voor uw account.",
     "changePasswordTitle": "Wachtwoord wijzigen",
+    "languageTitle": "Taal",
+    "languageDescription": "Kies de taal van de gebruikersinterface.",
     "changePasswordDescription": "Werk het wachtwoord bij dat u gebruikt om in te loggen."
   },
   "app": {

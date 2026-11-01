@@ -89,6 +89,34 @@ describe('EmailLogPage', () => {
     expect(screen.getByText('SMTP timeout')).toBeInTheDocument();
   });
 
+  test('SMS tab loads the SMS delivery log in the same page', async () => {
+    mockApiClient.get.mockImplementation((endpoint: string) => {
+      if (endpoint.includes('/sms-log')) {
+        return Promise.resolve([
+          {
+            id: 1,
+            createdAtUtc: '2026-11-01T10:00:00Z',
+            toNumber: '+420777123456',
+            templateCode: 'appointment_reminder',
+            status: 'Sent',
+            error: null,
+            recipientName: 'Eva Kralova',
+            reservationSlotId: 9
+          }
+        ]);
+      }
+      return Promise.resolve(logs);
+    });
+    renderPage();
+    await screen.findByText('Rezervace potvrzena');
+
+    fireEvent.click(screen.getByRole('tab', { name: /^SMS$/i }));
+
+    expect(await screen.findByText('Eva Kralova')).toBeInTheDocument();
+    expect(screen.getByText('+420777123456')).toBeInTheDocument();
+    expect(mockApiClient.get).toHaveBeenCalledWith('/api/communicationtemplates/sms-log?limit=100');
+  });
+
   test('search submits the trimmed term', async () => {
     renderPage();
     await screen.findByText('Rezervace potvrzena');
