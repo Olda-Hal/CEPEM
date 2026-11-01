@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using DatabaseAPI.DatabaseModels;
 
 namespace DatabaseAPI.Services;
 
@@ -19,16 +20,18 @@ public class SmtpOptions
 public interface IEmailService
 {
     /// <summary>
-    /// Send the password reset link. Throws when SMTP is not configured or the
-    /// message fails to send — callers decide how to surface that.
+    /// Send the password reset link. Every attempt is recorded in the admin
+    /// e-mail log; without SMTP the message only goes to the container log.
+    /// A transport failure throws after being recorded — callers decide how
+    /// to surface that.
     /// </summary>
-    Task SendPasswordResetAsync(string toEmail, string resetUrl);
+    Task SendPasswordResetAsync(string toEmail, string resetUrl, EmailLogContext? context = null);
 
     /// <summary>
     /// Send the pre-visit intake form link in the patient's language
     /// (cs / nl / en).
     /// </summary>
-    Task SendIntakeFormReminderAsync(string toEmail, string intakeUrl, string language, DateTime visitStart);
+    Task SendIntakeFormReminderAsync(string toEmail, string intakeUrl, string language, DateTime visitStart, EmailLogContext? context = null);
 
     bool IsConfigured { get; }
 }
@@ -36,28 +39,23 @@ public interface IEmailService
 public class EmailService : IEmailService
 {
     private readonly SmtpOptions _options;
+    private readonly IEmailLogWriter _emailLogWriter;
     private readonly ILogger<EmailService> _logger;
 
-    public EmailService(ILogger<EmailService> logger, Microsoft.Extensions.Options.IOptions<SmtpOptions> options)
+    public EmailService(
+        ILogger<EmailService> logger,
+        Microsoft.Extensions.Options.IOptions<SmtpOptions> options,
+        IEmailLogWriter emailLogWriter)
     {
         _logger = logger;
         _options = options.Value;
+        _emailLogWriter = emailLogWriter;
     }
 
     public bool IsConfigured => _options.IsConfigured;
 
-    public async Task SendPasswordResetAsync(string toEmail, string resetUrl)
+    public async Task SendPasswordResetAsync(string toEmail, string resetUrl, EmailLogContext? context = null)
     {
-        if (!IsConfigured)
-        {
-            // Development/CI convenience: with no SMTP configured the link
-            // still lands in the container log instead of being lost.
-            _logger.LogWarning(
-                "SMTP is not configured – password reset link for {Email}: {ResetUrl}",
-                toEmail, resetUrl);
-            return;
-        }
-
         var subject = "CEPEM – obnovení hesla / password reset";
         var body =
             $"Dobrý den,\n\n" +
@@ -71,38 +69,46 @@ public class EmailService : IEmailService
             $"{resetUrl}\n\n" +
             $"If you did not request this, you can ignore this e-mail.";
 
-        using var message = new MailMessage
-        {
-            From = new MailAddress(_options.FromAddress, _options.FromName),
-            Subject = subject,
-            Body = body,
-            IsBodyHtml = false
-        };
-        message.To.Add(toEmail);
-
-        using var client = new SmtpClient(_options.Host!, _options.Port)
-        {
-            EnableSsl = _options.EnableSsl,
-            DeliveryMethod = SmtpDeliveryMethod.Network
-        };
-        if (!string.IsNullOrWhiteSpace(_options.UserName))
-        {
-            client.Credentials = new NetworkCredential(_options.UserName, _options.Password);
-        }
-
-        await client.SendMailAsync(message);
-        _logger.LogInformation("Password reset e-mail sent to {Email}", toEmail);
+        await SendAsync(
+            toEmail,
+            subject,
+            body,
+            WithKind(context, EmailLogKinds.PasswordReset));
     }
 
-    public async Task SendIntakeFormReminderAsync(string toEmail, string intakeUrl, string language, DateTime visitStart)
+    public async Task SendIntakeFormReminderAsync(
+        string toEmail,
+        string intakeUrl,
+        string language,
+        DateTime visitStart,
+        EmailLogContext? context = null)
     {
         var (subject, body) = BuildIntakeReminder(language, intakeUrl, visitStart);
 
+        await SendAsync(
+            toEmail,
+            subject,
+            body,
+            WithKind(context, EmailLogKinds.IntakeReminder));
+    }
+
+    /// <summary>
+    /// Shared SMTP send path. Every attempt is recorded in the admin e-mail
+    /// log, including attempts that only fall back to the container log.
+    /// </summary>
+    private async Task SendAsync(string toEmail, string subject, string body, EmailLogContext context)
+    {
         if (!IsConfigured)
         {
+            // Development/CI convenience: with no SMTP configured the message
+            // (including its link) still lands in the container log.
             _logger.LogWarning(
-                "SMTP is not configured – intake form link for {Email} ({Language}): {IntakeUrl}",
-                toEmail, language, intakeUrl);
+                "SMTP is not configured – e-mail to {Email} ({Subject}):\n{Body}",
+                toEmail, subject, body);
+
+            await _emailLogWriter.WriteAsync(
+                toEmail, subject, EmailLogStatuses.LoggedOnly,
+                "SMTP is not configured", context);
             return;
         }
 
@@ -115,19 +121,34 @@ public class EmailService : IEmailService
         };
         message.To.Add(toEmail);
 
-        using var client = new SmtpClient(_options.Host!, _options.Port)
+        try
         {
-            EnableSsl = _options.EnableSsl,
-            DeliveryMethod = SmtpDeliveryMethod.Network
-        };
-        if (!string.IsNullOrWhiteSpace(_options.UserName))
-        {
-            client.Credentials = new NetworkCredential(_options.UserName, _options.Password);
-        }
+            using var client = new SmtpClient(_options.Host!, _options.Port)
+            {
+                EnableSsl = _options.EnableSsl,
+                DeliveryMethod = SmtpDeliveryMethod.Network
+            };
+            if (!string.IsNullOrWhiteSpace(_options.UserName))
+            {
+                client.Credentials = new NetworkCredential(_options.UserName, _options.Password);
+            }
 
-        await client.SendMailAsync(message);
-        _logger.LogInformation("Intake form reminder sent to {Email} ({Language})", toEmail, language);
+            await client.SendMailAsync(message);
+            _logger.LogInformation("E-mail sent to {Email} ({Subject})", toEmail, subject);
+
+            await _emailLogWriter.WriteAsync(
+                toEmail, subject, EmailLogStatuses.Sent, null, context);
+        }
+        catch (Exception ex)
+        {
+            await _emailLogWriter.WriteAsync(
+                toEmail, subject, EmailLogStatuses.Failed, ex.Message, context);
+            throw;
+        }
     }
+
+    private static EmailLogContext WithKind(EmailLogContext? context, string kind) =>
+        context is null ? new EmailLogContext(kind) : context with { Kind = kind };
 
     private static (string Subject, string Body) BuildIntakeReminder(string language, string intakeUrl, DateTime visitStart)
     {

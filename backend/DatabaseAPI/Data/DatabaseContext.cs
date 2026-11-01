@@ -93,6 +93,7 @@ public class DatabaseContext : DbContext
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationSlot> ReservationSlots { get; set; }
     public DbSet<IntakeFormLink> IntakeFormLinks { get; set; }
+    public DbSet<EmailLog> EmailLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -574,6 +575,16 @@ public class DatabaseContext : DbContext
 
         modelBuilder.Entity<IntakeFormLink>()
             .HasIndex(l => l.VisitId);
+
+        // Admin e-mail log: newest-first listing plus recipient/kind filters.
+        modelBuilder.Entity<EmailLog>()
+            .HasIndex(log => log.CreatedAtUtc);
+
+        modelBuilder.Entity<EmailLog>()
+            .HasIndex(log => new { log.Kind, log.Status });
+
+        modelBuilder.Entity<EmailLog>()
+            .HasIndex(log => log.ToAddress);
     }
 
     private void ConfigureContactRelationships(ModelBuilder modelBuilder)

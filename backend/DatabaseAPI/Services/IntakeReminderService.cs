@@ -135,8 +135,20 @@ public class IntakeReminderService : BackgroundService
                 var baseUrl = (Options.FrontendBaseUrl ?? "http://localhost:3000").TrimEnd('/');
                 var intakeUrl = $"{baseUrl}/intake/{created.Value.RawToken}";
 
+                var recipientName = slot.Person is null
+                    ? null
+                    : $"{slot.Person.FirstName} {slot.Person.LastName}".Trim();
+
                 await _emailService.SendIntakeFormReminderAsync(
-                    email, intakeUrl, MapLanguage(slot.CountryCode), slot.StartDateTime);
+                    email,
+                    intakeUrl,
+                    MapLanguage(slot.CountryCode),
+                    slot.StartDateTime,
+                    new EmailLogContext(
+                        EmailLogKinds.IntakeReminder,
+                        slot.PersonId,
+                        recipientName,
+                        slot.Id));
 
                 sent++;
             }

@@ -164,7 +164,11 @@ public class PasswordResetService : IPasswordResetService
 
         try
         {
-            await _emailService.SendPasswordResetAsync(email, resetUrl);
+            var recipientName = $"{employee.Person.FirstName} {employee.Person.LastName}".Trim();
+            await _emailService.SendPasswordResetAsync(
+                email,
+                resetUrl,
+                new EmailLogContext(EmailLogKinds.PasswordReset, employee.PersonId, recipientName));
             return (true, null);
         }
         catch (Exception ex)

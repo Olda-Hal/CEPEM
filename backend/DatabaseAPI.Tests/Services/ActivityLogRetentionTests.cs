@@ -96,4 +96,30 @@ public class ActivityLogRetentionTests : IDisposable
 
         Assert.Equal(0, deleted);
     }
+
+    private void SeedEmailLog(int daysOld)
+    {
+        _context.EmailLogs.Add(new EmailLog
+        {
+            ToAddress = "eva@example.com",
+            Subject = "test",
+            Kind = EmailLogKinds.PasswordReset,
+            Status = EmailLogStatuses.Sent,
+            CreatedAtUtc = DateTime.UtcNow.AddDays(-daysOld)
+        });
+        _context.SaveChanges();
+    }
+
+    [Fact]
+    public async Task EmailLogRetention_RemovesOnlyRowsPastTheCutoff()
+    {
+        SeedEmailLog(daysOld: 400);
+        SeedEmailLog(daysOld: 366);
+        SeedEmailLog(daysOld: 36);
+
+        var deleted = await EmailLogRetention.DeleteOlderThanAsync(_context, retentionDays: 365);
+
+        Assert.Equal(2, deleted);
+        Assert.Equal(1, await _context.EmailLogs.CountAsync());
+    }
 }

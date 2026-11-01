@@ -100,6 +100,7 @@ public static class ProxyConfig
         // Activity logs (audit trail) - GET only; the middleware's POST goes
         // through the internal typed client, not the proxy
         yield return Route("activity-logs-get", "/api/activitylogs/{**rest}", "GET", "audit.read");
+        yield return Route("email-logs-get", "/api/emaillogs/{**rest}", "GET", "audit.read");
 
         // Vyhodnocování (doctor evaluation of .tdb measurements)
         yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");

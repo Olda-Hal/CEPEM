@@ -14,6 +14,9 @@ public class ActivityLogRetentionOptions
     /// <summary>Logs older than this are deleted. Default: one year.</summary>
     public int RetentionDays { get; set; } = 365;
 
+    /// <summary>E-mail log rows older than this are deleted. Default: one year.</summary>
+    public int EmailLogRetentionDays { get; set; } = 365;
+
     /// <summary>How often the cleanup runs. Default: daily with a startup delay.</summary>
     public int CleanupIntervalHours { get; set; } = 24;
 
@@ -61,6 +64,15 @@ public class ActivityLogRetentionService : BackgroundService
                 {
                     _logger.LogInformation("Activity log retention deleted {Count} rows older than {Days} days", deleted, Options.RetentionDays);
                 }
+
+                var deletedEmails = await EmailLogRetention.DeleteOlderThanAsync(
+                    context, Options.EmailLogRetentionDays, stoppingToken);
+                if (deletedEmails > 0)
+                {
+                    _logger.LogInformation(
+                        "E-mail log retention deleted {Count} rows older than {Days} days",
+                        deletedEmails, Options.EmailLogRetentionDays);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -73,6 +85,22 @@ public class ActivityLogRetentionService : BackgroundService
 
             await Task.Delay(interval, stoppingToken);
         }
+    }
+}
+
+/// <summary>Pure deletion helper for the admin e-mail log.</summary>
+public static class EmailLogRetention
+{
+    public static async Task<int> DeleteOlderThanAsync(DatabaseContext context, int retentionDays, CancellationToken cancellationToken = default)
+    {
+        var cutoff = DateTime.UtcNow.AddDays(-retentionDays);
+        var oldLogs = await context.EmailLogs
+            .Where(log => log.CreatedAtUtc < cutoff)
+            .ToListAsync(cancellationToken);
+
+        context.EmailLogs.RemoveRange(oldLogs);
+        await context.SaveChangesAsync(cancellationToken);
+        return oldLogs.Count;
     }
 }
 
