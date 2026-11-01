@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.APIModels;
+using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 
 namespace DatabaseAPI.Controllers;
@@ -14,15 +16,21 @@ public class VisitsController : ControllerBase
 {
     private readonly IVisitService _visitService;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IIntakeFormLinkService _intakeFormLinkService;
+    private readonly DatabaseContext _context;
     private readonly ILogger<VisitsController> _logger;
 
     public VisitsController(
         IVisitService visitService,
         IActorCountryContextService actorCountryContextService,
+        IIntakeFormLinkService intakeFormLinkService,
+        DatabaseContext context,
         ILogger<VisitsController> logger)
     {
         _visitService = visitService;
         _actorCountryContextService = actorCountryContextService;
+        _intakeFormLinkService = intakeFormLinkService;
+        _context = context;
         _logger = logger;
     }
 
@@ -63,6 +71,55 @@ public class VisitsController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Creates a link to the public intake form for this visit. The doctor
+    /// opens it on a tablet and hands it to the patient; submissions attach
+    /// to this visit. The link stays valid through the visit day.
+    /// </summary>
+    [HttpPost("{visitId}/intake-link")]
+    public async Task<ActionResult<IntakeFormLinkDto>> CreateIntakeLink(int patientId, int visitId)
+    {
+        var visit = await _context.Visits
+            .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId);
+        if (visit == null)
+        {
+            return NotFound("Visit not found");
+        }
+
+        var patient = await _context.Patients
+            .Include(p => p.Person)
+            .FirstOrDefaultAsync(p => p.Id == patientId);
+        if (patient == null)
+        {
+            return NotFound("Patient not found");
+        }
+
+        var expiresAt = visit.VisitDate.Date.AddDays(1);
+        if (expiresAt < DateTime.UtcNow.AddHours(2))
+        {
+            expiresAt = DateTime.UtcNow.AddHours(2);
+        }
+
+        var created = await _intakeFormLinkService.CreateLinkForVisitAsync(
+            patient.PersonId, visit.Id, visit.ReservationSlotId, expiresAt);
+        if (created == null)
+        {
+            return BadRequest("Could not create an intake form link");
+        }
+
+        var (link, rawToken) = created.Value;
+        return Ok(new IntakeFormLinkDto
+        {
+            LinkId = link.Id,
+            Token = rawToken,
+            IntakePath = $"/intake/{rawToken}",
+            ExpiresAtUtc = link.ExpiresAtUtc,
+            PersonId = link.PersonId,
+            PersonName = $"{patient.Person.FirstName} {patient.Person.LastName}".Trim(),
+            ReservationId = null
+        });
     }
 
     /// <summary>Upload a file and attach it to the visit (multipart).</summary>

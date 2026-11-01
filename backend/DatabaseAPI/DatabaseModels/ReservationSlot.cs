@@ -52,6 +52,12 @@ public class ReservationSlot
     [StringLength(2)]
     public string CountryCode { get; set; } = DefaultCountryCode;
 
+    /// <summary>
+    /// Set when the "fill in your intake form" reminder e-mail has been sent
+    /// for this confirmed slot (also acts as the reminder idempotency key).
+    /// </summary>
+    public DateTime? IntakeReminderSentAtUtc { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

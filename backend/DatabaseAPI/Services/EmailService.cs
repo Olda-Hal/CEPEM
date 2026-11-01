@@ -23,6 +23,13 @@ public interface IEmailService
     /// message fails to send — callers decide how to surface that.
     /// </summary>
     Task SendPasswordResetAsync(string toEmail, string resetUrl);
+
+    /// <summary>
+    /// Send the pre-visit intake form link in the patient's language
+    /// (cs / nl / en).
+    /// </summary>
+    Task SendIntakeFormReminderAsync(string toEmail, string intakeUrl, string language, DateTime visitStart);
+
     bool IsConfigured { get; }
 }
 
@@ -85,5 +92,73 @@ public class EmailService : IEmailService
 
         await client.SendMailAsync(message);
         _logger.LogInformation("Password reset e-mail sent to {Email}", toEmail);
+    }
+
+    public async Task SendIntakeFormReminderAsync(string toEmail, string intakeUrl, string language, DateTime visitStart)
+    {
+        var (subject, body) = BuildIntakeReminder(language, intakeUrl, visitStart);
+
+        if (!IsConfigured)
+        {
+            _logger.LogWarning(
+                "SMTP is not configured – intake form link for {Email} ({Language}): {IntakeUrl}",
+                toEmail, language, intakeUrl);
+            return;
+        }
+
+        using var message = new MailMessage
+        {
+            From = new MailAddress(_options.FromAddress, _options.FromName),
+            Subject = subject,
+            Body = body,
+            IsBodyHtml = false
+        };
+        message.To.Add(toEmail);
+
+        using var client = new SmtpClient(_options.Host!, _options.Port)
+        {
+            EnableSsl = _options.EnableSsl,
+            DeliveryMethod = SmtpDeliveryMethod.Network
+        };
+        if (!string.IsNullOrWhiteSpace(_options.UserName))
+        {
+            client.Credentials = new NetworkCredential(_options.UserName, _options.Password);
+        }
+
+        await client.SendMailAsync(message);
+        _logger.LogInformation("Intake form reminder sent to {Email} ({Language})", toEmail, language);
+    }
+
+    private static (string Subject, string Body) BuildIntakeReminder(string language, string intakeUrl, DateTime visitStart)
+    {
+        var dateText = visitStart.ToString("dd.MM.yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+        return language switch
+        {
+            "nl" => (
+                "CEPEM – vul uw intakeformulier in",
+                $"Goedendag,\n\n" +
+                $"uw bezoek is gepland op {dateText}. Vul vóór het bezoek het intakeformulier in via onderstaande link:\n\n" +
+                $"{intakeUrl}\n\n" +
+                $"Bekende gegevens zijn al ingevuld; u hoeft alleen wijzigingen aan te passen. " +
+                $"De link blijft geldig tot het begin van het bezoek.\n\n" +
+                $"Heeft u dit formulier niet aangevraagd? Negeer deze e-mail dan."),
+            "en" => (
+                "CEPEM – please complete your intake form",
+                $"Hello,\n\n" +
+                $"your visit is scheduled for {dateText}. Please complete the intake form before the visit:\n\n" +
+                $"{intakeUrl}\n\n" +
+                $"Known details are pre-filled; only update what has changed. " +
+                $"The link remains valid until the visit starts.\n\n" +
+                $"If you did not request this form, you can ignore this e-mail."),
+            _ => (
+                "CEPEM – vyplňte prosím vstupní formulář",
+                $"Dobrý den,\n\n" +
+                $"Vaše návštěva je naplánována na {dateText}. Před návštěvou prosím vyplňte vstupní formulář:\n\n" +
+                $"{intakeUrl}\n\n" +
+                $"Známé údaje jsou předvyplněné, upravte jen to, co se změnilo. " +
+                $"Odkaz zůstává platný do začátku návštěvy.\n\n" +
+                $"Pokud jste o formulář nežádali, tento e-mail ignorujte.")
+        };
     }
 }

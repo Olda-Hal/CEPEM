@@ -38,6 +38,8 @@ public static class ProxyConfig
         yield return Route("patients-post-photo", "/api/patients/{id}/photo", "POST", "patients.photo.write");
         yield return Route("patients-post-documents", "/api/patients/{id}/documents", "POST", "patients.documents.write");
         yield return Route("patients-post-visits", "/api/patients/{id}/visits", "POST", "patients.write");
+        // Opening the tablet form is a read-level action (creates only a token).
+        yield return Route("patients-post-visit-intake-link", "/api/patients/{id}/visits/{visitId}/intake-link", "POST", "patients.read");
         yield return Route("patients-post-visit-documents", "/api/patients/{id}/visits/{visitId}/documents", "POST", "patients.documents.write");
         yield return Route("patients-put", "/api/patients/{**rest}", "PUT", "patients.write");
         yield return Route("patients-patch", "/api/patients/{**rest}", "PATCH", "patients.write");
@@ -92,6 +94,7 @@ public static class ProxyConfig
         yield return Route("slots-release", "/api/reservations/slots/{slotId}/release", "POST", "reservations.write");
         yield return Route("slots-block", "/api/reservations/slots/{slotId}/block", "POST", "reservations.write");
         yield return Route("slots-reject", "/api/reservations/slots/{slotId}/reject", "POST", "reservations.write");
+        yield return Route("slots-intake-link", "/api/reservations/slots/{slotId}/intake-link", "POST", "reservations.read");
         yield return Route("slots-delete", "/api/reservations/slots/{**rest}", "DELETE", "reservations.write");
 
         // Activity logs (audit trail) - GET only; the middleware's POST goes

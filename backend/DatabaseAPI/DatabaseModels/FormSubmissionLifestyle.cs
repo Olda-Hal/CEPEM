@@ -18,5 +18,13 @@ public class FormSubmissionLifestyle
 
     public bool VaccinesAfter2023 { get; set; }
 
+    public bool HadCovid { get; set; }
+    public string? CovidWhen { get; set; }
+    public bool CovidVaccine { get; set; }
+
+    // Vitals captured by the form; kept here so the next visit can prefill them.
+    public float? Weight { get; set; }
+    public float? Height { get; set; }
+
     public string? AdditionalHealthInfo { get; set; }
 }

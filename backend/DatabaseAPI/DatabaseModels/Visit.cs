@@ -29,6 +29,14 @@ public class Visit
     public int? SourceEventId { get; set; }
     public Event? SourceEvent { get; set; }
 
+    /// <summary>
+    /// Reservation slot this visit was created from (set when a confirmed
+    /// reservation is converted into a visit). One visit per slot; the link
+    /// also lets the intake form find its visit before the patient exists.
+    /// </summary>
+    public int? ReservationSlotId { get; set; }
+    public ReservationSlot? ReservationSlot { get; set; }
+
     public int? CreatedByEmployeeId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

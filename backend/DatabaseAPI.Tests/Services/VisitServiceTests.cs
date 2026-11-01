@@ -190,4 +190,85 @@ public class VisitServiceTests : IDisposable
         await Assert.ThrowsAsync<ScopeViolationException>(
             () => service.UpdateVisitAsync(patient.Id, visit!.Id, new UpdateVisitRequest { SourceEventId = foreignEvent.Id }));
     }
+
+    private ReservationSlot SeedSlot(int? personId, DateTime start)
+    {
+        var slot = new ReservationSlot
+        {
+            HospitalId = 1,
+            PersonId = personId,
+            StartDateTime = start,
+            EndDateTime = start.AddHours(1),
+            Status = SlotStatus.Reserved,
+            CountryCode = "CZ"
+        };
+        _context.ReservationSlots.Add(slot);
+        _context.SaveChanges();
+        return slot;
+    }
+
+    [Fact]
+    public async Task EnsureVisitForReservationSlot_WithoutPatient_DefersVisit()
+    {
+        var person = new Person
+        {
+            FirstName = "Novy",
+            LastName = "Pacient",
+            UID = "res-new",
+            Gender = "F",
+            CountryCode = "CZ",
+            Active = true
+        };
+        _context.Persons.Add(person);
+        _context.SaveChanges();
+        var slot = SeedSlot(person.Id, new DateTime(2026, 11, 10, 9, 0, 0, DateTimeKind.Utc));
+        var service = CreateService();
+
+        var visitId = await service.EnsureVisitForReservationSlotAsync(slot, createdByEmployeeId: null);
+
+        Assert.Null(visitId);
+        Assert.Equal(0, await _context.Visits.CountAsync());
+    }
+
+    [Fact]
+    public async Task EnsureVisitForReservationSlot_CreatesOneVisitPerSlot()
+    {
+        var patient = SeedPatient();
+        var slot = SeedSlot(patient.PersonId, new DateTime(2026, 11, 10, 9, 0, 0, DateTimeKind.Utc));
+        var service = CreateService();
+
+        var first = await service.EnsureVisitForReservationSlotAsync(slot, createdByEmployeeId: null);
+        var second = await service.EnsureVisitForReservationSlotAsync(slot, createdByEmployeeId: null);
+
+        Assert.NotNull(first);
+        Assert.Equal(first, second);
+        var visit = await _context.Visits.SingleAsync();
+        Assert.Equal(slot.Id, visit.ReservationSlotId);
+        Assert.Equal(slot.StartDateTime.Date, visit.VisitDate);
+        Assert.Equal(patient.Id, visit.PatientId);
+    }
+
+    [Fact]
+    public async Task LinkIntakeEvent_SetsSourceEventOnSlotVisit()
+    {
+        var patient = SeedPatient();
+        var slot = SeedSlot(patient.PersonId, new DateTime(2026, 11, 10, 9, 0, 0, DateTimeKind.Utc));
+        var service = CreateService();
+        var eventType = new EventType { NameTranslation = new Translation { EN = "Intake", CS = "Intake" } };
+        _context.EventTypes.Add(eventType);
+        await _context.SaveChangesAsync();
+        var intakeEvent = new Event
+        {
+            PatientId = patient.Id,
+            EventTypeId = eventType.Id,
+            HappenedAt = DateTime.UtcNow
+        };
+        _context.Events.Add(intakeEvent);
+        await _context.SaveChangesAsync();
+
+        await service.LinkIntakeEventAsync(patient.Id, null, slot.Id, intakeEvent.Id);
+
+        var visit = await _context.Visits.SingleAsync();
+        Assert.Equal(intakeEvent.Id, visit.SourceEventId);
+    }
 }

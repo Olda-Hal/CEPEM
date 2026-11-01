@@ -1,3 +1,4 @@
+using DatabaseAPI.APIModels;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.Services;
@@ -14,17 +15,26 @@ public class ReservationSlotsController : ControllerBase
     private readonly ILogger<ReservationSlotsController> _logger;
     private readonly IActorCountryContextService _actorCountryContextService;
     private readonly IEmployeeScopeService _employeeScopeService;
+    private readonly IPersonMatchingService _personMatchingService;
+    private readonly IVisitService _visitService;
+    private readonly IIntakeFormLinkService _intakeFormLinkService;
 
     public ReservationSlotsController(
         DatabaseContext context,
         ILogger<ReservationSlotsController> logger,
         IActorCountryContextService actorCountryContextService,
-        IEmployeeScopeService employeeScopeService)
+        IEmployeeScopeService employeeScopeService,
+        IPersonMatchingService personMatchingService,
+        IVisitService visitService,
+        IIntakeFormLinkService intakeFormLinkService)
     {
         _context = context;
         _logger = logger;
         _actorCountryContextService = actorCountryContextService;
         _employeeScopeService = employeeScopeService;
+        _personMatchingService = personMatchingService;
+        _visitService = visitService;
+        _intakeFormLinkService = intakeFormLinkService;
     }
 
     /// <summary>
@@ -299,6 +309,23 @@ public class ReservationSlotsController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            if (slot.Status == SlotStatus.Available)
+            {
+                await RevokeSlotIntakeLinksAsync(slot.Id);
+            }
+            else if (slot.Status == SlotStatus.Reserved)
+            {
+                try
+                {
+                    await _visitService.EnsureVisitForReservationSlotAsync(
+                        slot, _actorCountryContextService.GetActorEmployeeId());
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not create visit for reserved slot {SlotId}", slot.Id);
+                }
+            }
+
             return Ok(MapToDto(slot));
         }
         catch (Exception ex)
@@ -336,6 +363,7 @@ public class ReservationSlotsController : ControllerBase
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            await RevokeSlotIntakeLinksAsync(slot.Id);
 
             return Ok(MapToDto(slot));
         }
@@ -359,6 +387,7 @@ public class ReservationSlotsController : ControllerBase
             if (!await CanAccessHospitalAsync(slot.HospitalId))
                 return StatusCode(403, "K tomuto slotu nemáte přístup.");
 
+            await RevokeSlotIntakeLinksAsync(slot.Id);
             _context.ReservationSlots.Remove(slot);
             await _context.SaveChangesAsync();
 
@@ -396,61 +425,73 @@ public class ReservationSlotsController : ControllerBase
                 if (string.IsNullOrWhiteSpace(request.NewPerson.FirstName) || string.IsNullOrWhiteSpace(request.NewPerson.LastName))
                     return BadRequest("New person first name and last name are required");
 
-                var uid = $"res-{Guid.NewGuid():N}";
-                while (await _context.Persons.AnyAsync(p => p.UID == uid))
+                // Public bookings carry a name, e-mail and phone. Reuse the
+                // existing person only when BOTH contacts match exactly one
+                // person; ambiguous or partial matches fall back to a new record.
+                var matchedPerson = await _personMatchingService.FindUniquePersonByContactsAsync(
+                    request.NewPerson.Email, request.NewPerson.PhoneNumber);
+                if (matchedPerson != null)
                 {
-                    uid = $"res-{Guid.NewGuid():N}";
+                    personId = matchedPerson.Id;
                 }
-
-                var person = new Person
+                else
                 {
-                    FirstName = request.NewPerson.FirstName.Trim(),
-                    LastName = request.NewPerson.LastName.Trim(),
-                    Gender = "Unknown",
-                    CountryCode = await _actorCountryContextService.GetActorCountryCodeAsync(),
-                    UID = uid,
-                    Active = true
-                };
-
-                _context.Persons.Add(person);
-                await _context.SaveChangesAsync();
-
-                if (!string.IsNullOrWhiteSpace(request.NewPerson.PhoneNumber) || !string.IsNullOrWhiteSpace(request.NewPerson.Email))
-                {
-                    var contact = new Contact();
-                    _context.Contacts.Add(contact);
-                    await _context.SaveChangesAsync();
-
-                    _context.ContactToObjects.Add(new ContactToObject
+                    var uid = $"res-{Guid.NewGuid():N}";
+                    while (await _context.Persons.AnyAsync(p => p.UID == uid))
                     {
-                        ContactId = contact.Id,
-                        ObjectId = person.Id,
-                        ObjectType = ContactObjectType.Person,
-                        PersonId = person.Id
-                    });
-
-                    if (!string.IsNullOrWhiteSpace(request.NewPerson.PhoneNumber))
-                    {
-                        _context.ContactPhoneNumbers.Add(new ContactPhoneNumber
-                        {
-                            ContactId = contact.Id,
-                            PhoneNumber = request.NewPerson.PhoneNumber.Trim()
-                        });
+                        uid = $"res-{Guid.NewGuid():N}";
                     }
 
-                    if (!string.IsNullOrWhiteSpace(request.NewPerson.Email))
+                    var person = new Person
                     {
-                        _context.ContactEmails.Add(new ContactEmail
+                        FirstName = request.NewPerson.FirstName.Trim(),
+                        LastName = request.NewPerson.LastName.Trim(),
+                        Gender = "Unknown",
+                        CountryCode = await _actorCountryContextService.GetActorCountryCodeAsync(),
+                        UID = uid,
+                        Active = true
+                    };
+
+                    _context.Persons.Add(person);
+                    await _context.SaveChangesAsync();
+
+                    if (!string.IsNullOrWhiteSpace(request.NewPerson.PhoneNumber) || !string.IsNullOrWhiteSpace(request.NewPerson.Email))
+                    {
+                        var contact = new Contact();
+                        _context.Contacts.Add(contact);
+                        await _context.SaveChangesAsync();
+
+                        _context.ContactToObjects.Add(new ContactToObject
                         {
                             ContactId = contact.Id,
-                            Email = request.NewPerson.Email.Trim()
+                            ObjectId = person.Id,
+                            ObjectType = ContactObjectType.Person,
+                            PersonId = person.Id
                         });
+
+                        if (!string.IsNullOrWhiteSpace(request.NewPerson.PhoneNumber))
+                        {
+                            _context.ContactPhoneNumbers.Add(new ContactPhoneNumber
+                            {
+                                ContactId = contact.Id,
+                                PhoneNumber = request.NewPerson.PhoneNumber.Trim()
+                            });
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(request.NewPerson.Email))
+                        {
+                            _context.ContactEmails.Add(new ContactEmail
+                            {
+                                ContactId = contact.Id,
+                                Email = request.NewPerson.Email.Trim()
+                            });
+                        }
+
+                        await _context.SaveChangesAsync();
                     }
 
-                    await _context.SaveChangesAsync();
+                    personId = person.Id;
                 }
-
-                personId = person.Id;
             }
 
             if (!personId.HasValue)
@@ -467,6 +508,7 @@ public class ReservationSlotsController : ControllerBase
             slot.PersonId = personId.Value;
             slot.ExaminationTypeId = request.ExaminationTypeId;
             slot.Status = SlotStatus.Blocked;
+            slot.IntakeReminderSentAtUtc = null;
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -508,6 +550,19 @@ public class ReservationSlotsController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            // Convert the confirmed reservation into a visit when the person
+            // already has a patient record. New patients get their visit when
+            // the intake form is submitted (the slot keeps the appointment).
+            try
+            {
+                var createdBy = _actorCountryContextService.GetActorEmployeeId();
+                await _visitService.EnsureVisitForReservationSlotAsync(slot, createdBy);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not create visit for confirmed slot {SlotId}", slot.Id);
+            }
+
             return Ok(MapToDto(slot));
         }
         catch (Exception ex)
@@ -542,6 +597,7 @@ public class ReservationSlotsController : ControllerBase
             slot.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            await RevokeSlotIntakeLinksAsync(slot.Id);
 
             return Ok(MapToDto(slot));
         }
@@ -550,6 +606,76 @@ public class ReservationSlotsController : ControllerBase
             _logger.LogError(ex, "Error rejecting reservation slot");
             return StatusCode(500, new { Error = "Error rejecting reservation slot", Details = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Creates a public intake-form link for a booked slot. Used for the
+    /// on-site tablet flow, including people who have no patient record yet.
+    /// </summary>
+    [HttpPost("{id}/intake-link")]
+    public async Task<ActionResult<IntakeFormLinkDto>> CreateIntakeLink(int id)
+    {
+        var slot = await _context.ReservationSlots
+            .FirstOrDefaultAsync(s => s.Id == id);
+        if (slot == null)
+        {
+            return NotFound("Reservation slot not found");
+        }
+
+        if (!await CanAccessHospitalAsync(slot.HospitalId))
+        {
+            return StatusCode(403, "K tomuto slotu nemáte přístup.");
+        }
+
+        if (!slot.PersonId.HasValue)
+        {
+            return BadRequest("The slot has no booked person");
+        }
+
+        var now = DateTime.UtcNow;
+        var expiresAt = slot.StartDateTime > now.AddHours(2)
+            ? slot.StartDateTime
+            : now.AddHours(24);
+
+        var created = await _intakeFormLinkService.CreateLinkForReservationSlotAsync(
+            slot.PersonId.Value, slot.Id, expiresAt);
+        if (created == null)
+        {
+            return BadRequest("Could not create an intake form link");
+        }
+
+        var (link, rawToken) = created.Value;
+        return Ok(new IntakeFormLinkDto
+        {
+            LinkId = link.Id,
+            Token = rawToken,
+            IntakePath = $"/intake/{rawToken}",
+            ExpiresAtUtc = link.ExpiresAtUtc,
+            PersonId = link.PersonId,
+            PersonName = string.Empty,
+            ReservationId = null
+        });
+    }
+
+    /// <summary>Invalidate all intake-form links bound to a slot that no longer holds a reservation.</summary>
+    private async Task RevokeSlotIntakeLinksAsync(int slotId)
+    {
+        var links = await _context.IntakeFormLinks
+            .Where(link => link.ReservationSlotId == slotId && link.RevokedAtUtc == null)
+            .ToListAsync();
+
+        if (links.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var link in links)
+        {
+            link.RevokedAtUtc = now;
+        }
+
+        await _context.SaveChangesAsync();
     }
 
     private static ReservationSlotDto MapToDto(ReservationSlot slot)

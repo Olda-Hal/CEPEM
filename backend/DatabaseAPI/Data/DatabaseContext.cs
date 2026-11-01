@@ -170,6 +170,17 @@ public class DatabaseContext : DbContext
             .HasForeignKey(v => v.SourceEventId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // A confirmed reservation slot produces at most one visit.
+        modelBuilder.Entity<Visit>()
+            .HasOne(v => v.ReservationSlot)
+            .WithMany()
+            .HasForeignKey(v => v.ReservationSlotId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Visit>()
+            .HasIndex(v => v.ReservationSlotId)
+            .IsUnique();
+
         modelBuilder.Entity<VisitDocument>()
             .HasOne(vd => vd.Visit)
             .WithMany(v => v.Documents)
@@ -543,8 +554,26 @@ public class DatabaseContext : DbContext
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<IntakeFormLink>()
+            .HasOne(l => l.ReservationSlot)
+            .WithMany()
+            .HasForeignKey(l => l.ReservationSlotId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<IntakeFormLink>()
+            .HasOne(l => l.Visit)
+            .WithMany()
+            .HasForeignKey(l => l.VisitId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<IntakeFormLink>()
             .HasIndex(l => l.TokenHash)
             .IsUnique();
+
+        modelBuilder.Entity<IntakeFormLink>()
+            .HasIndex(l => l.ReservationSlotId);
+
+        modelBuilder.Entity<IntakeFormLink>()
+            .HasIndex(l => l.VisitId);
     }
 
     private void ConfigureContactRelationships(ModelBuilder modelBuilder)

@@ -12,6 +12,19 @@ public interface IVisitService
     Task<VisitDetailDto?> CreateVisitAsync(int patientId, CreateVisitRequest request, int? createdByEmployeeId, string countryCode);
     Task<VisitDetailDto?> UpdateVisitAsync(int patientId, int visitId, UpdateVisitRequest request);
     Task<VisitDocumentDto?> AttachDocumentAsync(int patientId, int visitId, byte[] data, string originalFileName);
+
+    /// <summary>
+    /// Creates (or returns) the visit for a confirmed reservation slot. Returns
+    /// null while the person has no patient record yet; the visit is then
+    /// created when the intake form is submitted.
+    /// </summary>
+    Task<int?> EnsureVisitForReservationSlotAsync(ReservationSlot slot, int? createdByEmployeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Links an intake-form event to the visit of a reservation slot or to an
+    /// explicit visit. Used after every form submission, including edits.
+    /// </summary>
+    Task LinkIntakeEventAsync(int patientId, int? visitId, int? reservationSlotId, int eventId, CancellationToken cancellationToken = default);
 }
 
 public class VisitService : IVisitService
@@ -167,6 +180,88 @@ public class VisitService : IVisitService
             UploadedAt = document.UploadedAt,
             FileSize = document.FileSize
         };
+    }
+
+    public async Task<int?> EnsureVisitForReservationSlotAsync(ReservationSlot slot, int? createdByEmployeeId, CancellationToken cancellationToken = default)
+    {
+        if (!slot.PersonId.HasValue)
+        {
+            return null;
+        }
+
+        var existing = await _context.Visits
+            .Where(v => v.ReservationSlotId == slot.Id)
+            .Select(v => (int?)v.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existing.HasValue)
+        {
+            return existing;
+        }
+
+        var patient = await _context.Patients
+            .FirstOrDefaultAsync(p => p.PersonId == slot.PersonId.Value && !p.IsDeleted, cancellationToken);
+        if (patient == null)
+        {
+            return null;
+        }
+
+        var visit = new Visit
+        {
+            PatientId = patient.Id,
+            ReservationSlotId = slot.Id,
+            VisitDate = slot.StartDateTime.Date,
+            CreatedByEmployeeId = createdByEmployeeId,
+            CountryCode = slot.CountryCode
+        };
+        _context.Visits.Add(visit);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return visit.Id;
+        }
+        catch (DbUpdateException)
+        {
+            // Concurrent confirmation/submission won the race; reuse its visit.
+            return await _context.Visits
+                .Where(v => v.ReservationSlotId == slot.Id)
+                .Select(v => (int?)v.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+    }
+
+    public async Task LinkIntakeEventAsync(int patientId, int? visitId, int? reservationSlotId, int eventId, CancellationToken cancellationToken = default)
+    {
+        Visit? visit = null;
+
+        if (visitId.HasValue)
+        {
+            visit = await _context.Visits
+                .FirstOrDefaultAsync(v => v.Id == visitId.Value && v.PatientId == patientId, cancellationToken);
+        }
+
+        if (visit == null && reservationSlotId.HasValue)
+        {
+            var slot = await _context.ReservationSlots
+                .FirstOrDefaultAsync(s => s.Id == reservationSlotId.Value, cancellationToken);
+            if (slot != null)
+            {
+                var ensuredVisitId = await EnsureVisitForReservationSlotAsync(slot, createdByEmployeeId: null, cancellationToken);
+                if (ensuredVisitId.HasValue)
+                {
+                    visit = await _context.Visits
+                        .FirstOrDefaultAsync(v => v.Id == ensuredVisitId.Value && v.PatientId == patientId, cancellationToken);
+                }
+            }
+        }
+
+        if (visit == null)
+        {
+            return;
+        }
+
+        visit.SourceEventId = eventId;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     private static VisitDetailDto MapDetail(Visit visit) => new()

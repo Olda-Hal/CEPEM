@@ -821,6 +821,12 @@ namespace DatabaseAPI.Migrations
                     b.Property<string>("AdditionalHealthInfo")
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("CovidVaccine")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("CovidWhen")
+                        .HasColumnType("longtext");
+
                     b.Property<bool>("DigestiveIssues")
                         .HasColumnType("tinyint(1)");
 
@@ -829,6 +835,12 @@ namespace DatabaseAPI.Migrations
 
                     b.Property<int>("FormSubmissionId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("HadCovid")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<float?>("Height")
+                        .HasColumnType("float");
 
                     b.Property<float?>("LastMealHours")
                         .HasColumnType("float");
@@ -847,6 +859,9 @@ namespace DatabaseAPI.Migrations
 
                     b.Property<bool>("VaccinesAfter2023")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<float?>("Weight")
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -1171,10 +1186,16 @@ namespace DatabaseAPI.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("LastSubmittedAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("PersonId")
                         .HasColumnType("int");
 
                     b.Property<int?>("ReservationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReservationSlotId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("RevokedAtUtc")
@@ -1188,14 +1209,21 @@ namespace DatabaseAPI.Migrations
                     b.Property<DateTime?>("UsedAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("VisitId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PersonId");
 
                     b.HasIndex("ReservationId");
 
+                    b.HasIndex("ReservationSlotId");
+
                     b.HasIndex("TokenHash")
                         .IsUnique();
+
+                    b.HasIndex("VisitId");
 
                     b.ToTable("IntakeFormLinks");
                 });
@@ -1588,6 +1616,9 @@ namespace DatabaseAPI.Migrations
                     b.Property<int>("HospitalId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("IntakeReminderSentAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("InternalNote")
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
@@ -1823,6 +1854,9 @@ namespace DatabaseAPI.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ReservationSlotId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("SourceEventId")
                         .HasColumnType("int");
 
@@ -1832,6 +1866,9 @@ namespace DatabaseAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("ReservationSlotId")
+                        .IsUnique();
 
                     b.HasIndex("SourceEventId");
 
@@ -2382,9 +2419,23 @@ namespace DatabaseAPI.Migrations
                         .HasForeignKey("ReservationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("DatabaseAPI.DatabaseModels.ReservationSlot", "ReservationSlot")
+                        .WithMany()
+                        .HasForeignKey("ReservationSlotId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Visit", "Visit")
+                        .WithMany()
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Person");
 
                     b.Navigation("Reservation");
+
+                    b.Navigation("ReservationSlot");
+
+                    b.Navigation("Visit");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.LastNameHistory", b =>
@@ -2679,12 +2730,19 @@ namespace DatabaseAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("DatabaseAPI.DatabaseModels.ReservationSlot", "ReservationSlot")
+                        .WithMany()
+                        .HasForeignKey("ReservationSlotId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("DatabaseAPI.DatabaseModels.Event", "SourceEvent")
                         .WithMany()
                         .HasForeignKey("SourceEventId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Patient");
+
+                    b.Navigation("ReservationSlot");
 
                     b.Navigation("SourceEvent");
                 });

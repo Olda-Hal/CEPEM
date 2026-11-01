@@ -20,6 +20,8 @@ namespace DatabaseAPI.Tests.Controllers;
 public class EventsControllerTests : IDisposable
 {
     private readonly DatabaseContext _context;
+    private readonly IntakeFormLinkService _linkService;
+    private readonly Mock<IVisitService> _visitServiceMock = new();
     private readonly EventsController _controller;
 
     public EventsControllerTests()
@@ -38,13 +40,16 @@ public class EventsControllerTests : IDisposable
         var uidMock = new Mock<IUidService>();
         uidMock.Setup(service => service.GetNextAvailableUidAsync()).ReturnsAsync("00000099");
 
+        _linkService = new IntakeFormLinkService(_context);
+
         _controller = new EventsController(
             _context,
             actorCountryMock.Object,
             uidMock.Object,
             new EventService(_context),
             new EventOptionsService(_context),
-            new IntakeFormLinkService(_context),
+            _linkService,
+            _visitServiceMock.Object,
             NullLogger<EventsController>.Instance);
     }
 
@@ -465,5 +470,110 @@ public class EventsControllerTests : IDisposable
         Assert.NotNull(result.Value);
         var updated = await _context.Persons.SingleAsync(p => p.Id == person.Id);
         Assert.Equal("00000099", updated.UID); // from the mocked IUidService
+    }
+
+    private ReservationSlot SeedReservationSlot(int personId, DateTime start)
+    {
+        var slot = new ReservationSlot
+        {
+            HospitalId = 1,
+            PersonId = personId,
+            StartDateTime = start,
+            EndDateTime = start.AddHours(1),
+            Status = SlotStatus.Reserved,
+            CountryCode = "CZ"
+        };
+        _context.ReservationSlots.Add(slot);
+        _context.SaveChanges();
+        return slot;
+    }
+
+    [Fact]
+    public async Task SubmitIntakeFormByLink_ForReservationSlot_CanBeEditedUntilVisit()
+    {
+        var person = SeedPerson();
+        SeedEventType();
+        var slot = SeedReservationSlot(person.Id, DateTime.UtcNow.AddDays(2));
+        var created = await _linkService.CreateLinkForReservationSlotAsync(
+            person.Id, slot.Id, slot.StartDateTime);
+        Assert.NotNull(created);
+        var token = created!.Value.RawToken;
+
+        var request = new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            ConfirmAccuracy = true,
+            TermsAccepted = true
+        };
+
+        var first = await _controller.SubmitIntakeFormByLink(token, request);
+        Assert.Null(first.Result);
+
+        var afterFirst = await _controller.GetIntakeFormLinkInfo(token);
+        var firstInfo = Assert.IsType<IntakeFormLinkInfoDto>(
+            Assert.IsType<OkObjectResult>(afterFirst.Result).Value);
+        Assert.True(firstInfo.CanEdit);
+        Assert.True(firstInfo.AlreadySubmitted);
+        Assert.Equal(slot.StartDateTime, firstInfo.VisitStartUtc);
+
+        var second = await _controller.SubmitIntakeFormByLink(token, request);
+        Assert.Null(second.Result);
+
+        var link = await _context.IntakeFormLinks.SingleAsync(l => l.Id == created.Value.Link.Id);
+        Assert.NotNull(link.UsedAtUtc);
+        Assert.NotNull(link.LastSubmittedAtUtc);
+
+        _visitServiceMock.Verify(
+            service => service.LinkIntakeEventAsync(
+                person.Id, null, slot.Id, It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task GetIntakeFormLinkInfo_PrefillsDemographicsAndLatestMedicalData()
+    {
+        var person = SeedPerson();
+        SeedEventType();
+        var (firstToken, _) = await CreateValidLink(person);
+
+        var submitted = await _controller.SubmitIntakeFormByLink(firstToken, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1985, 4, 2, 0, 0, 0, DateTimeKind.Utc),
+            InsuranceNumber = 55,
+            Email = "eva@example.com",
+            PhoneNumber = "777123456",
+            Weight = 72,
+            Height = 170,
+            MedDiabetes = true,
+            Smoking = true,
+            LastMealHours = "6",
+            HadCovid = true,
+            CovidWhen = "2021",
+            CovidVaccine = true,
+            AdditionalHealthInfo = "note",
+            ConfirmAccuracy = true,
+            TermsAccepted = true
+        });
+        Assert.Null(submitted.Result);
+
+        var (secondToken, _) = await CreateValidLink(person);
+        var infoResult = await _controller.GetIntakeFormLinkInfo(secondToken);
+        var info = Assert.IsType<IntakeFormLinkInfoDto>(
+            Assert.IsType<OkObjectResult>(infoResult.Result).Value);
+
+        Assert.Equal("Eva", info.Prefill.FirstName);
+        Assert.Equal(new DateTime(1985, 4, 2), info.Prefill.DateOfBirth);
+        Assert.Equal(55, info.Prefill.InsuranceNumber);
+        Assert.Equal("eva@example.com", info.Prefill.Email);
+        Assert.Equal("777123456", info.Prefill.PhoneNumber);
+        Assert.Equal(72, info.Prefill.Weight);
+        Assert.Equal(170, info.Prefill.Height);
+        Assert.True(info.Prefill.MedDiabetes);
+        Assert.True(info.Prefill.Smoking);
+        Assert.Equal("6", info.Prefill.LastMealHours);
+        Assert.True(info.Prefill.HadCovid);
+        Assert.Equal("2021", info.Prefill.CovidWhen);
+        Assert.True(info.Prefill.CovidVaccine);
+        Assert.Equal("note", info.Prefill.AdditionalHealthInfo);
     }
 }

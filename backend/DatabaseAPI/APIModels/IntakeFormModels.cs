@@ -132,6 +132,26 @@ public class IntakeFormLinkInfoDto
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public int? ReservationId { get; set; }
+    public int? ReservationSlotId { get; set; }
+    public int? VisitId { get; set; }
     public DateTime ExpiresAtUtc { get; set; }
+
+    /// <summary>cs / nl / en, derived from the reservation country.</summary>
+    public string Language { get; set; } = "cs";
+
+    /// <summary>Start of the booked visit (UTC); edited forms lock at this time.</summary>
+    public DateTime? VisitStartUtc { get; set; }
+
+    /// <summary>Per-visit links accept repeated submissions until they expire.</summary>
+    public bool CanEdit { get; set; }
+
+    /// <summary>The form was already submitted at least once (editing now).</summary>
+    public bool AlreadySubmitted { get; set; }
+
+    /// <summary>
+    /// Demographics from the patient card plus the medical answers from the
+    /// most recent submission, so a returning patient only updates changes.
+    /// </summary>
+    public CreateIntakeFormEventRequest Prefill { get; set; } = new();
 }
 

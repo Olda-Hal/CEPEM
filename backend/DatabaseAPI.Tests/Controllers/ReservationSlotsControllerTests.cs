@@ -1,3 +1,4 @@
+using DatabaseAPI.APIModels;
 using DatabaseAPI.Controllers;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
@@ -40,7 +41,10 @@ public class ReservationSlotsControllerTests : IDisposable
             _context,
             NullLogger<ReservationSlotsController>.Instance,
             actorCountryMock.Object,
-            _scopeMock.Object);
+            _scopeMock.Object,
+            new PersonMatchingService(_context),
+            new Mock<IVisitService>().Object,
+            new IntakeFormLinkService(_context));
     }
 
     private void SetActor(
@@ -93,6 +97,43 @@ public class ReservationSlotsControllerTests : IDisposable
         _context.ReservationSlots.Add(slot);
         _context.SaveChanges();
         return slot;
+    }
+
+    private Person SeedPersonWithContacts(string firstName, string email, string phone)
+    {
+        var person = new Person
+        {
+            FirstName = firstName,
+            LastName = "Kralova",
+            UID = Guid.NewGuid().ToString("N")[..10],
+            Gender = "F",
+            CountryCode = "CZ",
+            Active = true
+        };
+        _context.Persons.Add(person);
+        _context.SaveChanges();
+
+        var contact = new Contact();
+        _context.Contacts.Add(contact);
+        _context.SaveChanges();
+
+        _context.ContactToObjects.Add(new ContactToObject
+        {
+            ContactId = contact.Id,
+            ObjectId = person.Id,
+            ObjectType = ContactObjectType.Person,
+            PersonId = person.Id
+        });
+        _context.ContactEmails.Add(new ContactEmail { ContactId = contact.Id, Email = email });
+        _context.ContactPhoneNumbers.Add(new ContactPhoneNumber { ContactId = contact.Id, PhoneNumber = phone });
+        _context.Patients.Add(new Patient
+        {
+            PersonId = person.Id,
+            BirthDate = new DateTime(1990, 1, 1),
+            CountryCode = "CZ"
+        });
+        _context.SaveChanges();
+        return person;
     }
 
     private int SeedExaminationType(string name = "Mamograf")
@@ -389,6 +430,88 @@ public class ReservationSlotsControllerTests : IDisposable
             .Join(_context.ContactEmails, cto => cto.ContactId, ce => ce.ContactId, (_, ce) => ce.Email)
             .SingleAsync();
         Assert.Equal("anna@example.com", email);
+    }
+
+    [Fact]
+    public async Task BlockSlot_WithNewPersonMatchingBothContacts_ReusesExistingPerson()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1));
+        var examinationTypeId = SeedExaminationType();
+        var existing = SeedPersonWithContacts("Eva", "eva@example.com", "777 123 456");
+
+        var result = await _controller.BlockSlot(slot.Id, new BlockReservationSlotRequest
+        {
+            NewPerson = new BlockReservationSlotPersonRequest
+            {
+                FirstName = "Eva",
+                LastName = "Kralova",
+                Email = "EVA@example.com",
+                PhoneNumber = "777123456"
+            },
+            ExaminationTypeId = examinationTypeId
+        });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        var stored = await _context.ReservationSlots.SingleAsync(s => s.Id == slot.Id);
+        Assert.Equal(existing.Id, stored.PersonId);
+        Assert.Equal(1, await _context.Persons.CountAsync());
+    }
+
+    [Fact]
+    public async Task BlockSlot_WithAmbiguousContacts_CreatesNewPerson()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1));
+        var examinationTypeId = SeedExaminationType();
+        SeedPersonWithContacts("Eva", "shared@example.com", "777123456");
+        SeedPersonWithContacts("Eva", "shared@example.com", "777 123 456");
+
+        var result = await _controller.BlockSlot(slot.Id, new BlockReservationSlotRequest
+        {
+            NewPerson = new BlockReservationSlotPersonRequest
+            {
+                FirstName = "Anna",
+                LastName = "Dvorakova",
+                Email = "shared@example.com",
+                PhoneNumber = "777123456"
+            },
+            ExaminationTypeId = examinationTypeId
+        });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        var stored = await _context.ReservationSlots.SingleAsync(s => s.Id == slot.Id);
+        var bookedPerson = await _context.Persons.SingleAsync(p => p.Id == stored.PersonId);
+        Assert.Equal("Anna", bookedPerson.FirstName);
+        Assert.Equal(3, await _context.Persons.CountAsync());
+    }
+
+    [Fact]
+    public async Task CreateIntakeLink_ForBookedSlot_ReturnsUsableLink()
+    {
+        var hospitalId = SeedHospital();
+        var person = SeedPersonWithContacts("Eva", "eva@example.com", "777123456");
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1), SlotStatus.Reserved, person.Id);
+
+        var result = await _controller.CreateIntakeLink(slot.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<IntakeFormLinkDto>(ok.Value);
+        var link = await _context.IntakeFormLinks.SingleAsync();
+        Assert.Equal(slot.Id, link.ReservationSlotId);
+        Assert.Equal(person.Id, link.PersonId);
+        Assert.EndsWith(dto.Token, dto.IntakePath);
+    }
+
+    [Fact]
+    public async Task CreateIntakeLink_WithoutBookedPerson_ReturnsBadRequest()
+    {
+        var hospitalId = SeedHospital();
+        var slot = SeedSlot(hospitalId, _base, _base.AddHours(1));
+
+        var result = await _controller.CreateIntakeLink(slot.Id);
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
     [Fact]

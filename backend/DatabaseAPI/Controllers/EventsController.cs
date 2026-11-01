@@ -18,6 +18,7 @@ public class EventsController : ControllerBase
     private readonly IEventService _eventService;
     private readonly IEventOptionsService _eventOptionsService;
     private readonly IIntakeFormLinkService _intakeFormLinkService;
+    private readonly IVisitService _visitService;
     private readonly ILogger<EventsController> _logger;
 
     public EventsController(
@@ -27,6 +28,7 @@ public class EventsController : ControllerBase
         IEventService eventService,
         IEventOptionsService eventOptionsService,
         IIntakeFormLinkService intakeFormLinkService,
+        IVisitService visitService,
         ILogger<EventsController> logger)
     {
         _context = context;
@@ -35,6 +37,7 @@ public class EventsController : ControllerBase
         _eventService = eventService;
         _eventOptionsService = eventOptionsService;
         _intakeFormLinkService = intakeFormLinkService;
+        _visitService = visitService;
         _logger = logger;
     }
 
@@ -279,13 +282,29 @@ public class EventsController : ControllerBase
             if (invalidReason != null)
                 return BadRequest(invalidReason);
 
+            var alreadySubmitted = link.UsedAtUtc.HasValue;
+            if (!alreadySubmitted && link.VisitId.HasValue)
+            {
+                alreadySubmitted = await _context.Visits
+                    .Where(v => v.Id == link.VisitId.Value)
+                    .Select(v => v.SourceEventId != null)
+                    .FirstOrDefaultAsync();
+            }
+
             return Ok(new IntakeFormLinkInfoDto
             {
                 PersonId = link.PersonId,
                 FirstName = link.Person.FirstName,
                 LastName = link.Person.LastName,
                 ReservationId = link.ReservationId,
-                ExpiresAtUtc = link.ExpiresAtUtc
+                ReservationSlotId = link.ReservationSlotId,
+                VisitId = link.VisitId,
+                ExpiresAtUtc = link.ExpiresAtUtc,
+                Language = MapLanguage(link.ReservationSlot?.CountryCode ?? link.Person.CountryCode),
+                VisitStartUtc = link.ReservationSlot?.StartDateTime ?? link.Visit?.VisitDate,
+                CanEdit = link.AllowsEdits,
+                AlreadySubmitted = alreadySubmitted,
+                Prefill = await BuildIntakePrefillAsync(link)
             });
         }
         catch (Exception ex)
@@ -327,7 +346,9 @@ public class EventsController : ControllerBase
                     PersonId = link.PersonId,
                     BirthDate = birthDate,
                     InsuranceNumber = request.InsuranceNumber ?? 0,
-                    Alive = true
+                    Alive = true,
+                    CountryCode = link.ReservationSlot?.CountryCode ?? link.Person.CountryCode,
+                    HomeHospitalId = link.ReservationSlot?.HospitalId
                 };
 
                 _context.Patients.Add(patient);
@@ -342,20 +363,188 @@ public class EventsController : ControllerBase
                 return objectResult;
             }
 
+            var dto = intakeResult.Value ??
+                      (intakeResult.Result as OkObjectResult)?.Value as IntakeFormEventDto ??
+                      new IntakeFormEventDto
+                      {
+                          EventId = 0,
+                          CreatedAt = DateTime.UtcNow,
+                          PatientName = BuildPersonName(link.Person.FirstName, link.Person.LastName)
+                      };
+
+            // Attach the (possibly edited) submission to the visit created from
+            // the reservation, or to the visit the doctor opened on the tablet.
+            // A linking failure must not lose the already saved submission.
+            try
+            {
+                await _visitService.LinkIntakeEventAsync(patient.Id, link.VisitId, link.ReservationSlotId, dto.EventId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not link intake event {EventId} to a visit", dto.EventId);
+            }
+
             await _intakeFormLinkService.MarkUsedAsync(link);
 
-            return intakeResult.Value ?? (intakeResult.Result as OkObjectResult)?.Value as IntakeFormEventDto ??
-                   new IntakeFormEventDto
-                   {
-                       EventId = 0,
-                       CreatedAt = DateTime.UtcNow,
-                       PatientName = BuildPersonName(link.Person.FirstName, link.Person.LastName)
-                   };
+            return dto;
         }
         catch (Exception ex)
         {
             return StatusCode(500, $"Error submitting intake form by link: {ex.Message}");
         }
+    }
+
+    private static string MapLanguage(string? countryCode)
+    {
+        return countryCode?.Trim().ToUpperInvariant() switch
+        {
+            "NL" => "nl",
+            "CZ" or null or "" => "cs",
+            _ => "en"
+        };
+    }
+
+    /// <summary>
+    /// Prefills the public form from the patient card and the latest submitted
+    /// form. Consent/signature fields are intentionally left blank — each
+    /// visit needs a fresh signature.
+    /// </summary>
+    private async Task<CreateIntakeFormEventRequest> BuildIntakePrefillAsync(IntakeFormLink link)
+    {
+        var person = link.Person;
+        var patient = person.Patient;
+
+        // Contacts may be linked via PersonId (new rows) or only ObjectId
+        // (historical rows), so accept both when building the prefill.
+        var contactIds = await _context.ContactToObjects
+            .Where(link => link.ObjectType == ContactObjectType.Person &&
+                           (link.PersonId == person.Id || link.ObjectId == person.Id))
+            .Select(link => link.ContactId)
+            .Distinct()
+            .ToListAsync();
+
+        var prefill = new CreateIntakeFormEventRequest
+        {
+            FirstName = person.FirstName,
+            LastName = person.LastName,
+            Gender = person.Gender,
+            Email = await _context.ContactEmails
+                .Where(entry => contactIds.Contains(entry.ContactId))
+                .Select(entry => entry.Email)
+                .FirstOrDefaultAsync(),
+            PhoneNumber = await _context.ContactPhoneNumbers
+                .Where(entry => contactIds.Contains(entry.ContactId))
+                .Select(entry => entry.PhoneNumber)
+                .FirstOrDefaultAsync(),
+            Address = person.Address?.Street,
+            PostalCode = person.Address?.PostalCode,
+            DateOfBirth = patient?.BirthDate,
+            InsuranceNumber = patient is { InsuranceNumber: > 0 } ? patient.InsuranceNumber : null
+        };
+
+        if (patient == null)
+        {
+            return prefill;
+        }
+
+        var latest = await _context.FormSubmissions
+            .Where(submission => submission.PatientId == patient.Id)
+            .Include(submission => submission.Medication)
+            .Include(submission => submission.Lifestyle)
+            .Include(submission => submission.ReproductiveHealth)
+            .Include(submission => submission.SicknessHistories)
+            .OrderByDescending(submission => submission.SubmittedAtUtc)
+            .ThenByDescending(submission => submission.Id)
+            .FirstOrDefaultAsync();
+
+        if (latest == null)
+        {
+            return prefill;
+        }
+
+        if (latest.Medication is { } medication)
+        {
+            prefill.MedBloodPressure = medication.MedBloodPressure;
+            prefill.MedHeart = medication.MedHeart;
+            prefill.MedCholesterol = medication.MedCholesterol;
+            prefill.MedBloodThinners = medication.MedBloodThinners;
+            prefill.MedDiabetes = medication.MedDiabetes;
+            prefill.MedThyroid = medication.MedThyroid;
+            prefill.MedNerves = medication.MedNerves;
+            prefill.MedPsych = medication.MedPsych;
+            prefill.MedDigestion = medication.MedDigestion;
+            prefill.MedPain = medication.MedPain;
+            prefill.MedDehydration = medication.MedDehydration;
+            prefill.MedBreathing = medication.MedBreathing;
+            prefill.MedAntibiotics = medication.MedAntibiotics;
+            prefill.MedSupplements = medication.MedSupplements;
+            prefill.MedAllergies = medication.MedAllergies;
+        }
+
+        if (latest.Lifestyle is { } lifestyle)
+        {
+            prefill.PoorSleep = lifestyle.PoorSleep;
+            prefill.DigestiveIssues = lifestyle.DigestiveIssues;
+            prefill.PhysicalStress = lifestyle.PhysicalStress;
+            prefill.MentalStress = lifestyle.MentalStress;
+            prefill.Smoking = lifestyle.Smoking;
+            prefill.Fatigue = lifestyle.Fatigue;
+            prefill.LastMealHours = lifestyle.LastMealHours?
+                .ToString("0.##", CultureInfo.InvariantCulture);
+            prefill.HadCovid = lifestyle.HadCovid;
+            prefill.CovidWhen = lifestyle.CovidWhen;
+            prefill.CovidVaccine = lifestyle.CovidVaccine;
+            prefill.VaccinesAfter2023 = lifestyle.VaccinesAfter2023;
+            prefill.Weight = lifestyle.Weight;
+            prefill.Height = lifestyle.Height;
+            prefill.AdditionalHealthInfo = lifestyle.AdditionalHealthInfo;
+        }
+
+        if (latest.ReproductiveHealth is { } reproductive)
+        {
+            prefill.LastMenstruationDate = reproductive.LastMenstruationDate;
+            prefill.MenstruationCycleDays = reproductive.MenstruationCycleDays;
+            prefill.YearsSinceLastMenstruation = reproductive.YearsSinceLastMenstruation;
+            prefill.GaveBirth = reproductive.GaveBirth;
+            prefill.BirthCount = reproductive.BirthCount;
+            prefill.BirthWhen = reproductive.BirthWhen;
+            prefill.Breastfed = reproductive.Breastfed;
+            prefill.BreastfeedingMonths = reproductive.BreastfeedingMonths;
+            prefill.BreastfeedingInflammation = reproductive.BreastfeedingInflammation;
+            prefill.EndedWithInflammation = reproductive.EndedWithInflammation;
+            prefill.Contraception = reproductive.Contraception;
+            prefill.ContraceptionDuration = reproductive.ContraceptionDuration;
+            prefill.Estrogen = reproductive.Estrogen;
+            prefill.EstrogenType = reproductive.EstrogenType;
+            prefill.Interruption = reproductive.Interruption;
+            prefill.InterruptionCount = reproductive.InterruptionCount;
+            prefill.Miscarriage = reproductive.Miscarriage;
+            prefill.MiscarriageCount = reproductive.MiscarriageCount;
+            prefill.BreastInjury = reproductive.BreastInjury;
+            prefill.Mammogram = reproductive.Mammogram;
+            prefill.MammogramCount = reproductive.MammogramCount;
+            prefill.BreastBiopsy = reproductive.BreastBiopsy;
+            prefill.BreastImplants = reproductive.BreastImplants;
+            prefill.BreastSurgery = reproductive.BreastSurgery;
+            prefill.BreastSurgeryType = reproductive.BreastSurgeryType;
+            prefill.FamilyTumors = reproductive.FamilyTumors;
+            prefill.FamilyTumorType = reproductive.FamilyTumorType;
+        }
+
+        prefill.SicknessHistories = latest.SicknessHistories
+            .OrderBy(sickness => sickness.Id)
+            .Select(sickness => new SicknessHistoryRequestItem
+            {
+                SicknessName = sickness.SicknessName,
+                HadSickness = sickness.HadSickness,
+                SicknessWhen = sickness.SicknessWhen,
+                Vaccinated = sickness.Vaccinated,
+                VaccinationWhen = sickness.VaccinationWhen,
+                Notes = sickness.Notes
+            })
+            .ToList();
+
+        return prefill;
     }
 
     private string BuildChangesSummary(Patient patient, CreateIntakeFormEventRequest request)
@@ -545,7 +734,8 @@ public class EventsController : ControllerBase
                 {
                     ContactId = contact.Id,
                     ObjectId = patient.Person.Id,
-                    ObjectType = ContactObjectType.Person
+                    ObjectType = ContactObjectType.Person,
+                    PersonId = patient.Person.Id
                 });
             }
 
@@ -625,7 +815,7 @@ public class EventsController : ControllerBase
                     Street = street,
                     City = city,
                     PostalCode = request.PostalCode ?? string.Empty,
-                    Country = "CZ"
+                    Country = patient.Person.CountryCode
                 };
             }
             else
@@ -640,7 +830,7 @@ public class EventsController : ControllerBase
                     patient.Person.Address.PostalCode = request.PostalCode;
 
                 if (string.IsNullOrWhiteSpace(patient.Person.Address.Country))
-                    patient.Person.Address.Country = "CZ";
+                    patient.Person.Address.Country = patient.Person.CountryCode;
             }
 
             hasChanges = true;
@@ -694,6 +884,11 @@ public class EventsController : ControllerBase
             Fatigue = request.Fatigue == true,
             LastMealHours = ParseNullableFloat(request.LastMealHours),
             VaccinesAfter2023 = request.VaccinesAfter2023 == true,
+            HadCovid = request.HadCovid == true,
+            CovidWhen = request.CovidWhen,
+            CovidVaccine = request.CovidVaccine == true,
+            Weight = request.Weight,
+            Height = request.Height,
             AdditionalHealthInfo = request.AdditionalHealthInfo
         };
 
