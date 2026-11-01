@@ -77,7 +77,8 @@ describe('CommunicationTemplatesPage', () => {
     renderPage();
     await screen.findByText('intake_reminder');
 
-    fireEvent.click(screen.getAllByRole('button', { name: /edit/i })[0]);
+    const editButtons = screen.getAllByRole('button', { name: /edit/i });
+    fireEvent.click(editButtons[0]!);
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /body/i })).toBeInTheDocument();
