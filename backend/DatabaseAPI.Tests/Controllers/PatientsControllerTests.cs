@@ -14,6 +14,7 @@ public class PatientsControllerTests : IAsyncLifetime
 {
     private readonly DatabaseContext _context;
     private readonly PatientsController _controller;
+    private readonly Mock<IEmployeeScopeService> _scopeMock = new();
     private readonly ILogger<PatientsController> _logger;
 
     public PatientsControllerTests()
@@ -36,17 +37,14 @@ public class PatientsControllerTests : IAsyncLifetime
         _ = photoService;
         Directory.CreateDirectory(storageDir);
         // Unrestricted scope mock: full-access actor so delete checks pass
-        var scopeServiceMock = new Mock<IEmployeeScopeService>();
-        scopeServiceMock
-            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ActorScope(1, ["Admin"], [], []));
+        SetActor(1, "Admin");
         _controller = new PatientsController(
             _context,
             _logger,
             photoService,
             null!,
             new Mock<IActorCountryContextService>().Object,
-            scopeServiceMock.Object,
+            _scopeMock.Object,
             new Mock<IUidService>().Object,
             new Mock<IPatientService>().Object);
     }
@@ -60,6 +58,13 @@ public class PatientsControllerTests : IAsyncLifetime
     {
         await _context.Database.EnsureDeletedAsync();
         await _context.DisposeAsync();
+    }
+
+    private void SetActor(int? employeeId, params string[] roles)
+    {
+        _scopeMock
+            .Setup(service => service.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(employeeId, roles, [], []));
     }
 
     private async Task<DatabaseAPI.DatabaseModels.Patient> SeedPatientWithContact()
@@ -282,5 +287,60 @@ public class PatientsControllerTests : IAsyncLifetime
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.NotNull(okResult.Value);
+    }
+
+    [Fact]
+    public async Task GetPatient_WhenHidden_ReturnsNotFound()
+    {
+        var patient = await SeedPatientWithContact();
+        patient.IsDeleted = true;
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.GetPatient(patient.Id);
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetPatientDetail_WhenHidden_ReturnsNotFound()
+    {
+        var patient = await SeedPatientWithContact();
+        patient.IsDeleted = true;
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.GetPatientDetail(patient.Id);
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task RestorePatient_AsCreator_Succeeds()
+    {
+        var patient = await SeedPatientWithContact();
+        patient.CreatedByEmployeeId = 5;
+        patient.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        SetActor(5, "Examiner");
+
+        var result = await _controller.RestorePatient(patient.Id);
+
+        Assert.IsType<OkObjectResult>(result);
+        Assert.False((await _context.Patients.SingleAsync(p => p.Id == patient.Id)).IsDeleted);
+    }
+
+    [Fact]
+    public async Task RestorePatient_AsUnrelatedEmployee_ReturnsForbidden()
+    {
+        var patient = await SeedPatientWithContact();
+        patient.CreatedByEmployeeId = 5;
+        patient.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        SetActor(6, "Examiner");
+
+        var result = await _controller.RestorePatient(patient.Id);
+
+        var forbidden = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        Assert.True((await _context.Patients.SingleAsync(p => p.Id == patient.Id)).IsDeleted);
     }
 }

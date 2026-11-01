@@ -37,12 +37,14 @@ public class VisitsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<VisitListItemDto>>> GetVisits(int patientId)
     {
+        if (!await PatientIsVisibleAsync(patientId)) return NotFound("Patient not found");
         return Ok(await _visitService.GetVisitsAsync(patientId));
     }
 
     [HttpGet("{visitId}")]
     public async Task<ActionResult<VisitDetailDto>> GetVisit(int patientId, int visitId)
     {
+        if (!await PatientIsVisibleAsync(patientId)) return NotFound("Patient not found");
         var visit = await _visitService.GetVisitAsync(patientId, visitId);
         return visit == null ? NotFound("Visit not found") : Ok(visit);
     }
@@ -50,6 +52,7 @@ public class VisitsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<VisitDetailDto>> CreateVisit(int patientId, [FromBody] CreateVisitRequest request)
     {
+        if (!await PatientIsVisibleAsync(patientId)) return NotFound("Patient not found");
         var countryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
         var createdBy = _actorCountryContextService.GetActorEmployeeId();
 
@@ -64,6 +67,7 @@ public class VisitsController : ControllerBase
     {
         try
         {
+            if (!await PatientIsVisibleAsync(patientId)) return NotFound("Patient not found");
             var visit = await _visitService.UpdateVisitAsync(patientId, visitId, request);
             return visit == null ? NotFound("Visit not found") : Ok(visit);
         }
@@ -81,6 +85,8 @@ public class VisitsController : ControllerBase
     [HttpPost("{visitId}/intake-link")]
     public async Task<ActionResult<IntakeFormLinkDto>> CreateIntakeLink(int patientId, int visitId)
     {
+        if (!await PatientIsVisibleAsync(patientId)) return NotFound("Patient not found");
+
         var visit = await _context.Visits
             .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId);
         if (visit == null)
@@ -122,11 +128,16 @@ public class VisitsController : ControllerBase
         });
     }
 
+    private Task<bool> PatientIsVisibleAsync(int patientId) =>
+        _context.Patients.AnyAsync(p => p.Id == patientId && !p.IsDeleted);
+
     /// <summary>Upload a file and attach it to the visit (multipart).</summary>
     [HttpPost("{visitId}/documents")]
     [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<ActionResult<VisitDocumentDto>> AttachDocument(int patientId, int visitId, IFormFile file)
     {
+        if (!await PatientIsVisibleAsync(patientId)) return NotFound("Patient not found");
+
         if (file.Length == 0)
         {
             return BadRequest("Empty file");

@@ -239,7 +239,9 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == id);
+                var patient = await _context.Patients
+                    .Include(p => p.CreatedByEmployee)
+                    .FirstOrDefaultAsync(p => p.Id == id);
                 if (patient == null)
                 {
                     return NotFound("Patient not found");
@@ -247,6 +249,14 @@ namespace DatabaseAPI.Controllers
                 if (!patient.IsDeleted)
                 {
                     return BadRequest("Patient is not deleted");
+                }
+
+                // Restore follows the same rule as hide: creator, their direct
+                // supervisor or a full-access admin.
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!CanDeletePatient(actorScope, patient.CreatedByEmployeeId, patient.CreatedByEmployee?.CreatedByEmployeeId))
+                {
+                    return StatusCode(403, "Pacienta může obnovit pouze ten, kdo jej založil, nebo jeho nadřízený.");
                 }
 
                 patient.IsDeleted = false;
@@ -278,7 +288,7 @@ namespace DatabaseAPI.Controllers
                         .ThenInclude(per => per.ContactToObjects)
                             .ThenInclude(cto => cto.Contact)
                                 .ThenInclude(c => c.PhoneNumbers)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
                 if (patient == null)
                 {
@@ -311,7 +321,7 @@ namespace DatabaseAPI.Controllers
                             .ThenInclude(cto => cto.Contact)
                                 .ThenInclude(c => c.PhoneNumbers)
                     .Include(p => p.Comment)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
                 if (patient == null)
                 {
@@ -463,7 +473,7 @@ namespace DatabaseAPI.Controllers
                         .ThenInclude(fs => fs.Consent)
                     .Include(p => p.FormSubmissions)
                         .ThenInclude(fs => fs.SicknessHistories)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
                 if (patient == null)
                 {
@@ -760,6 +770,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(id))
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
                 if (photo == null || photo.Length == 0)
                 {
                     return BadRequest("No photo provided");
@@ -800,6 +815,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(id))
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
                 var photoData = await _photoService.GetPatientPhotoAsync(id);
 
                 if (photoData == null)
@@ -821,6 +841,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(id))
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
                 var deleted = await _photoService.DeletePatientPhotoAsync(id);
 
                 if (!deleted)
@@ -842,6 +867,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(id))
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
                 if (document == null || document.Length == 0)
                 {
                     return BadRequest("No document provided");
@@ -890,6 +920,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(id))
+                {
+                    return NotFound($"Patient with id {id} not found");
+                }
+
                 var documents = await _documentService.GetPatientDocumentsAsync(id);
 
                 var documentDtos = documents.Select(d => new PatientDocumentDto
@@ -914,6 +949,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(patientId))
+                {
+                    return NotFound("Patient not found");
+                }
+
                 var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
 
                 if (documentData == null)
@@ -935,6 +975,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                if (!await PatientIsVisibleAsync(patientId))
+                {
+                    return NotFound("Patient not found");
+                }
+
                 var deleted = await _documentService.DeleteDocumentAsync(documentId, patientId);
 
                 if (!deleted)
@@ -960,7 +1005,7 @@ namespace DatabaseAPI.Controllers
                 var patient = await _context.Patients
                     .Include(p => p.Person)
                     .Include(p => p.Comment)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
                 if (patient == null)
                 {
@@ -995,6 +1040,10 @@ namespace DatabaseAPI.Controllers
         /// Delete permission: the creating employee, their direct supervisor
         /// (the one who created their account), or a (Sys)Admin.
         /// </summary>
+        /// <summary>Hidden patients behave as not found for every patient-scoped endpoint.</summary>
+        private Task<bool> PatientIsVisibleAsync(int id) =>
+            _context.Patients.AnyAsync(p => p.Id == id && !p.IsDeleted);
+
         private static bool CanDeletePatient(ActorScope actor, int? creatorId, int? creatorSupervisorId)
             => actor.EmployeeId != null && (
                 actor.HasFullAccess
