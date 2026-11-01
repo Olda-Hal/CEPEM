@@ -144,7 +144,13 @@ public static class ProxyConfig
         {
             RouteId = id,
             ClusterId = ClusterId,
-            AuthorizationPolicy = permissionCode == null ? null : $"perm:{permissionCode}",
+            // "authenticated" is a real policy name; everything else is a
+            // permission code wrapped in the "perm:" policy prefix.
+            AuthorizationPolicy = permissionCode == null
+                ? null
+                : permissionCode == "authenticated"
+                    ? "authenticated"
+                    : $"perm:{permissionCode}",
             Match = new RouteMatch
             {
                 Path = path,

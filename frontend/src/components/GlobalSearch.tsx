@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient, ApiError } from '../utils/api';
@@ -277,85 +278,87 @@ export const GlobalSearch: React.FC = () => {
         <kbd>Ctrl K</kbd>
       </button>
 
-      {open && (
-        <div className="global-search-overlay" onMouseDown={close}>
-          <div
-            className="global-search-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('globalSearch.trigger')}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="global-search-input-row">
-              <span className="global-search-icon" aria-hidden="true">
-                ⌕
-              </span>
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={handleInputKeyDown}
-                placeholder={t('globalSearch.placeholder')}
-                aria-label={t('globalSearch.placeholder')}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <button
-                type="button"
-                className="global-search-close"
-                onClick={close}
-                aria-label={t('globalSearch.close')}
-              >
-                Esc
-              </button>
-            </div>
+      {open &&
+        createPortal(
+          <div className="global-search-overlay" onMouseDown={close}>
+            <div
+              className="global-search-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('globalSearch.trigger')}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="global-search-input-row">
+                <span className="global-search-icon" aria-hidden="true">
+                  ⌕
+                </span>
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={handleInputKeyDown}
+                  placeholder={t('globalSearch.placeholder')}
+                  aria-label={t('globalSearch.placeholder')}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  className="global-search-close"
+                  onClick={close}
+                  aria-label={t('globalSearch.close')}
+                >
+                  Esc
+                </button>
+              </div>
 
-            <div className="global-search-results">
-              {loading && <div className="global-search-state">{t('common.loading')}</div>}
-              {!loading && error && <div className="global-search-state error">{error}</div>}
-              {!loading && !error && query.trim().length < 2 && (
-                <div className="global-search-state">{t('globalSearch.hint')}</div>
-              )}
-              {!loading && !error && query.trim().length >= 2 && groups.length === 0 && (
-                <div className="global-search-state">{t('globalSearch.noResults')}</div>
-              )}
+              <div className="global-search-results">
+                {loading && <div className="global-search-state">{t('common.loading')}</div>}
+                {!loading && error && <div className="global-search-state error">{error}</div>}
+                {!loading && !error && query.trim().length < 2 && (
+                  <div className="global-search-state">{t('globalSearch.hint')}</div>
+                )}
+                {!loading && !error && query.trim().length >= 2 && groups.length === 0 && (
+                  <div className="global-search-state">{t('globalSearch.noResults')}</div>
+                )}
 
-              {!loading &&
-                !error &&
-                groups.map((group) => (
-                  <section key={group.key} className="global-search-group">
-                    <h3>{t(`globalSearch.groups.${group.key}`)}</h3>
-                    <ul role="listbox">
-                      {group.items.map((item) => {
-                        itemIndex += 1;
-                        const index = itemIndex;
-                        return (
-                          <li key={item.key} role="option" aria-selected={index === activeIndex}>
-                            <button
-                              type="button"
-                              className={`global-search-item${index === activeIndex ? ' active' : ''}`}
-                              onMouseEnter={() => setActiveIndex(index)}
-                              onClick={() => handleSelect(item)}
-                            >
-                              <span className="global-search-item-label">{item.label}</span>
-                              <span className="global-search-item-meta">{item.meta}</span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                ))}
-            </div>
+                {!loading &&
+                  !error &&
+                  groups.map((group) => (
+                    <section key={group.key} className="global-search-group">
+                      <h3>{t(`globalSearch.groups.${group.key}`)}</h3>
+                      <ul role="listbox">
+                        {group.items.map((item) => {
+                          itemIndex += 1;
+                          const index = itemIndex;
+                          return (
+                            <li key={item.key} role="option" aria-selected={index === activeIndex}>
+                              <button
+                                type="button"
+                                className={`global-search-item${index === activeIndex ? ' active' : ''}`}
+                                onMouseEnter={() => setActiveIndex(index)}
+                                onClick={() => handleSelect(item)}
+                              >
+                                <span className="global-search-item-label">{item.label}</span>
+                                <span className="global-search-item-meta">{item.meta}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  ))}
+              </div>
 
-            <div className="global-search-footer">
-              <span>↑↓ {t('globalSearch.navigate')}</span>
-              <span>↵ {t('globalSearch.open')}</span>
-              <span>Esc {t('globalSearch.close')}</span>
+              <div className="global-search-footer">
+                <span>↑↓ {t('globalSearch.navigate')}</span>
+                <span>↵ {t('globalSearch.open')}</span>
+                <span>Esc {t('globalSearch.close')}</span>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 };
