@@ -1066,6 +1066,27 @@
       "other": "Neznámé"
     }
   },
+  "globalSearch": {
+    "trigger": "Hledat…",
+    "placeholder": "Hledat pacienta, návštěvu, dokument, měření…",
+    "hint": "Začněte psát alespoň 2 znaky. Ctrl+K otevře hledání odkudkoli.",
+    "searchFailed": "Hledání se nepodařilo.",
+    "noResults": "Nic nenalezeno.",
+    "visitLabel": "Návštěva {{date}}",
+    "hasIntake": "s formulářem",
+    "noIntake": "bez formuláře",
+    "reviewCount": "{{count}} hodnocení",
+    "navigate": "pohyb",
+    "open": "otevřít",
+    "close": "zavřít",
+    "groups": {
+      "patients": "Pacienti",
+      "visits": "Návštěvy",
+      "documents": "Dokumenty",
+      "evaluations": "Vyhodnocování",
+      "employees": "Zaměstnanci"
+    }
+  },
   "adminPage": {
     "title": "Admin",
     "lead": "Systémové nástroje a dohled.",

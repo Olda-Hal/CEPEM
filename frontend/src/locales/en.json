@@ -1066,6 +1066,27 @@
       "other": "Unknown"
     }
   },
+  "globalSearch": {
+    "trigger": "Search…",
+    "placeholder": "Search patients, visits, documents, measurements…",
+    "hint": "Type at least 2 characters. Ctrl+K opens search from anywhere.",
+    "searchFailed": "Search failed.",
+    "noResults": "No results.",
+    "visitLabel": "Visit {{date}}",
+    "hasIntake": "intake filled",
+    "noIntake": "no intake",
+    "reviewCount": "{{count}} reviews",
+    "navigate": "navigate",
+    "open": "open",
+    "close": "close",
+    "groups": {
+      "patients": "Patients",
+      "visits": "Visits",
+      "documents": "Documents",
+      "evaluations": "Evaluations",
+      "employees": "Employees"
+    }
+  },
   "adminPage": {
     "title": "Admin",
     "lead": "System tools and oversight.",

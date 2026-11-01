@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient, ApiError } from '../utils/api';
 import { EvaluationCase } from '../types';
@@ -11,6 +12,8 @@ interface Marker extends SliceMarker {
 
 const EvaluationPage: React.FC = () => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const requestedCaseId = searchParams.get('case');
   const [current, setCurrent] = useState<EvaluationCase | null>(null);
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [recommendation, setRecommendation] = useState('');
@@ -43,9 +46,35 @@ const EvaluationPage: React.FC = () => {
     }
   }, [t]);
 
+  // Global search can deep-link a specific case (`/vyhodnocovani?case=42`).
+  // Without the parameter the page keeps its normal "oldest next" queue.
+  const loadInitial = useCallback(async () => {
+    const caseId = Number(requestedCaseId);
+    if (!Number.isInteger(caseId) || caseId <= 0) {
+      await loadNext();
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setAllDone(false);
+    try {
+      const selected = await apiClient.get<EvaluationCase>(`/api/evaluations/cases/${caseId}`);
+      setCurrent(selected);
+      setMarkers([]);
+      setRecommendation('');
+    } catch (err) {
+      console.error('Failed to load the requested evaluation case', err);
+      setError(t('evaluation.loadFailed'));
+      await loadNext();
+    } finally {
+      setLoading(false);
+    }
+  }, [requestedCaseId, loadNext, t]);
+
   useEffect(() => {
-    void loadNext();
-  }, [loadNext]);
+    void loadInitial();
+  }, [loadInitial]);
 
   const addMarker = (slice: number, x: number, y: number) => {
     if (!current) return;

@@ -1066,6 +1066,27 @@
       "other": "Onbekend"
     }
   },
+  "globalSearch": {
+    "trigger": "Zoeken…",
+    "placeholder": "Zoek patiënten, bezoeken, documenten, metingen…",
+    "hint": "Typ minimaal 2 tekens. Ctrl+K opent zoeken vanaf elke pagina.",
+    "searchFailed": "Zoeken is mislukt.",
+    "noResults": "Niets gevonden.",
+    "visitLabel": "Bezoek {{date}}",
+    "hasIntake": "met formulier",
+    "noIntake": "zonder formulier",
+    "reviewCount": "{{count}} beoordelingen",
+    "navigate": "navigeren",
+    "open": "openen",
+    "close": "sluiten",
+    "groups": {
+      "patients": "Patiënten",
+      "visits": "Bezoeken",
+      "documents": "Documenten",
+      "evaluations": "Beoordelingen",
+      "employees": "Medewerkers"
+    }
+  },
   "adminPage": {
     "title": "Beheer",
     "lead": "Systeemtools en overzicht.",

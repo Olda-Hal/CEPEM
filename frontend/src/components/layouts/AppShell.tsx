@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasRole, isAdmin } from '../../utils/roles';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
+import { GlobalSearch } from '../../components/GlobalSearch';
 import './AppShell.css';
 
 const fetchBuildVersion = async (): Promise<string | null> => {
@@ -206,6 +207,7 @@ export const AppShell: React.FC = () => {
           </nav>
 
           <div className="shell-header-right">
+            <GlobalSearch />
             <LanguageSwitcher />
             <Link
               to="/settings"
