@@ -1,7 +1,4 @@
 .shell-search-trigger {
-  /* Keep the search affordance above the nav dropdowns in the header. */
-  position: relative;
-  z-index: 1001;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -13,6 +10,12 @@
   font: inherit;
   font-size: 0.875rem;
   cursor: pointer;
+}
+
+/* Search sits in the top header row, above the navigation row. */
+.shell-header-inner .shell-search-trigger {
+  flex: 1 1 320px;
+  max-width: 520px;
 }
 
 .shell-search-trigger:hover {

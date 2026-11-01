@@ -59,8 +59,17 @@
   color: var(--color-text, #1f2937);
 }
 
+.shell-header-nav {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 4px var(--space-lg, 24px) 6px;
+  border-top: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+}
+
 .shell-nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   flex: 1 1 auto;
@@ -189,6 +198,10 @@
   .shell-header-inner {
     gap: var(--space-md, 16px);
     padding: 0 var(--space-md, 16px);
+  }
+
+  .shell-header-nav {
+    padding: 4px var(--space-md, 16px) 6px;
   }
 
   .shell-account-meta {

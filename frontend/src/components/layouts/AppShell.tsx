@@ -177,40 +177,9 @@ export const AppShell: React.FC = () => {
             <span className="shell-brand-name">CEPEM</span>
           </Link>
 
-          <nav className="shell-nav" aria-label={t('shell.mainNavigation')}>
-            {visibleSections(user).map((section) => (
-              <div key={section.key} className="shell-nav-item">
-                <Link
-                  to={section.to}
-                  className={`shell-nav-link${activeSection?.key === section.key ? ' active' : ''}`}
-                >
-                  {t(section.labelKey)}
-                  {section.children && (
-                    <span className="shell-nav-caret" aria-hidden="true">
-                      ▾
-                    </span>
-                  )}
-                </Link>
-                {section.children && (
-                  <div className="shell-dropdown" role="menu">
-                    {section.children.map((child) => (
-                      <Link
-                        key={child.key}
-                        to={child.to}
-                        className="shell-dropdown-link"
-                        role="menuitem"
-                      >
-                        {t(child.labelKey)}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
+          <GlobalSearch />
 
           <div className="shell-header-right">
-            <GlobalSearch />
             <LanguageSwitcher />
             <Link
               to="/settings"
@@ -242,6 +211,40 @@ export const AppShell: React.FC = () => {
               ⏻
             </button>
           </div>
+        </div>
+
+        <div className="shell-header-nav">
+          <nav className="shell-nav" aria-label={t('shell.mainNavigation')}>
+            {visibleSections(user).map((section) => (
+              <div key={section.key} className="shell-nav-item">
+                <Link
+                  to={section.to}
+                  className={`shell-nav-link${activeSection?.key === section.key ? ' active' : ''}`}
+                >
+                  {t(section.labelKey)}
+                  {section.children && (
+                    <span className="shell-nav-caret" aria-hidden="true">
+                      ▾
+                    </span>
+                  )}
+                </Link>
+                {section.children && (
+                  <div className="shell-dropdown" role="menu">
+                    {section.children.map((child) => (
+                      <Link
+                        key={child.key}
+                        to={child.to}
+                        className="shell-dropdown-link"
+                        role="menuitem"
+                      >
+                        {t(child.labelKey)}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
         </div>
       </header>
 
