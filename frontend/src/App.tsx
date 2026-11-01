@@ -21,6 +21,7 @@ const TestDashboard = React.lazy(() => import('./pages/TestDashboard'));
 const AdminEmployeesPage = React.lazy(() => import('./pages/AdminEmployeesPage'));
 const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'));
 const EmailLogPage = React.lazy(() => import('./pages/EmailLogPage'));
+const GdprPage = React.lazy(() => import('./pages/GdprPage'));
 const MonitoringPage = React.lazy(() => import('./pages/MonitoringPage'));
 const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage'));
 const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
@@ -154,6 +155,14 @@ function App() {
                       element={
                         <RoleRoute roles={[]}>
                           <EmailLogPage />
+                        </RoleRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/gdpr"
+                      element={
+                        <RoleRoute roles={[]}>
+                          <GdprPage />
                         </RoleRoute>
                       }
                     />

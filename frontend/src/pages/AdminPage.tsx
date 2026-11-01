@@ -6,6 +6,7 @@ import {
   MdAssignment,
   MdMailOutline,
   MdMonitorHeart,
+  MdPrivacyTip,
   MdQueryStats,
   MdScience
 } from 'react-icons/md';
@@ -56,6 +57,14 @@ const AdminPage: React.FC = () => {
       icon: <MdMailOutline size={28} />,
       titleKey: 'adminPage.emailLogTitle',
       descriptionKey: 'adminPage.emailLogDescription',
+      allowed: sysAdminOnly
+    },
+    {
+      key: 'gdpr',
+      to: '/admin/gdpr',
+      icon: <MdPrivacyTip size={28} />,
+      titleKey: 'adminPage.gdprTitle',
+      descriptionKey: 'adminPage.gdprDescription',
       allowed: sysAdminOnly
     },
     {
