@@ -4,6 +4,7 @@ WORKDIR /app
 # Copy project files from both directories
 COPY DatabaseAPI.Tests/*.csproj ./DatabaseAPI.Tests/
 COPY DatabaseAPI/*.csproj ./DatabaseAPI/
+COPY Shared/ ./Shared/
 RUN dotnet restore ./DatabaseAPI.Tests/
 
 # Copy source code

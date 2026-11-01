@@ -1,13 +1,18 @@
 # Use the official .NET 8 SDK image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+# Build context is backend/ so the shared source linked from the csproj
+# (../Shared/ForwardedHeadersSetup.cs) is available inside the image.
 WORKDIR /src
 
-# Copy project file and restore dependencies
-COPY ["DatabaseAPI.csproj", "./"]
-RUN dotnet restore "DatabaseAPI.csproj"
+# Copy project file and shared code, then restore dependencies
+COPY ["DatabaseAPI/DatabaseAPI.csproj", "DatabaseAPI/"]
+COPY Shared/ Shared/
+RUN dotnet restore "DatabaseAPI/DatabaseAPI.csproj"
 
-# Copy the rest of the source code
-COPY . .
+# Copy the rest of the project source code
+COPY DatabaseAPI/ DatabaseAPI/
+WORKDIR /src/DatabaseAPI
 
 # Build the application
 RUN dotnet build "DatabaseAPI.csproj" -c Release -o /app/build

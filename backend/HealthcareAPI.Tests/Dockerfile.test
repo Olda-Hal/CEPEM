@@ -4,6 +4,7 @@ WORKDIR /app
 # Copy project files from both directories
 COPY HealthcareAPI.Tests/*.csproj ./HealthcareAPI.Tests/
 COPY HealthcareAPI/*.csproj ./HealthcareAPI/
+COPY Shared/ ./Shared/
 RUN dotnet restore ./HealthcareAPI.Tests/
 
 # Copy source code

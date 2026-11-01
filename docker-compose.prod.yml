@@ -21,8 +21,8 @@ services:
 
   healthcare-api:
     build:
-      context: ./backend/HealthcareAPI
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: HealthcareAPI/Dockerfile
     container_name: cepem_healthcare_api
     restart: unless-stopped
     ports:
@@ -50,8 +50,8 @@ services:
 
   database-api:
     build:
-      context: ./backend/DatabaseAPI
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: DatabaseAPI/Dockerfile
     container_name: cepem_database_api
     restart: unless-stopped
     ports:
