@@ -74,7 +74,10 @@ builder.Services.AddHttpClient("DatabaseAPI", client =>
 builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>(client =>
 {
     client.BaseAddress = new Uri(databaseApiUrl.TrimEnd('/') + "/");
-});
+})
+// DatabaseAPI requires X-Service-Key on every non-health request; without
+// this handler the audit POST would be rejected with 401.
+.AddHttpMessageHandler<HealthcareAPI.Handlers.AuthenticationHandler>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
@@ -203,11 +206,13 @@ app.UseSerilogRequestLogging(options =>
 });
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseMiddleware<ActivityLoggingMiddleware>();
 
 app.UseRateLimiter();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
+// Must run after authentication so the audit row carries the caller's
+// employee id/e-mail (and before authorization so rejected calls are logged).
+app.UseMiddleware<ActivityLoggingMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
