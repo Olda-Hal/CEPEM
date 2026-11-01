@@ -19,7 +19,7 @@ zůstávají pouze otevřené úkoly a nápady.
 
 - Znovupovolit výběr barevného schématu, až budou opraveny ostatní motivy: teď je natvrdo píchnutá `PINNED_THEME='aurora'` v `ThemeManager.ts` a odebraný `ThemeSelector` z AppShell headeru (komponenta zůstala v repu pro pozdější návrat; rozbité motivy = nebula-blue…crimson-night).
 - `theme-overrides.css` postupně rozebrat — je to globální `!important` kladivo držící theming pohromadě; cíl: per-component theme tokeny.
-- Audit log: staré záznamy nemají uživatele/metodu/status (v tabulce jen „—“) — datová díra v backendu, zvážit backfill nebo lepší render; root cause je popsaný v nové sekci (middleware před autentizací + chybějící service key u typed klienta).
+- Audit log: staré záznamy nemají uživatele/metodu/status (v tabulce jen „—“) — nové záznamy uživatele mají (opraveno pořadí middleware + service key), zbývá zvážit backfill starých řádků nebo lepší render.
 - DB hygiena: v tabulkách zaměstnanců jsou záznamy s UUID UID („Admin User“) a ve správě rolí bezjmenná role; skript na sjednocení + UNIQUE ochrana před duplicitními rolemi.
 - Nativní date/time inputy se renderují podle locale prohlížeče (v headless testech en-US formát) — sjednotit cs-CZ, případně vlastní pickery.
 - Naturální lokalizace: strojové anglické labely v tabulkách pacientů/zaměstnanců (Status „Živ“, názvy typů událostí/rolí z EN překladů) přeložit do CS i EN klíčů konzistentně.
@@ -33,13 +33,11 @@ zůstávají pouze otevřené úkoly a nápady.
 Nové kandidáty z průzkumu backendu, frontendu, provozu a veřejného webu.
 Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 
-**Doporučené první tři:** funkční audit log, oprava no-op update endpointů a výběr lékaře při potvrzení slotu.
+**Doporučené první:** výběr lékaře při potvrzení slotu, ForwardedHeaders a self-grant u `permissions.manage`.
 
 ### Bezpečnost a správnost dat
 
-- **Audit log v praxi nezapisuje requesty** — `ActivityLoggingMiddleware` běží před `UseAuthentication()` (prázdný `context.User`) a typed `IActivityLogService` nemá `AuthenticationHandler`, takže POST na DatabaseAPI skončí 401; posunout middleware za autentizaci, doplnit service-key handler a ověřit vznik záznamů (`HealthcareAPI/Program.cs`, `Middleware/ActivityLoggingMiddleware.cs`, `Services/ActivityLogService.cs`).
 - **ForwardedHeaders chybí** — za nginx/Cloudflare je `RemoteIpAddress` IP proxy, takže login limit i globální rate limit jsou jeden bucket pro všechny a IP v auditu/metrikách je špatná; nastavit důvěryhodné proxy rozsahy v obou API (`HealthcareAPI/Program.cs`, `DatabaseAPI/Program.cs`).
-- **Update nemocnice a typu vyšetření se neukládá** — oba `Update` načítají `.AsNoTracking()`, mění detached entitu a `SaveChanges` nic nezapíše; u nové adresy navíc vznikne osiřelý `Address`. Načíst trackovaně a doplnit regresní testy (`HospitalsController.cs`, `ExaminationTypesController.cs`).
 - **Skrytý pacient jde stále otevřít a obnovit** — `GetPatientDetail` nefiltruje `IsDeleted` a `RestorePatient` nemá kontrolu oprávnění jako `DeletePatient`; sjednotit viditelnost i authz (`PatientsController.cs`).
 - **`permissions.manage` umožňuje self-grant** — `PermissionsController` nevaliduje komu a jaké právo lze přiřadit; omezit na SysAdmin a assignable scope vynutit na serveru (`PermissionsController.cs`, `HealthcareAPI/AdminController.cs`).
 - **Update slotu nehlídá kolize ani stavový automat** — `UpdateSlot` mění časy bez overlap checku a dovolí `Reserved` bez osoby/lekáře; `ConfirmSlot` navíc posílá jako lékaře právě přihlášeného uživatele, takže Center/Country Admin se stane „lékařem“ rezervace. Doplnit výběr lékaře a validace (`ReservationSlotsController.cs`, `ReservationSlotsPage.tsx`).
@@ -48,7 +46,7 @@ Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 - **Relace a impersonace nejsou dohledatelné/odvolatelné** — 8h JWT bez refresh/logout endpointu, změna hesla ani deaktivace token nezruší, `AccessControlVersion` se neověřuje a audit nepropisuje `impersonator_id`; doplnit revokaci, server-side expiraci hesla a audit náhledu (`AuthService.cs`, `PermissionAuthorization.cs`, `AdminController.cs`).
 - **Veřejný intake mění kmenová data bez revize** — anonymní odkaz přepisuje jméno, datum narození, pojišťovnu i adresu bez schválení personálem a submit (pacient → event → označení linku) není transakční; zvážit frontu změn k potvrzení a transakci (`EventsController.cs`).
 - **PII v logech je v plaintextu** — `EmailLog` (adresa, jméno) i `ActivityLog` (e-mail) drží osobní údaje nešifrovaně a CSV export je vrací bez maskování; zvážit maskování/redakci a kratší retenci těchto sloupců (`EmailLog.cs`, `ActivityLog.cs`, `EmailLogsController.cs`).
-- **Chybí unit/integration testy kritických endpointů a stránek** — update nemocnice/typu vyšetření, kolize v `UpdateSlot`, čitelnost soft-deleted pacienta, reset hesla, uploady, kompletní intake a chybějící testy stránek (návštěvy, rezervace, admin, formuláře); doplnit cílené testy (doplňuje, nenahrazuje E2E TOP 1).
+- **Chybí unit/integration testy kritických endpointů a stránek** — kolize v `UpdateSlot`, čitelnost soft-deleted pacienta, reset hesla, uploady, kompletní intake a chybějící testy stránek (návštěvy, rezervace, admin, formuláře); doplnit cílené testy (doplňuje, nenahrazuje E2E TOP 1).
 
 ### Klinická agenda a produkt
 
