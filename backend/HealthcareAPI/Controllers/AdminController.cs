@@ -300,6 +300,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [RequirePermission("permissions.manage")]
+        [RequireRole("SysAdmin")]
         [HttpPost("access/employees/{employeeId}/permissions")]
         public async Task<IActionResult> AddEmployeePermission(int employeeId, [FromBody] JsonElement request)
         {
@@ -321,6 +322,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [RequirePermission("permissions.manage")]
+        [RequireRole("SysAdmin")]
         [HttpDelete("access/employee-permissions/{id}")]
         public async Task<IActionResult> DeleteEmployeePermission(int id)
         {
@@ -348,6 +350,7 @@ namespace HealthcareAPI.Controllers
         }
 
         [RequirePermission("permissions.manage")]
+        [RequireRole("SysAdmin")]
         [HttpPut("access/roles/{roleId}/rules")]
         public async Task<IActionResult> UpdateRolePermissionRules(int roleId, [FromBody] JsonElement request)
         {

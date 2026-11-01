@@ -5,6 +5,7 @@ using DatabaseAPI.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace DatabaseAPI.Tests.Controllers;
@@ -18,6 +19,7 @@ namespace DatabaseAPI.Tests.Controllers;
 public class PermissionsControllerTests : IDisposable
 {
     private readonly DatabaseContext _context;
+    private readonly Mock<IEmployeeScopeService> _scopeMock = new();
     private readonly PermissionsController _controller;
 
     public PermissionsControllerTests()
@@ -26,7 +28,16 @@ public class PermissionsControllerTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _context = new DatabaseContext(options);
-        _controller = new PermissionsController(_context);
+
+        SetActorRoles("SysAdmin");
+        _controller = new PermissionsController(_context, _scopeMock.Object);
+    }
+
+    private void SetActorRoles(params string[] roles)
+    {
+        _scopeMock
+            .Setup(service => service.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(1, roles, [], []));
     }
 
     public void Dispose()
@@ -264,6 +275,75 @@ public class PermissionsControllerTests : IDisposable
         var deleteResult = await _controller.DeleteEmployeePermission(created.Id);
         Assert.IsType<OkResult>(deleteResult);
         Assert.False(await _context.EmployeePermissions.AnyAsync(ep => ep.Id == created.Id));
+    }
+
+    [Fact]
+    public async Task CreateEmployeePermission_AsNonSysAdmin_ReturnsForbidden()
+    {
+        var (employee, _, permission) = SeedEmployeeWithRole();
+        SetActorRoles("Center Admin");
+
+        var result = await _controller.CreateEmployeePermission(new PermissionsController.CreateEmployeePermissionRequest
+        {
+            EmployeeId = employee.Id,
+            PermissionId = permission.Id,
+            Effect = "Allow"
+        });
+
+        var forbidden = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        Assert.False(await _context.EmployeePermissions.AnyAsync());
+    }
+
+    [Fact]
+    public async Task DeleteEmployeePermission_AsNonSysAdmin_ReturnsForbidden()
+    {
+        var (employee, _, permission) = SeedEmployeeWithRole();
+        var overrideRow = new EmployeePermission
+        {
+            UserId = employee.PersonId,
+            PermissionId = permission.Id,
+            Effect = "Allow"
+        };
+        _context.EmployeePermissions.Add(overrideRow);
+        await _context.SaveChangesAsync();
+        SetActorRoles("Center Admin");
+
+        var result = await _controller.DeleteEmployeePermission(overrideRow.Id);
+
+        var forbidden = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        Assert.True(await _context.EmployeePermissions.AnyAsync(ep => ep.Id == overrideRow.Id));
+    }
+
+    [Fact]
+    public async Task UpdateRolePermissions_AsNonSysAdmin_ReturnsForbidden()
+    {
+        var (_, role, permission) = SeedEmployeeWithRole();
+        SetActorRoles("Country Admin");
+
+        var result = await _controller.UpdateRolePermissions(role.Id, new PermissionsController.UpdateRolePermissionsRequest
+        {
+            Permissions = new List<PermissionsController.RolePermissionDto>
+            {
+                new() { PermissionId = permission.Id, Code = permission.Code, Effect = "Allow" }
+            }
+        });
+
+        var forbidden = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreatePermission_AsNonSysAdmin_ReturnsForbidden()
+    {
+        SetActorRoles("Center Admin");
+
+        var result = await _controller.Create(new Permission { Code = "self.grant" });
+
+        var forbidden = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        Assert.False(await _context.Permissions.AnyAsync(p => p.Code == "self.grant"));
     }
 }
 

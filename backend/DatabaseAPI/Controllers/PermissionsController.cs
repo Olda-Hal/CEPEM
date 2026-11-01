@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace DatabaseAPI.Controllers
@@ -10,10 +11,26 @@ namespace DatabaseAPI.Controllers
     public class PermissionsController : ControllerBase
     {
         private readonly DatabaseContext _context;
+        private readonly IEmployeeScopeService _employeeScopeService;
 
-        public PermissionsController(DatabaseContext context)
+        public PermissionsController(DatabaseContext context, IEmployeeScopeService employeeScopeService)
         {
             _context = context;
+            _employeeScopeService = employeeScopeService;
+        }
+
+        /// <summary>
+        /// Permission administration is the highest-privilege operation in the
+        /// system: a holder could grant themselves (or a role) any permission,
+        /// so only SysAdmin may mutate the catalog, role grants or overrides.
+        /// </summary>
+        private async Task<ObjectResult?> RequireSysAdminAsync(CancellationToken cancellationToken = default)
+        {
+            var actor = await _employeeScopeService.GetActorScopeAsync(cancellationToken);
+            return actor.Roles.Contains("SysAdmin")
+                ? null
+                : StatusCode(StatusCodes.Status403Forbidden,
+                    "Správu oprávnění může provádět pouze SysAdmin.");
         }
 
         [HttpGet]
@@ -25,6 +42,9 @@ namespace DatabaseAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Permission>> Create(Permission p)
         {
+            var denied = await RequireSysAdminAsync();
+            if (denied != null) return denied;
+
             _context.Permissions.Add(p);
             await _context.SaveChangesAsync();
             return Ok(p);
@@ -71,6 +91,9 @@ namespace DatabaseAPI.Controllers
         [HttpPut("/api/admin/role-permissions")]
         public async Task<ActionResult> UpdateRolePermissions([FromQuery] int roleId, UpdateRolePermissionsRequest request)
         {
+            var denied = await RequireSysAdminAsync();
+            if (denied != null) return denied;
+
             var role = await _context.Roles.FindAsync(roleId);
             if (role == null) return NotFound("Role not found");
 
@@ -108,6 +131,9 @@ namespace DatabaseAPI.Controllers
         [HttpPost("/api/admin/employee-permissions")]
         public async Task<ActionResult<EmployeePermission>> CreateEmployeePermission(CreateEmployeePermissionRequest req)
         {
+            var denied = await RequireSysAdminAsync();
+            if (denied != null) return denied;
+
             var employee = await _context.Employees.Include(e => e.Person).FirstOrDefaultAsync(e => e.Id == req.EmployeeId);
             if (employee == null) return NotFound("Employee not found");
 
@@ -128,6 +154,9 @@ namespace DatabaseAPI.Controllers
         [HttpDelete("/api/admin/employee-permissions/{id}")]
         public async Task<ActionResult> DeleteEmployeePermission(int id)
         {
+            var denied = await RequireSysAdminAsync();
+            if (denied != null) return denied;
+
             var ep = await _context.EmployeePermissions.FindAsync(id);
             if (ep == null) return NotFound();
             _context.EmployeePermissions.Remove(ep);
