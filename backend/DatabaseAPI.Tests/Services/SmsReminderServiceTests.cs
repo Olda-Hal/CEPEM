@@ -85,16 +85,20 @@ public class SmsReminderServiceTests : IDisposable
         return slot;
     }
 
-    private void SeedTemplate(string language = "cs")
+    private void SeedTemplate(
+        string language = "cs",
+        string body = "Pripominka {{date}} v {{time}}",
+        string scopeType = CommunicationScopes.Global,
+        int scopeId = 0)
     {
         _context.CommunicationTemplates.Add(new CommunicationTemplate
         {
             Code = CommunicationTemplateCodes.AppointmentReminderSms,
             Channel = CommunicationChannels.Sms,
             Language = language,
-            ScopeType = CommunicationScopes.Global,
-            ScopeId = 0,
-            Body = "Pripominka {{date}} v {{time}}",
+            ScopeType = scopeType,
+            ScopeId = scopeId,
+            Body = body,
             IsActive = true
         });
         _context.SaveChanges();
@@ -152,6 +156,94 @@ public class SmsReminderServiceTests : IDisposable
 
         Assert.Equal(0, sent);
         sms.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task RunOnce_WithoutTemplate_SkipsAndDoesNotClaimSlot()
+    {
+        var person = SeedPersonWithPhone();
+        var slot = SeedSlot(DateTime.UtcNow.AddHours(12), person);
+
+        var sms = new Mock<ISmsService>();
+        var service = CreateService(sms.Object);
+
+        var sent = await service.RunOnceAsync(_context, _templates, sms.Object, leadHours: 24);
+
+        Assert.Equal(0, sent);
+        sms.VerifyNoOtherCalls();
+        var stored = await _context.ReservationSlots.SingleAsync(entry => entry.Id == slot.Id);
+        Assert.Null(stored.SmsReminderSentAtUtc);
+    }
+
+    [Fact]
+    public async Task RunOnce_SendFailure_ReleasesClaimForRetry()
+    {
+        var person = SeedPersonWithPhone();
+        var slot = SeedSlot(DateTime.UtcNow.AddHours(12), person);
+        SeedTemplate();
+
+        var sms = new Mock<ISmsService>();
+        sms.Setup(service => service.SendAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<SmsLogContext>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("gateway down"));
+
+        var service = CreateService(sms.Object);
+        var sent = await service.RunOnceAsync(_context, _templates, sms.Object, leadHours: 24);
+
+        Assert.Equal(0, sent);
+        var stored = await _context.ReservationSlots.SingleAsync(entry => entry.Id == slot.Id);
+        Assert.Null(stored.SmsReminderSentAtUtc);
+    }
+
+    [Fact]
+    public async Task RunOnce_UsesDutchLanguageForNlSlot()
+    {
+        var person = SeedPersonWithPhone();
+        person.CountryCode = "NL";
+        await _context.SaveChangesAsync();
+        var slot = SeedSlot(DateTime.UtcNow.AddHours(12), person);
+        slot.CountryCode = "NL";
+        await _context.SaveChangesAsync();
+        SeedTemplate(language: "nl", body: "Herinnering {{date}}");
+
+        var sms = new Mock<ISmsService>();
+        var service = CreateService(sms.Object);
+
+        var sent = await service.RunOnceAsync(_context, _templates, sms.Object, leadHours: 24);
+
+        Assert.Equal(1, sent);
+        sms.Verify(service => service.SendAsync(
+            It.IsAny<string>(),
+            It.Is<string>(body => body.StartsWith("Herinnering")),
+            It.IsAny<string>(),
+            It.IsAny<SmsLogContext>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RunOnce_CenterTemplateOverridesGlobal()
+    {
+        var person = SeedPersonWithPhone();
+        var slot = SeedSlot(DateTime.UtcNow.AddHours(12), person);
+        SeedTemplate(body: "Global {{date}}");
+        SeedTemplate(body: "Center {{date}}", scopeType: CommunicationScopes.Center, scopeId: slot.HospitalId);
+
+        var sms = new Mock<ISmsService>();
+        var service = CreateService(sms.Object);
+
+        var sent = await service.RunOnceAsync(_context, _templates, sms.Object, leadHours: 24);
+
+        Assert.Equal(1, sent);
+        sms.Verify(service => service.SendAsync(
+            It.IsAny<string>(),
+            It.Is<string>(body => body.StartsWith("Center")),
+            It.IsAny<string>(),
+            It.IsAny<SmsLogContext>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

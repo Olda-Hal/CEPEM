@@ -38,7 +38,8 @@ public class CommunicationTemplateServiceTests : IDisposable
         string body = "Scope body",
         bool active = true,
         string code = CommunicationTemplateCodes.IntakeReminder,
-        string channel = CommunicationChannels.Email)
+        string channel = CommunicationChannels.Email,
+        DateTime? updatedAtUtc = null)
     {
         var template = new CommunicationTemplate
         {
@@ -49,7 +50,8 @@ public class CommunicationTemplateServiceTests : IDisposable
             ScopeId = scopeId,
             Subject = "Subject",
             Body = body,
-            IsActive = active
+            IsActive = active,
+            UpdatedAtUtc = updatedAtUtc ?? DateTime.UtcNow
         };
         _context.CommunicationTemplates.Add(template);
         _context.SaveChanges();
@@ -104,6 +106,56 @@ public class CommunicationTemplateServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Resolve_DoesNotMixChannels()
+    {
+        Seed(CommunicationScopes.Global, 0, channel: CommunicationChannels.Sms, body: "sms");
+
+        var email = await _service.ResolveAsync(
+            CommunicationTemplateCodes.IntakeReminder, CommunicationChannels.Email, "cs", 7, 203);
+        var sms = await _service.ResolveAsync(
+            CommunicationTemplateCodes.IntakeReminder, CommunicationChannels.Sms, "cs", 7, 203);
+
+        Assert.Null(email);
+        Assert.NotNull(sms);
+    }
+
+    [Fact]
+    public async Task Resolve_CountryOverrideForAnotherCountry_FallsBackToGlobal()
+    {
+        var global = Seed(CommunicationScopes.Global, 0, body: "global");
+        Seed(CommunicationScopes.Country, 528, body: "NL country");
+
+        var template = await _service.ResolveAsync(
+            CommunicationTemplateCodes.IntakeReminder, CommunicationChannels.Email, "cs", 7, 203);
+
+        Assert.Equal(global.Id, template?.Id);
+    }
+
+    [Fact]
+    public async Task Resolve_FallsBackToCzechWhenRequestedAndEnglishAreMissing()
+    {
+        var czech = Seed(CommunicationScopes.Global, 0, language: "cs", body: "czech");
+
+        var template = await _service.ResolveAsync(
+            CommunicationTemplateCodes.IntakeReminder, CommunicationChannels.Email, "de", 7, 276);
+
+        Assert.Equal(czech.Id, template?.Id);
+    }
+
+    [Fact]
+    public async Task Resolve_PrefersMostRecentlyUpdatedTemplateWithinSameScope()
+    {
+        var older = Seed(CommunicationScopes.Global, 0, body: "older", updatedAtUtc: DateTime.UtcNow.AddDays(-2));
+        var newer = Seed(CommunicationScopes.Global, 0, body: "newer", updatedAtUtc: DateTime.UtcNow);
+
+        var template = await _service.ResolveAsync(
+            CommunicationTemplateCodes.IntakeReminder, CommunicationChannels.Email, "cs", 7, 203);
+
+        Assert.Equal(newer.Id, template?.Id);
+        Assert.NotEqual(older.Id, template?.Id);
+    }
+
+    [Fact]
     public void Render_ReplacesKnownValuesAndKeepsUnknownPlaceholders()
     {
         var rendered = _service.Render(
@@ -115,5 +167,19 @@ public class CommunicationTemplateServiceTests : IDisposable
             });
 
         Assert.Equal("Hello Eva, visit . {{unknown}}", rendered);
+    }
+
+    [Fact]
+    public void Render_AllowsWhitespaceInsidePlaceholders()
+    {
+        var rendered = _service.Render(
+            "Hello {{ name }}, visit {{  date  }}.",
+            new Dictionary<string, string?>
+            {
+                ["name"] = "Eva",
+                ["date"] = "12. 11. 2026"
+            });
+
+        Assert.Equal("Hello Eva, visit 12. 11. 2026.", rendered);
     }
 }

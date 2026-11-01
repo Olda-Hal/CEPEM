@@ -20,6 +20,8 @@ public class ReservationSlotsControllerTests : IDisposable
 {
     private readonly DatabaseContext _context;
     private readonly Mock<IEmployeeScopeService> _scopeMock = new();
+    private readonly Mock<IEmailService> _emailMock = new();
+    private readonly Mock<ICommunicationTemplateService> _templateMock = new();
     private readonly ReservationSlotsController _controller;
 
     public ReservationSlotsControllerTests()
@@ -45,8 +47,8 @@ public class ReservationSlotsControllerTests : IDisposable
             new PersonMatchingService(_context),
             new Mock<IVisitService>().Object,
             new IntakeFormLinkService(_context),
-            new Mock<IEmailService>().Object,
-            new Mock<ICommunicationTemplateService>().Object);
+            _emailMock.Object,
+            _templateMock.Object);
     }
 
     private void SetActor(
@@ -554,6 +556,93 @@ public class ReservationSlotsControllerTests : IDisposable
         var dto = Assert.IsType<ReservationSlotDto>(ok.Value);
         Assert.Equal("Reserved", dto.Status);
         Assert.Equal(doctor.Id, dto.DoctorId);
+    }
+
+    [Fact]
+    public async Task ConfirmSlot_SendsConfirmedTemplateToThePerson()
+    {
+        var hospitalId = SeedHospital();
+        var person = SeedPersonWithContacts("Eva", "eva@example.com", "+420777123456");
+        var slot = SeedSlot(
+            hospitalId, _base, _base.AddHours(1),
+            status: SlotStatus.Blocked, personId: person.Id);
+        var doctorPerson = new Person { FirstName = "MUDr", LastName = "Doktor", UID = "00000012", Gender = "M", CountryCode = "CZ", Active = true };
+        _context.Persons.Add(doctorPerson);
+        await _context.SaveChangesAsync();
+        var doctor = new Employee { PersonId = doctorPerson.Id, PasswordHash = "x", Salt = "s" };
+        _context.Employees.Add(doctor);
+        await _context.SaveChangesAsync();
+
+        _templateMock
+            .Setup(service => service.ResolveAsync(
+                CommunicationTemplateCodes.ReservationConfirmed,
+                CommunicationChannels.Email,
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CommunicationTemplate
+            {
+                Code = CommunicationTemplateCodes.ReservationConfirmed,
+                Channel = CommunicationChannels.Email,
+                Language = "cs",
+                Subject = "Potvrzeni",
+                Body = "Telo {{patientName}}"
+            });
+        _templateMock
+            .Setup(service => service.Render(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, string?>>()))
+            .Returns("Rendered confirmation");
+
+        var result = await _controller.ConfirmSlot(slot.Id, new ConfirmReservationSlotRequest { DoctorId = doctor.Id });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        _emailMock.Verify(service => service.SendTemplatedAsync(
+            "eva@example.com",
+            "Potvrzeni",
+            "Rendered confirmation",
+            EmailLogKinds.ReservationConfirmed,
+            It.Is<EmailLogContext>(context => context.ReservationSlotId == slot.Id)), Times.Once);
+    }
+
+    [Fact]
+    public async Task RejectSlot_SendsCancellationTemplateWhenPersonIsKnown()
+    {
+        var hospitalId = SeedHospital();
+        var person = SeedPersonWithContacts("Eva", "eva@example.com", "+420777123456");
+        var slot = SeedSlot(
+            hospitalId, _base, _base.AddHours(1),
+            status: SlotStatus.Blocked, personId: person.Id,
+            examinationTypeId: SeedExaminationType());
+
+        _templateMock
+            .Setup(service => service.ResolveAsync(
+                CommunicationTemplateCodes.ReservationCancelled,
+                CommunicationChannels.Email,
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CommunicationTemplate
+            {
+                Code = CommunicationTemplateCodes.ReservationCancelled,
+                Channel = CommunicationChannels.Email,
+                Language = "cs",
+                Subject = "Zruseni",
+                Body = "Telo"
+            });
+        _templateMock
+            .Setup(service => service.Render(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, string?>>()))
+            .Returns("Rendered cancellation");
+
+        var result = await _controller.RejectSlot(slot.Id);
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        _emailMock.Verify(service => service.SendTemplatedAsync(
+            "eva@example.com",
+            "Zruseni",
+            "Rendered cancellation",
+            EmailLogKinds.ReservationCancelled,
+            It.IsAny<EmailLogContext>()), Times.Once);
     }
 
     [Fact]

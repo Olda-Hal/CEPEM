@@ -123,15 +123,15 @@ public class CommunicationTemplatesController : ControllerBase
             return Conflict("This template variant already exists");
         }
 
-        if (template.ScopeType == CommunicationScopes.Center &&
-            !await _context.Hospitals.AnyAsync(hospital => hospital.Id == template.ScopeId))
+        var hospitalNames = await LoadHospitalNamesAsync(template.ScopeType, template.ScopeId);
+        if (template.ScopeType == CommunicationScopes.Center && hospitalNames.Count == 0)
         {
             return BadRequest("Unknown center");
         }
 
         _context.CommunicationTemplates.Add(template);
         await _context.SaveChangesAsync();
-        return Ok(ToDto(template, new Dictionary<int, string>()));
+        return Ok(ToDto(template, hospitalNames));
     }
 
     [HttpPut("{id:int}")]
@@ -163,8 +163,8 @@ public class CommunicationTemplatesController : ControllerBase
             return Conflict("This template variant already exists");
         }
 
-        if (updated.ScopeType == CommunicationScopes.Center &&
-            !await _context.Hospitals.AnyAsync(hospital => hospital.Id == updated.ScopeId))
+        var hospitalNames = await LoadHospitalNamesAsync(updated.ScopeType, updated.ScopeId);
+        if (updated.ScopeType == CommunicationScopes.Center && hospitalNames.Count == 0)
         {
             return BadRequest("Unknown center");
         }
@@ -180,7 +180,7 @@ public class CommunicationTemplatesController : ControllerBase
         template.UpdatedAtUtc = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return Ok(ToDto(template, new Dictionary<int, string>()));
+        return Ok(ToDto(template, hospitalNames));
     }
 
     [HttpDelete("{id:int}")]
@@ -219,6 +219,22 @@ public class CommunicationTemplatesController : ControllerBase
             .ToListAsync();
 
         return Ok(rows);
+    }
+
+    private async Task<Dictionary<int, string>> LoadHospitalNamesAsync(string scopeType, int scopeId)
+    {
+        if (scopeType != CommunicationScopes.Center)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        var hospital = await _context.Hospitals
+            .Where(entry => entry.Id == scopeId)
+            .Select(entry => new { entry.Id, entry.Name })
+            .FirstOrDefaultAsync();
+        return hospital == null
+            ? new Dictionary<int, string>()
+            : new Dictionary<int, string> { [hospital.Id] = hospital.Name ?? $"#{hospital.Id}" };
     }
 
     private static string? Validate(SaveCommunicationTemplateRequest request)

@@ -37,7 +37,7 @@ public interface ICommunicationTemplateService
 public class CommunicationTemplateService : ICommunicationTemplateService
 {
     private static readonly Regex PlaceholderPattern = new(
-        @"\{\{(\w+)\}\}", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        @"\{\{\s*(\w+)\s*\}\}", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly DatabaseContext _context;
 

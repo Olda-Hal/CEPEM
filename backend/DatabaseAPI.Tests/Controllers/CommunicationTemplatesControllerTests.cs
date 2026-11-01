@@ -120,6 +120,109 @@ public class CommunicationTemplatesControllerTests : IDisposable
         Assert.Empty(await _context.CommunicationTemplates.ToListAsync());
     }
 
+
+    [Fact]
+    public async Task Create_CenterScopeResolvesHospitalName()
+    {
+        var hospital = new Hospital { Name = "CEPEM Praha", CountryScopeId = 203 };
+        _context.Hospitals.Add(hospital);
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.Create(Request(
+            scopeType: CommunicationScopes.Center,
+            scopeId: hospital.Id));
+
+        var dto = Assert.IsType<CommunicationTemplateDto>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("CEPEM Praha", dto.ScopeName);
+    }
+
+    [Fact]
+    public async Task Create_UnknownCenterReturnsBadRequest()
+    {
+        var result = await _controller.Create(Request(
+            scopeType: CommunicationScopes.Center,
+            scopeId: 999));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Create_SmsWithoutSubjectIsAllowed()
+    {
+        var result = await _controller.Create(Request(
+            channel: CommunicationChannels.Sms,
+            subject: null,
+            body: "SMS text"));
+
+        var dto = Assert.IsType<CommunicationTemplateDto>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Null(dto.Subject);
+        Assert.Equal(CommunicationChannels.Sms, dto.Channel);
+    }
+
+    [Fact]
+    public async Task Create_RejectsUnknownChannelAndBadLanguage()
+    {
+        var badChannel = await _controller.Create(Request(channel: "Push"));
+        Assert.IsType<BadRequestObjectResult>(badChannel.Result);
+
+        var badLanguage = await _controller.Create(Request(language: "x"));
+        Assert.IsType<BadRequestObjectResult>(badLanguage.Result);
+    }
+
+    [Fact]
+    public async Task Update_ToDuplicateVariantReturnsConflict()
+    {
+        var first = Assert.IsType<CommunicationTemplateDto>(
+            Assert.IsType<OkObjectResult>((await _controller.Create(Request(language: "cs"))).Result).Value);
+        await _controller.Create(Request(language: "en"));
+
+        var result = await _controller.Update(first.Id, Request(language: "en"));
+
+        Assert.IsType<ConflictObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetAll_FiltersByScopeAndSearch()
+    {
+        await _controller.Create(Request(body: "Pripominka vstupniho formularu"));
+        await _controller.Create(Request(language: "en", body: "Intake reminder"));
+
+        var bySearch = await _controller.GetAll(search: "vstupniho");
+        var searchRows = Assert.IsAssignableFrom<List<CommunicationTemplateDto>>(
+            Assert.IsType<OkObjectResult>(bySearch.Result).Value);
+        Assert.Single(searchRows);
+
+        var byScope = await _controller.GetAll(scopeType: CommunicationScopes.Global, scopeId: 0);
+        var scopeRows = Assert.IsAssignableFrom<List<CommunicationTemplateDto>>(
+            Assert.IsType<OkObjectResult>(byScope.Result).Value);
+        Assert.Equal(2, scopeRows.Count);
+    }
+
+    [Fact]
+    public async Task GetSmsLog_ClampsLimit()
+    {
+        for (var index = 0; index < 3; index++)
+        {
+            _context.SmsLogs.Add(new SmsLog
+            {
+                CreatedAtUtc = DateTime.UtcNow.AddMinutes(index),
+                ToNumber = $"+420{index}",
+                TemplateCode = CommunicationTemplateCodes.AppointmentReminderSms,
+                Status = EmailLogStatuses.Sent
+            });
+        }
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.GetSmsLog(limit: 2);
+
+        var rows = Assert.IsAssignableFrom<List<SmsLogDto>>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(2, rows.Count);
+        Assert.Equal("+4202", rows[0].ToNumber);
+    }
+
     [Fact]
     public async Task GetSmsLog_ReturnsNewestFirst()
     {
