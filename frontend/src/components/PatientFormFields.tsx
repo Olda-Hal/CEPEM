@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface PatientFormData {
   firstName: string;
@@ -99,6 +100,7 @@ const SignaturePad: React.FC<{
   disabled: boolean;
   onChange: (value: string) => void;
 }> = ({ value, disabled, onChange }) => {
+  const { t } = useTranslation();
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const drawingRef = React.useRef(false);
   const currentStrokeRef = React.useRef<SignatureStroke>([]);
@@ -231,7 +233,7 @@ const SignaturePad: React.FC<{
           onClick={clearSignature}
           disabled={disabled}
         >
-          Vymazat podpis
+          {t('patientForm.clearSignature')}
         </button>
       </div>
     </div>
@@ -245,14 +247,16 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
   disabled = false,
   className = 'form-section'
 }) => {
+  const { t } = useTranslation();
+
   return (
     <>
       {/* Základní údaje */}
       <section className={className}>
-        <h2>Základní údaje</h2>
+        <h2>{t('patientForm.basicInfo')}</h2>
         <div className="form-row">
           <div className="form-field">
-            <label>Příjmení *</label>
+            <label>{t('patientForm.lastName')} *</label>
             <input
               type="text"
               value={form.lastName}
@@ -262,7 +266,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Jméno *</label>
+            <label>{t('patientForm.firstName')} *</label>
             <input
               type="text"
               value={form.firstName}
@@ -272,7 +276,10 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Datum narození {!showPhoto ? '*' : ''}</label>
+            <label>
+              {t('patientForm.dateOfBirth')}
+              {!showPhoto ? ' *' : ''}
+            </label>
             <input
               type="date"
               value={form.dateOfBirth}
@@ -285,20 +292,23 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
 
         <div className="form-row">
           <div className="form-field">
-            <label>Pohlaví {!showPhoto ? '*' : ''}</label>
+            <label>
+              {t('patientForm.gender')}
+              {!showPhoto ? ' *' : ''}
+            </label>
             <select
               value={form.gender}
               onChange={(e) => onChange('gender', e.target.value)}
               required={showPhoto ? false : true}
               disabled={disabled}
             >
-              <option value="">Vyberte pohlaví</option>
-              <option value="M">Muž</option>
-              <option value="F">Žena</option>
+              <option value="">{t('patientForm.selectGender')}</option>
+              <option value="M">{t('patientForm.male')}</option>
+              <option value="F">{t('patientForm.female')}</option>
             </select>
           </div>
           <div className="form-field">
-            <label>Váha (kg)</label>
+            <label>{t('patientForm.weight')}</label>
             <input
               type="number"
               step="0.1"
@@ -308,7 +318,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Výška (cm)</label>
+            <label>{t('patientForm.height')}</label>
             <input
               type="number"
               value={form.height}
@@ -320,7 +330,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
 
         <div className="form-row">
           <div className="form-field">
-            <label>Pojišťovna</label>
+            <label>{t('patientForm.insuranceCompany')}</label>
             <input
               type="text"
               value={form.insuranceCompany}
@@ -329,7 +339,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Email</label>
+            <label>{t('patientForm.email')}</label>
             <input
               type="email"
               value={form.email}
@@ -338,7 +348,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Telefon</label>
+            <label>{t('patientForm.phone')}</label>
             <input
               type="tel"
               value={form.phone}
@@ -350,17 +360,17 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
 
         <div className="form-row">
           <div className="form-field">
-            <label>Adresa</label>
+            <label>{t('patientForm.address')}</label>
             <input
               type="text"
               value={form.address}
               onChange={(e) => onChange('address', e.target.value)}
-              placeholder="Ulice, město"
+              placeholder={t('patientForm.addressPlaceholder')}
               disabled={disabled}
             />
           </div>
           <div className="form-field">
-            <label>PSČ</label>
+            <label>{t('patientForm.postalCode')}</label>
             <input
               type="text"
               value={form.postalCode}
@@ -373,7 +383,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
 
       {/* Užívám léky na */}
       <section className={className}>
-        <h2>Užívám léky na:</h2>
+        <h2>{t('patientForm.medications')}</h2>
         <div className="checkbox-grid">
           <label className="checkbox-label">
             <input
@@ -382,7 +392,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medBloodPressure', e.target.checked)}
               disabled={disabled}
             />
-            Tlak
+            {t('patientForm.medBloodPressure')}
           </label>
           <label className="checkbox-label">
             <input
@@ -391,7 +401,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medHeart', e.target.checked)}
               disabled={disabled}
             />
-            Srdce
+            {t('patientForm.medHeart')}
           </label>
           <label className="checkbox-label">
             <input
@@ -400,7 +410,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medCholesterol', e.target.checked)}
               disabled={disabled}
             />
-            Cholesterol
+            {t('patientForm.medCholesterol')}
           </label>
           <label className="checkbox-label">
             <input
@@ -409,7 +419,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medBloodThinners', e.target.checked)}
               disabled={disabled}
             />
-            Srážlivost
+            {t('patientForm.medBloodThinners')}
           </label>
           <label className="checkbox-label">
             <input
@@ -418,7 +428,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medDiabetes', e.target.checked)}
               disabled={disabled}
             />
-            Cukrovka
+            {t('patientForm.medDiabetes')}
           </label>
           <label className="checkbox-label">
             <input
@@ -427,7 +437,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medThyroid', e.target.checked)}
               disabled={disabled}
             />
-            Štítná žláza
+            {t('patientForm.medThyroid')}
           </label>
           <label className="checkbox-label">
             <input
@@ -436,7 +446,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medNerves', e.target.checked)}
               disabled={disabled}
             />
-            Nervy
+            {t('patientForm.medNerves')}
           </label>
           <label className="checkbox-label">
             <input
@@ -445,7 +455,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medPsych', e.target.checked)}
               disabled={disabled}
             />
-            Psychika
+            {t('patientForm.medPsych')}
           </label>
           <label className="checkbox-label">
             <input
@@ -454,7 +464,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medDigestion', e.target.checked)}
               disabled={disabled}
             />
-            Zažívání
+            {t('patientForm.medDigestion')}
           </label>
           <label className="checkbox-label">
             <input
@@ -463,7 +473,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medPain', e.target.checked)}
               disabled={disabled}
             />
-            Bolest
+            {t('patientForm.medPain')}
           </label>
           <label className="checkbox-label">
             <input
@@ -472,7 +482,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medDehydration', e.target.checked)}
               disabled={disabled}
             />
-            Odvodnění
+            {t('patientForm.medDehydration')}
           </label>
           <label className="checkbox-label">
             <input
@@ -481,7 +491,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medBreathing', e.target.checked)}
               disabled={disabled}
             />
-            Dýchání
+            {t('patientForm.medBreathing')}
           </label>
           <label className="checkbox-label">
             <input
@@ -490,7 +500,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medAntibiotics', e.target.checked)}
               disabled={disabled}
             />
-            Antibiotika
+            {t('patientForm.medAntibiotics')}
           </label>
           <label className="checkbox-label">
             <input
@@ -499,7 +509,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medSupplements', e.target.checked)}
               disabled={disabled}
             />
-            Doplňky stravy
+            {t('patientForm.medSupplements')}
           </label>
           <label className="checkbox-label">
             <input
@@ -508,14 +518,14 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('medAllergies', e.target.checked)}
               disabled={disabled}
             />
-            Alergie
+            {t('patientForm.medAllergies')}
           </label>
         </div>
       </section>
 
       {/* Doplňující informace */}
       <section className={className}>
-        <h2>Doplňující informace</h2>
+        <h2>{t('patientForm.additionalInfo')}</h2>
         <div className="checkbox-grid">
           <label className="checkbox-label">
             <input
@@ -524,7 +534,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('poorSleep', e.target.checked)}
               disabled={disabled}
             />
-            Špatný spánek
+            {t('patientForm.poorSleep')}
           </label>
           <label className="checkbox-label">
             <input
@@ -533,7 +543,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('digestiveIssues', e.target.checked)}
               disabled={disabled}
             />
-            Zažívání
+            {t('patientForm.digestiveIssues')}
           </label>
           <label className="checkbox-label">
             <input
@@ -542,7 +552,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('physicalStress', e.target.checked)}
               disabled={disabled}
             />
-            Fyzická zátěž
+            {t('patientForm.physicalStress')}
           </label>
           <label className="checkbox-label">
             <input
@@ -551,7 +561,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('mentalStress', e.target.checked)}
               disabled={disabled}
             />
-            Psychická zátěž
+            {t('patientForm.mentalStress')}
           </label>
           <label className="checkbox-label">
             <input
@@ -560,7 +570,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('smoking', e.target.checked)}
               disabled={disabled}
             />
-            Kouření
+            {t('patientForm.smoking')}
           </label>
           <label className="checkbox-label">
             <input
@@ -569,12 +579,12 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('fatigue', e.target.checked)}
               disabled={disabled}
             />
-            Pocity únavy
+            {t('patientForm.fatigue')}
           </label>
         </div>
         <div className="form-row">
           <div className="form-field">
-            <label>Poslední jídlo před (hod.)</label>
+            <label>{t('patientForm.lastMealHours')}</label>
             <input
               type="number"
               value={form.lastMealHours}
@@ -587,19 +597,19 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
 
       {/* Další informace o stavu organizmu */}
       <section className={className}>
-        <h2>Další informace o stavu organizmu</h2>
+        <h2>{t('patientForm.healthStatusInfo')}</h2>
         <textarea
           rows={6}
           value={form.additionalHealthInfo}
           onChange={(e) => onChange('additionalHealthInfo', e.target.value)}
-          placeholder="Další informace o stavu organizmu, které půjdou do komentáře k pacientovi..."
+          placeholder={t('patientForm.healthStatusPlaceholder')}
           disabled={disabled}
         />
       </section>
 
       {/* COVID */}
       <section className={className}>
-        <h2>COVID</h2>
+        <h2>{t('patientForm.covid')}</h2>
         <div className="form-row">
           <label className="checkbox-label">
             <input
@@ -608,18 +618,18 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('hadCovid', e.target.checked)}
               disabled={disabled}
             />
-            Prodělal/a jsem COVID
+            {t('patientForm.hadCovid')}
           </label>
         </div>
         {form.hadCovid && (
           <div className="form-row">
             <div className="form-field">
-              <label>Kdy?</label>
+              <label>{t('patientForm.covidWhen')}</label>
               <input
                 type="text"
                 value={form.covidWhen}
                 onChange={(e) => onChange('covidWhen', e.target.value)}
-                placeholder="např. 2021, lehký průběh"
+                placeholder={t('patientForm.covidWhenPlaceholder')}
                 disabled={disabled}
               />
             </div>
@@ -633,7 +643,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('covidVaccine', e.target.checked)}
               disabled={disabled}
             />
-            Vakcinace proti COVID-u
+            {t('patientForm.covidVaccine')}
           </label>
         </div>
         <div className="form-row">
@@ -644,19 +654,19 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('vaccinesAfter2023', e.target.checked)}
               disabled={disabled}
             />
-            Vakcinace jiné po r.2023
+            {t('patientForm.vaccinesAfter2023')}
           </label>
         </div>
       </section>
 
       {/* Mamární diagnostika */}
       <section className={`${className} optional-section`}>
-        <h2>Doplnění jen k mamární diagnostice MEIK (nepovinné)</h2>
-        <p className="section-note">Tuto sekci vyplňte pouze pokud je relevantní</p>
+        <h2>{t('patientForm.mammarySection')}</h2>
+        <p className="section-note">{t('patientForm.mammarySectionNote')}</p>
 
         <div className="form-row">
           <div className="form-field">
-            <label>Kdy poslední menzes</label>
+            <label>{t('patientForm.lastMenstruationDate')}</label>
             <input
               type="text"
               value={form.lastMenstruationDate}
@@ -665,7 +675,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Po kolika dnech se opakuje</label>
+            <label>{t('patientForm.menstruationCycleDays')}</label>
             <input
               type="number"
               value={form.menstruationCycleDays}
@@ -674,7 +684,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Počet let od poslední menzes</label>
+            <label>{t('patientForm.yearsSinceLastMenstruation')}</label>
             <input
               type="number"
               value={form.yearsSinceLastMenstruation}
@@ -692,12 +702,12 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('gaveBirth', e.target.checked)}
               disabled={disabled}
             />
-            Rodila
+            {t('patientForm.gaveBirth')}
           </label>
           {form.gaveBirth && (
             <>
               <div className="form-field">
-                <label>Kolikrát</label>
+                <label>{t('patientForm.birthCount')}</label>
                 <input
                   type="number"
                   value={form.birthCount}
@@ -706,12 +716,12 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
                 />
               </div>
               <div className="form-field">
-                <label>Kdy</label>
+                <label>{t('patientForm.birthWhen')}</label>
                 <input
                   type="text"
                   value={form.birthWhen}
                   onChange={(e) => onChange('birthWhen', e.target.value)}
-                  placeholder="např. 2015, 2018"
+                  placeholder={t('patientForm.birthWhenPlaceholder')}
                   disabled={disabled}
                 />
               </div>
@@ -727,11 +737,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('breastfed', e.target.checked)}
               disabled={disabled}
             />
-            Kojila
+            {t('patientForm.breastfed')}
           </label>
           {form.breastfed && (
             <div className="form-field">
-              <label>Počet měsíců</label>
+              <label>{t('patientForm.breastfeedingMonths')}</label>
               <input
                 type="number"
                 value={form.breastfeedingMonths}
@@ -750,7 +760,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('breastfeedingInflammation', e.target.checked)}
               disabled={disabled}
             />
-            Záněty při kojení?
+            {t('patientForm.breastfeedingInflammation')}
           </label>
           <label className="checkbox-label">
             <input
@@ -759,7 +769,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('endedWithInflammation', e.target.checked)}
               disabled={disabled}
             />
-            Končilo kojení zánětem?
+            {t('patientForm.endedWithInflammation')}
           </label>
         </div>
 
@@ -771,11 +781,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('contraception', e.target.checked)}
               disabled={disabled}
             />
-            Antikoncepce
+            {t('patientForm.contraception')}
           </label>
           {form.contraception && (
             <div className="form-field">
-              <label>Jak dlouho?</label>
+              <label>{t('patientForm.contraceptionDuration')}</label>
               <input
                 type="text"
                 value={form.contraceptionDuration}
@@ -794,11 +804,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('estrogen', e.target.checked)}
               disabled={disabled}
             />
-            Estrogen
+            {t('patientForm.estrogen')}
           </label>
           {form.estrogen && (
             <div className="form-field">
-              <label>Druh?</label>
+              <label>{t('patientForm.type')}</label>
               <input
                 type="text"
                 value={form.estrogenType}
@@ -817,11 +827,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('interruption', e.target.checked)}
               disabled={disabled}
             />
-            Interrupce
+            {t('patientForm.interruption')}
           </label>
           {form.interruption && (
             <div className="form-field">
-              <label>Počet?</label>
+              <label>{t('patientForm.count')}</label>
               <input
                 type="number"
                 value={form.interruptionCount}
@@ -837,11 +847,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('miscarriage', e.target.checked)}
               disabled={disabled}
             />
-            Potrat
+            {t('patientForm.miscarriage')}
           </label>
           {form.miscarriage && (
             <div className="form-field">
-              <label>Počet?</label>
+              <label>{t('patientForm.count')}</label>
               <input
                 type="number"
                 value={form.miscarriageCount}
@@ -860,7 +870,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('breastInjury', e.target.checked)}
               disabled={disabled}
             />
-            Úraz prsu?
+            {t('patientForm.breastInjury')}
           </label>
           <label className="checkbox-label">
             <input
@@ -869,11 +879,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('mammogram', e.target.checked)}
               disabled={disabled}
             />
-            RTG Mamograf?
+            {t('patientForm.mammogram')}
           </label>
           {form.mammogram && (
             <div className="form-field">
-              <label>Počet?</label>
+              <label>{t('patientForm.count')}</label>
               <input
                 type="number"
                 value={form.mammogramCount}
@@ -892,7 +902,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('breastBiopsy', e.target.checked)}
               disabled={disabled}
             />
-            Biopsie prsu?
+            {t('patientForm.breastBiopsy')}
           </label>
           <label className="checkbox-label">
             <input
@@ -901,7 +911,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('breastImplants', e.target.checked)}
               disabled={disabled}
             />
-            Impl?
+            {t('patientForm.breastImplants')}
           </label>
         </div>
 
@@ -913,11 +923,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('breastSurgery', e.target.checked)}
               disabled={disabled}
             />
-            Operace prsu?
+            {t('patientForm.breastSurgery')}
           </label>
           {form.breastSurgery && (
             <div className="form-field">
-              <label>Jaká?</label>
+              <label>{t('patientForm.breastSurgeryType')}</label>
               <input
                 type="text"
                 value={form.breastSurgeryType}
@@ -936,11 +946,11 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               onChange={(e) => onChange('familyTumors', e.target.checked)}
               disabled={disabled}
             />
-            Nádory v rodině?
+            {t('patientForm.familyTumors')}
           </label>
           {form.familyTumors && (
             <div className="form-field">
-              <label>Druh?</label>
+              <label>{t('patientForm.type')}</label>
               <input
                 type="text"
                 value={form.familyTumorType}
@@ -954,7 +964,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
 
       {/* Potvrzení správnosti a Smluvní podmínky */}
       <section className={`${className} terms-section`}>
-        <h2>Potvrzení správnosti vyplněných údajů</h2>
+        <h2>{t('patientForm.accuracyTitle')}</h2>
         <div className="form-row">
           <label className="checkbox-label">
             <input
@@ -964,38 +974,20 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               required
               disabled={disabled}
             />
-            Potvrzuji správnost vyplnění výše uvedených údajů *
+            {t('patientForm.accuracyConfirmation')} *
           </label>
         </div>
 
-        <h2>Smluvní podmínky</h2>
+        <h2>{t('patientForm.termsTitle')}</h2>
         <div className="terms-text">
           <ol>
-            <li>
-              Klient souhlasí se zpracováním svých osobních údajů Centrem Preventivní Medicíny (dále
-              CPM).
-            </li>
-            <li>Klient, při pobytu v CPM, respektuje organizační pokyny personálu CPM.</li>
-            <li>
-              CPM zachází s osobními údaji klientů podle platných zákonů EU a ČR, které to upravují.
-            </li>
-            <li>
-              CPM uchovává dokumenty, výsledky různých vyšetření v CPM nebo které Klient CPM předal.
-            </li>
-            <li>
-              CPM používá výsledky vyšetření Klienta jen k dalšímu odbornému posouzení, eventuálně k
-              další výzkumné činnosti nebo ke statistice v navazujících databázích. Ve všech těchto
-              případech respektuje anonymitu klientů (není možno spojit osobní údaje s výsledkem
-              vyšetření).
-            </li>
-            <li>
-              CPM může informovat Klienta o změně v organizaci poskytování svých služeb tím
-              způsobem, který si při objednání služeb zvolil Klient sám.
-            </li>
-            <li>
-              Klienta CPM vyškrtne z aktuální evidence jen na základě jeho písemné žádosti nebo při
-              úmrtí.
-            </li>
+            <li>{t('patientForm.termsItem1')}</li>
+            <li>{t('patientForm.termsItem2')}</li>
+            <li>{t('patientForm.termsItem3')}</li>
+            <li>{t('patientForm.termsItem4')}</li>
+            <li>{t('patientForm.termsItem5')}</li>
+            <li>{t('patientForm.termsItem6')}</li>
+            <li>{t('patientForm.termsItem7')}</li>
           </ol>
         </div>
         <div className="form-row">
@@ -1007,13 +999,13 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               required
               disabled={disabled}
             />
-            Se smluvními podmínkami CPM souhlasím *
+            {t('patientForm.termsAcceptance')} *
           </label>
         </div>
 
         <div className="form-row">
           <div className="form-field">
-            <label>Kde</label>
+            <label>{t('patientForm.signaturePlace')}</label>
             <input
               type="text"
               value={form.signaturePlace}
@@ -1022,7 +1014,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Datum</label>
+            <label>{t('patientForm.signatureDate')}</label>
             <input
               type="date"
               value={form.signatureDate}
@@ -1031,7 +1023,7 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
             />
           </div>
           <div className="form-field">
-            <label>Podpis klienta</label>
+            <label>{t('patientForm.signature')}</label>
             <SignaturePad
               value={form.signatureVector}
               disabled={disabled}
