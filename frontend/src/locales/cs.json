@@ -1035,10 +1035,43 @@
     "employeesDescription": "Účty zaměstnanců, role a přístupy.",
     "noAccess": "Pro tuto sekci nemáte oprávnění."
   },
+  "emailLog": {
+    "title": "E-maily",
+    "loadFailed": "Nepodařilo se načíst log e-mailů",
+    "exportFailed": "Export e-mailového logu se nepodařil",
+    "searchPlaceholder": "Hledat příjemce, předmět…",
+    "kindFilter": "Typ",
+    "statusFilter": "Stav",
+    "all": "vše",
+    "exportCsv": "Export CSV",
+    "totalEntries": "{{count}} záznamů",
+    "time": "Čas",
+    "recipient": "Příjemce",
+    "subject": "Předmět",
+    "kind": "Typ",
+    "status": "Stav",
+    "slot": "Rezervační slot",
+    "error": "Chyba",
+    "noEntries": "Žádné e-maily",
+    "detailTitle": "Detail e-mailu",
+    "kinds": {
+      "passwordReset": "Reset hesla",
+      "intakeReminder": "Vstupní formulář",
+      "other": "Ostatní"
+    },
+    "statuses": {
+      "sent": "Odesláno",
+      "loggedOnly": "Jen do logu",
+      "failed": "Chyba",
+      "other": "Neznámé"
+    }
+  },
   "adminPage": {
     "title": "Admin",
     "lead": "Systémové nástroje a dohled.",
     "auditLogTitle": "Audit log",
+    "emailLogTitle": "E-maily",
+    "emailLogDescription": "Odeslané e-maily — příjemce, typ, stav a chyby.",
     "auditLogDescription": "Záznam akcí provedených v systému.",
     "testsTitle": "Test dashboard",
     "testsDescription": "Přehled testovacích výsledků.",

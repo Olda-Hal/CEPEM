@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   MdAdminPanelSettings,
   MdAssignment,
+  MdMailOutline,
   MdMonitorHeart,
   MdQueryStats,
   MdScience
@@ -47,6 +48,14 @@ const AdminPage: React.FC = () => {
       icon: <MdAssignment size={28} />,
       titleKey: 'adminPage.auditLogTitle',
       descriptionKey: 'adminPage.auditLogDescription',
+      allowed: sysAdminOnly
+    },
+    {
+      key: 'email-log',
+      to: '/admin/email-log',
+      icon: <MdMailOutline size={28} />,
+      titleKey: 'adminPage.emailLogTitle',
+      descriptionKey: 'adminPage.emailLogDescription',
       allowed: sysAdminOnly
     },
     {

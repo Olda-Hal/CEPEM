@@ -1035,10 +1035,43 @@
     "employeesDescription": "Medewerkeraccounts, rollen en toegang.",
     "noAccess": "U heeft geen toegang tot dit onderdeel."
   },
+  "emailLog": {
+    "title": "E-mails",
+    "loadFailed": "Het e-maillogboek kon niet worden geladen",
+    "exportFailed": "Exporteren van het e-maillogboek is mislukt",
+    "searchPlaceholder": "Zoek ontvanger, onderwerp…",
+    "kindFilter": "Type",
+    "statusFilter": "Status",
+    "all": "alles",
+    "exportCsv": "CSV exporteren",
+    "totalEntries": "{{count}} regels",
+    "time": "Tijd",
+    "recipient": "Ontvanger",
+    "subject": "Onderwerp",
+    "kind": "Type",
+    "status": "Status",
+    "slot": "Reserveringstijdsleuf",
+    "error": "Fout",
+    "noEntries": "Geen e-mails",
+    "detailTitle": "E-maildetails",
+    "kinds": {
+      "passwordReset": "Wachtwoordreset",
+      "intakeReminder": "Inschrijfformulier",
+      "other": "Overig"
+    },
+    "statuses": {
+      "sent": "Verzonden",
+      "loggedOnly": "Alleen log",
+      "failed": "Mislukt",
+      "other": "Onbekend"
+    }
+  },
   "adminPage": {
     "title": "Beheer",
     "lead": "Systeemtools en overzicht.",
     "auditLogTitle": "Auditlogboek",
+    "emailLogTitle": "E-mails",
+    "emailLogDescription": "Verzonden e-mails — ontvanger, type, status en fouten.",
     "auditLogDescription": "Registratie van alle acties die in het systeem zijn uitgevoerd.",
     "testsTitle": "Testdashboard",
     "testsDescription": "Overzicht van testresultaten.",

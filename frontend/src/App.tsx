@@ -20,6 +20,7 @@ const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
 const TestDashboard = React.lazy(() => import('./pages/TestDashboard'));
 const AdminEmployeesPage = React.lazy(() => import('./pages/AdminEmployeesPage'));
 const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'));
+const EmailLogPage = React.lazy(() => import('./pages/EmailLogPage'));
 const MonitoringPage = React.lazy(() => import('./pages/MonitoringPage'));
 const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage'));
 const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
@@ -145,6 +146,14 @@ function App() {
                       element={
                         <RoleRoute roles={[]}>
                           <ActivityLogPage />
+                        </RoleRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/email-log"
+                      element={
+                        <RoleRoute roles={[]}>
+                          <EmailLogPage />
                         </RoleRoute>
                       }
                     />

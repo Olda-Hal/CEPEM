@@ -1035,10 +1035,43 @@
     "employeesDescription": "Employee accounts, roles and access.",
     "noAccess": "You do not have access to this section."
   },
+  "emailLog": {
+    "title": "E-mails",
+    "loadFailed": "Failed to load the e-mail log",
+    "exportFailed": "E-mail log export failed",
+    "searchPlaceholder": "Search recipient, subject…",
+    "kindFilter": "Type",
+    "statusFilter": "Status",
+    "all": "all",
+    "exportCsv": "Export CSV",
+    "totalEntries": "{{count}} entries",
+    "time": "Time",
+    "recipient": "Recipient",
+    "subject": "Subject",
+    "kind": "Type",
+    "status": "Status",
+    "slot": "Reservation slot",
+    "error": "Error",
+    "noEntries": "No e-mails",
+    "detailTitle": "E-mail detail",
+    "kinds": {
+      "passwordReset": "Password reset",
+      "intakeReminder": "Intake form",
+      "other": "Other"
+    },
+    "statuses": {
+      "sent": "Sent",
+      "loggedOnly": "Log only",
+      "failed": "Failed",
+      "other": "Unknown"
+    }
+  },
   "adminPage": {
     "title": "Admin",
     "lead": "System tools and oversight.",
     "auditLogTitle": "Audit log",
+    "emailLogTitle": "E-mails",
+    "emailLogDescription": "Outgoing e-mails — recipient, type, status and errors.",
     "auditLogDescription": "Record of all actions performed in the system.",
     "testsTitle": "Test dashboard",
     "testsDescription": "Overview of test results.",

@@ -40,6 +40,7 @@ const ADMINISTRATION_CHILDREN: NavSubItem[] = [
 const ADMIN_CHILDREN: NavSubItem[] = [
   { key: 'monitoring', to: '/admin/monitoring', labelKey: 'adminPage.monitoringTitle' },
   { key: 'audit-log', to: '/admin/activity-log', labelKey: 'adminPage.auditLogTitle' },
+  { key: 'email-log', to: '/admin/email-log', labelKey: 'adminPage.emailLogTitle' },
   { key: 'tests', to: '/tests', labelKey: 'adminPage.testsTitle' },
   { key: 'roles', to: '/admin/roles', labelKey: 'adminPage.rolesTitle' },
   { key: 'health', to: '/admin/health', labelKey: 'adminPage.healthTitle' }

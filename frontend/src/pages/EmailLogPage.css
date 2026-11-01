@@ -1,0 +1,13 @@
+.status-logged-only {
+  color: #b7791f;
+  font-weight: 600;
+}
+
+.email-log-subject {
+  overflow-wrap: anywhere;
+}
+
+.email-log-address {
+  color: var(--color-text-secondary, #666);
+  font-size: 0.85em;
+}
