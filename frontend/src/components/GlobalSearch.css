@@ -1,4 +1,7 @@
 .shell-search-trigger {
+  /* Keep the search affordance above the nav dropdowns in the header. */
+  position: relative;
+  z-index: 1001;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -27,7 +30,9 @@
 .global-search-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+
+  /* Above the header dropdowns, toasts and shared modals. */
+  z-index: 100000;
   display: flex;
   justify-content: center;
   align-items: flex-start;
