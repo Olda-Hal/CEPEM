@@ -851,6 +851,7 @@
     "searchCenters": "Hledat centrum…",
     "searchRoles": "Hledat roli…",
     "showInactive": "Zobrazit neaktivní",
+    "searchEmployees": "Hledat zaměstnance…",
     "previewAs": "Náhled jako",
     "previewAsHint": "Otevřít systém pod účtem tohoto zaměstnance (jen SysAdmin)",
     "confirmImpersonation": "Otevřít systém jako {{name}}? Prohlížení bude omezeno právy tohoto účtu.",
@@ -1065,6 +1066,23 @@
       "failed": "Chyba",
       "other": "Neznámé"
     }
+  },
+  "savedViews": {
+    "label": "Uložený pohled",
+    "none": "— vybrat —",
+    "save": "Uložit pohled",
+    "delete": "Smazat",
+    "setDefault": "Nastavit výchozí",
+    "isDefault": "★ Výchozí",
+    "saveTitle": "Uložit aktuální filtry",
+    "name": "Název pohledu",
+    "makeDefault": "Nastavit jako výchozí pro tuto stránku",
+    "hint": "Uloží se aktuální filtry. Výchozí pohled se použije při otevření stránky.",
+    "confirmDelete": "Smazat uložený pohled „{{name}}“?",
+    "loadFailed": "Nepodařilo se načíst uložené pohledy.",
+    "saveFailed": "Pohled se nepodařilo uložit.",
+    "deleteFailed": "Pohled se nepodařilo smazat.",
+    "defaultFailed": "Výchozí pohled se nepodařilo nastavit."
   },
   "globalSearch": {
     "trigger": "Hledat…",

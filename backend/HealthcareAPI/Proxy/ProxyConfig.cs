@@ -102,6 +102,14 @@ public static class ProxyConfig
         yield return Route("activity-logs-get", "/api/activitylogs/{**rest}", "GET", "audit.read");
         yield return Route("email-logs-get", "/api/emaillogs/{**rest}", "GET", "audit.read");
 
+        // Per-user saved filters: authentication is enough, rows are scoped to
+        // the acting employee server-side.
+        yield return Route("saved-views-get", "/api/savedviews/{**rest}", "GET", "authenticated");
+        yield return Route("saved-views-post", "/api/savedviews", "POST", "authenticated");
+        yield return Route("saved-views-post-default", "/api/savedviews/{id}/default", "POST", "authenticated");
+        yield return Route("saved-views-put", "/api/savedviews/{**rest}", "PUT", "authenticated");
+        yield return Route("saved-views-delete", "/api/savedviews/{**rest}", "DELETE", "authenticated");
+
         // Vyhodnocování (doctor evaluation of .tdb measurements)
         yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");
         // The interactive report is part of the patient's visit record, so

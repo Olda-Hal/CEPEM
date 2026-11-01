@@ -168,18 +168,25 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-// Permission-based authorization policies for YARP routes ("perm:{code}")
+// Authorization policies for YARP routes: "authenticated" for per-user data
+// without a specific permission, and "perm:{code}" for permission-gated APIs.
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddSingleton<IPermissionEvaluator, PermissionEvaluator>();
-foreach (var policyName in ProxyConfig.Routes.Select(r => r.AuthorizationPolicy).Where(p => p != null).Distinct()!)
+builder.Services.AddAuthorization(options =>
 {
-    var code = policyName["perm:".Length..];
-    builder.Services.AddAuthorization(options =>
+    options.AddPolicy("authenticated", policy => policy.RequireAuthenticatedUser());
+
+    foreach (var policyName in ProxyConfig.Routes
+                 .Select(route => route.AuthorizationPolicy)
+                 .Where(policy => policy != null && policy.StartsWith("perm:", StringComparison.Ordinal))
+                 .Distinct()!)
     {
-        options.AddPolicy(policyName!, policy => policy.Requirements.Add(new PermissionRequirement(code)));
-    });
-}
+        var code = policyName["perm:".Length..];
+        options.AddPolicy(policyName, policy =>
+            policy.Requirements.Add(new PermissionRequirement(code)));
+    }
+});
 
 // YARP pass-through proxy for routes that used to be hand-written
 // copy-paste proxy controller actions

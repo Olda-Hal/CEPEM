@@ -38,6 +38,7 @@ const createLocalDateTime = (dateValue: string, timeValue: string) =>
 import { useToast } from '../contexts/ToastContext';
 import SlotCreationPanel from '../components/reservations/SlotCreationPanel';
 import BookingPanel from '../components/reservations/BookingPanel';
+import { SavedViews } from '../components/SavedViews';
 
 export const ReservationSlotsPage: React.FC = () => {
   const { user } = useAuth();
@@ -315,6 +316,19 @@ export const ReservationSlotsPage: React.FC = () => {
               />
             </label>
           </div>
+
+          <SavedViews
+            surface="reservations"
+            filters={{ hospitalId: selectedHospitalId, date: selectedDate }}
+            onApply={(filters) => {
+              if (typeof filters.hospitalId === 'string') {
+                setSelectedHospitalId(filters.hospitalId);
+              }
+              if (typeof filters.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(filters.date)) {
+                setSelectedDate(filters.date);
+              }
+            }}
+          />
         </section>
 
         <section className="stats-grid">

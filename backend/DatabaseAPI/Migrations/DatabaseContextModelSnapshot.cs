@@ -1754,6 +1754,49 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("RolePermissions");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.SavedView", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FiltersJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Surface")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "Surface");
+
+                    b.HasIndex("EmployeeId", "Surface", "Name")
+                        .IsUnique();
+
+                    b.ToTable("SavedViews");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.SicknessHistory", b =>
                 {
                     b.Property<int>("Id")

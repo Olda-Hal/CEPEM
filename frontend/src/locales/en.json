@@ -851,6 +851,7 @@
     "searchCenters": "Search centers…",
     "searchRoles": "Search roles…",
     "showInactive": "Show inactive",
+    "searchEmployees": "Search employees…",
     "previewAs": "Preview as",
     "previewAsHint": "Open the system under this employee's account (SysAdmin only)",
     "confirmImpersonation": "Open the system as {{name}}? Browsing is limited to this account's permissions.",
@@ -1065,6 +1066,23 @@
       "failed": "Failed",
       "other": "Unknown"
     }
+  },
+  "savedViews": {
+    "label": "Saved view",
+    "none": "— select —",
+    "save": "Save view",
+    "delete": "Delete",
+    "setDefault": "Set as default",
+    "isDefault": "★ Default",
+    "saveTitle": "Save current filters",
+    "name": "View name",
+    "makeDefault": "Make this the default for this page",
+    "hint": "The current filters are stored. The default view is applied when the page opens.",
+    "confirmDelete": "Delete the saved view \"{{name}}\"?",
+    "loadFailed": "Could not load saved views.",
+    "saveFailed": "Could not save the view.",
+    "deleteFailed": "Could not delete the view.",
+    "defaultFailed": "Could not set the default view."
   },
   "globalSearch": {
     "trigger": "Search…",

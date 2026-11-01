@@ -851,6 +851,7 @@
     "searchCenters": "Zoek naar centra...",
     "searchRoles": "Zoek naar rollen...",
     "showInactive": "Toon inactieve",
+    "searchEmployees": "Medewerkers zoeken…",
     "previewAs": "Bekijken als",
     "previewAsHint": "Open het systeem onder de account van deze medewerker (alleen SysAdmin)",
     "confirmImpersonation": "Het systeem openen als {{name}}? De weergave is beperkt tot de rechten van dit account.",
@@ -1065,6 +1066,23 @@
       "failed": "Mislukt",
       "other": "Onbekend"
     }
+  },
+  "savedViews": {
+    "label": "Opgeslagen weergave",
+    "none": "— selecteren —",
+    "save": "Weergave opslaan",
+    "delete": "Verwijderen",
+    "setDefault": "Als standaard instellen",
+    "isDefault": "★ Standaard",
+    "saveTitle": "Huidige filters opslaan",
+    "name": "Naam van de weergave",
+    "makeDefault": "Als standaard voor deze pagina instellen",
+    "hint": "De huidige filters worden opgeslagen. De standaardweergave wordt toegepast bij het openen van de pagina.",
+    "confirmDelete": "De opgeslagen weergave \"{{name}}\" verwijderen?",
+    "loadFailed": "Opgeslagen weergaven konden niet worden geladen.",
+    "saveFailed": "De weergave kon niet worden opgeslagen.",
+    "deleteFailed": "De weergave kon niet worden verwijderd.",
+    "defaultFailed": "De standaardweergave kon niet worden ingesteld."
   },
   "globalSearch": {
     "trigger": "Zoeken…",

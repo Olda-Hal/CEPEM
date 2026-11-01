@@ -9,6 +9,7 @@ import { PatientSearchResponse } from '../types';
 import { apiClient } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
 import { BaseModal } from '../components/BaseModal';
+import { SavedViews } from '../components/SavedViews';
 import './PatientsPage.css';
 
 const ITEMS_PER_PAGE = 20;
@@ -126,6 +127,19 @@ export const PatientsPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <SavedViews
+        surface="patients"
+        filters={{ search: searchQuery, showDeleted }}
+        onApply={(filters) => {
+          if (typeof filters.search === 'string') {
+            setSearchQuery(filters.search);
+          }
+          if (typeof filters.showDeleted === 'boolean' && canSeeDeleted) {
+            setShowDeleted(filters.showDeleted);
+          }
+        }}
+      />
 
       <div className="search-section">
         <div className="search-bar">

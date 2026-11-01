@@ -94,6 +94,7 @@ public class DatabaseContext : DbContext
     public DbSet<ReservationSlot> ReservationSlots { get; set; }
     public DbSet<IntakeFormLink> IntakeFormLinks { get; set; }
     public DbSet<EmailLog> EmailLogs { get; set; }
+    public DbSet<SavedView> SavedViews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -585,6 +586,13 @@ public class DatabaseContext : DbContext
 
         modelBuilder.Entity<EmailLog>()
             .HasIndex(log => log.ToAddress);
+
+        modelBuilder.Entity<SavedView>()
+            .HasIndex(view => new { view.EmployeeId, view.Surface, view.Name })
+            .IsUnique();
+
+        modelBuilder.Entity<SavedView>()
+            .HasIndex(view => new { view.EmployeeId, view.Surface });
     }
 
     private void ConfigureContactRelationships(ModelBuilder modelBuilder)

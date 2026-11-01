@@ -14,6 +14,7 @@ import { apiClient, getAuthToken } from '../utils/api';
 import PermissionsModal from '../components/PermissionsModal';
 import { CreateEmployeeModal } from '../components/CreateEmployeeModal';
 import SearchableMultiSelect from '../components/SearchableMultiSelect';
+import { SavedViews } from '../components/SavedViews';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
 import { hasRole } from '../utils/roles';
@@ -33,6 +34,7 @@ const AdminEmployeesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [impersonatingId, setImpersonatingId] = useState<number | null>(null);
 
@@ -253,8 +255,17 @@ const AdminEmployeesPage: React.FC = () => {
 
   const employees = data?.employees ?? [];
 
-  const totalPages = Math.max(1, Math.ceil(employees.length / EMPLOYEES_PER_PAGE));
-  const pagedEmployees = employees.slice(
+  const employeeSearchTerm = searchQuery.trim().toLowerCase();
+  const filteredEmployees = employeeSearchTerm
+    ? employees.filter((employee) =>
+        [employee.fullName, employee.email, employee.uid, employee.phoneNumber]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(employeeSearchTerm))
+      )
+    : employees;
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / EMPLOYEES_PER_PAGE));
+  const pagedEmployees = filteredEmployees.slice(
     page * EMPLOYEES_PER_PAGE,
     (page + 1) * EMPLOYEES_PER_PAGE
   );
@@ -264,6 +275,16 @@ const AdminEmployeesPage: React.FC = () => {
       <div className="page-heading">
         <h1 className="page-title">{t('admin.employeeManagement')}</h1>
         <div className="page-heading-actions">
+          <input
+            type="search"
+            className="employees-search"
+            placeholder={t('admin.searchEmployees')}
+            value={searchQuery}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setPage(0);
+            }}
+          />
           <label className="inactive-toggle">
             <input
               type="checkbox"
@@ -283,6 +304,20 @@ const AdminEmployeesPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <SavedViews
+        surface="employees"
+        filters={{ search: searchQuery, showInactive }}
+        onApply={(filters) => {
+          if (typeof filters.search === 'string') {
+            setSearchQuery(filters.search);
+          }
+          if (typeof filters.showInactive === 'boolean') {
+            setShowInactive(filters.showInactive);
+          }
+          setPage(0);
+        }}
+      />
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
