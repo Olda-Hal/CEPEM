@@ -132,6 +132,11 @@ SMTP_USER=your-smtp-user
 SMTP_PASSWORD=your-smtp-password
 SMTP_FROM=noreply@your-domain.com
 SMTP_FROM_NAME=CEPEM
+
+# Pre-visit intake form reminder
+INTAKE_REMINDER_ENABLED=true
+INTAKE_REMINDER_LEAD_DAYS=3
+INTAKE_REMINDER_CHECK_INTERVAL_MINUTES=15
 ```
 
 Then recreate just the API container:
@@ -147,6 +152,7 @@ Notes:
 - The sending address must be allowed by the provider (SPF/DKIM helps deliverability).
 - Test egress from the host: `openssl s_client -starttls smtp -connect smtp.your-provider.com:587 -crlf`.
 - Reset links use `FRONTEND_PUBLIC_URL`; if it is `localhost`, e-mails point to localhost.
+- The intake reminder is sent `INTAKE_REMINDER_LEAD_DAYS` before a **confirmed** reservation (only slots with status `Reserved`), to the e-mail on the booking. The reminder scan runs every `INTAKE_REMINDER_CHECK_INTERVAL_MINUTES`; links stay editable until the visit starts.
 
 ## Grafana
 

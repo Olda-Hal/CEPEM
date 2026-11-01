@@ -237,6 +237,22 @@
   margin: 0;
 }
 
+.visit-intake-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.visit-intake-warning {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff4e5;
+  border: 1px solid #e8a13a;
+  color: #8a5300;
+  font-size: var(--text-sm, 0.875rem);
+}
+
 .visit-card textarea {
   width: 100%;
   padding: 10px 12px;

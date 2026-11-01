@@ -105,6 +105,11 @@ export const PatientVisitsSection: React.FC<PatientVisitsSectionProps> = ({ pati
                 {visit.hasIntakeForm && (
                   <span className="status-badge status-active">{t('visits.intakeBadge')}</span>
                 )}
+                {!visit.hasIntakeForm && new Date(visit.visitDate) < new Date() && (
+                  <span className="status-badge status-error">
+                    {t('visits.intakeMissingBadge')}
+                  </span>
+                )}
               </span>
               <span className="administration-menu-chevron">›</span>
             </button>

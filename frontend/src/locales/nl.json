@@ -246,7 +246,8 @@
       "select": "Selecteer",
       "edit": "Bewerken",
       "confirm": "Bevestigen",
-      "reject": "Afwijzen"
+      "reject": "Afwijzen",
+      "openIntake": "Formulier openen"
     },
     "editor": {
       "title": "Bewerk tijdslot",
@@ -285,7 +286,8 @@
       "rejectFailed": "Fout bij het afwijzen van een slot.",
       "updateFailed": "Fout bij het bijwerken van een slot.",
       "releaseFailed": "Fout bij het vrijgeven van een slot.",
-      "deleteFailed": "Fout bij het verwijderen van een slot."
+      "deleteFailed": "Fout bij het verwijderen van een slot.",
+      "intakeLinkFailed": "Het inschrijfformulier kon niet worden geopend."
     }
   },
   "evaluation": {
@@ -410,7 +412,13 @@
     "signatureRequired": "Handtekening vereist.",
     "submitFailed": "Het formulier kon niet worden verzonden.",
     "thankYouTitle": "Bedankt",
-    "thankYouDescription": "Het formulier is succesvol ingediend."
+    "thankYouDescription": "Het formulier is succesvol ingediend.",
+    "visitDate": "Tijdstip van bezoek: {{date}}",
+    "visitDateFallback": "de start van het bezoek",
+    "alreadySubmitted": "Het formulier is al ingediend. U kunt het tot de start van het bezoek blijven aanpassen.",
+    "update": "Wijzigingen opslaan",
+    "thankYouEditable": "Uw formulier is opgeslagen. U kunt het tot {{date}} opnieuw openen en aanpassen.",
+    "editAgain": "Formulier aanpassen"
   },
   "testDashboard": {
     "title": "Testdashboard",
@@ -1073,6 +1081,10 @@
     "intakeTitle": "Inschrijfformulier",
     "intakeEmpty": "Er is nog geen inschrijfformulier ingevuld voor dit bezoek.",
     "addIntake": "Inschrijfformulier invullen",
+    "openIntakeTablet": "Formulier openen (tablet)",
+    "intakeLinkFailed": "Het formulier kon niet worden geopend",
+    "intakeMissingWarning": "Voor dit bezoek is geen inschrijfformulier ingevuld. U kunt het hierboven op de tablet invullen.",
+    "intakeMissingBadge": "geen formulier",
     "otherVisits": "Andere bezoeken",
     "patientSearchPlaceholder": "Patiënten zoeken…"
   }

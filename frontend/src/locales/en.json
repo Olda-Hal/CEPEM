@@ -246,7 +246,8 @@
       "select": "Select",
       "edit": "Edit",
       "confirm": "Confirm",
-      "reject": "Reject"
+      "reject": "Reject",
+      "openIntake": "Open form"
     },
     "editor": {
       "title": "Edit slot",
@@ -285,7 +286,8 @@
       "rejectFailed": "Error rejecting slot.",
       "updateFailed": "Error updating slot.",
       "releaseFailed": "Error releasing slot.",
-      "deleteFailed": "Error deleting slot."
+      "deleteFailed": "Error deleting slot.",
+      "intakeLinkFailed": "Could not open the intake form."
     }
   },
   "evaluation": {
@@ -410,7 +412,13 @@
     "signatureRequired": "Signature is required.",
     "submitFailed": "Failed to submit the form.",
     "thankYouTitle": "Thank you",
-    "thankYouDescription": "The form was submitted successfully."
+    "thankYouDescription": "The form was submitted successfully.",
+    "visitDate": "Visit time: {{date}}",
+    "visitDateFallback": "the visit start",
+    "alreadySubmitted": "The form has already been submitted. You can keep editing until the visit starts.",
+    "update": "Save changes",
+    "thankYouEditable": "Your form was saved. You can reopen and edit it until {{date}}.",
+    "editAgain": "Edit form"
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -1073,6 +1081,10 @@
     "intakeTitle": "Intake form",
     "intakeEmpty": "No intake form filled for this visit yet.",
     "addIntake": "Fill intake form",
+    "openIntakeTablet": "Open form (tablet)",
+    "intakeLinkFailed": "Could not open the form",
+    "intakeMissingWarning": "No intake form was filled for this visit. You can fill it on the tablet above.",
+    "intakeMissingBadge": "no form",
     "otherVisits": "Other visits",
     "patientSearchPlaceholder": "Search patients…"
   }

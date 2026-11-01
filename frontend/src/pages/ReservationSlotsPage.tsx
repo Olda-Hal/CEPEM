@@ -166,6 +166,21 @@ export const ReservationSlotsPage: React.FC = () => {
     setSelectedSlotId(slot.id);
   };
 
+  const handleOpenIntakeForm = async (slot: ReservationSlot) => {
+    try {
+      const link = await apiClient.post<{ intakePath: string }>(
+        `/api/reservations/slots/${slot.id}/intake-link`,
+        {}
+      );
+      window.open(`${window.location.origin}${link.intakePath}`, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      const errorMessage =
+        error instanceof ApiError ? error.message : t('reservationSlots.errors.intakeLinkFailed');
+      toast.error(errorMessage);
+      console.error(t('reservationSlots.errors.intakeLinkFailed'), error);
+    }
+  };
+
   const handleUpdateSelectedSlot = async () => {
     if (!selectedSlotId) {
       return;
@@ -429,6 +444,16 @@ export const ReservationSlotsPage: React.FC = () => {
                             <button className="ghost-button" onClick={() => handleEditSlot(slot)}>
                               {t('reservationSlots.table.edit')}
                             </button>
+
+                            {slot.personId &&
+                              (slot.status === 'BLOCKED' || slot.status === 'RESERVED') && (
+                                <button
+                                  className="ghost-button"
+                                  onClick={() => handleOpenIntakeForm(slot)}
+                                >
+                                  {t('reservationSlots.table.openIntake')}
+                                </button>
+                              )}
 
                             {canReviewSlots && slot.status === 'BLOCKED' && (
                               <>

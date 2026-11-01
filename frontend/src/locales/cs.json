@@ -246,7 +246,8 @@
       "select": "Vybrat",
       "edit": "Upravit",
       "confirm": "Potvrdit",
-      "reject": "Zamítnout"
+      "reject": "Zamítnout",
+      "openIntake": "Otevřít formulář"
     },
     "editor": {
       "title": "Úprava slotu",
@@ -285,7 +286,8 @@
       "rejectFailed": "Chyba při zamítnutí slotu.",
       "updateFailed": "Chyba při úpravě slotu.",
       "releaseFailed": "Chyba při uvolnění slotu.",
-      "deleteFailed": "Chyba při mazání slotu."
+      "deleteFailed": "Chyba při mazání slotu.",
+      "intakeLinkFailed": "Nepodařilo se otevřít vstupní formulář."
     }
   },
   "evaluation": {
@@ -410,7 +412,13 @@
     "signatureRequired": "Podpis je povinný.",
     "submitFailed": "Nepodařilo se odeslat formulář.",
     "thankYouTitle": "Děkujeme",
-    "thankYouDescription": "Formulář byl úspěšně odeslán."
+    "thankYouDescription": "Formulář byl úspěšně odeslán.",
+    "visitDate": "Termín návštěvy: {{date}}",
+    "visitDateFallback": "začátku návštěvy",
+    "alreadySubmitted": "Formulář už byl odeslán. Změny můžete ukládat do začátku návštěvy.",
+    "update": "Uložit změny",
+    "thankYouEditable": "Formulář byl uložen. Do {{date}} ho můžete znovu otevřít a upravit.",
+    "editAgain": "Upravit formulář"
   },
   "testDashboard": {
     "title": "Test Dashboard",
@@ -1073,6 +1081,10 @@
     "intakeTitle": "Vstupní formulář",
     "intakeEmpty": "K návštěvě zatím není vyplněný vstupní formulář.",
     "addIntake": "Vyplnit vstupní formulář",
+    "openIntakeTablet": "Otevřít formulář (tablet)",
+    "intakeLinkFailed": "Nepodařilo se otevřít formulář",
+    "intakeMissingWarning": "Formulář k této návštěvě nebyl vyplněn. Můžete ho vyplnit na tabletu výše.",
+    "intakeMissingBadge": "bez formuláře",
     "otherVisits": "Další návštěvy",
     "patientSearchPlaceholder": "Hledat pacienta…"
   }

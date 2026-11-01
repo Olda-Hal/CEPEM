@@ -29,6 +29,15 @@
   border: 1px solid var(--color-error);
 }
 
+.intake-notice {
+  background: var(--color-info-light, #e8f1fb);
+  color: var(--color-info, #1f5aa8);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-info, #1f5aa8);
+}
+
 .patient-form {
   display: flex;
   flex-direction: column;

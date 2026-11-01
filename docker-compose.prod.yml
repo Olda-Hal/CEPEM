@@ -79,6 +79,10 @@ services:
       - Smtp__FromName=${SMTP_FROM_NAME:-CEPEM}
       # Public SPA URL used in reset links (must not be localhost!)
       - App__FrontendBaseUrl=${FRONTEND_PUBLIC_URL:-http://localhost:3000}
+      # Pre-visit intake form reminder (Reserved slots → e-mail with a link)
+      - IntakeReminder__Enabled=${INTAKE_REMINDER_ENABLED:-true}
+      - IntakeReminder__LeadDays=${INTAKE_REMINDER_LEAD_DAYS:-3}
+      - IntakeReminder__CheckIntervalMinutes=${INTAKE_REMINDER_CHECK_INTERVAL_MINUTES:-15}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents

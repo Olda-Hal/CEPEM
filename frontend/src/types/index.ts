@@ -664,12 +664,94 @@ export interface IntakeFormLinkResponse {
   reservationId?: number;
 }
 
+/** Values returned by the backend to prefill the public intake form. */
+export interface IntakeFormPrefill {
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  insuranceNumber?: number | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+  weight?: number | null;
+  height?: number | null;
+
+  medBloodPressure?: boolean | null;
+  medHeart?: boolean | null;
+  medCholesterol?: boolean | null;
+  medBloodThinners?: boolean | null;
+  medDiabetes?: boolean | null;
+  medThyroid?: boolean | null;
+  medNerves?: boolean | null;
+  medPsych?: boolean | null;
+  medDigestion?: boolean | null;
+  medPain?: boolean | null;
+  medDehydration?: boolean | null;
+  medBreathing?: boolean | null;
+  medAntibiotics?: boolean | null;
+  medSupplements?: boolean | null;
+  medAllergies?: boolean | null;
+
+  poorSleep?: boolean | null;
+  digestiveIssues?: boolean | null;
+  physicalStress?: boolean | null;
+  mentalStress?: boolean | null;
+  smoking?: boolean | null;
+  fatigue?: boolean | null;
+  lastMealHours?: string | null;
+
+  hadCovid?: boolean | null;
+  covidWhen?: string | null;
+  covidVaccine?: boolean | null;
+  vaccinesAfter2023?: boolean | null;
+
+  lastMenstruationDate?: string | null;
+  menstruationCycleDays?: number | null;
+  yearsSinceLastMenstruation?: number | null;
+  gaveBirth?: boolean | null;
+  birthCount?: number | null;
+  birthWhen?: string | null;
+  breastfed?: boolean | null;
+  breastfeedingMonths?: number | null;
+  breastfeedingInflammation?: boolean | null;
+  endedWithInflammation?: boolean | null;
+  contraception?: boolean | null;
+  contraceptionDuration?: string | null;
+  estrogen?: boolean | null;
+  estrogenType?: string | null;
+  interruption?: boolean | null;
+  interruptionCount?: number | null;
+  miscarriage?: boolean | null;
+  miscarriageCount?: number | null;
+  breastInjury?: boolean | null;
+  mammogram?: boolean | null;
+  mammogramCount?: number | null;
+  breastBiopsy?: boolean | null;
+  breastImplants?: boolean | null;
+  breastSurgery?: boolean | null;
+  breastSurgeryType?: string | null;
+  familyTumors?: boolean | null;
+  familyTumorType?: string | null;
+
+  additionalHealthInfo?: string | null;
+}
+
 export interface IntakeFormLinkInfo {
   personId: number;
   firstName: string;
   lastName: string;
   reservationId?: number;
+  reservationSlotId?: number;
+  visitId?: number;
   expiresAtUtc: string;
+  /** cs / nl / en derived from the reservation country. */
+  language: string;
+  visitStartUtc?: string | null;
+  canEdit: boolean;
+  alreadySubmitted: boolean;
+  prefill: IntakeFormPrefill;
 }
 
 /** Active SysAdmin "preview as employee" session (UI-side bookkeeping). */

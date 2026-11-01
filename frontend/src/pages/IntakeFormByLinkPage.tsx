@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PatientFormData, PatientFormFields } from '../components/PatientFormFields';
 import { apiClient } from '../utils/api';
-import { IntakeFormLinkInfo } from '../types';
+import { IntakeFormLinkInfo, IntakeFormPrefill } from '../types';
 import './AddPatientFormPage.css';
 
 const getDefaultFormData = (firstName = '', lastName = ''): PatientFormData => ({
@@ -79,8 +79,103 @@ const getDefaultFormData = (firstName = '', lastName = ''): PatientFormData => (
   familyTumorType: ''
 });
 
+/** Maps the backend prefill (patient card + last form) onto the form state. */
+const applyPrefill = (
+  base: PatientFormData,
+  prefill: IntakeFormPrefill | undefined
+): PatientFormData => {
+  if (!prefill) {
+    return base;
+  }
+
+  const text = (value: string | null | undefined, fallback = '') => value ?? fallback;
+  const numberText = (value: number | null | undefined) =>
+    value === null || value === undefined ? '' : String(value);
+  const flag = (value: boolean | null | undefined) => value ?? false;
+
+  return {
+    ...base,
+    firstName: text(prefill.firstName, base.firstName),
+    lastName: text(prefill.lastName, base.lastName),
+    dateOfBirth: prefill.dateOfBirth ? prefill.dateOfBirth.slice(0, 10) : '',
+    gender: prefill.gender === 'M' || prefill.gender === 'F' ? prefill.gender : '',
+    weight: numberText(prefill.weight),
+    height: numberText(prefill.height),
+    insuranceCompany: numberText(prefill.insuranceNumber),
+    email: text(prefill.email),
+    phone: text(prefill.phoneNumber),
+    address: text(prefill.address),
+    postalCode: text(prefill.postalCode),
+
+    medBloodPressure: flag(prefill.medBloodPressure),
+    medHeart: flag(prefill.medHeart),
+    medCholesterol: flag(prefill.medCholesterol),
+    medBloodThinners: flag(prefill.medBloodThinners),
+    medDiabetes: flag(prefill.medDiabetes),
+    medThyroid: flag(prefill.medThyroid),
+    medNerves: flag(prefill.medNerves),
+    medPsych: flag(prefill.medPsych),
+    medDigestion: flag(prefill.medDigestion),
+    medPain: flag(prefill.medPain),
+    medDehydration: flag(prefill.medDehydration),
+    medBreathing: flag(prefill.medBreathing),
+    medAntibiotics: flag(prefill.medAntibiotics),
+    medSupplements: flag(prefill.medSupplements),
+    medAllergies: flag(prefill.medAllergies),
+
+    poorSleep: flag(prefill.poorSleep),
+    digestiveIssues: flag(prefill.digestiveIssues),
+    physicalStress: flag(prefill.physicalStress),
+    mentalStress: flag(prefill.mentalStress),
+    smoking: flag(prefill.smoking),
+    fatigue: flag(prefill.fatigue),
+    lastMealHours: text(prefill.lastMealHours),
+
+    hadCovid: flag(prefill.hadCovid),
+    covidWhen: text(prefill.covidWhen),
+    covidVaccine: flag(prefill.covidVaccine),
+    vaccinesAfter2023: flag(prefill.vaccinesAfter2023),
+
+    lastMenstruationDate: text(prefill.lastMenstruationDate),
+    menstruationCycleDays: numberText(prefill.menstruationCycleDays),
+    yearsSinceLastMenstruation: numberText(prefill.yearsSinceLastMenstruation),
+    gaveBirth: flag(prefill.gaveBirth),
+    birthCount: numberText(prefill.birthCount),
+    birthWhen: text(prefill.birthWhen),
+    breastfed: flag(prefill.breastfed),
+    breastfeedingMonths: numberText(prefill.breastfeedingMonths),
+    breastfeedingInflammation: flag(prefill.breastfeedingInflammation),
+    endedWithInflammation: flag(prefill.endedWithInflammation),
+    contraception: flag(prefill.contraception),
+    contraceptionDuration: text(prefill.contraceptionDuration),
+    estrogen: flag(prefill.estrogen),
+    estrogenType: text(prefill.estrogenType),
+    interruption: flag(prefill.interruption),
+    interruptionCount: numberText(prefill.interruptionCount),
+    miscarriage: flag(prefill.miscarriage),
+    miscarriageCount: numberText(prefill.miscarriageCount),
+    breastInjury: flag(prefill.breastInjury),
+    mammogram: flag(prefill.mammogram),
+    mammogramCount: numberText(prefill.mammogramCount),
+    breastBiopsy: flag(prefill.breastBiopsy),
+    breastImplants: flag(prefill.breastImplants),
+    breastSurgery: flag(prefill.breastSurgery),
+    breastSurgeryType: text(prefill.breastSurgeryType),
+    familyTumors: flag(prefill.familyTumors),
+    familyTumorType: text(prefill.familyTumorType),
+    additionalHealthInfo: text(prefill.additionalHealthInfo),
+
+    // Consent and the signature belong to this visit, never prefilled.
+    confirmAccuracy: false,
+    termsAccepted: false,
+    signaturePlace: '',
+    signatureDate: new Date().toISOString().slice(0, 10),
+    signatureVector: ''
+  };
+};
+
 export const IntakeFormByLinkPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -88,11 +183,13 @@ export const IntakeFormByLinkPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [linkInfo, setLinkInfo] = useState<IntakeFormLinkInfo | null>(null);
   const [form, setForm] = useState<PatientFormData>(getDefaultFormData());
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
 
   useEffect(() => {
     const loadLink = async () => {
       if (!token) {
-        setError(t('intakeLink.invalidLink'));
+        setError(i18n.t('intakeLink.invalidLink'));
         setLoading(false);
         return;
       }
@@ -102,16 +199,24 @@ export const IntakeFormByLinkPage: React.FC = () => {
           `/api/events/intake-form-links/${token}`
         );
         setLinkInfo(info);
-        setForm(getDefaultFormData(info.firstName, info.lastName));
+        setAlreadySubmitted(info.alreadySubmitted);
+        setCanEdit(info.canEdit);
+        setForm(applyPrefill(getDefaultFormData(info.firstName, info.lastName), info.prefill));
+
+        // The form follows the reservation country (cs / nl / en).
+        if (['cs', 'en', 'nl'].includes(info.language) && i18n.language !== info.language) {
+          void i18n.changeLanguage(info.language);
+        }
       } catch (err: any) {
-        setError(err.message || t('intakeLink.invalidLink'));
+        setError(err.message || i18n.t('intakeLink.invalidLink'));
       } finally {
         setLoading(false);
       }
     };
 
     loadLink();
-  }, [token, t]);
+    // Load once per token; language changes must not reset the user's edits.
+  }, [token, i18n]);
 
   const handleChange = (field: keyof PatientFormData, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -224,6 +329,7 @@ export const IntakeFormByLinkPage: React.FC = () => {
       };
 
       await apiClient.post(`/api/events/intake-form-links/${token}/submit`, payload);
+      setAlreadySubmitted(true);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || t('intakeLink.submitFailed'));
@@ -247,7 +353,22 @@ export const IntakeFormByLinkPage: React.FC = () => {
       <div className="add-patient-page">
         <div className="form-container">
           <h1>{t('intakeLink.thankYouTitle')}</h1>
-          <p>{t('intakeLink.thankYouDescription')}</p>
+          <p>
+            {canEdit
+              ? t('intakeLink.thankYouEditable', {
+                  date: linkInfo?.visitStartUtc
+                    ? new Date(linkInfo.visitStartUtc).toLocaleString(i18n.language)
+                    : t('intakeLink.visitDateFallback')
+                })
+              : t('intakeLink.thankYouDescription')}
+          </p>
+          {canEdit && (
+            <div className="form-actions">
+              <button type="button" className="btn-submit" onClick={() => setSuccess(false)}>
+                {t('intakeLink.editAgain')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -265,6 +386,16 @@ export const IntakeFormByLinkPage: React.FC = () => {
           </p>
         )}
 
+        {linkInfo?.visitStartUtc && (
+          <p className="intake-notice">
+            {t('intakeLink.visitDate', {
+              date: new Date(linkInfo.visitStartUtc).toLocaleString(i18n.language)
+            })}
+          </p>
+        )}
+
+        {alreadySubmitted && <p className="intake-notice">{t('intakeLink.alreadySubmitted')}</p>}
+
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="patient-form">
@@ -277,7 +408,11 @@ export const IntakeFormByLinkPage: React.FC = () => {
 
           <div className="form-actions">
             <button type="submit" disabled={submitting} className="btn-submit">
-              {submitting ? t('intakeLink.submitting') : t('intakeLink.submit')}
+              {submitting
+                ? t('intakeLink.submitting')
+                : alreadySubmitted
+                  ? t('intakeLink.update')
+                  : t('intakeLink.submit')}
             </button>
           </div>
         </form>

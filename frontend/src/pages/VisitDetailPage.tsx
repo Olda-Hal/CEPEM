@@ -38,6 +38,7 @@ const VisitDetailPage: React.FC = () => {
   const [savingNote, setSavingNote] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [creatingIntakeLink, setCreatingIntakeLink] = useState(false);
   const [reportCaseId, setReportCaseId] = useState<number | null>(null);
 
   const [patientSearch, setPatientSearch] = useState('');
@@ -69,6 +70,16 @@ const VisitDetailPage: React.FC = () => {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  // The intake form opens in a new tab (tablet). Refresh when the doctor
+  // comes back so a freshly submitted form appears without a manual reload.
+  useEffect(() => {
+    const handleFocus = () => {
+      void load();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [load]);
 
   // Patient search (debounced) — lets the user jump to visits of other patients
@@ -187,6 +198,21 @@ const VisitDetailPage: React.FC = () => {
           ? err.message
           : t('patients.documents.errors.viewFailed')
       );
+    }
+  };
+
+  const handleOpenIntakeForm = async () => {
+    setCreatingIntakeLink(true);
+    try {
+      const link = await apiClient.post<{ intakePath: string }>(
+        `/api/patients/${patientId}/visits/${visitIdNum}/intake-link`,
+        {}
+      );
+      window.open(`${window.location.origin}${link.intakePath}`, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : t('visits.intakeLinkFailed'));
+    } finally {
+      setCreatingIntakeLink(false);
     }
   };
 
@@ -423,15 +449,32 @@ const VisitDetailPage: React.FC = () => {
             <div className="visit-card-header">
               <h3>{t('visits.intakeTitle')}</h3>
               {!visit.intakeForm && (
-                <button className="btn btn-primary btn-sm" onClick={() => setShowIntakeModal(true)}>
-                  + {t('visits.addIntake')}
-                </button>
+                <div className="visit-intake-actions">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleOpenIntakeForm}
+                    disabled={creatingIntakeLink}
+                  >
+                    {creatingIntakeLink ? t('common.loading') : t('visits.openIntakeTablet')}
+                  </button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setShowIntakeModal(true)}
+                  >
+                    + {t('visits.addIntake')}
+                  </button>
+                </div>
               )}
             </div>
             {visit.intakeForm ? (
               <pre className="visit-intake-preview">{visit.intakeForm}</pre>
             ) : (
-              <p className="visit-empty">{t('visits.intakeEmpty')}</p>
+              <>
+                <p className="visit-empty">{t('visits.intakeEmpty')}</p>
+                {new Date(visit.visitDate) < new Date() && (
+                  <p className="visit-intake-warning">{t('visits.intakeMissingWarning')}</p>
+                )}
+              </>
             )}
           </section>
         </main>
