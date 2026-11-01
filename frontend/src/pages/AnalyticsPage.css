@@ -1,0 +1,222 @@
+.analytics-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.analytics-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.analytics-heading h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analytics-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.analytics-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--color-text-secondary, #718096);
+  font-size: 0.8rem;
+}
+
+.analytics-filters input,
+.analytics-filters select {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border-radius: 8px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1a202c);
+  font: inherit;
+}
+
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.analytics-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 5%);
+}
+
+.analytics-kpi.warning {
+  border-color: #e8a13a;
+  background: #fffaf0;
+}
+
+.analytics-kpi span {
+  color: var(--color-text-secondary, #718096);
+  font-size: 0.8rem;
+}
+
+.analytics-kpi strong {
+  color: var(--color-text, #1a202c);
+  font-size: 1.8rem;
+}
+
+.analytics-kpi small {
+  color: var(--color-text-secondary, #718096);
+  font-size: 0.75rem;
+}
+
+.analytics-card {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 5%);
+}
+
+.analytics-card h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.analytics-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+  color: var(--color-text-secondary, #718096);
+  font-size: 0.75rem;
+}
+
+.analytics-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border-radius: 2px;
+}
+
+.legend-booked::before {
+  background: #667eea;
+}
+
+.legend-visits::before {
+  background: #38a169;
+}
+
+.legend-evaluations::before {
+  background: #d69e2e;
+}
+
+.analytics-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 220px;
+  padding-top: 8px;
+  overflow-x: auto;
+}
+
+.analytics-chart-day {
+  min-width: 22px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.analytics-chart-bars {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+}
+
+.analytics-chart-bars .bar {
+  width: 5px;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #667eea;
+}
+
+.analytics-chart-bars .bar.visits {
+  background: #38a169;
+}
+
+.analytics-chart-bars .bar.evaluations {
+  background: #d69e2e;
+}
+
+.analytics-chart-label {
+  color: var(--color-text-secondary, #718096);
+  font-size: 0.62rem;
+  white-space: nowrap;
+  transform: rotate(-45deg);
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.analytics-table th,
+.analytics-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 6%));
+  text-align: left;
+}
+
+.analytics-table th {
+  color: var(--color-text-secondary, #718096);
+  font-weight: 600;
+}
+
+.analytics-muted,
+.analytics-state {
+  color: var(--color-text-secondary, #718096);
+  padding: 16px;
+  text-align: center;
+}
+
+.analytics-page .alert {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.analytics-page .alert-error {
+  border: 1px solid #d64545;
+  background: #fdecec;
+  color: #a32a2a;
+}
+
+@media (width <= 700px) {
+  .analytics-heading {
+    flex-direction: column;
+  }
+
+  .analytics-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

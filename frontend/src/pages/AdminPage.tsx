@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   MdAdminPanelSettings,
   MdAssignment,
+  MdBarChart,
   MdMailOutline,
   MdMonitorHeart,
   MdPrivacyTip,
@@ -65,6 +66,14 @@ const AdminPage: React.FC = () => {
       icon: <MdPrivacyTip size={28} />,
       titleKey: 'adminPage.gdprTitle',
       descriptionKey: 'adminPage.gdprDescription',
+      allowed: sysAdminOnly
+    },
+    {
+      key: 'analytics',
+      to: '/admin/analytics',
+      icon: <MdBarChart size={28} />,
+      titleKey: 'adminPage.analyticsTitle',
+      descriptionKey: 'adminPage.analyticsDescription',
       allowed: sysAdminOnly
     },
     {
