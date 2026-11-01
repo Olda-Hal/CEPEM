@@ -1,5 +1,6 @@
 using Prometheus;
 using Microsoft.EntityFrameworkCore;
+using Cepem.Shared;
 using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 using DatabaseAPI.Repositories;
@@ -32,6 +33,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddCepemForwardedHeaders(builder.Configuration);
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -118,6 +120,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Must be first: rate limiting, audit and metrics all read the caller IP.
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

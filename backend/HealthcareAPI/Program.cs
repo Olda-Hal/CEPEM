@@ -1,4 +1,5 @@
 using Prometheus;
+using Cepem.Shared;
 using HealthcareAPI.Authorization;
 using HealthcareAPI.Middleware;
 using HealthcareAPI.Proxy;
@@ -40,6 +41,7 @@ builder.Services.AddSwaggerGen();
 
 // Add HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddCepemForwardedHeaders(builder.Configuration);
 
 // Register repositories and services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -186,6 +188,9 @@ var proxyBuilder = builder.Services.AddReverseProxy()
 ProxyConfig.AddClaimsTransform(proxyBuilder, databaseApiServiceKey);
 
 var app = builder.Build();
+
+// Must be first: rate limiting, audit and metrics all read the caller IP.
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

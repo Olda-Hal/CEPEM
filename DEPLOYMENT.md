@@ -153,6 +153,7 @@ Notes:
 - Test egress from the host: `openssl s_client -starttls smtp -connect smtp.your-provider.com:587 -crlf`.
 - Reset links use `FRONTEND_PUBLIC_URL`; if it is `localhost`, e-mails point to localhost.
 - The intake reminder is sent `INTAKE_REMINDER_LEAD_DAYS` before a **confirmed** reservation (only slots with status `Reserved`), to the e-mail on the booking. The reminder scan runs every `INTAKE_REMINDER_CHECK_INTERVAL_MINUTES`; links stay editable until the visit starts.
+- Both APIs read the caller IP from `X-Forwarded-For`/`X-Forwarded-Proto` and trust loopback plus private Docker ranges by default (`ForwardedHeaders__ForwardLimit`, `ForwardedHeaders__KnownNetworks`, `ForwardedHeaders__KnownProxies`). Keep nginx as the outermost proxy so rate limiting and audit use the real client IP.
 - Every send attempt (password reset and intake reminder) is recorded in **Admin → E-maily** with recipient, subject, type, status and the SMTP error for failed attempts. Message bodies and links are never stored in that log. Rows are pruned after `ActivityLogRetention:EmailLogRetentionDays` (default 365).
 
 ## Grafana
