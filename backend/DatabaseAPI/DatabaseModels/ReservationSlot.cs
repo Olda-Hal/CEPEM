@@ -58,6 +58,9 @@ public class ReservationSlot
     /// </summary>
     public DateTime? IntakeReminderSentAtUtc { get; set; }
 
+    /// <summary>Set when the day-before SMS reminder has been sent.</summary>
+    public DateTime? SmsReminderSentAtUtc { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

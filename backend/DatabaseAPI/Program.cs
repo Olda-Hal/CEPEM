@@ -82,6 +82,12 @@ builder.Services.AddScoped<IIntakeFormLinkService, IntakeFormLinkService>();
 builder.Services.AddScoped<IPersonMatchingService, PersonMatchingService>();
 builder.Services.AddScoped<IGdprService, GdprService>();
 builder.Services.AddSingleton<IDocumentTextExtractionService, DocumentTextExtractionService>();
+builder.Services.AddScoped<ICommunicationTemplateService, CommunicationTemplateService>();
+builder.Services.Configure<SmsOptions>(builder.Configuration.GetSection("Sms"));
+builder.Services.Configure<SmsReminderOptions>(builder.Configuration.GetSection(SmsReminderOptions.SectionName));
+builder.Services.AddHttpClient("Sms");
+builder.Services.AddSingleton<ISmsService, SmsService>();
+builder.Services.AddHostedService<SmsReminderService>();
 
 // Pre-visit intake form reminders (Reserved slots → e-mail with a form link)
 builder.Services.Configure<IntakeReminderOptions>(

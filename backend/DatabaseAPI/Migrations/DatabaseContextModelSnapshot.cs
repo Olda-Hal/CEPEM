@@ -135,6 +135,63 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.CommunicationTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("varchar(5)");
+
+                    b.Property<int>("ScopeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ScopeType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Channel", "Code", "Language");
+
+                    b.HasIndex("Code", "Channel", "Language", "ScopeType", "ScopeId")
+                        .IsUnique();
+
+                    b.ToTable("CommunicationTemplates");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.ConsentTemplate", b =>
                 {
                     b.Property<int>("Id")
@@ -1839,6 +1896,9 @@ namespace DatabaseAPI.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<DateTime?>("SmsReminderSentAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("StartDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -1986,6 +2046,53 @@ namespace DatabaseAPI.Migrations
                     b.HasIndex("FormSubmissionId");
 
                     b.ToTable("SicknessHistories");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.SmsLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int?>("PersonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RecipientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int?>("ReservationSlotId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("TemplateCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ToNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("SmsLogs");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.Symptom", b =>

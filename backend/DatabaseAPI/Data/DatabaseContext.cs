@@ -98,6 +98,8 @@ public class DatabaseContext : DbContext
     public DbSet<ConsentTemplate> ConsentTemplates { get; set; }
     public DbSet<PatientConsent> PatientConsents { get; set; }
     public DbSet<GdprRequest> GdprRequests { get; set; }
+    public DbSet<CommunicationTemplate> CommunicationTemplates { get; set; }
+    public DbSet<SmsLog> SmsLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -612,6 +614,26 @@ public class DatabaseContext : DbContext
 
         modelBuilder.Entity<GdprRequest>()
             .HasIndex(request => new { request.PatientId, request.RequestedAtUtc });
+
+        modelBuilder.Entity<CommunicationTemplate>()
+            .HasIndex(template => new
+            {
+                template.Code,
+                template.Channel,
+                template.Language,
+                template.ScopeType,
+                template.ScopeId
+            })
+            .IsUnique();
+
+        modelBuilder.Entity<CommunicationTemplate>()
+            .HasIndex(template => new { template.Channel, template.Code, template.Language });
+
+        modelBuilder.Entity<SmsLog>()
+            .HasIndex(log => log.CreatedAtUtc);
+
+        modelBuilder.Entity<SmsLog>()
+            .HasIndex(log => log.PersonId);
     }
 
     private void ConfigureContactRelationships(ModelBuilder modelBuilder)

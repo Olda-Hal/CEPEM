@@ -23,6 +23,9 @@ public static class CountryScopeMapper
             : 999;
     }
 
+    public static string? ToCountryCode(int scopeId) =>
+        ScopeByCountryCode.FirstOrDefault(entry => entry.Value == scopeId).Key;
+
     public static string NormalizeCode(string? countryCode)
     {
         if (string.IsNullOrWhiteSpace(countryCode))

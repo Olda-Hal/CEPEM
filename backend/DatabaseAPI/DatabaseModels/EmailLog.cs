@@ -48,6 +48,8 @@ public static class EmailLogKinds
 {
     public const string PasswordReset = "PasswordReset";
     public const string IntakeReminder = "IntakeReminder";
+    public const string ReservationConfirmed = "ReservationConfirmed";
+    public const string ReservationCancelled = "ReservationCancelled";
 }
 
 public static class EmailLogStatuses

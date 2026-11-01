@@ -30,17 +30,20 @@ public class PasswordResetService : IPasswordResetService
 
     private readonly DatabaseContext _context;
     private readonly IEmailService _emailService;
+    private readonly ICommunicationTemplateService _templateService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PasswordResetService> _logger;
 
     public PasswordResetService(
         DatabaseContext context,
         IEmailService emailService,
+        ICommunicationTemplateService templateService,
         IConfiguration configuration,
         ILogger<PasswordResetService> logger)
     {
         _context = context;
         _emailService = emailService;
+        _templateService = templateService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -165,10 +168,35 @@ public class PasswordResetService : IPasswordResetService
         try
         {
             var recipientName = $"{employee.Person.FirstName} {employee.Person.LastName}".Trim();
-            await _emailService.SendPasswordResetAsync(
-                email,
-                resetUrl,
-                new EmailLogContext(EmailLogKinds.PasswordReset, employee.PersonId, recipientName));
+            var context = new EmailLogContext(EmailLogKinds.PasswordReset, employee.PersonId, recipientName);
+            var language = CommunicationLanguages.FromCountry(employee.Person.CountryCode);
+            var countryScopeId = DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(employee.Person.CountryCode);
+            var template = await _templateService.ResolveAsync(
+                CommunicationTemplateCodes.PasswordReset,
+                CommunicationChannels.Email,
+                language,
+                hospitalId: null,
+                countryScopeId: countryScopeId);
+
+            if (template != null)
+            {
+                var body = _templateService.Render(template.Body, new Dictionary<string, string?>
+                {
+                    ["name"] = recipientName,
+                    ["resetUrl"] = resetUrl
+                });
+                await _emailService.SendTemplatedAsync(
+                    email,
+                    string.IsNullOrWhiteSpace(template.Subject) ? "CEPEM – password reset" : template.Subject,
+                    body,
+                    EmailLogKinds.PasswordReset,
+                    context);
+            }
+            else
+            {
+                await _emailService.SendPasswordResetAsync(email, resetUrl, context);
+            }
+
             return (true, null);
         }
         catch (Exception ex)

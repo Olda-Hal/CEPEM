@@ -18,6 +18,8 @@ public class ReservationSlotsController : ControllerBase
     private readonly IPersonMatchingService _personMatchingService;
     private readonly IVisitService _visitService;
     private readonly IIntakeFormLinkService _intakeFormLinkService;
+    private readonly IEmailService _emailService;
+    private readonly ICommunicationTemplateService _templateService;
 
     public ReservationSlotsController(
         DatabaseContext context,
@@ -26,7 +28,9 @@ public class ReservationSlotsController : ControllerBase
         IEmployeeScopeService employeeScopeService,
         IPersonMatchingService personMatchingService,
         IVisitService visitService,
-        IIntakeFormLinkService intakeFormLinkService)
+        IIntakeFormLinkService intakeFormLinkService,
+        IEmailService emailService,
+        ICommunicationTemplateService templateService)
     {
         _context = context;
         _logger = logger;
@@ -35,6 +39,101 @@ public class ReservationSlotsController : ControllerBase
         _personMatchingService = personMatchingService;
         _visitService = visitService;
         _intakeFormLinkService = intakeFormLinkService;
+        _emailService = emailService;
+        _templateService = templateService;
+    }
+
+    private sealed record ReservationCommunication(
+        int SlotId,
+        int PersonId,
+        string? PatientName,
+        int HospitalId,
+        string CountryCode,
+        DateTime StartDateTime,
+        int? DoctorId);
+
+    private ReservationCommunication? CaptureCommunication(ReservationSlot slot) =>
+        slot.PersonId.HasValue
+            ? new ReservationCommunication(
+                slot.Id,
+                slot.PersonId.Value,
+                slot.Person is null ? null : $"{slot.Person.FirstName} {slot.Person.LastName}".Trim(),
+                slot.HospitalId,
+                slot.CountryCode,
+                slot.StartDateTime,
+                slot.DoctorId)
+            : null;
+
+    private async Task SendReservationCommunicationAsync(
+        ReservationCommunication communication, string code, string kind)
+    {
+        try
+        {
+            var email = await _context.ContactToObjects
+                .Where(link => link.ObjectType == ContactObjectType.Person &&
+                               (link.PersonId == communication.PersonId ||
+                                link.ObjectId == communication.PersonId))
+                .Join(_context.ContactEmails,
+                    link => link.ContactId,
+                    entry => entry.ContactId,
+                    (_, entry) => entry.Email)
+                .FirstOrDefaultAsync();
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return;
+            }
+
+            var hospital = await _context.Hospitals
+                .Where(entry => entry.Id == communication.HospitalId)
+                .Select(entry => new { entry.Name, entry.CountryScopeId })
+                .FirstOrDefaultAsync();
+
+            var language = CommunicationLanguages.FromCountry(communication.CountryCode);
+            var template = await _templateService.ResolveAsync(
+                code,
+                CommunicationChannels.Email,
+                language,
+                communication.HospitalId,
+                hospital?.CountryScopeId);
+            if (template == null)
+            {
+                return;
+            }
+
+            var patientName = communication.PatientName ??
+                await _context.Persons
+                    .Where(person => person.Id == communication.PersonId)
+                    .Select(person => (person.FirstName + " " + person.LastName).Trim())
+                    .FirstOrDefaultAsync();
+            var doctorName = communication.DoctorId.HasValue
+                ? await _context.Employees
+                    .Where(employee => employee.Id == communication.DoctorId.Value)
+                    .Select(employee => (employee.Person.FirstName + " " + employee.Person.LastName).Trim())
+                    .FirstOrDefaultAsync()
+                : null;
+
+            var body = _templateService.Render(template.Body, new Dictionary<string, string?>
+            {
+                ["patientName"] = patientName,
+                ["date"] = communication.StartDateTime.ToString("dd.MM.yyyy"),
+                ["time"] = communication.StartDateTime.ToString("HH:mm"),
+                ["clinic"] = hospital?.Name,
+                ["doctor"] = doctorName
+            });
+
+            await _emailService.SendTemplatedAsync(
+                email,
+                string.IsNullOrWhiteSpace(template.Subject) ? "CEPEM" : template.Subject,
+                body,
+                kind,
+                new EmailLogContext(kind, communication.PersonId, patientName, communication.SlotId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Could not send reservation communication {Code} for slot {SlotId}",
+                code, communication.SlotId);
+        }
     }
 
     /// <summary>
@@ -340,6 +439,8 @@ public class ReservationSlotsController : ControllerBase
             if (request.InternalNote != null)
                 slot.InternalNote = string.IsNullOrWhiteSpace(request.InternalNote) ? null : request.InternalNote.Trim();
 
+            var cancellation = newStatus == SlotStatus.Available ? CaptureCommunication(slot) : null;
+
             if (newStatus is SlotStatus.Available or SlotStatus.Unavailable)
             {
                 // Same semantics as release: a free/blocked-out slot no longer
@@ -362,6 +463,14 @@ public class ReservationSlotsController : ControllerBase
             if (timesChanged || newStatus == SlotStatus.Available)
             {
                 await RevokeSlotIntakeLinksAsync(slot.Id);
+            }
+
+            if (cancellation != null)
+            {
+                await SendReservationCommunicationAsync(
+                    cancellation,
+                    CommunicationTemplateCodes.ReservationCancelled,
+                    EmailLogKinds.ReservationCancelled);
             }
 
             if (newStatus == SlotStatus.Reserved)
@@ -407,6 +516,7 @@ public class ReservationSlotsController : ControllerBase
                 return BadRequest("Only blocked or reserved slots can be released");
             }
 
+            var communication = CaptureCommunication(slot);
             slot.DoctorId = null;
             slot.PersonId = null;
             slot.ExaminationTypeId = null;
@@ -415,6 +525,14 @@ public class ReservationSlotsController : ControllerBase
 
             await _context.SaveChangesAsync();
             await RevokeSlotIntakeLinksAsync(slot.Id);
+
+            if (communication != null)
+            {
+                await SendReservationCommunicationAsync(
+                    communication,
+                    CommunicationTemplateCodes.ReservationCancelled,
+                    EmailLogKinds.ReservationCancelled);
+            }
 
             return Ok(MapToDto(slot));
         }
@@ -430,7 +548,9 @@ public class ReservationSlotsController : ControllerBase
     {
         try
         {
-            var slot = await _context.ReservationSlots.FirstOrDefaultAsync(s => s.Id == id);
+            var slot = await _context.ReservationSlots
+                .IncludeSlotDetails()
+                .FirstOrDefaultAsync(s => s.Id == id);
 
             if (slot == null)
                 return NotFound("Reservation slot not found");
@@ -438,9 +558,18 @@ public class ReservationSlotsController : ControllerBase
             if (!await CanAccessHospitalAsync(slot.HospitalId))
                 return StatusCode(403, "K tomuto slotu nemáte přístup.");
 
+            var communication = CaptureCommunication(slot);
             await RevokeSlotIntakeLinksAsync(slot.Id);
             _context.ReservationSlots.Remove(slot);
             await _context.SaveChangesAsync();
+
+            if (communication != null)
+            {
+                await SendReservationCommunicationAsync(
+                    communication,
+                    CommunicationTemplateCodes.ReservationCancelled,
+                    EmailLogKinds.ReservationCancelled);
+            }
 
             return NoContent();
         }
@@ -595,6 +724,7 @@ public class ReservationSlotsController : ControllerBase
             if (!doctorExists)
                 return NotFound("Doctor not found");
 
+            var communication = CaptureCommunication(slot);
             slot.DoctorId = request.DoctorId;
             slot.Status = SlotStatus.Reserved;
             slot.UpdatedAt = DateTime.UtcNow;
@@ -612,6 +742,14 @@ public class ReservationSlotsController : ControllerBase
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Could not create visit for confirmed slot {SlotId}", slot.Id);
+            }
+
+            if (communication != null)
+            {
+                await SendReservationCommunicationAsync(
+                    communication with { DoctorId = request.DoctorId },
+                    CommunicationTemplateCodes.ReservationConfirmed,
+                    EmailLogKinds.ReservationConfirmed);
             }
 
             return Ok(MapToDto(slot));
@@ -641,6 +779,7 @@ public class ReservationSlotsController : ControllerBase
             if (slot.Status != SlotStatus.Blocked)
                 return BadRequest("Only blocked slots can be rejected");
 
+            var communication = CaptureCommunication(slot);
             slot.DoctorId = null;
             slot.PersonId = null;
             slot.ExaminationTypeId = null;
@@ -649,6 +788,14 @@ public class ReservationSlotsController : ControllerBase
 
             await _context.SaveChangesAsync();
             await RevokeSlotIntakeLinksAsync(slot.Id);
+
+            if (communication != null)
+            {
+                await SendReservationCommunicationAsync(
+                    communication,
+                    CommunicationTemplateCodes.ReservationCancelled,
+                    EmailLogKinds.ReservationCancelled);
+            }
 
             return Ok(MapToDto(slot));
         }

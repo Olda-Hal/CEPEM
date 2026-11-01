@@ -9,7 +9,8 @@ import {
   MdMonitorHeart,
   MdPrivacyTip,
   MdQueryStats,
-  MdScience
+  MdScience,
+  MdSms
 } from 'react-icons/md';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../utils/roles';
@@ -58,6 +59,14 @@ const AdminPage: React.FC = () => {
       icon: <MdMailOutline size={28} />,
       titleKey: 'adminPage.emailLogTitle',
       descriptionKey: 'adminPage.emailLogDescription',
+      allowed: sysAdminOnly
+    },
+    {
+      key: 'communication',
+      to: '/admin/communication',
+      icon: <MdSms size={28} />,
+      titleKey: 'adminPage.communicationTitle',
+      descriptionKey: 'adminPage.communicationDescription',
       allowed: sysAdminOnly
     },
     {

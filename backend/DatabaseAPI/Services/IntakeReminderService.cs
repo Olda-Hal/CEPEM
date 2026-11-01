@@ -79,7 +79,8 @@ public class IntakeReminderService : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
                 var linkService = scope.ServiceProvider.GetRequiredService<IIntakeFormLinkService>();
-                await RunOnceAsync(context, linkService, Options.LeadDays, stoppingToken);
+                var templateService = scope.ServiceProvider.GetRequiredService<ICommunicationTemplateService>();
+                await RunOnceAsync(context, linkService, templateService, Options.LeadDays, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -95,11 +96,26 @@ public class IntakeReminderService : BackgroundService
     }
 
     /// <summary>Single scan, separated for testability.</summary>
-    public async Task<int> RunOnceAsync(DatabaseContext context, IIntakeFormLinkService linkService, int leadDays, CancellationToken cancellationToken = default)
+    public async Task<int> RunOnceAsync(
+        DatabaseContext context,
+        IIntakeFormLinkService linkService,
+        ICommunicationTemplateService templateService,
+        int leadDays,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var due = await IntakeReminderPlanner.FindDueSlotsAsync(context, now, leadDays, cancellationToken);
         var sent = 0;
+
+        // Hospital is loaded separately: an Include on a required navigation
+        // makes the query depend on a hospital row existing, which is not part
+        // of the reminder selection criteria.
+        var hospitalIds = due.Select(slot => slot.HospitalId).Distinct().ToList();
+        var hospitals = hospitalIds.Count == 0
+            ? new Dictionary<int, Hospital>()
+            : await context.Hospitals
+                .Where(hospital => hospitalIds.Contains(hospital.Id))
+                .ToDictionaryAsync(hospital => hospital.Id, cancellationToken);
 
         foreach (var slot in due)
         {
@@ -138,17 +154,49 @@ public class IntakeReminderService : BackgroundService
                 var recipientName = slot.Person is null
                     ? null
                     : $"{slot.Person.FirstName} {slot.Person.LastName}".Trim();
+                hospitals.TryGetValue(slot.HospitalId, out var hospital);
+                var language = MapLanguage(slot.CountryCode);
+                var logContext = new EmailLogContext(
+                    EmailLogKinds.IntakeReminder,
+                    slot.PersonId,
+                    recipientName,
+                    slot.Id);
 
-                await _emailService.SendIntakeFormReminderAsync(
-                    email,
-                    intakeUrl,
-                    MapLanguage(slot.CountryCode),
-                    slot.StartDateTime,
-                    new EmailLogContext(
+                var template = await templateService.ResolveAsync(
+                    CommunicationTemplateCodes.IntakeReminder,
+                    CommunicationChannels.Email,
+                    language,
+                    slot.HospitalId,
+                    hospital?.CountryScopeId,
+                    cancellationToken);
+
+                if (template != null)
+                {
+                    var body = templateService.Render(template.Body, new Dictionary<string, string?>
+                    {
+                        ["patientName"] = recipientName,
+                        ["date"] = slot.StartDateTime.ToString("dd.MM.yyyy HH:mm"),
+                        ["link"] = intakeUrl,
+                        ["clinic"] = hospital?.Name
+                    });
+                    await _emailService.SendTemplatedAsync(
+                        email,
+                        string.IsNullOrWhiteSpace(template.Subject)
+                            ? "CEPEM – intake form"
+                            : template.Subject,
+                        body,
                         EmailLogKinds.IntakeReminder,
-                        slot.PersonId,
-                        recipientName,
-                        slot.Id));
+                        logContext);
+                }
+                else
+                {
+                    await _emailService.SendIntakeFormReminderAsync(
+                        email,
+                        intakeUrl,
+                        language,
+                        slot.StartDateTime,
+                        logContext);
+                }
 
                 sent++;
             }

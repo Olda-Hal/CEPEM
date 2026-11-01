@@ -33,6 +33,9 @@ public interface IEmailService
     /// </summary>
     Task SendIntakeFormReminderAsync(string toEmail, string intakeUrl, string language, DateTime visitStart, EmailLogContext? context = null);
 
+    /// <summary>Send admin-editable template output (reservation confirmations, etc.).</summary>
+    Task SendTemplatedAsync(string toEmail, string subject, string body, string kind, EmailLogContext? context = null);
+
     bool IsConfigured { get; }
 }
 
@@ -90,6 +93,12 @@ public class EmailService : IEmailService
             subject,
             body,
             WithKind(context, EmailLogKinds.IntakeReminder));
+    }
+
+    public Task SendTemplatedAsync(
+        string toEmail, string subject, string body, string kind, EmailLogContext? context = null)
+    {
+        return SendAsync(toEmail, subject, body, WithKind(context, kind));
     }
 
     /// <summary>

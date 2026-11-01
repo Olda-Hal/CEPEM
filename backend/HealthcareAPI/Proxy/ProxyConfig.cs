@@ -116,6 +116,12 @@ public static class ProxyConfig
         // Clinic business metrics (scope enforced in DatabaseAPI)
         yield return Route("analytics-summary", "/api/analytics/{**rest}", "GET", "dashboard.read");
 
+        // Editable e-mail/SMS templates and SMS delivery log
+        yield return Route("communication-templates-get", "/api/communicationtemplates/{**rest}", "GET", "communication.manage");
+        yield return Route("communication-templates-post", "/api/communicationtemplates", "POST", "communication.manage");
+        yield return Route("communication-templates-put", "/api/communicationtemplates/{**rest}", "PUT", "communication.manage");
+        yield return Route("communication-templates-delete", "/api/communicationtemplates/{**rest}", "DELETE", "communication.manage");
+
         // Vyhodnocování (doctor evaluation of .tdb measurements)
         yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");
         // The interactive report is part of the patient's visit record, so

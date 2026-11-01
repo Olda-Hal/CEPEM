@@ -23,6 +23,7 @@ const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'));
 const EmailLogPage = React.lazy(() => import('./pages/EmailLogPage'));
 const GdprPage = React.lazy(() => import('./pages/GdprPage'));
 const AnalyticsPage = React.lazy(() => import('./pages/AnalyticsPage'));
+const CommunicationTemplatesPage = React.lazy(() => import('./pages/CommunicationTemplatesPage'));
 const MonitoringPage = React.lazy(() => import('./pages/MonitoringPage'));
 const RoleManagementPage = React.lazy(() => import('./pages/RoleManagementPage'));
 const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPage'));
@@ -172,6 +173,14 @@ function App() {
                       element={
                         <RoleRoute roles={[]}>
                           <AnalyticsPage />
+                        </RoleRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/communication"
+                      element={
+                        <RoleRoute roles={[]}>
+                          <CommunicationTemplatesPage />
                         </RoleRoute>
                       }
                     />

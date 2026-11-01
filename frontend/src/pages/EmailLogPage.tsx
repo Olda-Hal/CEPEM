@@ -27,7 +27,7 @@ interface EmailLogListResponse {
 }
 
 const PAGE_SIZE = 50;
-const KINDS = ['PasswordReset', 'IntakeReminder'];
+const KINDS = ['PasswordReset', 'IntakeReminder', 'ReservationConfirmed', 'ReservationCancelled'];
 const STATUSES = ['Sent', 'LoggedOnly', 'Failed'];
 
 const kindKey = (kind: string) =>
@@ -35,7 +35,11 @@ const kindKey = (kind: string) =>
     ? 'passwordReset'
     : kind === 'IntakeReminder'
       ? 'intakeReminder'
-      : 'other';
+      : kind === 'ReservationConfirmed'
+        ? 'reservationConfirmed'
+        : kind === 'ReservationCancelled'
+          ? 'reservationCancelled'
+          : 'other';
 
 const statusKey = (status: string) =>
   status === 'Sent'

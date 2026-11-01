@@ -44,7 +44,9 @@ public class ReservationSlotsControllerTests : IDisposable
             _scopeMock.Object,
             new PersonMatchingService(_context),
             new Mock<IVisitService>().Object,
-            new IntakeFormLinkService(_context));
+            new IntakeFormLinkService(_context),
+            new Mock<IEmailService>().Object,
+            new Mock<ICommunicationTemplateService>().Object);
     }
 
     private void SetActor(

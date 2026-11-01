@@ -34,6 +34,7 @@ namespace DatabaseAPI.Services
                 await SeedPermissionsAsync();
                 await BackfillEmployeeRolesAsync();
                 await SeedIntakeFormEventTypeAsync();
+                await SeedCommunicationTemplatesAsync();
                 if (_env.IsDevelopment())
                 {
                     await SeedDemoDataAsync();
@@ -388,7 +389,8 @@ namespace DatabaseAPI.Services
             ("audit.read", "View the activity audit log"),
             ("evaluations.read", "View evaluation cases (Vyhodnocování)"),
             ("evaluations.write", "Evaluate cases and write recommendations"),
-            ("gdpr.manage", "Export, anonymize and manage patient consents")
+            ("gdpr.manage", "Export, anonymize and manage patient consents"),
+            ("communication.manage", "Browse and edit e-mail/SMS templates and delivery logs")
         };
 
         /// <summary>
@@ -398,6 +400,177 @@ namespace DatabaseAPI.Services
         /// to call any permission-gated endpoint — most visibly /api/employees/me
         /// right after login (403).
         /// </summary>
+        /// <summary>
+        /// Seeds the global wording for every built-in communication template.
+        /// Runs only when the template table is empty so administrator edits
+        /// and deletions are never overwritten by a restart.
+        /// </summary>
+        private async Task SeedCommunicationTemplatesAsync()
+        {
+            if (await _context.CommunicationTemplates.AnyAsync())
+            {
+                return;
+            }
+
+            var templates = new List<CommunicationTemplate>
+            {
+                new()
+                {
+                    Code = CommunicationTemplateCodes.PasswordReset,
+                    Channel = CommunicationChannels.Email,
+                    Language = "cs",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – obnovení hesla",
+                    Body = "Dobrý den {{name}},\n\nbyla podána žádost o obnovení hesla k Vašemu účtu CEPEM. Odkaz platí 15 minut:\n\n{{resetUrl}}\n\nPokud jste o změnu nepožádali, tento e-mail ignorujte."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.PasswordReset,
+                    Channel = CommunicationChannels.Email,
+                    Language = "en",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – password reset",
+                    Body = "Hello {{name}},\n\nA password reset was requested for your CEPEM account. The link is valid for 15 minutes:\n\n{{resetUrl}}\n\nIf you did not request this, you can ignore this e-mail."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.PasswordReset,
+                    Channel = CommunicationChannels.Email,
+                    Language = "nl",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – wachtwoord resetten",
+                    Body = "Hallo {{name}},\n\nEr is een wachtwoordreset aangevraagd voor uw CEPEM-account. De link is 15 minuten geldig:\n\n{{resetUrl}}\n\nAls u dit niet heeft aangevraagd, kunt u deze e-mail negeren."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.IntakeReminder,
+                    Channel = CommunicationChannels.Email,
+                    Language = "cs",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – vyplňte prosím vstupní formulář",
+                    Body = "Dobrý den {{patientName}},\n\nVaše návštěva je naplánována na {{date}}. Před návštěvou vyplňte vstupní formulář:\n\n{{link}}\n\nZnámé údaje jsou předvyplněné, upravte jen to, co se změnilo. Odkaz zůstává platný do začátku návštěvy."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.IntakeReminder,
+                    Channel = CommunicationChannels.Email,
+                    Language = "en",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – please complete your intake form",
+                    Body = "Hello {{patientName}},\n\nYour visit is scheduled for {{date}}. Please complete the intake form before the visit:\n\n{{link}}\n\nKnown details are pre-filled; only update what has changed. The link stays valid until the visit starts."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.IntakeReminder,
+                    Channel = CommunicationChannels.Email,
+                    Language = "nl",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – vul uw intakeformulier in",
+                    Body = "Goedendag {{patientName}},\n\nUw bezoek is gepland op {{date}}. Vul vóór het bezoek het intakeformulier in:\n\n{{link}}\n\nBekende gegevens zijn al ingevuld; u hoeft alleen wijzigingen aan te passen. De link blijft geldig tot het begin van het bezoek."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.ReservationConfirmed,
+                    Channel = CommunicationChannels.Email,
+                    Language = "cs",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – rezervace potvrzena",
+                    Body = "Dobrý den {{patientName}},\n\nVaše rezervace v {{clinic}} je potvrzena na {{date}} v {{time}}. Lékař: {{doctor}}.\n\nCEPEM"
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.ReservationConfirmed,
+                    Channel = CommunicationChannels.Email,
+                    Language = "en",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – reservation confirmed",
+                    Body = "Hello {{patientName}},\n\nYour reservation at {{clinic}} is confirmed for {{date}} at {{time}}. Doctor: {{doctor}}.\n\nCEPEM"
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.ReservationConfirmed,
+                    Channel = CommunicationChannels.Email,
+                    Language = "nl",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – reservering bevestigd",
+                    Body = "Hallo {{patientName}},\n\nUw reservering bij {{clinic}} is bevestigd voor {{date}} om {{time}}. Arts: {{doctor}}.\n\nCEPEM"
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.ReservationCancelled,
+                    Channel = CommunicationChannels.Email,
+                    Language = "cs",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – rezervace zrušena",
+                    Body = "Dobrý den {{patientName}},\n\nVaše rezervace v {{clinic}} na {{date}} v {{time}} byla zrušena. V případě potřeby nás prosím kontaktujte.\n\nCEPEM"
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.ReservationCancelled,
+                    Channel = CommunicationChannels.Email,
+                    Language = "en",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – reservation cancelled",
+                    Body = "Hello {{patientName}},\n\nYour reservation at {{clinic}} on {{date}} at {{time}} has been cancelled. Please contact us if you need a new appointment.\n\nCEPEM"
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.ReservationCancelled,
+                    Channel = CommunicationChannels.Email,
+                    Language = "nl",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = "CEPEM – reservering geannuleerd",
+                    Body = "Hallo {{patientName}},\n\nUw reservering bij {{clinic}} op {{date}} om {{time}} is geannuleerd. Neem contact met ons op als u een nieuwe afspraak nodig heeft.\n\nCEPEM"
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.AppointmentReminderSms,
+                    Channel = CommunicationChannels.Sms,
+                    Language = "cs",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = null,
+                    Body = "Připomínka CEPEM: {{date}} v {{time}}, {{clinic}}. Pokud se nemůžete dostavit, kontaktujte nás."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.AppointmentReminderSms,
+                    Channel = CommunicationChannels.Sms,
+                    Language = "en",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = null,
+                    Body = "CEPEM reminder: {{date}} at {{time}}, {{clinic}}. If you cannot attend, please contact us."
+                },
+                new()
+                {
+                    Code = CommunicationTemplateCodes.AppointmentReminderSms,
+                    Channel = CommunicationChannels.Sms,
+                    Language = "nl",
+                    ScopeType = CommunicationScopes.Global,
+                    ScopeId = 0,
+                    Subject = null,
+                    Body = "CEPEM-herinnering: {{date}} om {{time}}, {{clinic}}. Neem contact op als u niet kunt komen."
+                }
+            };
+
+            _context.CommunicationTemplates.AddRange(templates);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} communication templates.", templates.Count);
+        }
+
         private async Task BackfillEmployeeRolesAsync()
         {
             var baselineRole = await GetRoleByNameAsync("Examiner");

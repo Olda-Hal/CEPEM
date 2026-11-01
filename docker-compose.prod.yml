@@ -83,6 +83,16 @@ services:
       - IntakeReminder__Enabled=${INTAKE_REMINDER_ENABLED:-true}
       - IntakeReminder__LeadDays=${INTAKE_REMINDER_LEAD_DAYS:-3}
       - IntakeReminder__CheckIntervalMinutes=${INTAKE_REMINDER_CHECK_INTERVAL_MINUTES:-15}
+      # Day-before appointment SMS. Default "log" writes only to the SMS log;
+      # set SMS_PROVIDER=http and SMS_ENDPOINT to call a JSON gateway.
+      - Sms__Enabled=${SMS_ENABLED:-true}
+      - Sms__Provider=${SMS_PROVIDER:-log}
+      - Sms__Endpoint=${SMS_ENDPOINT:-}
+      - Sms__ApiKey=${SMS_API_KEY:-}
+      - Sms__Sender=${SMS_SENDER:-CEPEM}
+      - SmsReminder__Enabled=${SMS_REMINDER_ENABLED:-true}
+      - SmsReminder__LeadHours=${SMS_REMINDER_LEAD_HOURS:-24}
+      - SmsReminder__CheckIntervalMinutes=${SMS_REMINDER_CHECK_INTERVAL_MINUTES:-30}
     volumes:
       - ./data/patient-photos:/app/patient-photos
       - ./data/patient-documents:/app/patient-documents
