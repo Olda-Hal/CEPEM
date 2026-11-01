@@ -10,6 +10,7 @@ public class PatientDocumentService
     private readonly DocumentEncryptionService _encryptionService;
     private readonly ITdbAnalysisService _tdbAnalysisService;
     private readonly ILogger<PatientDocumentService> _logger;
+    private readonly IDocumentTextExtractionService? _textExtractionService;
     private readonly string _documentStoragePath;
     private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
@@ -18,12 +19,14 @@ public class PatientDocumentService
         DocumentEncryptionService encryptionService,
         ITdbAnalysisService tdbAnalysisService,
         IConfiguration configuration,
-        ILogger<PatientDocumentService> logger)
+        ILogger<PatientDocumentService> logger,
+        IDocumentTextExtractionService? textExtractionService = null)
     {
         _context = context;
         _encryptionService = encryptionService;
         _tdbAnalysisService = tdbAnalysisService;
         _logger = logger;
+        _textExtractionService = textExtractionService;
         _documentStoragePath = configuration["DocumentStorage:Path"] ?? "/app/patient-documents";
         
         if (!Directory.Exists(_documentStoragePath))
@@ -81,6 +84,27 @@ public class PatientDocumentService
 
         _logger.LogInformation("Saved encrypted document {DocumentId} for patient {PatientId} at {Path}",
             document.Id, patientId, fileName);
+
+        if (_textExtractionService != null && tdbAnalysis == null)
+        {
+            try
+            {
+                var extraction = await _textExtractionService.ExtractAsync(documentData, originalFileName);
+                document.ExtractedText = extraction.Text;
+                document.ExtractionStatus = extraction.Status;
+                document.ExtractionError = extraction.Error;
+                document.ExtractedAtUtc = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Text extraction failed for document {DocumentId}", document.Id);
+                document.ExtractionStatus = DocumentExtractionStatus.Failed;
+                document.ExtractionError = ex.Message;
+                document.ExtractedAtUtc = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+        }
 
         if (tdbAnalysis != null)
         {

@@ -29,6 +29,7 @@ interface SearchDocument {
   patientName: string;
   fileName: string;
   uploadedAt: string;
+  snippet?: string | null;
 }
 
 interface SearchEvaluation {
@@ -195,7 +196,9 @@ export const GlobalSearch: React.FC = () => {
       key: `document-${document.documentId}`,
       group: 'documents',
       label: document.fileName,
-      meta: [document.patientName, formatDate(document.uploadedAt)].filter(Boolean).join(' · '),
+      meta: [document.patientName, formatDate(document.uploadedAt), document.snippet]
+        .filter(Boolean)
+        .join(' · '),
       onSelect: () => navigate(`/patients/${document.patientId}`)
     }));
 

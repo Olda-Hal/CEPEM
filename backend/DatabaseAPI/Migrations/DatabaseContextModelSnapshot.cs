@@ -1552,6 +1552,21 @@ namespace DatabaseAPI.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
+                    b.Property<DateTime?>("ExtractedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ExtractedText")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ExtractionError")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("ExtractionStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(255)

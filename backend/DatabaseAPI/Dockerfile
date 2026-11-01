@@ -20,10 +20,19 @@ RUN dotnet publish "DatabaseAPI.csproj" -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
-# Install wait-for-it script for database readiness
-RUN apt-get update && apt-get install -y wget && \
+# Install wait-for-it plus the document text/OCR toolchain (PDF text layer,
+# scanned PDFs and images). The service degrades to "Unavailable" when a
+# configured tool is missing, so this is not a hard runtime requirement.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        wget \
+        poppler-utils \
+        tesseract-ocr \
+        tesseract-ocr-ces \
+        tesseract-ocr-eng \
+        tesseract-ocr-nld && \
     wget -O /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x /wait-for-it.sh
+    chmod +x /wait-for-it.sh && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=publish /app/publish .
 

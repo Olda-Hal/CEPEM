@@ -146,6 +146,31 @@ public class SearchControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task Search_DocumentFullText_ReturnsSnippet()
+    {
+        var patient = SeedPatient();
+        _context.PatientDocuments.Add(new PatientDocument
+        {
+            PatientId = patient.Id,
+            FileName = "encrypted.pdf.enc",
+            OriginalFileName = "scan.pdf",
+            UploadedAt = DateTime.UtcNow,
+            FileSize = 10,
+            EncryptedPath = "path",
+            ExtractedText = "Zprava obsahuje diabetes a hypertenzi.",
+            ExtractionStatus = DocumentExtractionStatus.Extracted,
+            ExtractedAtUtc = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        var response = await SearchAsync("diabetes");
+
+        var document = Assert.Single(response.Documents);
+        Assert.Equal("scan.pdf", document.FileName);
+        Assert.Contains("diabetes", document.Snippet);
+    }
+
+    [Fact]
     public async Task Search_RespectsCategoryFlags()
     {
         SeedPatient();

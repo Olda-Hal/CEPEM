@@ -145,23 +145,54 @@ public class SearchController : ControllerBase
 
     private async Task<List<SearchDocumentDto>> SearchDocumentsAsync(string term, int limit)
     {
-        return await _context.PatientDocuments
+        var rows = await _context.PatientDocuments
             .AsNoTracking()
             .Where(document => !document.IsDeleted && !document.Patient.IsDeleted)
             .Where(document =>
                 document.OriginalFileName.Contains(term) ||
-                document.FileName.Contains(term))
+                document.FileName.Contains(term) ||
+                (document.ExtractedText != null && document.ExtractedText.Contains(term)))
             .OrderByDescending(document => document.UploadedAt)
             .Take(limit)
-            .Select(document => new SearchDocumentDto
+            .Select(document => new
             {
-                DocumentId = document.Id,
-                PatientId = document.PatientId,
+                document.Id,
+                document.PatientId,
                 PatientName = (document.Patient.Person.FirstName + " " + document.Patient.Person.LastName).Trim(),
-                FileName = document.OriginalFileName,
-                UploadedAt = document.UploadedAt
+                document.OriginalFileName,
+                document.UploadedAt,
+                document.ExtractedText
             })
             .ToListAsync();
+
+        return rows.Select(row => new SearchDocumentDto
+        {
+            DocumentId = row.Id,
+            PatientId = row.PatientId,
+            PatientName = row.PatientName,
+            FileName = row.OriginalFileName,
+            UploadedAt = row.UploadedAt,
+            Snippet = BuildSnippet(row.ExtractedText, term)
+        }).ToList();
+    }
+
+    private static string? BuildSnippet(string? text, string term)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var index = text.IndexOf(term, StringComparison.OrdinalIgnoreCase);
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var start = Math.Max(0, index - 60);
+        var length = Math.Min(text.Length - start, term.Length + 120);
+        var snippet = text.Substring(start, length).Replace('\n', ' ').Trim();
+        return $"{(start > 0 ? "…" : string.Empty)}{snippet}{(start + length < text.Length ? "…" : string.Empty)}";
     }
 
     private async Task<List<SearchEvaluationDto>> SearchEvaluationsAsync(string term, int limit)

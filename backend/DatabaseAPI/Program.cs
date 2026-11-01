@@ -81,6 +81,7 @@ builder.Services.AddScoped<IEventOptionsService, EventOptionsService>();
 builder.Services.AddScoped<IIntakeFormLinkService, IntakeFormLinkService>();
 builder.Services.AddScoped<IPersonMatchingService, PersonMatchingService>();
 builder.Services.AddScoped<IGdprService, GdprService>();
+builder.Services.AddSingleton<IDocumentTextExtractionService, DocumentTextExtractionService>();
 
 // Pre-visit intake form reminders (Reserved slots → e-mail with a form link)
 builder.Services.Configure<IntakeReminderOptions>(

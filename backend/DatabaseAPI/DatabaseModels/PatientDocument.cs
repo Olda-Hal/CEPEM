@@ -35,4 +35,16 @@ public class PatientDocument
   public string EncryptedPath { get; set; } = null!;
 
   public bool IsDeleted { get; set; } = false;
+
+  /// <summary>Searchable text layer extracted by OCR / PDF text extraction.</summary>
+  public string? ExtractedText { get; set; }
+
+  /// <summary>Pending / Extracted / NoText / Unsupported / Unavailable / Failed.</summary>
+  [MaxLength(20)]
+  public string ExtractionStatus { get; set; } = "Pending";
+
+  [MaxLength(500)]
+  public string? ExtractionError { get; set; }
+
+  public DateTime? ExtractedAtUtc { get; set; }
 }

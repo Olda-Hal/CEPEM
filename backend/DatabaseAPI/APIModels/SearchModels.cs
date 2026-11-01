@@ -43,6 +43,9 @@ public class SearchDocumentDto
     public string PatientName { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public DateTime UploadedAt { get; set; }
+
+    /// <summary>Short context around a full-text match, when the term came from the document text.</summary>
+    public string? Snippet { get; set; }
 }
 
 /// <summary>No patient identity is exposed for .tdb evaluation results.</summary>
