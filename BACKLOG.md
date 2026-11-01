@@ -33,20 +33,16 @@ zůstávají pouze otevřené úkoly a nápady.
 Nové kandidáty z průzkumu backendu, frontendu, provozu a veřejného webu.
 Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 
-**Doporučené první:** ForwardedHeaders, self-grant u `permissions.manage` a viditelnost skrytého pacienta.
+**Doporučené první:** integrita šifrování, validace uploadů a PII v logech.
 
 ### Bezpečnost a správnost dat
 
-- **ForwardedHeaders chybí** — za nginx/Cloudflare je `RemoteIpAddress` IP proxy, takže login limit i globální rate limit jsou jeden bucket pro všechny a IP v auditu/metrikách je špatná; nastavit důvěryhodné proxy rozsahy v obou API (`HealthcareAPI/Program.cs`, `DatabaseAPI/Program.cs`).
-- **Skrytý pacient jde stále otevřít a obnovit** — `GetPatientDetail` nefiltruje `IsDeleted` a `RestorePatient` nemá kontrolu oprávnění jako `DeletePatient`; sjednotit viditelnost i authz (`PatientsController.cs`).
-- **`permissions.manage` umožňuje self-grant** — `PermissionsController` nevaliduje komu a jaké právo lze přiřadit; omezit na SysAdmin a assignable scope vynutit na serveru (`PermissionsController.cs`, `HealthcareAPI/AdminController.cs`).
-- **Update slotu nehlídá kolize ani stavový automat** — `UpdateSlot` mění časy bez overlap checku a dovolí `Reserved` bez osoby/lekáře; doplnit kontrolu kolizí a povolených přechodů (`ReservationSlotsController.cs`).
 - **Šifrování souborů nemá integritu** — AES-CBC bez MAC a klíč z `PadRight/Substring` (není KDF); manipulace s ciphertextem se nepozná. Přejít na AES-GCM/Encrypt-then-MAC s korektní derivací a migrací stávajících souborů (`DocumentEncryptionService.cs`, `PhotoEncryptionService.cs`).
 - **Uploady věří Content-Type a příponě** — u fotek i dokumentů validovat magic bytes/skutečné dekódování (ideálně antivirová kontrola), ne jen hlavičku od klienta (`PatientsController.cs`).
 - **Relace a impersonace nejsou dohledatelné/odvolatelné** — 8h JWT bez refresh/logout endpointu, změna hesla ani deaktivace token nezruší, `AccessControlVersion` se neověřuje a audit nepropisuje `impersonator_id`; doplnit revokaci, server-side expiraci hesla a audit náhledu (`AuthService.cs`, `PermissionAuthorization.cs`, `AdminController.cs`).
 - **Veřejný intake mění kmenová data bez revize** — anonymní odkaz přepisuje jméno, datum narození, pojišťovnu i adresu bez schválení personálem a submit (pacient → event → označení linku) není transakční; zvážit frontu změn k potvrzení a transakci (`EventsController.cs`).
 - **PII v logech je v plaintextu** — `EmailLog` (adresa, jméno) i `ActivityLog` (e-mail) drží osobní údaje nešifrovaně a CSV export je vrací bez maskování; zvážit maskování/redakci a kratší retenci těchto sloupců (`EmailLog.cs`, `ActivityLog.cs`, `EmailLogsController.cs`).
-- **Chybí unit/integration testy kritických endpointů a stránek** — kolize v `UpdateSlot`, čitelnost soft-deleted pacienta, reset hesla, uploady, kompletní intake a chybějící testy stránek (návštěvy, rezervace, admin, formuláře); doplnit cílené testy (doplňuje, nenahrazuje E2E TOP 1).
+- **Chybí unit/integration testy kritických endpointů a stránek** — reset hesla, uploady, kompletní intake a chybějící testy stránek (návštěvy, rezervace, admin, formuláře); doplnit cílené testy (doplňuje, nenahrazuje E2E TOP 1).
 
 ### Klinická agenda a produkt
 
