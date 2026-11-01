@@ -205,6 +205,21 @@ public class VisitService : IVisitService
             return null;
         }
 
+        // Avoid duplicate visits when staff already created the day's visit
+        // manually: adopt it for this reservation instead of adding another.
+        var sameDayVisit = await _context.Visits
+            .Where(v => v.PatientId == patient.Id &&
+                        v.ReservationSlotId == null &&
+                        v.VisitDate == slot.StartDateTime.Date)
+            .OrderByDescending(v => v.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (sameDayVisit != null)
+        {
+            sameDayVisit.ReservationSlotId = slot.Id;
+            await _context.SaveChangesAsync(cancellationToken);
+            return sameDayVisit.Id;
+        }
+
         var visit = new Visit
         {
             PatientId = patient.Id,

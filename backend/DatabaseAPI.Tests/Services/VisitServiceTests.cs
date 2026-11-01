@@ -249,6 +249,23 @@ public class VisitServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task EnsureVisitForReservationSlot_AdoptsSameDayManualVisit()
+    {
+        var patient = SeedPatient();
+        var service = CreateService();
+        var visitDate = new DateTime(2026, 11, 10);
+        var manualVisit = await service.CreateVisitAsync(
+            patient.Id, new CreateVisitRequest { VisitDate = visitDate }, null, "CZ");
+        var slot = SeedSlot(patient.PersonId, visitDate.AddHours(9));
+
+        var visitId = await service.EnsureVisitForReservationSlotAsync(slot, createdByEmployeeId: null);
+
+        Assert.Equal(manualVisit!.Id, visitId);
+        var visit = await _context.Visits.SingleAsync();
+        Assert.Equal(slot.Id, visit.ReservationSlotId);
+    }
+
+    [Fact]
     public async Task LinkIntakeEvent_SetsSourceEventOnSlotVisit()
     {
         var patient = SeedPatient();
