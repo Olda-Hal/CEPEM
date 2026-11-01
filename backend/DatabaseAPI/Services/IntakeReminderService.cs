@@ -115,7 +115,7 @@ public class IntakeReminderService : BackgroundService
 
             if (string.IsNullOrWhiteSpace(email))
             {
-                _logger.LogInformation("Skipping intake reminder for slot {SlotId}: no e-mail on file", slot.Id);
+                _logger.LogDebug("Skipping intake reminder for slot {SlotId}: no e-mail on file", slot.Id);
                 continue;
             }
 

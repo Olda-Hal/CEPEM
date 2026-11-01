@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MdAssignment, MdOutlineDescription, MdPerson } from 'react-icons/md';
@@ -40,6 +40,7 @@ const VisitDetailPage: React.FC = () => {
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [creatingIntakeLink, setCreatingIntakeLink] = useState(false);
   const [reportCaseId, setReportCaseId] = useState<number | null>(null);
+  const awaitingIntakeRef = useRef(false);
 
   const [patientSearch, setPatientSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
@@ -74,9 +75,13 @@ const VisitDetailPage: React.FC = () => {
 
   // The intake form opens in a new tab (tablet). Refresh when the doctor
   // comes back so a freshly submitted form appears without a manual reload.
+  // Only reload after that action, so an unsaved note is never discarded.
   useEffect(() => {
     const handleFocus = () => {
-      void load();
+      if (awaitingIntakeRef.current) {
+        awaitingIntakeRef.current = false;
+        void load();
+      }
     };
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
@@ -208,6 +213,7 @@ const VisitDetailPage: React.FC = () => {
         `/api/patients/${patientId}/visits/${visitIdNum}/intake-link`,
         {}
       );
+      awaitingIntakeRef.current = true;
       window.open(`${window.location.origin}${link.intakePath}`, '_blank', 'noopener,noreferrer');
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : t('visits.intakeLinkFailed'));
@@ -448,23 +454,23 @@ const VisitDetailPage: React.FC = () => {
           <section className="visit-card">
             <div className="visit-card-header">
               <h3>{t('visits.intakeTitle')}</h3>
-              {!visit.intakeForm && (
-                <div className="visit-intake-actions">
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={handleOpenIntakeForm}
-                    disabled={creatingIntakeLink}
-                  >
-                    {creatingIntakeLink ? t('common.loading') : t('visits.openIntakeTablet')}
-                  </button>
+              <div className="visit-intake-actions">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleOpenIntakeForm}
+                  disabled={creatingIntakeLink}
+                >
+                  {creatingIntakeLink ? t('common.loading') : t('visits.openIntakeTablet')}
+                </button>
+                {!visit.intakeForm && (
                   <button
                     className="btn btn-secondary btn-sm"
                     onClick={() => setShowIntakeModal(true)}
                   >
                     + {t('visits.addIntake')}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             {visit.intakeForm ? (
               <pre className="visit-intake-preview">{visit.intakeForm}</pre>
