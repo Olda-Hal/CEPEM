@@ -182,6 +182,34 @@ public class PatientDocumentService
         return true;
     }
 
+    /// <summary>
+    /// GDPR erasure: remove every document row (including soft-deleted ones)
+    /// and its encrypted file for the patient. Evaluation cases keep their
+    /// anonymised data but lose the document link (FK is SetNull).
+    /// </summary>
+    public async Task<int> PurgeDocumentsForPatientAsync(int patientId)
+    {
+        var documents = await _context.PatientDocuments
+            .Where(document => document.PatientId == patientId)
+            .ToListAsync();
+
+        foreach (var document in documents)
+        {
+            var filePath = Path.Combine(_documentStoragePath, document.EncryptedPath);
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+
+        _context.PatientDocuments.RemoveRange(documents);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Purged {Count} encrypted documents for patient {PatientId} (GDPR)", documents.Count, patientId);
+        return documents.Count;
+    }
+
     public long GetMaxFileSizeBytes()
     {
         return MaxFileSizeBytes;

@@ -95,6 +95,9 @@ public class DatabaseContext : DbContext
     public DbSet<IntakeFormLink> IntakeFormLinks { get; set; }
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<SavedView> SavedViews { get; set; }
+    public DbSet<ConsentTemplate> ConsentTemplates { get; set; }
+    public DbSet<PatientConsent> PatientConsents { get; set; }
+    public DbSet<GdprRequest> GdprRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -593,6 +596,22 @@ public class DatabaseContext : DbContext
 
         modelBuilder.Entity<SavedView>()
             .HasIndex(view => new { view.EmployeeId, view.Surface });
+
+        modelBuilder.Entity<ConsentTemplate>()
+            .HasIndex(template => new { template.ConsentType, template.Version, template.Language })
+            .IsUnique();
+
+        modelBuilder.Entity<PatientConsent>()
+            .HasOne(consent => consent.Patient)
+            .WithMany()
+            .HasForeignKey(consent => consent.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PatientConsent>()
+            .HasIndex(consent => new { consent.PatientId, consent.ConsentType, consent.AcceptedAtUtc });
+
+        modelBuilder.Entity<GdprRequest>()
+            .HasIndex(request => new { request.PatientId, request.RequestedAtUtc });
     }
 
     private void ConfigureContactRelationships(ModelBuilder modelBuilder)

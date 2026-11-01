@@ -387,7 +387,8 @@ namespace DatabaseAPI.Services
             ("tests.read", "View the test results dashboard"),
             ("audit.read", "View the activity audit log"),
             ("evaluations.read", "View evaluation cases (Vyhodnocování)"),
-            ("evaluations.write", "Evaluate cases and write recommendations")
+            ("evaluations.write", "Evaluate cases and write recommendations"),
+            ("gdpr.manage", "Export, anonymize and manage patient consents")
         };
 
         /// <summary>

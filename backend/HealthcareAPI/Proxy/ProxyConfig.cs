@@ -110,6 +110,9 @@ public static class ProxyConfig
         yield return Route("saved-views-put", "/api/savedviews/{**rest}", "PUT", "authenticated");
         yield return Route("saved-views-delete", "/api/savedviews/{**rest}", "DELETE", "authenticated");
 
+        // GDPR tooling (data map, export, anonymization, consent registry)
+        yield return Route("gdpr", "/api/gdpr/{**rest}", null, "gdpr.manage");
+
         // Vyhodnocování (doctor evaluation of .tdb measurements)
         yield return Route("evaluations-get", "/api/evaluations/{**rest}", "GET", "evaluations.read");
         // The interactive report is part of the patient's visit record, so

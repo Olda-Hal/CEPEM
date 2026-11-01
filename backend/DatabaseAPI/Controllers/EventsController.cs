@@ -219,6 +219,32 @@ public class EventsController : ControllerBase
 
             await SaveFormSubmissionData(request, patient, intakeFormEvent.Id);
 
+            // Every accepted intake form is also a recorded consent history
+            // row (the version points at the active GDPR template when one
+            // exists, otherwise at the built-in version 1).
+            if (request.TermsAccepted == true)
+            {
+                var language = MapLanguage(patient.Person.CountryCode);
+                var template = await _context.ConsentTemplates
+                    .Where(entry => entry.ConsentType == "gdpr" &&
+                                    entry.Language == language &&
+                                    entry.IsActive)
+                    .OrderByDescending(entry => entry.CreatedAtUtc)
+                    .FirstOrDefaultAsync();
+
+                _context.PatientConsents.Add(new PatientConsent
+                {
+                    PatientId = patient.Id,
+                    ConsentType = "gdpr",
+                    Version = template?.Version ?? "1",
+                    Language = language,
+                    Source = "IntakeForm",
+                    AcceptedAtUtc = DateTime.UtcNow,
+                    IntakeEventId = intakeFormEvent.Id
+                });
+                await _context.SaveChangesAsync();
+            }
+
             return Ok(new IntakeFormEventDto
             {
                 EventId = intakeFormEvent.Id,

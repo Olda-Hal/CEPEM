@@ -447,6 +447,40 @@ public class EventsControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task SubmitIntakeFormByLink_WithTermsAccepted_RecordsConsentVersion()
+    {
+        var person = SeedPerson();
+        SeedEventType();
+        _context.ConsentTemplates.Add(new ConsentTemplate
+        {
+            ConsentType = "gdpr",
+            Version = "2",
+            Language = "cs",
+            Title = "Souhlas",
+            Text = "Text",
+            IsActive = true
+        });
+        await _context.SaveChangesAsync();
+        var (token, _) = await CreateValidLink(person);
+
+        var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            ConfirmAccuracy = true,
+            TermsAccepted = true
+        });
+
+        Assert.Null(result.Result);
+        var consent = await _context.PatientConsents.SingleAsync();
+        var patient = await _context.Patients.SingleAsync(p => p.PersonId == person.Id);
+        Assert.Equal(patient.Id, consent.PatientId);
+        Assert.Equal("gdpr", consent.ConsentType);
+        Assert.Equal("2", consent.Version);
+        Assert.Equal("IntakeForm", consent.Source);
+        Assert.NotNull(consent.IntakeEventId);
+    }
+
+    [Fact]
     public async Task SubmitIntakeFormByLink_WithUnknownToken_ReturnsNotFound()
     {
         var result = await _controller.SubmitIntakeFormByLink("deadbeef", new CreateIntakeFormEventRequest());
