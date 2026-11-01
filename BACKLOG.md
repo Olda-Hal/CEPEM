@@ -29,21 +29,7 @@ zůstávají pouze otevřené úkoly, ověření a nápady.
 - `UidService` stále může v race zdědit duplicitní UID při souběžném vytvoření dvou pacientů (gap-filling nelze serializovat); pragmaticky doplnit UNIQUE constraint + retry.
 - `TestResultsController` má kód seriálovitě na disk (test-results mount) — zvážit symlink-escape + path traversal review po sloučení do gateway (dnes za perm `tests.read`).
 
-## Ověření na živém stacku po nasazení
+## Známá omezení (kontext pro tým, není to úkol)
 
-- SysAdmin → Náhled jako Doktor/Examiner (menu, data, oprávnění) → Ukončit náhled; a že deaktivovaný zaměstnanec zmizí a po zapnutí přepínače „Zobrazit neaktivní“ se dá znovu aktivovat.
-- Health dashboard: v produkčním nginxu ověřit routy `/health` a `/db-health` (nginx.conf se peče do image, nutný rebuild frontendu).
-
-## Nasazení (nejdřív tohle) — zbývá udělat na produkci
-
-- Nasadit větev `refactor` na produkci: `sudo docker compose -f docker-compose.prod.yml up -d --build` (aplikují se nové migrace a permission seedy samy). Po startu zkontrolovat `docker compose -f docker-compose.prod.yml ps` — všechny služby musí být `healthy` (healthchecky opraveny 2026-11-01).
-- Po nasazení projít hlavní toky v UI: login → pacienti → detail → rezervační sloty → audit log.
-- Zkontrolovat logy `database-api` po prvním startu (migrace musí projít čistě).
-- Nahrát produkční `.env` na server — vyplnit `DOMAIN_NAME`, `FRONTEND_PUBLIC_URL`, `SERVICE_AUTH_KEY`, `ADMIN_INITIAL_PASSWORD`, `GF_SECURITY_ADMIN_USER/PASSWORD`, `SMTP_HOST/PORT/USER/PASSWORD/SSL` a ostatní nové proměnné (bez SMTP se reset-link jen zaloguje).
-- Provést rotaci klíčů a rešifrování pacientských souborů (pokud ještě neproběhlo — viz `REFACTOR_PLAN.md`, manuální kroky).
-- Nastavit cron pro `scripts/backup_daily.sh` a jednou vyzkoušet obnovu z backupu (obnova se nikdy netestovala).
-
-## Známá omezení (říct týmu)
-
-- Dev DB měla ručně opravenou migrační historii — produkční má čistou, ale první deploy hlídat.
-- Intake dotazník a patient-record formuláře jsou záměrně oddělené (různé domény).
+- **Migrační historie dev DB:** v dev databázi se část migrací aplikovala ručně (případně se ručně označila jako hotová), takže její `__EFMigrationsHistory` nemusí odpovídat čisté DB. Produkční databáze je čistá a tato „záplata“ se jí netýká — jde jen o upozornění, že dev DB není vzor pro ověření migrací a při prvním produkčním startu se staví od nuly.
+- **Intake dotazník vs. patient-record formuláře:** jsou to dva samostatné systémy s vlastními tabulkami a tokem (intake vyplňuje pacient přes odkaz, patient-record spravuje personál). Není to duplicita ani bug; data se mezi nimi automaticky nepřenášejí a nemá smysl je slučovat bez zadání.
