@@ -207,8 +207,9 @@ public class HospitalsController : ControllerBase
     {
         try
         {
+            // Must be tracked: the request mutates the entity and SaveChanges
+            // has to persist those changes.
             var hospital = await _context.Hospitals
-                .AsNoTracking()
                 .Include(h => h.Address)
                 .FirstOrDefaultAsync(h => h.Id == id);
             if (hospital == null)
@@ -251,16 +252,15 @@ public class HospitalsController : ControllerBase
                 }
                 else
                 {
-                    var address = new Address
+                    // Attach through the navigation so EF inserts the address
+                    // and sets Hospital.AddressId in the same SaveChanges.
+                    hospital.Address = new Address
                     {
                         Street = request.Street ?? string.Empty,
                         City = request.City ?? string.Empty,
                         PostalCode = request.PostalCode ?? string.Empty,
                         Country = request.Country ?? string.Empty
                     };
-                    _context.Addresses.Add(address);
-                    await _context.SaveChangesAsync();
-                    hospital.AddressId = address.Id;
                 }
             }
 

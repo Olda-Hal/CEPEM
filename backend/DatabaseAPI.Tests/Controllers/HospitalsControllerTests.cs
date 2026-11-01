@@ -114,7 +114,64 @@ public class HospitalsControllerTests : IAsyncLifetime
         var result = await _controller.Update(hospital.Id, request);
 
         // Assert
-        Assert.True(result is OkObjectResult or NotFoundObjectResult or BadRequestObjectResult);
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Update_PersistsNameAndCreatesAddress()
+    {
+        var hospital = new Hospital { Name = "Original Name", Active = true };
+        _context.Hospitals.Add(hospital);
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.Update(hospital.Id, new UpdateHospitalRequest
+        {
+            Name = "Updated Name",
+            Street = "Main 1",
+            City = "Prague",
+            PostalCode = "11000",
+            Country = "CZ"
+        });
+
+        Assert.IsType<OkObjectResult>(result);
+
+        _context.ChangeTracker.Clear();
+        var stored = await _context.Hospitals
+            .Include(h => h.Address)
+            .SingleAsync(h => h.Id == hospital.Id);
+
+        Assert.Equal("Updated Name", stored.Name);
+        Assert.NotNull(stored.Address);
+        Assert.Equal("Main 1", stored.Address!.Street);
+        Assert.Equal(stored.AddressId, stored.Address.Id);
+        Assert.Equal(1, await _context.Addresses.CountAsync());
+    }
+
+    [Fact]
+    public async Task Update_PersistsExistingAddressChanges()
+    {
+        var address = new Address { Street = "Old 1", City = "Brno", PostalCode = "60200", Country = "CZ" };
+        _context.Addresses.Add(address);
+        await _context.SaveChangesAsync();
+        var hospital = new Hospital { Name = "Hospital", Active = true, AddressId = address.Id };
+        _context.Hospitals.Add(hospital);
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.Update(hospital.Id, new UpdateHospitalRequest
+        {
+            Street = "New 2",
+            City = "Prague",
+            PostalCode = "11000"
+        });
+
+        Assert.IsType<OkObjectResult>(result);
+
+        _context.ChangeTracker.Clear();
+        var stored = await _context.Addresses.SingleAsync(a => a.Id == address.Id);
+        Assert.Equal("New 2", stored.Street);
+        Assert.Equal("Prague", stored.City);
+        Assert.Equal("11000", stored.PostalCode);
+        Assert.Equal(1, await _context.Addresses.CountAsync());
     }
 
     [Fact]

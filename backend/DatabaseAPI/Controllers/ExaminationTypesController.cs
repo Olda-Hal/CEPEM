@@ -113,8 +113,8 @@ public class ExaminationTypesController : ControllerBase
     {
         try
         {
+            // Must be tracked so the translation edits are persisted.
             var type = await _context.ExaminationTypes
-                .AsNoTracking()
                 .Include(e => e.NameTranslation)
                 .FirstOrDefaultAsync(e => e.Id == id);
             if (type == null)
@@ -125,10 +125,14 @@ public class ExaminationTypesController : ControllerBase
 
             if (type.NameTranslation == null)
             {
-                var translation = new Translation { EN = request.EN, CS = request.CS, NL = request.NL };
-                _context.Translations.Add(translation);
-                await _context.SaveChangesAsync();
-                type.NameTranslationId = translation.Id;
+                // Attach through the navigation so EF inserts the translation
+                // and sets NameTranslationId in the same SaveChanges.
+                type.NameTranslation = new Translation
+                {
+                    EN = request.EN,
+                    CS = request.CS,
+                    NL = request.NL
+                };
             }
             else
             {

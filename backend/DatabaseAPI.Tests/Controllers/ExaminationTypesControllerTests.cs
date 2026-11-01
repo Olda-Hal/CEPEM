@@ -160,7 +160,58 @@ public class ExaminationTypesControllerTests : IAsyncLifetime
         var result = await _controller.Update(examinationType.Id, request);
 
         // Assert
-        Assert.True(result is OkObjectResult or NotFoundObjectResult or BadRequestObjectResult);
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Update_PersistsTranslations()
+    {
+        var translation = new Translation { EN = "Old", CS = "Stary", NL = "Oud" };
+        _context.Translations.Add(translation);
+        await _context.SaveChangesAsync();
+        var examinationType = new ExaminationType { NameTranslationId = translation.Id };
+        _context.ExaminationTypes.Add(examinationType);
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.Update(examinationType.Id, new UpdateExaminationTypeRequest
+        {
+            EN = "New",
+            CS = "Novy",
+            NL = "Nieuw"
+        });
+
+        Assert.IsType<OkObjectResult>(result);
+
+        _context.ChangeTracker.Clear();
+        var stored = await _context.Translations.SingleAsync(t => t.Id == translation.Id);
+        Assert.Equal("New", stored.EN);
+        Assert.Equal("Novy", stored.CS);
+        Assert.Equal("Nieuw", stored.NL);
+    }
+
+    [Fact]
+    public async Task Update_WithMissingTranslation_CreatesAndLinksIt()
+    {
+        var examinationType = new ExaminationType();
+        _context.ExaminationTypes.Add(examinationType);
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.Update(examinationType.Id, new UpdateExaminationTypeRequest
+        {
+            EN = "Created",
+            CS = "Vytvoreno",
+            NL = "Gemaakt"
+        });
+
+        Assert.IsType<OkObjectResult>(result);
+
+        _context.ChangeTracker.Clear();
+        var stored = await _context.ExaminationTypes.SingleAsync(t => t.Id == examinationType.Id);
+        Assert.NotNull(stored.NameTranslationId);
+        var translation = await _context.Translations.SingleAsync(t => t.Id == stored.NameTranslationId);
+        Assert.Equal("Created", translation.EN);
+        Assert.Equal("Vytvoreno", translation.CS);
+        Assert.Equal("Gemaakt", translation.NL);
     }
 
     [Fact]
