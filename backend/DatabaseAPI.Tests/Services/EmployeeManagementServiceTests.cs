@@ -25,6 +25,13 @@ public class EmployeeManagementServiceTests : IDisposable
         _context = new DatabaseContext(options);
 
         _scopeMock
+            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(
+                1,
+                new[] { "SysAdmin" },
+                Array.Empty<int>(),
+                Array.Empty<int>()));
+        _scopeMock
             .Setup(s => s.GetVisibleEmployeeIdsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((HashSet<int>?)null);
     }
@@ -81,5 +88,65 @@ public class EmployeeManagementServiceTests : IDisposable
         var employees = await CreateService().GetAllEmployeesAsync(includeInactive: true);
 
         Assert.Equal(2, employees.Count);
+    }
+
+    [Fact]
+    public async Task GetAllEmployees_NonAdminWithoutScope_SeesNobody()
+    {
+        SeedEmployee("ACTIVE", active: true);
+
+        _scopeMock
+            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(
+                99,
+                new[] { "Doctor" },
+                Array.Empty<int>(),
+                Array.Empty<int>()));
+
+        var employees = await CreateService().GetAllEmployeesAsync();
+
+        Assert.Empty(employees);
+    }
+
+    [Fact]
+    public async Task GetAllEmployees_ScopedAdmin_OnlySeesVisibleIds()
+    {
+        var visible = SeedEmployee("VISIBLE", active: true);
+        SeedEmployee("HIDDEN", active: true);
+
+        _scopeMock
+            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(
+                99,
+                new[] { "Center Admin" },
+                new[] { 1 },
+                new[] { 203 }));
+        _scopeMock
+            .Setup(s => s.GetVisibleEmployeeIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HashSet<int> { visible.Id });
+
+        var employees = await CreateService().GetAllEmployeesAsync();
+
+        Assert.Single(employees);
+        Assert.Equal(visible.Id, employees[0].EmployeeId);
+    }
+
+    [Fact]
+    public async Task ResetPassword_OutOfScope_ReturnsNull()
+    {
+        var target = SeedEmployee("TARGET", active: true);
+
+        _scopeMock
+            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(
+                99,
+                new[] { "Center Admin" },
+                new[] { 1 },
+                new[] { 203 }));
+        _scopeMock
+            .Setup(s => s.GetVisibleEmployeeIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HashSet<int>());
+
+        Assert.Null(await CreateService().ResetPasswordAsync(target.Id));
     }
 }

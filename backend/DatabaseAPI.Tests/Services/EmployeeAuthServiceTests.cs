@@ -48,7 +48,11 @@ public class EmployeeAuthServiceTests : IDisposable
         scopeMock.Setup(s => s.GetVisibleEmployeeIdsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((HashSet<int>?)null);
         scopeMock.Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ActorScope(null, new List<string>(), new List<int>(), new List<int>()));
+            .ReturnsAsync(new ActorScope(
+                null,
+                new List<string> { "SysAdmin" },
+                new List<int>(),
+                new List<int>()));
         scopeMock.Setup(s => s.ValidateAssignableRolesAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)null);
         scopeMock.Setup(s => s.ValidateCountryAssignmentAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))

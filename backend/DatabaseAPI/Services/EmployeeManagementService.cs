@@ -56,9 +56,29 @@ namespace DatabaseAPI.Services
             _employeeScopeService = employeeScopeService;
         }
 
+        /// <summary>
+        /// Visibility for employee management endpoints. Unlike the general
+        /// search helper, a user without an administrative role sees nobody:
+        /// only your own subordinates (plus yourself) are listed.
+        /// </summary>
+        private async Task<HashSet<int>?> GetManagementVisibleIdsAsync(CancellationToken cancellationToken)
+        {
+            var actor = await _employeeScopeService.GetActorScopeAsync(cancellationToken);
+            if (actor.HasFullAccess)
+            {
+                return null; // no filtering
+            }
+            if (!actor.IsScopedAdmin)
+            {
+                return new HashSet<int>();
+            }
+
+            return await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+        }
+
         public async Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
         {
-            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+            var visibleIds = await GetManagementVisibleIdsAsync(cancellationToken);
 
             var query = _context.Employees.AsQueryable();
             if (visibleIds != null)
@@ -127,7 +147,7 @@ namespace DatabaseAPI.Services
         {
             // The detail read is subject to the same visibility rules as the
             // list, so a scoped admin cannot fetch an outsider by id.
-            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync();
+            var visibleIds = await GetManagementVisibleIdsAsync(CancellationToken.None);
             if (visibleIds != null && !visibleIds.Contains(employeeId))
             {
                 return null;
@@ -210,7 +230,7 @@ namespace DatabaseAPI.Services
                 }
 
                 // Administrative scope enforcement (Center/Country Admin)
-                var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+                var visibleIds = await GetManagementVisibleIdsAsync(cancellationToken);
                 if (visibleIds != null && !visibleIds.Contains(employeeId))
                 {
                     return new UpdateEmployeeResponse
@@ -388,6 +408,14 @@ namespace DatabaseAPI.Services
 
         public async Task<string?> ResetPasswordAsync(int employeeId)
         {
+            // Out-of-scope employees are reported as not found so the caller
+            // cannot probe the existence of other centers' staff.
+            var visibleIds = await GetManagementVisibleIdsAsync(CancellationToken.None);
+            if (visibleIds != null && !visibleIds.Contains(employeeId))
+            {
+                return null;
+            }
+
             var employee = await _context.Employees
                 .Include(e => e.Person)
                 .FirstOrDefaultAsync(e => e.Id == employeeId);
@@ -428,7 +456,7 @@ namespace DatabaseAPI.Services
                 return (false, null);
             }
 
-            var visibleIds = await _employeeScopeService.GetVisibleEmployeeIdsAsync(cancellationToken);
+            var visibleIds = await GetManagementVisibleIdsAsync(cancellationToken);
             if (visibleIds != null && !visibleIds.Contains(employeeId))
             {
                 return (true, "Nemáte oprávnění deaktivovat tohoto zaměstnance");
