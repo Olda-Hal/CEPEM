@@ -10,7 +10,7 @@
   width: 100%;
   max-width: 820px;
   padding: 2rem;
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface, #fff);
   border-radius: 12px;
   box-shadow: 0 8px 30px rgb(0 0 0 / 8%);
 }
