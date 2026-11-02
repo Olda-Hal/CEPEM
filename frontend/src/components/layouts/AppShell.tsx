@@ -49,6 +49,11 @@ const ADMIN_CHILDREN: NavSubItem[] = [
   { key: 'health', to: '/admin/health', labelKey: 'adminPage.healthTitle' }
 ];
 
+// The Examinations overview is temporarily hidden from the navigation while
+// its workflow is being reworked. The route still exists; flip this to true to
+// bring the menu item back.
+const SHOW_EXAMINATIONS_NAV = false;
+
 const NAV_SECTIONS: NavSection[] = [
   { key: 'patients', to: '/patients', labelKey: 'patients.title', matchPrefixes: ['/patients'] },
   {
@@ -111,9 +116,11 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
       );
     }
     if (section.key === 'examinations') {
-      // Examinations overview belongs to administration, not to the examiner
-      // (whose whole agenda is the Patients section) or evaluating doctor.
-      return isAdmin(user) || (!hasRole(user, 'Doctor') && !hasRole(user, 'Examiner'));
+      // Temporarily hidden from the menu (see SHOW_EXAMINATIONS_NAV).
+      return (
+        SHOW_EXAMINATIONS_NAV &&
+        (isAdmin(user) || (!hasRole(user, 'Doctor') && !hasRole(user, 'Examiner')))
+      );
     }
     if (section.key === 'vyhodnocovani') {
       // Vyhodnocování is the evaluating doctor's home; country admins oversee it.
