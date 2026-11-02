@@ -194,6 +194,20 @@ export const AddPatientFormPage: React.FC = () => {
 
     setLoading(true);
     try {
+      // Preflight: do not create the patient when the mandatory GDPR wording
+      // is not published yet — otherwise the patient row would be left behind
+      // after the intake call is rejected.
+      const gdprLanguage = (i18n.language || 'cs').split('-')[0];
+      const gdprDocument = await apiClient.get<{ available: boolean }>(
+        `/api/gdpr/public/current?language=${gdprLanguage}`
+      );
+      if (!gdprDocument.available) {
+        setError(
+          'Znění GDPR zatím není zveřejněné. Požádejte správce, aby jej zveřejnil v Administraci → GDPR.'
+        );
+        return;
+      }
+
       const payload: any = {
         firstName: form.firstName,
         lastName: form.lastName,

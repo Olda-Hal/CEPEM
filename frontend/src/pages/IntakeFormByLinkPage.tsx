@@ -336,6 +336,7 @@ export const IntakeFormByLinkPage: React.FC = () => {
         termsAccepted: form.termsAccepted,
         gdprAccepted: form.gdprAccepted,
         gdprLanguage: linkInfo?.language,
+        gdprVersion: linkInfo?.gdprVersion,
         signaturePlace: form.signaturePlace || undefined,
         signatureDate: form.signatureDate || undefined,
         signatureVector: form.signatureVector,

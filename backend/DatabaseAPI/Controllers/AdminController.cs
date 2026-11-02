@@ -84,6 +84,13 @@ namespace DatabaseAPI.Controllers
         [HttpPost("employees/{employeeId}/reset-password")]
         public async Task<ActionResult> ResetEmployeePassword(int employeeId)
         {
+            // Out-of-scope employees are reported as not found so the route
+            // cannot be used to reset another center's staff.
+            if (!await _employeeManagementService.IsEmployeeVisibleForManagementAsync(employeeId))
+            {
+                return NotFound("Employee not found");
+            }
+
             var (ok, error) = await _passwordResetService.RequestResetForEmployeeAsync(employeeId);
             if (!ok)
             {

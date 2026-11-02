@@ -81,6 +81,36 @@ public class AdminControllerTests
     }
 
     [Fact]
+    public async Task ResetEmployeePassword_OutOfScope_ReturnsNotFound_AndDoesNotSend()
+    {
+        _service
+            .Setup(s => s.IsEmployeeVisibleForManagementAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await _controller.ResetEmployeePassword(42);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+        _passwordResetService.Verify(
+            s => s.RequestResetForEmployeeAsync(It.IsAny<int>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ResetEmployeePassword_VisibleEmployee_SendsReset()
+    {
+        _service
+            .Setup(s => s.IsEmployeeVisibleForManagementAsync(42, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _passwordResetService
+            .Setup(s => s.RequestResetForEmployeeAsync(42))
+            .ReturnsAsync((true, (string?)null));
+
+        var result = await _controller.ResetEmployeePassword(42);
+
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
     public async Task CreateRole_WhenInvalid_ReturnsBadRequest()
     {
         _service.Setup(s => s.CreateRoleAsync(It.IsAny<CreateRoleRequest>()))

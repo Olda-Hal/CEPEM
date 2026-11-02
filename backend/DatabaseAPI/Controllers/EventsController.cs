@@ -182,24 +182,11 @@ public class EventsController : ControllerBase
             // GDPR consent is mandatory and its wording must be published.
             // Validate before touching the patient/event data so a rejected
             // submission leaves no partial writes behind.
-            var gdprLanguage = NormalizeGdprLanguage(
-                request.GdprLanguage,
-                MapLanguage(patient.Person.CountryCode));
-            var gdprTemplate = await _context.ConsentTemplates
-                .Where(template => template.ConsentType == "gdpr" &&
-                                   template.Language == gdprLanguage &&
-                                   template.IsActive)
-                .OrderByDescending(template => template.CreatedAtUtc)
-                .ThenByDescending(template => template.Id)
-                .FirstOrDefaultAsync();
-
-            if (request.GdprAccepted != true)
+            var (gdprError, gdprTemplate, _) = await ResolveGdprConsentAsync(
+                request, patient.Person.CountryCode);
+            if (gdprError != null)
             {
-                return BadRequest("GDPR consent is required.");
-            }
-            if (gdprTemplate == null)
-            {
-                return BadRequest($"GDPR consent text is not available for language '{gdprLanguage}'.");
+                return BadRequest(gdprError);
             }
 
             var intakeFormEventType = await _context.EventTypes
@@ -249,7 +236,7 @@ public class EventsController : ControllerBase
             {
                 PatientId = patient.Id,
                 ConsentType = "gdpr",
-                Version = gdprTemplate.Version,
+                Version = gdprTemplate!.Version,
                 Language = gdprTemplate.Language,
                 Source = "IntakeForm",
                 AcceptedAtUtc = DateTime.UtcNow,
@@ -378,6 +365,20 @@ public class EventsController : ControllerBase
             if (invalidReason != null)
                 return BadRequest(invalidReason);
 
+            // Validate GDPR before creating/promoting a patient: a rejected
+            // submission must not leave a half-created patient behind.
+            request.GdprLanguage = MapLanguage(
+                link.ReservationSlot?.CountryCode ?? link.Person.CountryCode);
+            var (gdprError, gdprTemplate, _) = await ResolveGdprConsentAsync(
+                request, link.Person.CountryCode);
+            if (gdprError != null)
+            {
+                return BadRequest(gdprError);
+            }
+            // Pin the exact version the patient saw so a version published
+            // between page load and submit cannot change what gets recorded.
+            request.GdprVersion = gdprTemplate!.Version;
+
             var patient = await _context.Patients
                 .FirstOrDefaultAsync(p => p.PersonId == link.PersonId);
 
@@ -407,11 +408,6 @@ public class EventsController : ControllerBase
             }
 
             request.PatientId = patient.Id;
-
-            // The accepted GDPR version is the one shown for the link's
-            // reservation country, not a client-supplied override.
-            request.GdprLanguage = MapLanguage(
-                link.ReservationSlot?.CountryCode ?? link.Person.CountryCode);
 
             var intakeResult = await CreateIntakeFormEvent(request);
             if (intakeResult.Result is ObjectResult objectResult && objectResult.StatusCode >= 400)
@@ -464,6 +460,48 @@ public class EventsController : ControllerBase
     {
         var language = requested?.Trim().ToLowerInvariant();
         return language is "cs" or "en" or "nl" ? language : fallback;
+    }
+
+    /// <summary>
+    /// Resolves the mandatory GDPR consent. When the caller supplies a
+    /// version, only that active version is accepted (the patient agreed to
+    /// exactly that wording); otherwise the newest active version is used.
+    /// </summary>
+    private async Task<(string? Error, ConsentTemplate? Template, string Language)> ResolveGdprConsentAsync(
+        CreateIntakeFormEventRequest request, string? fallbackCountryCode)
+    {
+        var language = NormalizeGdprLanguage(
+            request.GdprLanguage, MapLanguage(fallbackCountryCode));
+
+        if (request.GdprAccepted != true)
+        {
+            return ("GDPR consent is required.", null, language);
+        }
+
+        var version = request.GdprVersion?.Trim();
+        var query = _context.ConsentTemplates
+            .Where(template => template.ConsentType == "gdpr" &&
+                               template.Language == language &&
+                               template.IsActive);
+        if (!string.IsNullOrWhiteSpace(version))
+        {
+            query = query.Where(template => template.Version == version);
+        }
+
+        var resolved = await query
+            .OrderByDescending(template => template.CreatedAtUtc)
+            .ThenByDescending(template => template.Id)
+            .FirstOrDefaultAsync();
+
+        if (resolved == null)
+        {
+            var detail = string.IsNullOrWhiteSpace(version)
+                ? $"language '{language}'"
+                : $"language '{language}' and version '{version}'";
+            return ($"GDPR consent text is not available for {detail}.", null, language);
+        }
+
+        return (null, resolved, language);
     }
 
     /// <summary>

@@ -85,6 +85,13 @@ public class CreateIntakeFormEventRequest
     /// <summary>Language of the GDPR wording shown to the patient (cs/en/nl).</summary>
     public string? GdprLanguage { get; set; }
 
+    /// <summary>
+    /// Exact GDPR version the patient saw. When supplied, the backend refuses
+    /// a version that is no longer active instead of silently recording a
+    /// newer one.
+    /// </summary>
+    public string? GdprVersion { get; set; }
+
     public string? SignaturePlace { get; set; }
     [JsonConverter(typeof(FlexibleNullableDateTimeConverter))]
     public DateTime? SignatureDate { get; set; }

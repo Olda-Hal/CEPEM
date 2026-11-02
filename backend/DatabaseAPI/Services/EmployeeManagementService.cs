@@ -13,6 +13,13 @@ namespace DatabaseAPI.Services
         /// </summary>
         Task<List<EmployeeListItem>> GetAllEmployeesAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId);
+
+        /// <summary>
+        /// Whether the acting administrator may manage the given employee.
+        /// Full access sees everyone; scoped admins see their subordinates;
+        /// other roles see nobody.
+        /// </summary>
+        Task<bool> IsEmployeeVisibleForManagementAsync(int employeeId, CancellationToken cancellationToken = default);
         Task<UpdateEmployeeResponse> UpdateEmployeeAsync(int employeeId, UpdateEmployeeRequest request, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -141,6 +148,13 @@ namespace DatabaseAPI.Services
                 .ToListAsync(cancellationToken);
 
             return employees;
+        }
+
+        public async Task<bool> IsEmployeeVisibleForManagementAsync(
+            int employeeId, CancellationToken cancellationToken = default)
+        {
+            var visibleIds = await GetManagementVisibleIdsAsync(cancellationToken);
+            return visibleIds == null || visibleIds.Contains(employeeId);
         }
 
         public async Task<EmployeeListItem?> GetEmployeeByIdAsync(int employeeId)

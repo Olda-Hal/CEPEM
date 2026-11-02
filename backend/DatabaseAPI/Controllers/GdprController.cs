@@ -12,7 +12,9 @@ namespace DatabaseAPI.Controllers;
 
 /// <summary>
 /// GDPR tooling: data map, full export (JSON/ZIP), anonymization, consent
-/// templates and recorded patient consents. Gateway-gated by gdpr.manage.
+/// templates and recorded patient consents. Gateway-gated by gdpr.manage,
+/// except <c>public/current</c>, which serves the published wording
+/// anonymously to the intake form and the public GDPR page.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]

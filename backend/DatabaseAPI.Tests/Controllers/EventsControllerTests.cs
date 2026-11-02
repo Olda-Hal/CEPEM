@@ -520,6 +520,8 @@ public class EventsControllerTests : IDisposable
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Contains("GDPR consent is required", badRequest.Value?.ToString());
         Assert.Empty(await _context.FormSubmissions.ToListAsync());
+        Assert.Empty(await _context.Patients.ToListAsync());
+        Assert.Null((await _context.IntakeFormLinks.SingleAsync()).UsedAtUtc);
     }
 
     [Fact]
@@ -542,6 +544,27 @@ public class EventsControllerTests : IDisposable
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Contains("not available", badRequest.Value?.ToString());
+        Assert.Empty(await _context.Patients.ToListAsync());
+    }
+
+    [Fact]
+    public async Task SubmitIntakeFormByLink_WithStaleGdprVersion_ReturnsBadRequest()
+    {
+        var person = SeedPerson();
+        SeedEventType();
+        var (token, _) = await CreateValidLink(person);
+
+        var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            GdprAccepted = true,
+            GdprLanguage = "cs",
+            GdprVersion = "0"
+        });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("version '0'", badRequest.Value?.ToString());
+        Assert.Empty(await _context.Patients.ToListAsync());
     }
 
     [Fact]
@@ -662,6 +685,8 @@ public class EventsControllerTests : IDisposable
         var info = Assert.IsType<IntakeFormLinkInfoDto>(
             Assert.IsType<OkObjectResult>(infoResult.Result).Value);
 
+        Assert.True(info.GdprAvailable);
+        Assert.Equal("1", info.GdprVersion);
         Assert.Equal("Eva", info.Prefill.FirstName);
         Assert.Equal(new DateTime(1985, 4, 2), info.Prefill.DateOfBirth);
         Assert.Equal(55, info.Prefill.InsuranceNumber);
