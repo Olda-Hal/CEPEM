@@ -748,6 +748,10 @@ export interface IntakeFormLinkInfo {
   expiresAtUtc: string;
   /** cs / nl / en derived from the reservation country. */
   language: string;
+  /** Whether an active GDPR template exists for the form language. */
+  gdprAvailable: boolean;
+  /** Version of the active GDPR template for the form language. */
+  gdprVersion?: string | null;
   visitStartUtc?: string | null;
   canEdit: boolean;
   alreadySubmitted: boolean;

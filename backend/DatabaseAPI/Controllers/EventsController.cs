@@ -179,6 +179,29 @@ public class EventsController : ControllerBase
             if (patient == null)
                 return NotFound("Patient not found");
 
+            // GDPR consent is mandatory and its wording must be published.
+            // Validate before touching the patient/event data so a rejected
+            // submission leaves no partial writes behind.
+            var gdprLanguage = NormalizeGdprLanguage(
+                request.GdprLanguage,
+                MapLanguage(patient.Person.CountryCode));
+            var gdprTemplate = await _context.ConsentTemplates
+                .Where(template => template.ConsentType == "gdpr" &&
+                                   template.Language == gdprLanguage &&
+                                   template.IsActive)
+                .OrderByDescending(template => template.CreatedAtUtc)
+                .ThenByDescending(template => template.Id)
+                .FirstOrDefaultAsync();
+
+            if (request.GdprAccepted != true)
+            {
+                return BadRequest("GDPR consent is required.");
+            }
+            if (gdprTemplate == null)
+            {
+                return BadRequest($"GDPR consent text is not available for language '{gdprLanguage}'.");
+            }
+
             var intakeFormEventType = await _context.EventTypes
                 .Include(et => et.NameTranslation)
                 .FirstOrDefaultAsync(et => et.NameTranslation != null &&
@@ -220,30 +243,19 @@ public class EventsController : ControllerBase
             await SaveFormSubmissionData(request, patient, intakeFormEvent.Id);
 
             // Every accepted intake form is also a recorded consent history
-            // row (the version points at the active GDPR template when one
-            // exists, otherwise at the built-in version 1).
-            if (request.TermsAccepted == true)
+            // row pointing at the exact GDPR version and language the patient
+            // agreed to.
+            _context.PatientConsents.Add(new PatientConsent
             {
-                var language = MapLanguage(patient.Person.CountryCode);
-                var template = await _context.ConsentTemplates
-                    .Where(entry => entry.ConsentType == "gdpr" &&
-                                    entry.Language == language &&
-                                    entry.IsActive)
-                    .OrderByDescending(entry => entry.CreatedAtUtc)
-                    .FirstOrDefaultAsync();
-
-                _context.PatientConsents.Add(new PatientConsent
-                {
-                    PatientId = patient.Id,
-                    ConsentType = "gdpr",
-                    Version = template?.Version ?? "1",
-                    Language = language,
-                    Source = "IntakeForm",
-                    AcceptedAtUtc = DateTime.UtcNow,
-                    IntakeEventId = intakeFormEvent.Id
-                });
-                await _context.SaveChangesAsync();
-            }
+                PatientId = patient.Id,
+                ConsentType = "gdpr",
+                Version = gdprTemplate.Version,
+                Language = gdprTemplate.Language,
+                Source = "IntakeForm",
+                AcceptedAtUtc = DateTime.UtcNow,
+                IntakeEventId = intakeFormEvent.Id
+            });
+            await _context.SaveChangesAsync();
 
             return Ok(new IntakeFormEventDto
             {
@@ -317,6 +329,17 @@ public class EventsController : ControllerBase
                     .FirstOrDefaultAsync();
             }
 
+            var language = MapLanguage(
+                link.ReservationSlot?.CountryCode ?? link.Person.CountryCode);
+            var gdprTemplate = await _context.ConsentTemplates
+                .AsNoTracking()
+                .Where(template => template.ConsentType == "gdpr" &&
+                                   template.Language == language &&
+                                   template.IsActive)
+                .OrderByDescending(template => template.CreatedAtUtc)
+                .ThenByDescending(template => template.Id)
+                .FirstOrDefaultAsync();
+
             return Ok(new IntakeFormLinkInfoDto
             {
                 PersonId = link.PersonId,
@@ -326,7 +349,9 @@ public class EventsController : ControllerBase
                 ReservationSlotId = link.ReservationSlotId,
                 VisitId = link.VisitId,
                 ExpiresAtUtc = link.ExpiresAtUtc,
-                Language = MapLanguage(link.ReservationSlot?.CountryCode ?? link.Person.CountryCode),
+                Language = language,
+                GdprAvailable = gdprTemplate != null,
+                GdprVersion = gdprTemplate?.Version,
                 VisitStartUtc = link.ReservationSlot?.StartDateTime ?? link.Visit?.VisitDate,
                 CanEdit = link.AllowsEdits,
                 AlreadySubmitted = alreadySubmitted,
@@ -383,6 +408,11 @@ public class EventsController : ControllerBase
 
             request.PatientId = patient.Id;
 
+            // The accepted GDPR version is the one shown for the link's
+            // reservation country, not a client-supplied override.
+            request.GdprLanguage = MapLanguage(
+                link.ReservationSlot?.CountryCode ?? link.Person.CountryCode);
+
             var intakeResult = await CreateIntakeFormEvent(request);
             if (intakeResult.Result is ObjectResult objectResult && objectResult.StatusCode >= 400)
             {
@@ -428,6 +458,12 @@ public class EventsController : ControllerBase
             "CZ" or null or "" => "cs",
             _ => "en"
         };
+    }
+
+    private static string NormalizeGdprLanguage(string? requested, string fallback)
+    {
+        var language = requested?.Trim().ToLowerInvariant();
+        return language is "cs" or "en" or "nl" ? language : fallback;
     }
 
     /// <summary>

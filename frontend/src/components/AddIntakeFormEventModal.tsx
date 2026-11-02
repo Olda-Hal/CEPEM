@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import BaseModal from './BaseModal';
 import { PatientFormFields, PatientFormData } from './PatientFormFields';
@@ -52,6 +53,7 @@ const getDefaultFormData = (firstName: string, lastName: string): PatientFormDat
 
   confirmAccuracy: false,
   termsAccepted: false,
+  gdprAccepted: false,
   signaturePlace: '',
   signatureDate: new Date().toISOString().slice(0, 10),
   signatureVector: '',
@@ -100,6 +102,7 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
   onClose,
   onEventCreated
 }) => {
+  const { i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<PatientFormData>(
@@ -126,6 +129,11 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
 
     if (!form.confirmAccuracy) {
       setError('Potvrďte správnost vyplněných údajů');
+      return;
+    }
+
+    if (!form.gdprAccepted) {
+      setError('Musíte souhlasit se zpracováním osobních údajů (GDPR)');
       return;
     }
 
@@ -215,6 +223,8 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
         familyTumorType: form.familyTumorType || undefined,
         confirmAccuracy: form.confirmAccuracy,
         termsAccepted: form.termsAccepted,
+        gdprAccepted: form.gdprAccepted,
+        gdprLanguage: i18n.language,
         signaturePlace: form.signaturePlace || undefined,
         signatureDate: form.signatureDate || undefined,
         signatureVector: form.signatureVector,

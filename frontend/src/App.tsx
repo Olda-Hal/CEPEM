@@ -68,6 +68,7 @@ const IntakeFormByLinkPage = React.lazy(() =>
     return { default: m.IntakeFormByLinkPage };
   })
 );
+const PublicGdprPage = React.lazy(() => import('./pages/PublicGdprPage'));
 
 import './App.css';
 
@@ -113,6 +114,7 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/intake/:token" element={<IntakeFormByLinkPage />} />
+                  <Route path="/gdpr" element={<PublicGdprPage />} />
                   <Route
                     element={
                       <ProtectedRoute>

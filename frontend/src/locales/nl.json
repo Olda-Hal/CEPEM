@@ -410,6 +410,8 @@
     "submitting": "Aan het versturen...",
     "invalidLink": "De link voor de inschrijving is ongeldig.",
     "confirmAccuracyRequired": "Controleer of de ingevoerde informatie correct is.",
+    "gdprRequired": "U moet instemmen met de verwerking van persoonsgegevens (GDPR).",
+    "gdprUnavailable": "De GDPR-tekst is nog niet gepubliceerd. Neem contact op met de kliniek.",
     "termsRequired": "U moet de algemene voorwaarden accepteren.",
     "signatureRequired": "Handtekening vereist.",
     "submitFailed": "Het formulier kon niet worden verzonden.",
@@ -1206,6 +1208,12 @@
     "details": "Details",
     "requests": "GDPR-verzoeken",
     "noRequests": "Geen verzoeken.",
+    "consentRegistry": "GDPR-toestemmingenregister",
+    "openPublicPage": "Openbare pagina openen",
+    "noConsentRegistry": "Nog geen GDPR-toestemmingen geregistreerd.",
+    "patient": "Patiënt",
+    "uidLabel": "UID",
+    "noActiveGdprWarning": "Er is geen actieve GDPR-sjabloon. Het intakeformulier kan niet worden verzonden totdat een beheerder er een publiceert.",
     "templates": "Toestemmingssjablonen",
     "newTemplate": "Nieuw sjabloon",
     "editTemplate": "Sjabloon bewerken",
@@ -1356,6 +1364,9 @@
     "gaveBirth": "Bevallen",
     "gender": "Geslacht",
     "hadCovid": "Ik heb COVID gehad",
+    "gdprTitle": "GDPR",
+    "gdprLink": "Bekijk de actuele GDPR-tekst",
+    "gdprConsent": "Ik stem in met de verwerking van mijn persoonsgegevens volgens de actuele GDPR-tekst",
     "healthStatusInfo": "Overige informatie over uw gezondheid",
     "healthStatusPlaceholder": "Overige informatie over uw gezondheid die aan de opmerking bij de patiënt wordt toegevoegd...",
     "height": "Lengte (cm)",
@@ -1409,5 +1420,19 @@
     "vaccinesAfter2023": "Andere vaccinaties na 2023",
     "weight": "Gewicht (kg)",
     "yearsSinceLastMenstruation": "Jaren sinds laatste menstruatie"
+  },
+  "publicGdpr": {
+    "title": "Bescherming van persoonsgegevens (GDPR)",
+    "intro": "Actuele tekst van de toestemming voor de verwerking van persoonsgegevens.",
+    "languageLabel": "Taal van het document",
+    "version": "Versie {{version}}",
+    "notPublished": "Deze tekst is nog niet gepubliceerd.",
+    "loadFailed": "Het laden van de GDPR-tekst is mislukt.",
+    "backToApp": "Naar de applicatie",
+    "languages": {
+      "cs": "Čeština",
+      "en": "English",
+      "nl": "Nederlands"
+    }
   }
 }

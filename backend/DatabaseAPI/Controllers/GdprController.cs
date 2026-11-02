@@ -184,6 +184,114 @@ public class GdprController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Publicly readable current GDPR wording (no permission gate). The intake
+    /// form links here; publishing is done by an admin via consent-templates.
+    /// </summary>
+    [HttpGet("public/current")]
+    public async Task<ActionResult<PublicGdprDocumentDto>> GetPublicCurrent(
+        [FromQuery] string? language = null)
+    {
+        var availableLanguages = await _context.ConsentTemplates
+            .AsNoTracking()
+            .Where(template => template.ConsentType == "gdpr" && template.IsActive)
+            .Select(template => template.Language)
+            .Distinct()
+            .OrderBy(code => code)
+            .ToListAsync();
+
+        var normalizedLanguage = NormalizeLanguage(language);
+        var current = await _context.ConsentTemplates
+            .AsNoTracking()
+            .Where(template => template.ConsentType == "gdpr" &&
+                               template.IsActive &&
+                               template.Language == normalizedLanguage)
+            .OrderByDescending(template => template.CreatedAtUtc)
+            .ThenByDescending(template => template.Id)
+            .FirstOrDefaultAsync();
+
+        return Ok(new PublicGdprDocumentDto
+        {
+            Available = current != null,
+            Version = current?.Version,
+            Language = current?.Language ?? normalizedLanguage,
+            Title = current?.Title,
+            Text = current?.Text,
+            UpdatedAtUtc = current?.UpdatedAtUtc,
+            AvailableLanguages = availableLanguages
+        });
+    }
+
+    /// <summary>
+    /// Consent registry: who agreed to which version, newest first. Used by the
+    /// Admin > GDPR tab.
+    /// </summary>
+    [HttpGet("consents")]
+    public async Task<ActionResult<List<PatientConsentRegistryItemDto>>> GetConsentRegistry(
+        [FromQuery] string? consentType = null,
+        [FromQuery] string? version = null,
+        [FromQuery] string? language = null,
+        [FromQuery] int take = 200)
+    {
+        var query = _context.PatientConsents.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(consentType))
+        {
+            var type = consentType.Trim().ToLowerInvariant();
+            query = query.Where(consent => consent.ConsentType == type);
+        }
+        if (!string.IsNullOrWhiteSpace(version))
+        {
+            var exactVersion = version.Trim();
+            query = query.Where(consent => consent.Version == exactVersion);
+        }
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            var lang = NormalizeLanguage(language);
+            query = query.Where(consent => consent.Language == lang);
+        }
+
+        var limit = Math.Clamp(take, 1, 500);
+        var rows = await query
+            .OrderByDescending(consent => consent.AcceptedAtUtc)
+            .Take(limit)
+            .Select(consent => new
+            {
+                consent.Id,
+                consent.PatientId,
+                FirstName = consent.Patient.Person.FirstName,
+                LastName = consent.Patient.Person.LastName,
+                TitleBefore = consent.Patient.Person.TitleBefore,
+                TitleAfter = consent.Patient.Person.TitleAfter,
+                Uid = consent.Patient.Person.UID,
+                consent.ConsentType,
+                consent.Version,
+                consent.Language,
+                consent.Source,
+                consent.AcceptedAtUtc,
+                consent.RevokedAtUtc,
+                consent.IntakeEventId
+            })
+            .ToListAsync();
+
+        return Ok(rows
+            .Select(row => new PatientConsentRegistryItemDto
+            {
+                Id = row.Id,
+                PatientId = row.PatientId,
+                PatientName = $"{row.TitleBefore} {row.FirstName} {row.LastName} {row.TitleAfter}".Trim(),
+                Uid = row.Uid,
+                ConsentType = row.ConsentType,
+                Version = row.Version,
+                Language = row.Language,
+                Source = row.Source,
+                AcceptedAtUtc = row.AcceptedAtUtc,
+                RevokedAtUtc = row.RevokedAtUtc,
+                IntakeEventId = row.IntakeEventId
+            })
+            .ToList());
+    }
+
     [HttpGet("consent-templates")]
     public async Task<ActionResult<List<ConsentTemplateDto>>> GetTemplates(
         [FromQuery] string? consentType = null,

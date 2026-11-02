@@ -65,3 +65,31 @@ public class PatientConsentDto
     public DateTime? RevokedAtUtc { get; set; }
     public string? Notes { get; set; }
 }
+
+/// <summary>Publicly readable current GDPR wording for one language.</summary>
+public class PublicGdprDocumentDto
+{
+    public bool Available { get; set; }
+    public string? Version { get; set; }
+    public string? Language { get; set; }
+    public string? Title { get; set; }
+    public string? Text { get; set; }
+    public DateTime? UpdatedAtUtc { get; set; }
+    public List<string> AvailableLanguages { get; set; } = [];
+}
+
+/// <summary>A consent row enriched with the patient identity for the GDPR registry.</summary>
+public class PatientConsentRegistryItemDto
+{
+    public int Id { get; set; }
+    public int PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string Uid { get; set; } = string.Empty;
+    public string ConsentType { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string Language { get; set; } = string.Empty;
+    public string Source { get; set; } = string.Empty;
+    public DateTime AcceptedAtUtc { get; set; }
+    public DateTime? RevokedAtUtc { get; set; }
+    public int? IntakeEventId { get; set; }
+}

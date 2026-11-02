@@ -410,6 +410,8 @@
     "submitting": "Submitting...",
     "invalidLink": "The intake link is invalid.",
     "confirmAccuracyRequired": "Please confirm the accuracy of the entered information.",
+    "gdprRequired": "You must agree to the processing of personal data (GDPR).",
+    "gdprUnavailable": "The GDPR wording has not been published yet. Please contact the clinic.",
     "termsRequired": "You must accept the terms and conditions.",
     "signatureRequired": "Signature is required.",
     "submitFailed": "Failed to submit the form.",
@@ -1206,6 +1208,12 @@
     "details": "Details",
     "requests": "GDPR requests",
     "noRequests": "No requests.",
+    "consentRegistry": "GDPR consent registry",
+    "openPublicPage": "Open public page",
+    "noConsentRegistry": "No GDPR consents recorded yet.",
+    "patient": "Patient",
+    "uidLabel": "UID",
+    "noActiveGdprWarning": "No active GDPR template. The intake form cannot be submitted until an administrator publishes one.",
     "templates": "Consent templates",
     "newTemplate": "New template",
     "editTemplate": "Edit template",
@@ -1356,6 +1364,9 @@
     "gaveBirth": "Given birth",
     "gender": "Gender",
     "hadCovid": "I have had COVID",
+    "gdprTitle": "GDPR",
+    "gdprLink": "View the current GDPR wording",
+    "gdprConsent": "I agree to the processing of my personal data under the current GDPR wording",
     "healthStatusInfo": "Other information about your health",
     "healthStatusPlaceholder": "Other information about your health that will be added to the patient's comment...",
     "height": "Height (cm)",
@@ -1409,5 +1420,19 @@
     "vaccinesAfter2023": "Other vaccinations after 2023",
     "weight": "Weight (kg)",
     "yearsSinceLastMenstruation": "Years since last period"
+  },
+  "publicGdpr": {
+    "title": "Personal Data Protection (GDPR)",
+    "intro": "Current wording of the personal data processing consent.",
+    "languageLabel": "Document language",
+    "version": "Version {{version}}",
+    "notPublished": "This wording has not been published yet.",
+    "loadFailed": "Failed to load the GDPR wording.",
+    "backToApp": "Go to the application",
+    "languages": {
+      "cs": "Čeština",
+      "en": "English",
+      "nl": "Nederlands"
+    }
   }
 }

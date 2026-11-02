@@ -34,6 +34,13 @@ interface PatientConsent {
   notes?: string | null;
 }
 
+interface ConsentRegistryItem extends PatientConsent {
+  patientId: number;
+  patientName: string;
+  uid: string;
+  intakeEventId?: number | null;
+}
+
 interface ConsentTemplate {
   id: number;
   consentType: string;
@@ -81,6 +88,7 @@ const GdprPage: React.FC = () => {
   } | null>(null);
   const [dataMap, setDataMap] = useState<GdprDataMap | null>(null);
   const [consents, setConsents] = useState<PatientConsent[]>([]);
+  const [consentRegistry, setConsentRegistry] = useState<ConsentRegistryItem[]>([]);
   const [requests, setRequests] = useState<GdprRequest[]>([]);
   const [templates, setTemplates] = useState<ConsentTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -104,11 +112,22 @@ const GdprPage: React.FC = () => {
     }
   }, [t]);
 
+  const loadConsentRegistry = useCallback(async () => {
+    try {
+      setConsentRegistry(
+        await apiClient.get<ConsentRegistryItem[]>('/api/gdpr/consents?consentType=gdpr&take=200')
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('gdpr.loadFailed'));
+    }
+  }, [t]);
+
   useEffect(() => {
     if (admin) {
       void loadTemplates();
+      void loadConsentRegistry();
     }
-  }, [admin, loadTemplates]);
+  }, [admin, loadTemplates, loadConsentRegistry]);
 
   const loadPatient = useCallback(
     async (patientId: number) => {
@@ -426,11 +445,53 @@ const GdprPage: React.FC = () => {
 
       <section className="gdpr-card">
         <div className="gdpr-card-header">
+          <h2>{t('gdpr.consentRegistry')}</h2>
+          <a className="btn btn-secondary" href="/gdpr" target="_blank" rel="noopener noreferrer">
+            {t('gdpr.openPublicPage')}
+          </a>
+        </div>
+        {consentRegistry.length === 0 ? (
+          <p className="gdpr-muted">{t('gdpr.noConsentRegistry')}</p>
+        ) : (
+          <table className="gdpr-table">
+            <thead>
+              <tr>
+                <th>{t('gdpr.patient')}</th>
+                <th>{t('gdpr.uidLabel')}</th>
+                <th>{t('gdpr.version')}</th>
+                <th>{t('gdpr.language')}</th>
+                <th>{t('gdpr.source')}</th>
+                <th>{t('gdpr.acceptedAt')}</th>
+                <th>{t('gdpr.revokedAt')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {consentRegistry.map((consent) => (
+                <tr key={consent.id}>
+                  <td>{consent.patientName}</td>
+                  <td>{consent.uid}</td>
+                  <td>{consent.version}</td>
+                  <td>{consent.language}</td>
+                  <td>{consent.source}</td>
+                  <td>{formatDate(consent.acceptedAtUtc)}</td>
+                  <td>{formatDate(consent.revokedAtUtc)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="gdpr-card">
+        <div className="gdpr-card-header">
           <h2>{t('gdpr.templates')}</h2>
           <button className="btn btn-primary" onClick={() => openTemplateModal(null)}>
             + {t('gdpr.newTemplate')}
           </button>
         </div>
+        {!templates.some((template) => template.consentType === 'gdpr' && template.isActive) && (
+          <p className="gdpr-warning">{t('gdpr.noActiveGdprWarning')}</p>
+        )}
         {templates.length === 0 ? (
           <p className="gdpr-muted">{t('gdpr.noTemplates')}</p>
         ) : (

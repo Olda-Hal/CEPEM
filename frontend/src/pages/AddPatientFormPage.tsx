@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
 import { PatientFormFields, PatientFormData } from '../components/PatientFormFields';
 import './AddPatientFormPage.css';
 import { useToast } from '../contexts/ToastContext';
 
 export const AddPatientFormPage: React.FC = () => {
+  const { i18n } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -55,6 +57,7 @@ export const AddPatientFormPage: React.FC = () => {
 
     confirmAccuracy: false,
     termsAccepted: false,
+    gdprAccepted: false,
     signaturePlace: '',
     signatureDate: new Date().toISOString().slice(0, 10),
     signatureVector: '',
@@ -174,6 +177,11 @@ export const AddPatientFormPage: React.FC = () => {
       return;
     }
 
+    if (!form.gdprAccepted) {
+      setError('Musíte souhlasit se zpracováním osobních údajů (GDPR)');
+      return;
+    }
+
     if (!form.termsAccepted) {
       setError('Musíte souhlasit se smluvními podmínkami');
       return;
@@ -276,6 +284,8 @@ export const AddPatientFormPage: React.FC = () => {
           familyTumorType: form.familyTumorType || undefined,
           confirmAccuracy: form.confirmAccuracy,
           termsAccepted: form.termsAccepted,
+          gdprAccepted: form.gdprAccepted,
+          gdprLanguage: i18n.language,
           signaturePlace: form.signaturePlace || undefined,
           signatureDate: form.signatureDate || undefined,
           signatureVector: form.signatureVector,

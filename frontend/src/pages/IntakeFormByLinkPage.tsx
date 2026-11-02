@@ -42,6 +42,7 @@ const getDefaultFormData = (firstName = '', lastName = ''): PatientFormData => (
   lastMealHours: '',
   confirmAccuracy: false,
   termsAccepted: false,
+  gdprAccepted: false,
   signaturePlace: '',
   signatureDate: new Date().toISOString().slice(0, 10),
   signatureVector: '',
@@ -168,6 +169,7 @@ const applyPrefill = (
     // Consent and the signature belong to this visit, never prefilled.
     confirmAccuracy: false,
     termsAccepted: false,
+    gdprAccepted: false,
     signaturePlace: '',
     signatureDate: new Date().toISOString().slice(0, 10),
     signatureVector: ''
@@ -231,8 +233,18 @@ export const IntakeFormByLinkPage: React.FC = () => {
       return;
     }
 
+    if (linkInfo && !linkInfo.gdprAvailable) {
+      setError(t('intakeLink.gdprUnavailable'));
+      return;
+    }
+
     if (!form.confirmAccuracy) {
       setError(t('intakeLink.confirmAccuracyRequired'));
+      return;
+    }
+
+    if (!form.gdprAccepted) {
+      setError(t('intakeLink.gdprRequired'));
       return;
     }
 
@@ -322,6 +334,8 @@ export const IntakeFormByLinkPage: React.FC = () => {
         familyTumorType: form.familyTumorType || undefined,
         confirmAccuracy: form.confirmAccuracy,
         termsAccepted: form.termsAccepted,
+        gdprAccepted: form.gdprAccepted,
+        gdprLanguage: linkInfo?.language,
         signaturePlace: form.signaturePlace || undefined,
         signatureDate: form.signatureDate || undefined,
         signatureVector: form.signatureVector,
@@ -396,6 +410,10 @@ export const IntakeFormByLinkPage: React.FC = () => {
 
         {alreadySubmitted && <p className="intake-notice">{t('intakeLink.alreadySubmitted')}</p>}
 
+        {linkInfo && !linkInfo.gdprAvailable && (
+          <p className="error-message">{t('intakeLink.gdprUnavailable')}</p>
+        )}
+
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="patient-form">
@@ -407,7 +425,11 @@ export const IntakeFormByLinkPage: React.FC = () => {
           />
 
           <div className="form-actions">
-            <button type="submit" disabled={submitting} className="btn-submit">
+            <button
+              type="submit"
+              disabled={submitting || linkInfo?.gdprAvailable === false}
+              className="btn-submit"
+            >
               {submitting
                 ? t('intakeLink.submitting')
                 : alreadySubmitted

@@ -41,6 +41,7 @@ public class EventsControllerTests : IDisposable
         uidMock.Setup(service => service.GetNextAvailableUidAsync()).ReturnsAsync("00000099");
 
         _linkService = new IntakeFormLinkService(_context);
+        SeedGdprTemplate();
 
         _controller = new EventsController(
             _context,
@@ -82,6 +83,23 @@ public class EventsControllerTests : IDisposable
         _context.Persons.Add(person);
         _context.SaveChanges();
         return person;
+    }
+
+    private ConsentTemplate SeedGdprTemplate(
+        string version = "1", string language = "cs", bool active = true)
+    {
+        var template = new ConsentTemplate
+        {
+            ConsentType = "gdpr",
+            Version = version,
+            Language = language,
+            Title = "GDPR",
+            Text = "GDPR text",
+            IsActive = active
+        };
+        _context.ConsentTemplates.Add(template);
+        _context.SaveChanges();
+        return template;
     }
 
     private Patient SeedPatient(Person? person = null)
@@ -222,7 +240,8 @@ public class EventsControllerTests : IDisposable
 
         var result = await _controller.CreateIntakeFormEvent(new CreateIntakeFormEventRequest
         {
-            PatientId = patient.Id
+            PatientId = patient.Id,
+            GdprAccepted = true
         });
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -256,7 +275,8 @@ public class EventsControllerTests : IDisposable
             Weight = 65,
             Height = 170,
             MedDiabetes = true,
-            Smoking = true
+            Smoking = true,
+            GdprAccepted = true
         });
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
@@ -411,6 +431,7 @@ public class EventsControllerTests : IDisposable
             InsuranceNumber = 55,
             Weight = 70,
             ConfirmAccuracy = true,
+            GdprAccepted = true,
             TermsAccepted = true
         });
 
@@ -434,7 +455,8 @@ public class EventsControllerTests : IDisposable
 
         var request = new CreateIntakeFormEventRequest
         {
-            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc)
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            GdprAccepted = true
         };
 
         var first = await _controller.SubmitIntakeFormByLink(token, request);
@@ -447,7 +469,7 @@ public class EventsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task SubmitIntakeFormByLink_WithTermsAccepted_RecordsConsentVersion()
+    public async Task SubmitIntakeFormByLink_WithGdprAccepted_RecordsConsentVersion()
     {
         var person = SeedPerson();
         SeedEventType();
@@ -467,6 +489,7 @@ public class EventsControllerTests : IDisposable
         {
             DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
             ConfirmAccuracy = true,
+            GdprAccepted = true,
             TermsAccepted = true
         });
 
@@ -478,6 +501,47 @@ public class EventsControllerTests : IDisposable
         Assert.Equal("2", consent.Version);
         Assert.Equal("IntakeForm", consent.Source);
         Assert.NotNull(consent.IntakeEventId);
+    }
+
+    [Fact]
+    public async Task SubmitIntakeFormByLink_WithoutGdprConsent_ReturnsBadRequest()
+    {
+        var person = SeedPerson();
+        SeedEventType();
+        var (token, _) = await CreateValidLink(person);
+
+        var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            ConfirmAccuracy = true,
+            TermsAccepted = true
+        });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("GDPR consent is required", badRequest.Value?.ToString());
+        Assert.Empty(await _context.FormSubmissions.ToListAsync());
+    }
+
+    [Fact]
+    public async Task SubmitIntakeFormByLink_WithoutActiveGdprTemplate_ReturnsBadRequest()
+    {
+        var person = SeedPerson();
+        SeedEventType();
+        foreach (var template in _context.ConsentTemplates)
+        {
+            template.IsActive = false;
+        }
+        await _context.SaveChangesAsync();
+        var (token, _) = await CreateValidLink(person);
+
+        var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            GdprAccepted = true
+        });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("not available", badRequest.Value?.ToString());
     }
 
     [Fact]
@@ -497,7 +561,8 @@ public class EventsControllerTests : IDisposable
 
         var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
         {
-            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc)
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            GdprAccepted = true
         });
 
         Assert.Null(result.Result);
@@ -537,6 +602,7 @@ public class EventsControllerTests : IDisposable
         {
             DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
             ConfirmAccuracy = true,
+            GdprAccepted = true,
             TermsAccepted = true
         };
 
@@ -586,6 +652,7 @@ public class EventsControllerTests : IDisposable
             CovidVaccine = true,
             AdditionalHealthInfo = "note",
             ConfirmAccuracy = true,
+            GdprAccepted = true,
             TermsAccepted = true
         });
         Assert.Null(submitted.Result);

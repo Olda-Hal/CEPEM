@@ -153,4 +153,68 @@ public class GdprControllerTests : IDisposable
 
         Assert.IsType<NotFoundObjectResult>(result.Result);
     }
+
+    [Fact]
+    public async Task PublicCurrent_ReturnsActiveVersion_AndAvailableLanguages()
+    {
+        await CreateTemplateAsync(version: "1", language: "cs");
+        await CreateTemplateAsync(version: "2", language: "en");
+
+        var result = await _controller.GetPublicCurrent("en");
+
+        var document = Assert.IsType<PublicGdprDocumentDto>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.True(document.Available);
+        Assert.Equal("2", document.Version);
+        Assert.Equal("en", document.Language);
+        Assert.Equal("Souhlas", document.Title);
+        Assert.Equal(new[] { "cs", "en" }, document.AvailableLanguages);
+    }
+
+    [Fact]
+    public async Task PublicCurrent_WhenLanguageNotPublished_ReturnsUnavailable()
+    {
+        await CreateTemplateAsync(version: "1", language: "cs");
+
+        var result = await _controller.GetPublicCurrent("nl");
+
+        var document = Assert.IsType<PublicGdprDocumentDto>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.False(document.Available);
+        Assert.Equal(new[] { "cs" }, document.AvailableLanguages);
+    }
+
+    [Fact]
+    public async Task ConsentRegistry_ReturnsPatientIdentityAndVersion()
+    {
+        var patient = new Patient
+        {
+            Person = new Person
+            {
+                FirstName = "Eva", LastName = "Test", UID = "1", Gender = "F", CountryCode = "CZ", Active = true
+            },
+            BirthDate = new DateTime(1990, 1, 1),
+            CountryCode = "CZ"
+        };
+        _context.Patients.Add(patient);
+        await _context.SaveChangesAsync();
+
+        await _controller.RecordConsent(patient.Id, new RecordConsentRequest
+        {
+            ConsentType = "gdpr",
+            Version = "3",
+            Language = "nl",
+            Source = "IntakeForm"
+        });
+
+        var result = await _controller.GetConsentRegistry(consentType: "gdpr", take: 10);
+
+        var rows = Assert.IsType<List<PatientConsentRegistryItemDto>>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+        var row = Assert.Single(rows);
+        Assert.Equal("Eva Test", row.PatientName);
+        Assert.Equal("1", row.Uid);
+        Assert.Equal("3", row.Version);
+        Assert.Equal("nl", row.Language);
+    }
 }

@@ -78,6 +78,13 @@ public class CreateIntakeFormEventRequest
 
     public bool? ConfirmAccuracy { get; set; }
     public bool? TermsAccepted { get; set; }
+
+    /// <summary>Mandatory GDPR consent; the accepted version is recorded per patient.</summary>
+    public bool? GdprAccepted { get; set; }
+
+    /// <summary>Language of the GDPR wording shown to the patient (cs/en/nl).</summary>
+    public string? GdprLanguage { get; set; }
+
     public string? SignaturePlace { get; set; }
     [JsonConverter(typeof(FlexibleNullableDateTimeConverter))]
     public DateTime? SignatureDate { get; set; }
@@ -138,6 +145,12 @@ public class IntakeFormLinkInfoDto
 
     /// <summary>cs / nl / en, derived from the reservation country.</summary>
     public string Language { get; set; } = "cs";
+
+    /// <summary>Whether an active GDPR template exists for the form language.</summary>
+    public bool GdprAvailable { get; set; }
+
+    /// <summary>Version of the active GDPR template for the form language.</summary>
+    public string? GdprVersion { get; set; }
 
     /// <summary>Start of the booked visit (UTC); edited forms lock at this time.</summary>
     public DateTime? VisitStartUtc { get; set; }

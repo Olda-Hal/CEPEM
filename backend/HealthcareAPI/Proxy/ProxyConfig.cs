@@ -110,6 +110,10 @@ public static class ProxyConfig
         yield return Route("saved-views-put", "/api/savedviews/{**rest}", "PUT", "authenticated");
         yield return Route("saved-views-delete", "/api/savedviews/{**rest}", "DELETE", "authenticated");
 
+        // Public GDPR wording shown to patients (anonymous, read-only). Must be
+        // declared before the permission-gated GDPR route below.
+        yield return Route("gdpr-public", "/api/gdpr/public/{**rest}", "GET");
+
         // GDPR tooling (data map, export, anonymization, consent registry)
         yield return Route("gdpr", "/api/gdpr/{**rest}", null, "gdpr.manage");
 

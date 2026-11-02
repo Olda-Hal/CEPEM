@@ -40,6 +40,7 @@ export interface PatientFormData {
 
   confirmAccuracy: boolean;
   termsAccepted: boolean;
+  gdprAccepted: boolean;
   signaturePlace: string;
   signatureDate: string;
   signatureVector: string;
@@ -247,7 +248,8 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
   disabled = false,
   className = 'form-section'
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const gdprHref = `/gdpr?lang=${(i18n.language || 'cs').split('-')[0]}`;
 
   return (
     <>
@@ -1000,6 +1002,27 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
               disabled={disabled}
             />
             {t('patientForm.termsAcceptance')} *
+          </label>
+        </div>
+
+        <h2>{t('patientForm.gdprTitle')}</h2>
+        <div className="terms-text">
+          <p>
+            <a href={gdprHref} target="_blank" rel="noopener noreferrer">
+              {t('patientForm.gdprLink')}
+            </a>
+          </p>
+        </div>
+        <div className="form-row">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={form.gdprAccepted}
+              onChange={(e) => onChange('gdprAccepted', e.target.checked)}
+              required
+              disabled={disabled}
+            />
+            {t('patientForm.gdprConsent')} *
           </label>
         </div>
 

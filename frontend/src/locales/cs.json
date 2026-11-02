@@ -410,6 +410,8 @@
     "submitting": "Odesílám...",
     "invalidLink": "Odkaz na formulář není platný.",
     "confirmAccuracyRequired": "Potvrďte správnost vyplněných údajů.",
+    "gdprRequired": "Musíte souhlasit se zpracováním osobních údajů (GDPR).",
+    "gdprUnavailable": "Znění GDPR zatím není zveřejněné. Kontaktujte prosím kliniku.",
     "termsRequired": "Musíte souhlasit se smluvními podmínkami.",
     "signatureRequired": "Podpis je povinný.",
     "submitFailed": "Nepodařilo se odeslat formulář.",
@@ -1206,6 +1208,12 @@
     "details": "Detail",
     "requests": "GDPR požadavky",
     "noRequests": "Žádné požadavky.",
+    "consentRegistry": "Evidence souhlasů GDPR",
+    "openPublicPage": "Otevřít veřejnou stránku",
+    "noConsentRegistry": "Zatím nikdo nesouhlasil s GDPR.",
+    "patient": "Pacient",
+    "uidLabel": "UID",
+    "noActiveGdprWarning": "Není aktivní žádný vzor GDPR. Formulář nelze odeslat, dokud správce některý nezveřejní.",
     "templates": "Vzory souhlasů",
     "newTemplate": "Nový vzor",
     "editTemplate": "Upravit vzor",
@@ -1356,6 +1364,9 @@
     "gaveBirth": "Rodila",
     "gender": "Pohlaví",
     "hadCovid": "Prodělal/a jsem COVID",
+    "gdprTitle": "GDPR",
+    "gdprLink": "Zobrazit aktuální znění GDPR",
+    "gdprConsent": "Souhlasím se zpracováním osobních údajů podle aktuálního znění GDPR",
     "healthStatusInfo": "Další informace o stavu organizmu",
     "healthStatusPlaceholder": "Další informace o stavu organizmu, které půjdou do komentáře k pacientovi...",
     "height": "Výška (cm)",
@@ -1409,5 +1420,19 @@
     "vaccinesAfter2023": "Vakcinace jiné po r.2023",
     "weight": "Váha (kg)",
     "yearsSinceLastMenstruation": "Počet let od poslední menzes"
+  },
+  "publicGdpr": {
+    "title": "Ochrana osobních údajů (GDPR)",
+    "intro": "Aktuální znění souhlasu se zpracováním osobních údajů.",
+    "languageLabel": "Jazyk dokumentu",
+    "version": "Verze {{version}}",
+    "notPublished": "Toto znění zatím nebylo zveřejněno.",
+    "loadFailed": "Načtení GDPR se nepodařilo.",
+    "backToApp": "Přejít do aplikace",
+    "languages": {
+      "cs": "Čeština",
+      "en": "English",
+      "nl": "Nizozemština"
+    }
   }
 }
