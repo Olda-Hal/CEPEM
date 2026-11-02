@@ -127,7 +127,6 @@ export const PatientsPage: React.FC = () => {
         </div>
       </div>
 
-
       <div className="search-section">
         <div className="search-bar">
           <input
