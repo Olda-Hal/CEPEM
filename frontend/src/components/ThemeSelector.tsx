@@ -17,7 +17,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className = '' }) 
         value={currentTheme}
         onChange={(e) => changeTheme(e.target.value as any)}
         className="theme-select"
-        title="Change theme"
+        title={t('themes.changeTheme')}
       >
         <optgroup label={t('themes.lightThemes')}>
           {availableThemes

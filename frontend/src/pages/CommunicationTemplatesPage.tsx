@@ -362,8 +362,8 @@ const CommunicationTemplatesPage: React.FC = () => {
           onChange={(event) => setChannelFilter(event.target.value)}
         >
           <option value="">{t('communicationTemplates.allChannels')}</option>
-          <option value="Email">E-mail</option>
-          <option value="Sms">SMS</option>
+          <option value="Email">{t('communicationTemplates.channels.email')}</option>
+          <option value="Sms">{t('communicationTemplates.channels.sms')}</option>
         </select>
         <select
           aria-label={t('communicationTemplates.code')}

@@ -401,7 +401,10 @@
     "confirmDelete": "Are you sure?",
     "search": "Search",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "close": "Close",
+    "noData": "No data",
+    "refresh": "Refresh"
   },
   "intakeLink": {
     "pageTitle": "Intake Form",
@@ -440,7 +443,8 @@
     "coverageReport": "Coverage Report",
     "autoRefresh": "Auto Refresh",
     "refresh": "Refresh",
-    "description": "View test results and coverage reports"
+    "description": "View test results and coverage reports",
+    "failed": "Failed"
   },
   "passwordChange": {
     "title": "Change Password",
@@ -546,7 +550,8 @@
       "insuranceNumberInvalid": "Insurance number must contain only digits",
       "emailInvalid": "Invalid email format",
       "phoneInvalid": "Invalid phone number format",
-      "createFailed": "Failed to create patient"
+      "createFailed": "Failed to create patient",
+      "nameAndBirthDateRequired": "Enter first name, last name and date of birth"
     },
     "regenerateUid": "Generate new UID",
     "photo": "Photo",
@@ -557,7 +562,8 @@
       "capture": "Capture",
       "retake": "Retake",
       "confirm": "Use this photo",
-      "accessDenied": "Camera access was denied. Please allow access in browser settings."
+      "accessDenied": "Camera access was denied. Please allow access in browser settings.",
+      "startFailed": "Could not start the camera. Check permissions."
     },
     "patientDetail": "Patient Detail",
     "yearsOld": "years old",
@@ -656,7 +662,13 @@
       "upload": "Upload document",
       "empty": "No documents yet.",
       "uploadSuccess": "Document uploaded"
-    }
+    },
+    "addPatientFormTitle": "Client intake form",
+    "photoPreview": "Photo preview",
+    "capturedPhoto": "Captured patient",
+    "photoAlt": "Patient",
+    "commentSaveFailed": "Failed to save the comment",
+    "photoUploadFailed": "Failed to upload the photo"
   },
   "admin": {
     "employeeManagement": "Employee Management",
@@ -941,7 +953,8 @@
     "cyberAzure": "Cyber Azure",
     "forestShadow": "Forest Shadow",
     "cosmicPurple": "Cosmic Purple",
-    "crimsonNight": "Crimson Night"
+    "crimsonNight": "Crimson Night",
+    "changeTheme": "Change theme"
   },
   "events": {
     "addEvent": "Add Event",
@@ -994,7 +1007,9 @@
     "examinationDocumentsSelected_many": "{{count}} files selected for examination",
     "uploadingDocuments": "Uploading documents...",
     "groupUploadNotSupported": "Examination document upload is available only outside group mode.",
-    "addToList": "Add \"{{name}}\" to list"
+    "addToList": "Add \"{{name}}\" to list",
+    "newIntakeForm": "New intake form",
+    "examinationDocumentsSelected": "Selected examination documents: {{count}}"
   },
   "activityLog": {
     "title": "Audit log",
@@ -1090,7 +1105,10 @@
     "searchPlaceholder": "Search code or text…",
     "channel": "Channel",
     "allChannels": "All channels",
-    "channels": { "email": "E-mail", "sms": "SMS" },
+    "channels": {
+      "email": "E-mail",
+      "sms": "SMS"
+    },
     "code": "Code",
     "allCodes": "All codes",
     "codes": {
@@ -1107,7 +1125,11 @@
     "allLanguages": "All languages",
     "scope": "Scope",
     "allScopes": "All scopes",
-    "scopes": { "Global": "Global", "Country": "Country", "Center": "Center" },
+    "scopes": {
+      "Global": "Global",
+      "Country": "Country",
+      "Center": "Center"
+    },
     "country": "Country",
     "center": "Center",
     "selectCenter": "Select a center",
@@ -1433,5 +1455,19 @@
       "en": "English",
       "nl": "Nederlands"
     }
+  },
+  "editPatient": {
+    "structuredSubmission": "Structured form submission (all fields)",
+    "submissionId": "Submission ID",
+    "patientId": "Patient ID",
+    "eventId": "Event ID",
+    "submittedAt": "Submitted at",
+    "medication": "Medication",
+    "lifestyle": "Lifestyle",
+    "reproductiveHealth": "Reproductive health",
+    "consent": "Consents",
+    "signatureVectorRaw": "Signature vector raw data",
+    "sicknessHistories": "Sickness histories",
+    "rawPatientJson": "Raw patient JSON (complete payload)"
   }
 }

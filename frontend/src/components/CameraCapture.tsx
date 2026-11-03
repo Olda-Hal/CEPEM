@@ -150,7 +150,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
               <canvas ref={canvasRef} style={{ display: 'none' }} />
             </>
           ) : (
-            <img src={capturedImage} alt="Captured" className="captured-image" />
+            <img src={capturedImage} alt={t('patients.capturedPhoto')} className="captured-image" />
           )}
         </div>
 

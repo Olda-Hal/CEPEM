@@ -102,7 +102,7 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
   onClose,
   onEventCreated
 }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<PatientFormData>(
@@ -128,17 +128,17 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
     setError(null);
 
     if (!form.confirmAccuracy) {
-      setError('Potvrďte správnost vyplněných údajů');
+      setError(t('intakeLink.confirmAccuracyRequired'));
       return;
     }
 
     if (!form.gdprAccepted) {
-      setError('Musíte souhlasit se zpracováním osobních údajů (GDPR)');
+      setError(t('intakeLink.gdprRequired'));
       return;
     }
 
     if (!form.termsAccepted) {
-      setError('Musíte souhlasit se smluvními podmínkami');
+      setError(t('intakeLink.termsRequired'));
       return;
     }
 
@@ -255,7 +255,11 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
   if (!isOpen) return null;
 
   return (
-    <BaseModal title="Nový Vstupní Formulář" onClose={onClose} contentClassName="intake-form-modal">
+    <BaseModal
+      title={t('events.newIntakeForm')}
+      onClose={onClose}
+      contentClassName="intake-form-modal"
+    >
       {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit} className="modal-form">
@@ -268,10 +272,10 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
 
         <div className="modal-footer">
           <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
-            Zrušit
+            {t('common.cancel')}
           </button>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Vytváření...' : 'Vytvořit event'}
+            {loading ? t('common.creating') : t('events.createEvent')}
           </button>
         </div>
       </form>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import './BaseModal.css';
 
 interface BaseModalProps {
@@ -27,6 +28,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   contentClassName,
   children
 }) => {
+  const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Keep the latest onClose in a ref so the mount-time effect below never
@@ -108,7 +110,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         {title !== undefined && (
           <div className="modal-header">
             <h2>{title}</h2>
-            <button className="close-button" onClick={onClose} aria-label="Close">
+            <button className="close-button" onClick={onClose} aria-label={t('common.close')}>
               &times;
             </button>
           </div>

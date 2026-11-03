@@ -401,7 +401,10 @@
     "confirmDelete": "Jste si jisti?",
     "search": "Hledat",
     "previous": "Předchozí",
-    "next": "Další"
+    "next": "Další",
+    "close": "Zavřít",
+    "noData": "Žádná data",
+    "refresh": "Obnovit"
   },
   "intakeLink": {
     "pageTitle": "Vstupní formulář",
@@ -440,7 +443,8 @@
     "coverageReport": "Zpráva o Pokrytí",
     "autoRefresh": "Automatické Obnovení",
     "refresh": "Obnovit",
-    "description": "Zobrazit výsledky testů a reporty pokrytí"
+    "description": "Zobrazit výsledky testů a reporty pokrytí",
+    "failed": "Selhalo"
   },
   "passwordChange": {
     "title": "Změna hesla",
@@ -546,7 +550,8 @@
       "insuranceNumberInvalid": "Číslo pojišťovny musí obsahovat pouze číslice",
       "emailInvalid": "Neplatný formát emailové adresy",
       "phoneInvalid": "Neplatný formát telefonního čísla",
-      "createFailed": "Nepodařilo se vytvořit pacienta"
+      "createFailed": "Nepodařilo se vytvořit pacienta",
+      "nameAndBirthDateRequired": "Vyplňte jméno, příjmení a datum narození"
     },
     "regenerateUid": "Vygenerovat nové UID",
     "photo": "Fotografie",
@@ -557,7 +562,8 @@
       "capture": "Vyfotit",
       "retake": "Vyfotit znovu",
       "confirm": "Použít tuto fotku",
-      "accessDenied": "Přístup ke kameře byl odepřen. Povolte přístup v nastavení prohlížeče."
+      "accessDenied": "Přístup ke kameře byl odepřen. Povolte přístup v nastavení prohlížeče.",
+      "startFailed": "Nepodařilo se spustit kameru. Zkontrolujte oprávnění."
     },
     "patientDetail": "Detail pacienta",
     "yearsOld": "let",
@@ -656,7 +662,13 @@
       "upload": "Nahrát dokument",
       "empty": "Zatím žádné dokumenty.",
       "uploadSuccess": "Dokument nahrán"
-    }
+    },
+    "addPatientFormTitle": "Vstupní formulář klienta",
+    "photoPreview": "Náhled fotky",
+    "capturedPhoto": "Vyfocený pacient",
+    "photoAlt": "Pacient",
+    "commentSaveFailed": "Nepodařilo se uložit komentář",
+    "photoUploadFailed": "Nepodařilo se nahrát fotografii"
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",
@@ -981,7 +993,9 @@
     "examinationDocumentsSelected_other": "Vybráno {{count}} souborů k vyšetření",
     "uploadingDocuments": "Nahrávání dokumentů...",
     "groupUploadNotSupported": "Nahrávání dokumentů k vyšetření je dostupné pouze mimo skupinový režim.",
-    "addToList": "Přidat \"{{name}}\" do seznamu"
+    "addToList": "Přidat \"{{name}}\" do seznamu",
+    "newIntakeForm": "Nový Vstupní Formulář",
+    "examinationDocumentsSelected": "Vybrané dokumenty vyšetření: {{count}}"
   },
   "themes": {
     "lightThemes": "Světlé motivy",
@@ -994,7 +1008,8 @@
     "cyberAzure": "Kybernet azur",
     "forestShadow": "Lesní stín",
     "cosmicPurple": "Kosmická purpur",
-    "crimsonNight": "Karmínová noc"
+    "crimsonNight": "Karmínová noc",
+    "changeTheme": "Změnit motiv"
   },
   "activityLog": {
     "title": "Audit log",
@@ -1090,7 +1105,10 @@
     "searchPlaceholder": "Hledat v kódu nebo textu…",
     "channel": "Kanál",
     "allChannels": "Všechny kanály",
-    "channels": { "email": "E-mail", "sms": "SMS" },
+    "channels": {
+      "email": "E-mail",
+      "sms": "SMS"
+    },
     "code": "Kód",
     "allCodes": "Všechny kódy",
     "codes": {
@@ -1107,7 +1125,11 @@
     "allLanguages": "Všechny jazyky",
     "scope": "Rozsah",
     "allScopes": "Všechny rozsahy",
-    "scopes": { "Global": "Globální", "Country": "Země", "Center": "Centrum" },
+    "scopes": {
+      "Global": "Globální",
+      "Country": "Země",
+      "Center": "Centrum"
+    },
     "country": "Země",
     "center": "Centrum",
     "selectCenter": "Vyberte centrum",
@@ -1433,5 +1455,19 @@
       "en": "English",
       "nl": "Nizozemština"
     }
+  },
+  "editPatient": {
+    "structuredSubmission": "Strukturovaná data formuláře (všechna pole)",
+    "submissionId": "ID formuláře",
+    "patientId": "ID pacienta",
+    "eventId": "ID události",
+    "submittedAt": "Odesláno",
+    "medication": "Léky",
+    "lifestyle": "Životní styl",
+    "reproductiveHealth": "Reprodukční zdraví",
+    "consent": "Souhlasy",
+    "signatureVectorRaw": "Surová data podpisu",
+    "sicknessHistories": "Historie nemocí",
+    "rawPatientJson": "Surová JSON data pacienta (kompletní payload)"
   }
 }

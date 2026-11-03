@@ -7,7 +7,7 @@ import './AddPatientFormPage.css';
 import { useToast } from '../contexts/ToastContext';
 
 export const AddPatientFormPage: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -115,7 +115,7 @@ export const AddPatientFormPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      toast.info('Nepodařilo se spustit kameru. Zkontrolujte oprávnění.');
+      toast.info(t('patients.camera.startFailed'));
     }
   };
 
@@ -168,22 +168,22 @@ export const AddPatientFormPage: React.FC = () => {
     setError(null);
 
     if (!form.firstName || !form.lastName || !form.dateOfBirth) {
-      setError('Vyplňte jméno, příjmení a datum narození');
+      setError(t('patients.errors.nameAndBirthDateRequired'));
       return;
     }
 
     if (!form.confirmAccuracy) {
-      setError('Potvrďte správnost vyplněných údajů');
+      setError(t('intakeLink.confirmAccuracyRequired'));
       return;
     }
 
     if (!form.gdprAccepted) {
-      setError('Musíte souhlasit se zpracováním osobních údajů (GDPR)');
+      setError(t('intakeLink.gdprRequired'));
       return;
     }
 
     if (!form.termsAccepted) {
-      setError('Musíte souhlasit se smluvními podmínkami');
+      setError(t('intakeLink.termsRequired'));
       return;
     }
 
@@ -197,9 +197,7 @@ export const AddPatientFormPage: React.FC = () => {
         `/api/gdpr/public/current?language=${gdprLanguage}`
       );
       if (!gdprDocument.available) {
-        setError(
-          'Znění GDPR zatím není zveřejněné. Požádejte správce, aby jej zveřejnil v Administraci → GDPR.'
-        );
+        setError(t('intakeLink.gdprUnavailable'));
         return;
       }
 
@@ -330,7 +328,7 @@ export const AddPatientFormPage: React.FC = () => {
       if (newId) {
         navigate(`/patients/${newId}`);
       } else {
-        setError('Nepodařilo se vytvořit pacienta');
+        setError(t('patients.errors.createFailed'));
       }
     } catch (err: any) {
       console.error(err);
@@ -345,17 +343,17 @@ export const AddPatientFormPage: React.FC = () => {
   return (
     <div className="add-patient-page">
       <div className="form-container">
-        <h1>Vstupní formulář klienta</h1>
+        <h1>{t('patients.addPatientFormTitle')}</h1>
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="patient-form">
           <section className="form-section photo-section">
-            <h2>Fotografie pacienta</h2>
+            <h2>{t('patients.photo')}</h2>
             <div className="photo-container">
               {photoPreview ? (
                 <div className="photo-preview">
-                  <img src={photoPreview} alt="Náhled fotky" />
+                  <img src={photoPreview} alt={t('patients.photoPreview')} />
                   <button
                     type="button"
                     className="remove-photo-btn"
@@ -378,7 +376,7 @@ export const AddPatientFormPage: React.FC = () => {
                 </div>
               )}
               <button type="button" className="camera-btn" onClick={startCamera}>
-                📷 Vyfotit pacienta
+                📷 {t('patients.takePhoto')}
               </button>
             </div>
           </section>
@@ -392,10 +390,10 @@ export const AddPatientFormPage: React.FC = () => {
 
           <div className="form-actions">
             <button type="button" onClick={() => navigate('/patients')} className="btn-cancel">
-              Zrušit
+              {t('common.cancel')}
             </button>
             <button type="submit" disabled={loading} className="btn-submit">
-              {loading ? 'Vytvářím...' : 'Vytvořit pacienta'}
+              {loading ? t('common.creating') : t('patients.createPatient')}
             </button>
           </div>
         </form>
@@ -406,7 +404,7 @@ export const AddPatientFormPage: React.FC = () => {
         <div className="camera-modal">
           <div className="camera-content">
             <div className="camera-header">
-              <h3>Vyfotit pacienta</h3>
+              <h3>{t('patients.takePhoto')}</h3>
               <button className="close-btn" onClick={stopCamera}>
                 ×
               </button>
@@ -414,10 +412,10 @@ export const AddPatientFormPage: React.FC = () => {
             <video ref={videoRef} autoPlay playsInline className="camera-video" />
             <div className="camera-actions">
               <button onClick={stopCamera} className="btn-cancel">
-                Zrušit
+                {t('common.cancel')}
               </button>
               <button onClick={capturePhoto} className="btn-capture">
-                📷 Vyfotit
+                📷 {t('patients.camera.capture')}
               </button>
             </div>
           </div>

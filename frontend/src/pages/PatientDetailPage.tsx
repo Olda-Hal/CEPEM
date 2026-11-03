@@ -123,7 +123,7 @@ export const PatientDetailPage: React.FC = () => {
       setEditingComment(false);
     } catch (error) {
       console.error('Error updating comment:', error);
-      toast.info('Nepodařilo se uložit komentář');
+      toast.info(t('patients.commentSaveFailed'));
     }
   };
 
@@ -141,7 +141,7 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
-      toast.error('Nepodařilo se nahrát fotografii');
+      toast.error(t('patients.photoUploadFailed'));
     }
   };
 
@@ -231,7 +231,7 @@ export const PatientDetailPage: React.FC = () => {
               <button
                 className="photo-button"
                 onClick={() => setShowCamera(true)}
-                title="Vyfotit pacienta"
+                title={t('patients.takePhoto')}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   <path

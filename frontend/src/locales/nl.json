@@ -401,7 +401,10 @@
     "confirmDelete": "Weet u zeker?",
     "search": "Zoeken",
     "previous": "Vorige",
-    "next": "Volgende"
+    "next": "Volgende",
+    "close": "Sluiten",
+    "noData": "Geen gegevens",
+    "refresh": "Vernieuwen"
   },
   "intakeLink": {
     "pageTitle": "Inschrijfformulier",
@@ -440,7 +443,8 @@
     "coverageReport": "Deekkingsrapport",
     "autoRefresh": "Automatisch vernieuwen",
     "refresh": "Vernieuwen",
-    "description": "Bekijk testresultaten en deekkingsrapporten"
+    "description": "Bekijk testresultaten en deekkingsrapporten",
+    "failed": "Mislukt"
   },
   "passwordChange": {
     "title": "Wachtwoord wijzigen",
@@ -546,7 +550,8 @@
       "insuranceNumberInvalid": "Verzekeringsnummer mag alleen cijfers bevatten",
       "emailInvalid": "Ongeldig e-mailadresformaat",
       "phoneInvalid": "Ongeldig telefoonnummerformaat",
-      "createFailed": "Het aanmaken van de patiënt is mislukt"
+      "createFailed": "Het aanmaken van de patiënt is mislukt",
+      "nameAndBirthDateRequired": "Vul voornaam, achternaam en geboortedatum in"
     },
     "regenerateUid": "Nieuw UID genereren",
     "photo": "Foto",
@@ -557,7 +562,8 @@
       "capture": "Opnemen",
       "retake": "Nogmaals opnemen",
       "confirm": "Gebruik deze foto",
-      "accessDenied": "De toegang tot de camera is geweigerd. Geef toestemming in de browserinstellingen."
+      "accessDenied": "De toegang tot de camera is geweigerd. Geef toestemming in de browserinstellingen.",
+      "startFailed": "De camera kon niet worden gestart. Controleer de machtigingen."
     },
     "patientDetail": "Patiëntgegevens",
     "yearsOld": "jaar oud",
@@ -656,7 +662,13 @@
       "upload": "Document uploaden",
       "empty": "Geen documenten nog.",
       "uploadSuccess": "Document geüpload"
-    }
+    },
+    "addPatientFormTitle": "Intakeformulier voor cliënt",
+    "photoPreview": "Foto voorbeeld",
+    "capturedPhoto": "Gefotografeerde patiënt",
+    "photoAlt": "Patiënt",
+    "commentSaveFailed": "Opmerking opslaan mislukt",
+    "photoUploadFailed": "Foto uploaden mislukt"
   },
   "admin": {
     "employeeManagement": "Personeelsbeheer",
@@ -941,7 +953,8 @@
     "cyberAzure": "Cyber Azuur",
     "forestShadow": "Bos Schaduw",
     "cosmicPurple": "Kosmisch Paars",
-    "crimsonNight": "Karmozijn Nacht"
+    "crimsonNight": "Karmozijn Nacht",
+    "changeTheme": "Thema wijzigen"
   },
   "events": {
     "addEvent": "Gebeurtenis toevoegen",
@@ -994,7 +1007,9 @@
     "examinationDocumentsSelected_many": "{{count}} bestanden geselecteerd voor onderzoek",
     "uploadingDocuments": "Documenten uploaden...",
     "groupUploadNotSupported": "Het uploaden van onderzoeksdocumenten is alleen mogelijk buiten groepsmodus.",
-    "addToList": "Voeg \"{{name}}\" toe aan de lijst"
+    "addToList": "Voeg \"{{name}}\" toe aan de lijst",
+    "newIntakeForm": "Nieuw intakeformulier",
+    "examinationDocumentsSelected": "Geselecteerde onderzoeksdocumenten: {{count}}"
   },
   "activityLog": {
     "title": "Auditlogboek",
@@ -1090,7 +1105,10 @@
     "searchPlaceholder": "Zoek in code of tekst…",
     "channel": "Kanaal",
     "allChannels": "Alle kanalen",
-    "channels": { "email": "E-mail", "sms": "Sms" },
+    "channels": {
+      "email": "E-mail",
+      "sms": "Sms"
+    },
     "code": "Code",
     "allCodes": "Alle codes",
     "codes": {
@@ -1107,7 +1125,11 @@
     "allLanguages": "Alle talen",
     "scope": "Bereik",
     "allScopes": "Alle bereiken",
-    "scopes": { "Global": "Globaal", "Country": "Land", "Center": "Centrum" },
+    "scopes": {
+      "Global": "Globaal",
+      "Country": "Land",
+      "Center": "Centrum"
+    },
     "country": "Land",
     "center": "Centrum",
     "selectCenter": "Selecteer een centrum",
@@ -1433,5 +1455,19 @@
       "en": "English",
       "nl": "Nederlands"
     }
+  },
+  "editPatient": {
+    "structuredSubmission": "Gestructureerde formuliergegevens (alle velden)",
+    "submissionId": "Formulier-ID",
+    "patientId": "Patiënt-ID",
+    "eventId": "Gebeurtenis-ID",
+    "submittedAt": "Verzonden op",
+    "medication": "Medicatie",
+    "lifestyle": "Leefstijl",
+    "reproductiveHealth": "Voortplantingsgezondheid",
+    "consent": "Toestemmingen",
+    "signatureVectorRaw": "Ruwe handtekeninggegevens",
+    "sicknessHistories": "Ziektegeschiedenis",
+    "rawPatientJson": "Ruwe JSON van patiënt (volledige payload)"
   }
 }
