@@ -104,7 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (hasPreviewToken()) {
         void stopImpersonation();
       } else {
-        logout();
+        logout(false);
       }
     };
     window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
@@ -134,7 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (hasPreviewToken() || readStoredImpersonation()) {
       await restoreAdminSession();
     } else {
-      logout();
+      logout(false);
     }
     setLoading(false);
   };
@@ -149,7 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const adminToken = localStorage.getItem('authToken');
     setToken(adminToken);
     if (!adminToken) {
-      logout();
+      logout(false);
       return;
     }
 
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (employee) {
       setUser(employee);
     } else {
-      logout();
+      logout(false);
     }
   };
 
@@ -255,8 +255,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         confirmPassword
       });
 
-      // After successful password change, no longer requires password change
+      // The server bumps acl_version on password change, so the current JWT is
+      // already revoked. Clear the local session and send the user to login.
       setRequiresPasswordChange(false);
+      logout(false);
       return { success: true };
     } catch (error) {
       console.error(t('errors.changePasswordError'), error);
@@ -281,7 +283,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = (notifyServer = true) => {
+    if (notifyServer) {
+      // Revoke the administrator's JWT server-side (bumps acl_version). If a
+      // preview is active, use the admin token rather than the target's.
+      const adminToken = localStorage.getItem('authToken');
+      if (adminToken) {
+        sessionStorage.removeItem(IMPERSONATION_TOKEN_KEY);
+        void apiClient.post('/api/auth/logout', {}).catch(() => undefined);
+      }
+    }
+
     setUser(null);
     setToken(null);
     setRequiresPasswordChange(false);

@@ -779,7 +779,8 @@ export interface AuthContextType {
   user: Employee | null;
   token: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  /** Clear the session; notifyServer=false is used for 401-driven cleanup. */
+  logout: (notifyServer?: boolean) => void;
   changePassword: (
     currentPassword: string,
     newPassword: string,

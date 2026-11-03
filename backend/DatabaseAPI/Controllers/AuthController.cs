@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.APIModels;
+using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 using System.Diagnostics;
 
@@ -11,11 +13,57 @@ namespace DatabaseAPI.Controllers
     {
         private readonly IEmployeeAuthService _authService;
         private readonly IPasswordResetService _passwordResetService;
+        private readonly DatabaseContext _context;
 
-        public AuthController(IEmployeeAuthService authService, IPasswordResetService passwordResetService)
+        public AuthController(
+            IEmployeeAuthService authService,
+            IPasswordResetService passwordResetService,
+            DatabaseContext context)
         {
             _authService = authService;
             _passwordResetService = passwordResetService;
+            _context = context;
+        }
+
+        /// <summary>
+        /// Checks whether a JWT's acl_version still matches the employee and
+        /// the account is active. Called by the gateway on token validation.
+        /// </summary>
+        [HttpGet("token-valid")]
+        public async Task<IActionResult> ValidateToken(
+            [FromQuery] int employeeId,
+            [FromQuery] int accessControlVersion)
+        {
+            var employee = await _context.Employees
+                .Where(e => e.Id == employeeId)
+                .Select(e => new { e.AccessControlVersion, e.Person.Active })
+                .FirstOrDefaultAsync();
+
+            var valid = employee != null &&
+                        employee.Active &&
+                        employee.AccessControlVersion == accessControlVersion;
+
+            return Ok(new
+            {
+                valid,
+                accessControlVersion = employee?.AccessControlVersion,
+                active = employee?.Active ?? false
+            });
+        }
+
+        /// <summary>Server-side logout: revoke every token issued to the employee.</summary>
+        [HttpPost("logout/{employeeId:int}")]
+        public async Task<IActionResult> Logout(int employeeId)
+        {
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null)
+            {
+                return NotFound("Employee not found");
+            }
+
+            employee.AccessControlVersion++;
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         [HttpPost("authenticate")]

@@ -192,10 +192,12 @@ namespace DatabaseAPI.Services
             string newSalt = BCrypt.Net.BCrypt.GenerateSalt();
             string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, newSalt);
 
-            // Update password and extend expiration by 90 days
+            // Update password and extend expiration by 90 days. Bumping the
+            // ACL version invalidates every JWT issued before this change.
             employee.PasswordHash = newPasswordHash;
             employee.Salt = newSalt;
             employee.PasswordExpiration = DateTime.UtcNow.AddDays(90);
+            employee.AccessControlVersion++;
 
             await _context.SaveChangesAsync();
             return true;
@@ -242,14 +244,16 @@ namespace DatabaseAPI.Services
             string newSalt = BCrypt.Net.BCrypt.GenerateSalt();
             string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, newSalt);
 
-            // Update password and extend expiration by 90 days
+            // Update password and extend expiration by 90 days. Bumping the
+            // ACL version invalidates every JWT issued before this change.
             employee.PasswordHash = newPasswordHash;
             employee.Salt = newSalt;
             employee.PasswordExpiration = DateTime.UtcNow.AddDays(90);
+            employee.AccessControlVersion++;
 
             await _context.SaveChangesAsync();
-            
-            return new PasswordChangeResponse 
+
+            return new PasswordChangeResponse
             { 
                 Result = PasswordChangeResult.Success, 
                 Message = "Password changed successfully" 

@@ -132,6 +132,22 @@ public class EmployeeManagementServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task DeactivateEmployee_IncrementsAccessControlVersion()
+    {
+        var target = SeedEmployee("TARGET", active: true);
+        var before = target.AccessControlVersion;
+
+        var (found, forbidden) = await CreateService().DeactivateEmployeeAsync(target.Id);
+
+        Assert.True(found);
+        Assert.Null(forbidden);
+        await _context.Entry(target).ReloadAsync();
+        var person = await _context.Persons.SingleAsync(p => p.Id == target.PersonId);
+        Assert.False(person.Active);
+        Assert.Equal(before + 1, target.AccessControlVersion);
+    }
+
+    [Fact]
     public async Task ResetPassword_OutOfScope_ReturnsNull()
     {
         var target = SeedEmployee("TARGET", active: true);

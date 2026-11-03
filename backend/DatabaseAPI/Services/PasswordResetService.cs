@@ -108,6 +108,8 @@ public class PasswordResetService : IPasswordResetService
         employee.PasswordExpiration = DateTime.UtcNow.AddDays(90);
         employee.FailedLoginAttempts = 0;
         employee.LockedUntil = null;
+        // Invalidate every previously issued JWT for this employee.
+        employee.AccessControlVersion++;
 
         resetToken.UsedAtUtc = DateTime.UtcNow;
         await _context.SaveChangesAsync();

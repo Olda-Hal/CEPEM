@@ -71,6 +71,7 @@ public class AuthServiceTests
         Assert.Equal("Admin User", jwt.Claims.Single(c => c.Type == "impersonator_name").Value);
         Assert.Contains(jwt.Claims, c => (c.Type is ClaimTypes.Role or "role") && c.Value == "Doctor");
         Assert.Equal("CZ", jwt.Claims.Single(c => c.Type == "country_code").Value);
+        Assert.Equal("3", jwt.Claims.Single(c => c.Type == "acl_version").Value);
         Assert.InRange(jwt.ValidTo, DateTime.UtcNow.AddMinutes(50), DateTime.UtcNow.AddMinutes(70));
     }
 

@@ -243,6 +243,14 @@ namespace DatabaseAPI.Services
                     };
                 }
 
+                // Capture security-relevant state before the update so a
+                // role/activation change can invalidate existing JWTs.
+                var wasActive = employee.Person.Active;
+                var previousRoleIds = employee.Person.UserRoles
+                    .Select(role => role.RoleId)
+                    .OrderBy(id => id)
+                    .ToList();
+
                 // Administrative scope enforcement (Center/Country Admin)
                 var visibleIds = await GetManagementVisibleIdsAsync(cancellationToken);
                 if (visibleIds != null && !visibleIds.Contains(employeeId))
@@ -396,6 +404,13 @@ namespace DatabaseAPI.Services
                     }
                 }
 
+                var rolesChanged = !previousRoleIds.SequenceEqual(
+                    request.RoleIds.Distinct().OrderBy(id => id));
+                if (rolesChanged || wasActive != request.Active)
+                {
+                    employee.AccessControlVersion++;
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -454,6 +469,8 @@ namespace DatabaseAPI.Services
             employee.PasswordExpiration = DateTime.UtcNow.AddDays(-1);
             employee.FailedLoginAttempts = 0;
             employee.LockedUntil = null;
+            // Invalidate existing JWTs after a supervisor-triggered reset.
+            employee.AccessControlVersion++;
 
             await _context.SaveChangesAsync();
             return temporaryPassword;
@@ -477,6 +494,8 @@ namespace DatabaseAPI.Services
             }
 
             employee.Person.Active = false;
+            // Deactivation must invalidate already-issued JWTs immediately.
+            employee.AccessControlVersion++;
             await _context.SaveChangesAsync(cancellationToken);
             return (true, null);
         }

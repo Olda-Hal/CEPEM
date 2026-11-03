@@ -323,6 +323,20 @@ public class EmployeeAuthServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ChangePassword_IncrementsAccessControlVersion()
+    {
+        var employee = SeedEmployee("jan@example.com");
+        var before = employee.AccessControlVersion;
+
+        var result = await _service.ChangePasswordDetailedAsync(
+            employee.Id, ValidPassword, "NewPass123!");
+
+        Assert.Equal(PasswordChangeResult.Success, result.Result);
+        await _context.Entry(employee).ReloadAsync();
+        Assert.Equal(before + 1, employee.AccessControlVersion);
+    }
+
+    [Fact]
     public async Task ChangePassword_ForMissingEmployee_ReturnsValidationError()
     {
         var result = await _service.ChangePasswordDetailedAsync(99999, "whatever", "NewPass123!");

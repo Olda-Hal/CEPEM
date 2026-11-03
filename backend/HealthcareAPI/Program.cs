@@ -72,6 +72,9 @@ builder.Services.AddHttpClient("DatabaseAPI", client =>
 })
 .AddHttpMessageHandler<HealthcareAPI.Handlers.AuthenticationHandler>();
 
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ITokenValidityService, TokenValidityService>();
+
 // Activity log client (typed) - same base address as the named DatabaseAPI client
 builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>(client =>
 {
@@ -107,6 +110,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        };
+
+        // A JWT is only valid while its acl_version still matches the DB and
+        // the employee remains active. This is what makes password changes,
+        // deactivation, role changes and logout revoke existing tokens.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var principal = context.Principal;
+                var employeeIdValue = principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var versionValue = principal?.FindFirst("acl_version")?.Value;
+
+                if (!int.TryParse(employeeIdValue, out var employeeId) ||
+                    !int.TryParse(versionValue, out var accessControlVersion))
+                {
+                    context.Fail("Token is missing employee/acl_version claims.");
+                    return;
+                }
+
+                var validator = context.HttpContext.RequestServices
+                    .GetRequiredService<ITokenValidityService>();
+                if (!await validator.IsTokenValidAsync(
+                        employeeId, accessControlVersion, context.HttpContext.RequestAborted))
+                {
+                    context.Fail("Token has been revoked.");
+                }
+            }
         };
     });
 

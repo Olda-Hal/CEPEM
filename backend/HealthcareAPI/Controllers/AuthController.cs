@@ -119,6 +119,27 @@ namespace HealthcareAPI.Controllers
             return Ok(new { message = "Heslo bylo úspěšně změněno" });
         }
 
+        /// <summary>
+        /// Server-side logout: bumps the employee's ACL version so every JWT
+        /// issued so far stops validating immediately.
+        /// </summary>
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            var employeeIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (employeeIdClaim == null || !int.TryParse(employeeIdClaim.Value, out var employeeId))
+            {
+                return Unauthorized();
+            }
+
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.PostAsync($"/api/auth/logout/{employeeId}", null);
+            return response.IsSuccessStatusCode
+                ? NoContent()
+                : StatusCode((int)response.StatusCode);
+        }
+
         [RequirePermission("employees.create")]
         [EnableRateLimiting("api-write")]
         [HttpPost("create-employee")]

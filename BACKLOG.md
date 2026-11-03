@@ -31,15 +31,15 @@ zůstávají pouze otevřené úkoly a nápady.
 Nové kandidáty z průzkumu backendu, frontendu, provozu a veřejného webu.
 Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 
-**Doporučené první:** integrita šifrování, validace uploadů a PII v logech.
+**Navazující doporučení:** server-side vynucení expirace hesla, antivirová kontrola
+uploadů a kratší/refreshované tokeny.
 
 ### Bezpečnost a správnost dat
 
-- **Šifrování souborů nemá integritu** — AES-CBC bez MAC a klíč z `PadRight/Substring` (není KDF); manipulace s ciphertextem se nepozná. Přejít na AES-GCM/Encrypt-then-MAC s korektní derivací a migrací stávajících souborů (`DocumentEncryptionService.cs`, `PhotoEncryptionService.cs`).
-- **Uploady věří Content-Type a příponě** — u fotek i dokumentů validovat magic bytes/skutečné dekódování (ideálně antivirová kontrola), ne jen hlavičku od klienta (`PatientsController.cs`).
-- **Relace a impersonace nejsou dohledatelné/odvolatelné** — 8h JWT bez refresh/logout endpointu, změna hesla ani deaktivace token nezruší, `AccessControlVersion` se neověřuje a audit nepropisuje `impersonator_id`; doplnit revokaci, server-side expiraci hesla a audit náhledu (`AuthService.cs`, `PermissionAuthorization.cs`, `AdminController.cs`).
+- **Server-side vynucení expirace hesla** — expirace se dnes kontroluje jen na frontendu; API s expirovaným heslem lze použít dál. V token validaci blokovat business endpointy (kromě změny hesla a `/me`).
+- **Refresh tokeny / kratší access tokeny** — JWT má 8 h; revokace už funguje, ale krátkodobý access token + refresh by omezil dopad krádeže.
+- **Antivirová kontrola uploadů** — magic-byte validace už je, ale chybí skutečný AV sken (např. ClamAV) ukládaných dokumentů.
 - **Veřejný intake mění kmenová data bez revize** — anonymní odkaz přepisuje jméno, datum narození, pojišťovnu i adresu bez schválení personálem a submit (pacient → event → označení linku) není transakční; zvážit frontu změn k potvrzení a transakci (`EventsController.cs`).
-- **PII v logech je v plaintextu** — `EmailLog` (adresa, jméno) i `ActivityLog` (e-mail) drží osobní údaje nešifrovaně a CSV export je vrací bez maskování; zvážit maskování/redakci a kratší retenci těchto sloupců (`EmailLog.cs`, `ActivityLog.cs`, `EmailLogsController.cs`).
 - **Chybí unit/integration testy kritických endpointů a stránek** — reset hesla, uploady, kompletní intake a chybějící testy stránek (návštěvy, rezervace, admin, formuláře); doplnit cílené testy (doplňuje, nenahrazuje E2E TOP 1).
 
 ### Klinická agenda a produkt
