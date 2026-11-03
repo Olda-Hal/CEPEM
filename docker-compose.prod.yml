@@ -103,6 +103,7 @@ services:
       - DATABASE_CORS_ORIGINS=https://${DOMAIN_NAME}
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
+      - ADMIN_PASSWORD_CHANGE_REQUIRED=${ADMIN_PASSWORD_CHANGE_REQUIRED:-true}
       # Password-reset e-mail delivery (leave SMTP_HOST empty to log the link only)
       - Smtp__Host=${SMTP_HOST:-}
       - Smtp__Port=${SMTP_PORT:-587}
