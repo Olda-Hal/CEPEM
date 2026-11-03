@@ -160,14 +160,27 @@ Notes:
 
 ## Grafana
 
-Grafana and Prometheus are bound to `127.0.0.1` only. From your workstation use an SSH tunnel:
+Grafana is bound to `127.0.0.1:3001` and published by nginx at
+`https://${DOMAIN_NAME}/grafana/`; Prometheus stays on loopback and is only
+used as a datasource. The repo's `nginx-reverse-proxy.conf` contains the
+`/grafana/` location (including WebSocket upgrade and same-origin framing).
 
-```bash
-ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
-# then open http://localhost:3001
-```
-
-- `GRAFANA_ROOT_URL` must match the URL you use. For the tunnel use `http://localhost:3001`; for a public path use e.g. `https://your-domain.com/grafana/` **and** `GRAFANA_SERVE_FROM_SUB_PATH=true` plus an nginx `location /grafana/`. Without it Grafana redirects to its default `http://localhost:3000`.
+- `DOMAIN_NAME` must be set in the production `.env`; compose derives
+  `GRAFANA_ROOT_URL=https://${DOMAIN_NAME}/grafana/` and enables
+  `GRAFANA_SERVE_FROM_SUB_PATH` plus secure cookies from it.
+- The frontend link is built by Vite. `VITE_GRAFANA_URL` is passed as a Docker
+  **build arg**; when it is empty the SPA uses the same-origin `/grafana`
+  path, so the link works on any hostname. After changing it, rebuild the
+  frontend (a runtime env change is not enough):
+  `docker compose -f docker-compose.prod.yml up -d --build frontend`.
+- For an SSH tunnel instead of public hosting, set
+  `GRAFANA_ROOT_URL=http://localhost:3001`,
+  `GRAFANA_SERVE_FROM_SUB_PATH=false`, `GRAFANA_COOKIE_SECURE=false`, and
+  build the frontend with `VITE_GRAFANA_URL=http://localhost:3001`:
+  ```bash
+  ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
+  # then open http://localhost:3001
+  ```
 - Prometheus must find the provisioned datasource at `http://prometheus:9090` (not `localhost`). Check `deploy/grafana/provisioning/datasources/prometheus.yml` on the server; if it still says localhost, update it and recreate Grafana.
 - Check scrape targets and raw metrics:
   ```bash

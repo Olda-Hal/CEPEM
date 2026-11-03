@@ -12,8 +12,10 @@ RUN npm ci --legacy-peer-deps --no-audit --no-fund
 # Copy source code
 COPY frontend/ .
 
-# Build args for API URLs (passed from docker-compose.yml)
+# Build args for API/Grafana URLs (passed from docker-compose.yml).
+# Vite inlines these at build time, so they must be present before the build.
 ARG VITE_API_URL
+ARG VITE_GRAFANA_URL
 
 # Build the application
 RUN npm run build
