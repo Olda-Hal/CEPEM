@@ -132,9 +132,14 @@ const SignaturePad: React.FC<{
       if (!canvas) return { x: 0, y: 0 };
 
       const rect = canvas.getBoundingClientRect();
+      // The canvas is displayed scaled by CSS (width: 100%, max-width 640px),
+      // so map viewport coordinates into the canvas' intrinsic coordinate
+      // space instead of using CSS pixels directly.
+      const scaleX = rect.width === 0 ? 1 : canvas.width / rect.width;
+      const scaleY = rect.height === 0 ? 1 : canvas.height / rect.height;
       return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY
       };
     },
     []

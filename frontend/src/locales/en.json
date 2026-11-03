@@ -413,7 +413,6 @@
     "gdprRequired": "You must agree to the processing of personal data (GDPR).",
     "gdprUnavailable": "The GDPR wording has not been published yet. Please contact the clinic.",
     "termsRequired": "You must accept the terms and conditions.",
-    "signatureRequired": "Signature is required.",
     "submitFailed": "Failed to submit the form.",
     "thankYouTitle": "Thank you",
     "thankYouDescription": "The form was submitted successfully.",

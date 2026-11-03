@@ -187,11 +187,6 @@ export const AddPatientFormPage: React.FC = () => {
       return;
     }
 
-    if (!form.signatureVector) {
-      setError('Podpis je povinný');
-      return;
-    }
-
     setLoading(true);
     try {
       // Preflight: do not create the patient when the mandatory GDPR wording

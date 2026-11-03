@@ -142,11 +142,6 @@ export const AddIntakeFormEventModal: React.FC<AddIntakeFormEventModalProps> = (
       return;
     }
 
-    if (!form.signatureVector) {
-      setError('Podpis je povinný');
-      return;
-    }
-
     setLoading(true);
     try {
       const payload = {

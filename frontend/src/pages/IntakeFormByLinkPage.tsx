@@ -253,11 +253,6 @@ export const IntakeFormByLinkPage: React.FC = () => {
       return;
     }
 
-    if (!form.signatureVector) {
-      setError(t('intakeLink.signatureRequired'));
-      return;
-    }
-
     setSubmitting(true);
 
     try {
