@@ -1,7 +1,7 @@
 # Backlog — možné další přidání a opravy
 
 Seřazeno podle důležitosti. Začněte shora.
-Stav k 2026-11-01: všechny dokončené body byly z dokumentu odstraněny — níže
+Stav k 2026-11-03: všechny dokončené body byly z dokumentu odstraněny — níže
 zůstávají pouze otevřené úkoly a nápady.
 
 ## Chybí dodělat
@@ -10,9 +10,7 @@ zůstávají pouze otevřené úkoly a nápady.
 - **Rezervace → Návštěva (UI)** — backend už zakládá návštěvu z potvrzeného slotu; zbývá karta slotu → „zahájit návštěvu“ a zobrazení zdrojového slotu na detailu návštěvy.
 - **Vstupní formulář jako PDF** — preview intake formuláře v návštěvě je teď text z komentáře; zvážit generování/ukládání reálného PDF dokumentu (konzistentní s ostatními přílohami, tisk).
 - **Editace návštěvy v UI** — datum návštěvy i odpojení přílohy/smazání návštěvy (PATCH endpoint má, FE zatím umí jen poznámku).
-- **Skener → návštěva** — rychlé naskenování dokumentu přímo do otevřené návštěvy (rozšíření stávající kamery/scan flow v DocumentUpload).
 - **E2E suite pro TOP 1 toky** — playwright testy (scoping viditelnost zaměstnanců, vytvoření pacienta s/bez centra, návštěvy vč. backfill sanity) jako trvalé repro.
-- **Hromadné přiřazení center** — při onboardingu nového pracovníka bez centra: akce „přiřadit do centra“ přímo z tabulky zaměstnanců (de facto hotovo v edit modálu, zvážit inline UX).
 - **Hlídání „orphan“ příloh** — dokumenty bez návštěvy po novém toku by už neměly vznikat; přidat index/view/report kontrolující, že každý dokument má `VisitDocument` záznam (dev DB má 0, ověřit na produkci).
 
 ## Technický dluh a nálezy
@@ -25,7 +23,7 @@ zůstávají pouze otevřené úkoly a nápady.
 - Naturální lokalizace: strojové anglické labely v tabulkách pacientů/zaměstnanců (Status „Živ“, názvy typů událostí/rolí z EN překladů) přeložit do CS i EN klíčů konzistentně.
 - TestDashboard (`/tests`): stránka je značně děravá — zvážit smazání routy celé, nebo vysázení na reálná data.
 - `IntakeFormLinkService.MarkUsedAsync` není atomický (race vracející „already used“): doplnit DB-level check `UsedAtUtc IS NULL` přímo v UPDATE.
-- `UidService` stále může v race zdědit duplicitní UID při souběžném vytvoření dvou pacientů (gap-filling nelze serializovat); pragmaticky doplnit UNIQUE constraint + retry.
+- `UidService` stále může v race zdědit duplicitní UID při souběžném vytvoření dvou pacientů (gap-filling nelze serializovat). UNIQUE constraint už existuje (`UniqueUidWithBackfill`); zbývá retry při `DbUpdateException`/duplicitě.
 - `TestResultsController` má kód seriálovitě na disk (test-results mount) — zvážit symlink-escape + path traversal review po sloučení do gateway (dnes za perm `tests.read`).
 
 ## Nápady z celosystémového průzkumu (2026-11-01)
@@ -47,7 +45,6 @@ Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 ### Klinická agenda a produkt
 
 - **Rezervace pro existujícího pacienta** — `BookingPanel` posílá vždy `newPerson`, i když API umí `personId`; přidat vyhledání pacienta, aby se osoba neopisovala znovu a nevznikaly duplicity (`BookingPanel.tsx`, `types/index.ts`).
-- **Notifikace po potvrzení/zrušení rezervace personálem** — `ConfirmSlot`/`RejectSlot`/`ReleaseSlot` neposílají pacientovi e-mail a chybí připomínka den před návštěvou; doplnit potvrzení, zrušení a reminder (navazuje na e-mail log) (`ReservationSlotsController.cs`, `EmailService.cs`).
 - **Sloučení duplicitních pacientů** — při nejednoznačném matche se záměrně zakládá nová osoba; přidat admin nástroj na sloučení (kontakty, návštěvy, dokumenty, UID) s auditní stopou a náhledem dopadu (`PersonMatchingService.cs`, admin UI).
 - **Detail pacienta bere náhodný intake a nemá stránkování** — `FormSubmissions.FirstOrDefault()` bez `OrderBy` může zobrazit starý formulář; vzít latest podle `SubmittedAtUtc` a historii eventů/dokumentů stránkovat (`PatientsController.cs`).
 - **Legacy `Reservation` tabulka** — nikde se už nevytváří, ale `GetPatientDetail` ji stále merguje do appointments s negativními ID a `IntakeFormLink` na ni drží FK; rozhodnout migraci/odstranění (`Reservation.cs`, `PatientsController.cs`).
@@ -67,8 +64,6 @@ Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 
 ### UX, i18n a odolnost frontendu
 
-- **`PatientFormFields` je natvrdo česky** — ~69 českých labelů/placeholderů používá i veřejný intake, který se přepíná do EN/NL; zahraniční pacient dostane český formulář. Převést na i18n klíče cs/en/nl (`PatientFormFields.tsx`, `IntakeFormByLinkPage.tsx`).
-- **Zbytkové hardcoded stringy a chybějící klíče** — česky jsou toasty v `PatientDetailPage`, „Načítání…“ v `ProtectedRoute`, `AddIntakeFormEventModal`, `BaseModal` (`aria-label="Close"`); chybí `common.noData`, `events.examinationDocumentsSelected`, `loading`, `testDashboard.failed`.
 - **Mobilní navigace v AppShell** — pod 900 px se schová jen e-mail, ale menu, jazyk, nastavení a odhlášení zůstávají v jednom neobalovaném řádku; přidat hamburger/drawer (`AppShell.tsx`, `AppShell.css`).
 - **Chybí ErrorBoundary a 404 route** — pád renderu nebo lazy chunku nechá prázdnou stránku a neznámá URL vykreslí jen prázdný shell (`index.tsx`, `App.tsx`).
 - **Chyby serveru se ztrácejí** — kód čte neexistující `err.response?.data`, zatímco `ApiError` má `message/status`; validační důvod z backendu se nikdy nezobrazí (`CreateEmployeeModal.tsx`, `AddIntakeFormEventModal.tsx`, `AddPatientFormPage.tsx`).
@@ -88,7 +83,7 @@ Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 - **Kontejnery běží jako root a DB pod rootem** — Dockerfily nemají `USER`, compose `read_only/cap_drop`, a connection string/healthcheck/`mysqldump` používají MySQL root; přejít na neprivilegované uživatele a dedikovaný DB účet (Dockerfily, `.env.example`, `scripts/backup_daily.sh`).
 - **Activity log a retence nejsou škálovatelné** — middleware loguje i `/metrics` synchronně na každý request a retence načítá všechny staré řádky do paměti; vyjmout `/metrics`, zápis batchovat/asynchronizovat a mazat přes `ExecuteDeleteAsync` (`ActivityLoggingMiddleware.cs`, `ActivityLogRetentionService.cs`).
 - **Vyhodnocování načítá celou tabulku do paměti** — `GetCases`/`GetNext` dělají `ToListAsync()` všech případů s Include a filtrují až v C#; country scope, filtr recenzí a stránkování přesunout do SQL (`EvaluationsController.cs`).
-- **Edge nginx není hardeningovaný** — chybí `limit_req/limit_conn`, `server_tokens off`, CSP a immutable cache pro hashované bundly; přes frontend navíc veřejně prosvítá `/db-health` do DatabaseAPI (`nginx-reverse-proxy.conf`, `frontend/nginx.conf`).
+- **Edge nginx není hardeningovaný** — chybí `limit_req/limit_conn`, `server_tokens off` a CSP (immutable cache pro hashované bundly už je); přes frontend navíc veřejně prosvítá `/db-health` do DatabaseAPI (`nginx-reverse-proxy.conf`, `frontend/nginx.conf`).
 - **Chybí validace konfigurace a readiness** — aplikace kontroluje jen neprázdnost, takže projde ukázkový JWT klíč nebo `localhost` URL; healthchecky vrací natvrdo `Healthy` bez dotazu do DB. Přidat startovní validaci placeholdrů, oddělit liveness/readiness s `CanConnectAsync`, vendorovat `wait-for-it.sh` a nastavit `ASPNETCORE_ENVIRONMENT=Production` jako default image (`Program.cs`, HealthControllery, `DatabaseAPI/Dockerfile`).
 - **Onboarding a lokální tasky se rozcházejí s realitou** — `build.sh`/README odkazují na neexistující AI službu a běžné úkony (testy, migrace, záloha, reset DB) jsou rozeseté v dokumentaci; přidat `Makefile`/`justfile` a srovnat odkazy (`build.sh`, `README.md`, `TESTING.md`).
 - **Migrace při startu bez zámku a fail-fast** — `MigrateAsync` běží při každém startu, chybu jen zaloguje a aplikace naskočí nad neúspěšnou migrací; při více replikách hrozí souběh. Zavést zámek a fail-fast/readiness gate, případně migrace přesunout do deploy kroku (`Program.cs`, `MigrationService.cs`).
