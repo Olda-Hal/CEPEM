@@ -1000,20 +1000,6 @@
       "saveAllowedExaminations": "Het opslaan van beschikbare onderzoeken is mislukt."
     }
   },
-  "themes": {
-    "lightThemes": "Lichtthema's",
-    "darkThemes": "Donkerethema's",
-    "aurora": "Aurora",
-    "nebulaBlue": "Nebula Blauw",
-    "emeraldDawn": "Smaragd Zonsopgang",
-    "mysticViolet": "Mystiek Violet",
-    "obsidian": "Obsidiaan",
-    "cyberAzure": "Cyber Azuur",
-    "forestShadow": "Bos Schaduw",
-    "cosmicPurple": "Kosmisch Paars",
-    "crimsonNight": "Karmozijn Nacht",
-    "changeTheme": "Thema wijzigen"
-  },
   "events": {
     "addEvent": "Gebeurtenis toevoegen",
     "basicInfo": "Basisinformatie",
@@ -1103,7 +1089,9 @@
     "impersonationDetail": "U bladert als {{name}} (ingelogd als beheerder {{admin}}).",
     "stopImpersonation": "Voorbeeld beëindigen",
     "openMenu": "Menu openen",
-    "closeMenu": "Menu sluiten"
+    "closeMenu": "Menu sluiten",
+    "switchToLight": "Overschakelen naar lichte modus",
+    "switchToDark": "Overschakelen naar donkere modus"
   },
   "administration": {
     "title": "Beheer",

@@ -140,6 +140,8 @@ export interface ChangePasswordRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken?: string;
+  refreshTokenExpiresAt?: string;
   email: string;
   fullName: string;
   passwordExpiration?: string;

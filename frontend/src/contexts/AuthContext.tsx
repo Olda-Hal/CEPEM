@@ -13,7 +13,8 @@ import {
   ApiError,
   UNAUTHORIZED_EVENT,
   getAuthToken,
-  IMPERSONATION_TOKEN_KEY
+  IMPERSONATION_TOKEN_KEY,
+  REFRESH_TOKEN_KEY
 } from '../utils/api';
 import { useTranslation } from 'react-i18next';
 
@@ -223,6 +224,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setToken(response.token);
       localStorage.setItem('authToken', response.token);
+      if (response.refreshToken) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+      } else {
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+      }
       setRequiresPasswordChange(response.requiresPasswordChange);
       await loadCurrentUser();
       return { success: true };
@@ -301,6 +307,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     sessionStorage.removeItem(IMPERSONATION_TOKEN_KEY);
     clearStoredImpersonation();
     localStorage.removeItem('authToken');
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   };
 
   const isAuthenticated = !!user && !!token;

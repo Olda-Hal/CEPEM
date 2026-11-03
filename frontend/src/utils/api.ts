@@ -30,10 +30,63 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
  * own localStorage session) keep working with the administrator's identity.
  */
 export const IMPERSONATION_TOKEN_KEY = 'cepem:impersonationToken';
+export const REFRESH_TOKEN_KEY = 'authRefreshToken';
 
 /** Single source of truth for the active auth token. */
 export const getAuthToken = (): string | null =>
   sessionStorage.getItem(IMPERSONATION_TOKEN_KEY) ?? localStorage.getItem('authToken');
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+/**
+ * Exchange the stored refresh token for a new access token. Concurrent 401s
+ * share one request so a page with several queries does not rotate the
+ * session multiple times. Preview tokens are intentionally not refreshed:
+ * they fall back to the administrator's own session.
+ */
+export const refreshSession = (): Promise<boolean> => {
+  if (sessionStorage.getItem(IMPERSONATION_TOKEN_KEY)) {
+    return Promise.resolve(false);
+  }
+
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) {
+    return Promise.resolve(false);
+  }
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken })
+        });
+        if (!response.ok) {
+          return false;
+        }
+
+        const data = (await response.json()) as {
+          token?: string;
+          refreshToken?: string;
+        };
+        if (!data.token || !data.refreshToken) {
+          return false;
+        }
+
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+
+  return refreshInFlight;
+};
 
 class ApiClient {
   private baseUrl: string;
@@ -48,6 +101,35 @@ class ApiClient {
       ...(token && { Authorization: `Bearer ${token}` }),
       ...(!isFormData && { 'Content-Type': 'application/json' })
     };
+  }
+
+  private async fetchWithAuth(
+    endpoint: string,
+    init: RequestInit,
+    isFormData = false,
+    allowRefresh = true
+  ): Promise<Response> {
+    const send = () =>
+      fetch(this.url(endpoint), {
+        ...init,
+        headers: {
+          ...(this.getAuthHeaders(isFormData) as Record<string, string>),
+          ...((init.headers as Record<string, string> | undefined) ?? {})
+        }
+      });
+
+    let response = await send();
+    if (
+      response.status === 401 &&
+      allowRefresh &&
+      !endpoint.startsWith('/api/auth/login') &&
+      endpoint !== '/api/auth/refresh' &&
+      (await refreshSession())
+    ) {
+      response = await send();
+    }
+
+    return response;
   }
 
   private async handleResponse<T>(response: Response, endpoint: string): Promise<T> {
@@ -95,62 +177,46 @@ class ApiClient {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(this.url(endpoint), {
-      method: 'GET',
-      headers: this.getAuthHeaders()
-    });
+    const response = await this.fetchWithAuth(endpoint, { method: 'GET' });
     return this.handleResponse<T>(response, endpoint);
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(this.url(endpoint), {
+    const response = await this.fetchWithAuth(endpoint, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
       body: data !== undefined ? JSON.stringify(data) : undefined
     });
     return this.handleResponse<T>(response, endpoint);
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(this.url(endpoint), {
+    const response = await this.fetchWithAuth(endpoint, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
       body: data !== undefined ? JSON.stringify(data) : undefined
     });
     return this.handleResponse<T>(response, endpoint);
   }
 
   async patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(this.url(endpoint), {
+    const response = await this.fetchWithAuth(endpoint, {
       method: 'PATCH',
-      headers: this.getAuthHeaders(),
       body: data !== undefined ? JSON.stringify(data) : undefined
     });
     return this.handleResponse<T>(response, endpoint);
   }
 
   async delete<T>(endpoint: string): Promise<T> {
-    const response = await fetch(this.url(endpoint), {
-      method: 'DELETE',
-      headers: this.getAuthHeaders()
-    });
+    const response = await this.fetchWithAuth(endpoint, { method: 'DELETE' });
     return this.handleResponse<T>(response, endpoint);
   }
 
   async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
-    const response = await fetch(this.url(endpoint), {
-      method: 'POST',
-      headers: this.getAuthHeaders(true),
-      body: formData
-    });
+    const response = await this.fetchWithAuth(endpoint, { method: 'POST', body: formData }, true);
     return this.handleResponse<T>(response, endpoint);
   }
 
   async getBlob(endpoint: string): Promise<Blob> {
-    const response = await fetch(this.url(endpoint), {
-      method: 'GET',
-      headers: this.getAuthHeaders()
-    });
+    const response = await this.fetchWithAuth(endpoint, { method: 'GET' });
 
     if (!response.ok) {
       const body = await this.parseBody(response);

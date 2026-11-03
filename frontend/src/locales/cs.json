@@ -1055,20 +1055,6 @@
     "newIntakeForm": "Nový Vstupní Formulář",
     "examinationDocumentsSelected": "Vybrané dokumenty vyšetření: {{count}}"
   },
-  "themes": {
-    "lightThemes": "Světlé motivy",
-    "darkThemes": "Tmavé motivy",
-    "aurora": "Polární záře",
-    "nebulaBlue": "Modrá mlhovina",
-    "emeraldDawn": "Smaragdový úsvit",
-    "mysticViolet": "Mystická fialová",
-    "obsidian": "Obsidián",
-    "cyberAzure": "Kybernet azur",
-    "forestShadow": "Lesní stín",
-    "cosmicPurple": "Kosmická purpur",
-    "crimsonNight": "Karmínová noc",
-    "changeTheme": "Změnit motiv"
-  },
   "activityLog": {
     "title": "Audit log",
     "loadFailed": "Nepodařilo se načíst audit log",
@@ -1103,7 +1089,9 @@
     "impersonationDetail": "Prohlížíte systém jako {{name}} (přihlášen správce {{admin}}).",
     "stopImpersonation": "Ukončit náhled",
     "openMenu": "Otevřít menu",
-    "closeMenu": "Zavřít menu"
+    "closeMenu": "Zavřít menu",
+    "switchToLight": "Přepnout na světlý režim",
+    "switchToDark": "Přepnout na tmavý režim"
   },
   "administration": {
     "title": "Administrativa",

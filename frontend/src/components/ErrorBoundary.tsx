@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import i18n from '../i18n';
 import './ErrorBoundary.css';
 
@@ -22,6 +23,7 @@ export class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     console.error('Unhandled UI error', error, info);
+    Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
   }
 
   render(): React.ReactNode {

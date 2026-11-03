@@ -1,3 +1,2 @@
-// Theme system exports
-export * from './ThemeManager';
+export * from './theme';
 export * from './useTheme';

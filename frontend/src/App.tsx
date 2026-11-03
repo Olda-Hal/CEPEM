@@ -8,7 +8,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
 import { AppShell } from './components/layouts/AppShell';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { themeManager } from './themes/ThemeManager';
+import { initializeTheme } from './themes/theme';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
 import './components/ui/ui.css';
@@ -95,8 +95,7 @@ const LandingRedirect: React.FC = () => {
 
 function App() {
   useEffect(() => {
-    // Theme manager automatically handles initialization
-    themeManager.getCurrentTheme();
+    initializeTheme();
   }, []);
 
   return (

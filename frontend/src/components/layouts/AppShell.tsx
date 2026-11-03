@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasRole, isAdmin } from '../../utils/roles';
 import { GlobalSearch } from '../../components/GlobalSearch';
+import { useTheme } from '../../themes/useTheme';
 import './AppShell.css';
 
 const fetchBuildVersion = async (): Promise<string | null> => {
@@ -131,6 +132,7 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
  */
 export const AppShell: React.FC = () => {
   const { t } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
   const { user, logout, impersonation, stopImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -197,6 +199,15 @@ export const AppShell: React.FC = () => {
           <GlobalSearch />
 
           <div className="shell-header-right">
+            <button
+              type="button"
+              className="shell-icon-button"
+              title={theme === 'dark' ? t('shell.switchToLight') : t('shell.switchToDark')}
+              aria-label={theme === 'dark' ? t('shell.switchToLight') : t('shell.switchToDark')}
+              onClick={toggleTheme}
+            >
+              {theme === 'dark' ? '☀' : '☾'}
+            </button>
             <Link
               to="/settings"
               className="shell-icon-button"
