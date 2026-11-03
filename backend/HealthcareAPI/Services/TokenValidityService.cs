@@ -3,13 +3,17 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace HealthcareAPI.Services;
 
+public sealed record TokenValidityResult(bool Valid, bool PasswordExpired);
+
 public interface ITokenValidityService
 {
     /// <summary>
-    /// Returns false when the JWT's acl_version no longer matches the employee
-    /// or the account has been deactivated. Fail-closed on service errors.
+    /// Returns Valid=false when the JWT's acl_version no longer matches the
+    /// employee or the account has been deactivated. PasswordExpired=true
+    /// means only the password-change/self/logout endpoints may be used.
+    /// Fail-closed on service errors.
     /// </summary>
-    Task<bool> IsTokenValidAsync(
+    Task<TokenValidityResult> ValidateAsync(
         int employeeId,
         int accessControlVersion,
         CancellationToken cancellationToken = default);
@@ -18,6 +22,7 @@ public interface ITokenValidityService
 public class TokenValidityService : ITokenValidityService
 {
     private static readonly TimeSpan PositiveCacheDuration = TimeSpan.FromSeconds(30);
+    private static readonly TokenValidityResult InvalidResult = new(false, false);
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMemoryCache _cache;
@@ -33,15 +38,15 @@ public class TokenValidityService : ITokenValidityService
         _logger = logger;
     }
 
-    public async Task<bool> IsTokenValidAsync(
+    public async Task<TokenValidityResult> ValidateAsync(
         int employeeId,
         int accessControlVersion,
         CancellationToken cancellationToken = default)
     {
         var cacheKey = $"token-valid:{employeeId}:{accessControlVersion}";
-        if (_cache.TryGetValue(cacheKey, out bool cached) && cached)
+        if (_cache.TryGetValue(cacheKey, out TokenValidityResult? cached) && cached is not null)
         {
-            return true;
+            return cached;
         }
 
         try
@@ -53,34 +58,37 @@ public class TokenValidityService : ITokenValidityService
 
             if (!response.IsSuccessStatusCode)
             {
-                return false;
+                return InvalidResult;
             }
 
             var payload = await response.Content.ReadFromJsonAsync<TokenValidityResponse>(
                 cancellationToken: cancellationToken);
             if (payload?.Valid != true)
             {
-                return false;
+                return InvalidResult;
             }
+
+            var result = new TokenValidityResult(true, payload.PasswordExpired);
 
             // Cache only positive results: a revoked token must start failing
             // as soon as the next uncached check happens.
-            _cache.Set(cacheKey, true, PositiveCacheDuration);
-            return true;
+            _cache.Set(cacheKey, result, PositiveCacheDuration);
+            return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            return false;
+            return InvalidResult;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not validate token for employee {EmployeeId}", employeeId);
-            return false;
+            return InvalidResult;
         }
     }
 
     private sealed class TokenValidityResponse
     {
         public bool Valid { get; set; }
+        public bool PasswordExpired { get; set; }
     }
 }

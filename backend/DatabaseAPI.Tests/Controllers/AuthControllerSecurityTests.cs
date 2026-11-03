@@ -34,7 +34,10 @@ public class AuthControllerSecurityTests : IDisposable
         _context.Dispose();
     }
 
-    private Employee SeedEmployee(bool active, int accessControlVersion = 1)
+    private Employee SeedEmployee(
+        bool active,
+        int accessControlVersion = 1,
+        DateTime? passwordExpiration = null)
     {
         var person = new Person
         {
@@ -54,7 +57,8 @@ public class AuthControllerSecurityTests : IDisposable
             PersonId = person.Id,
             PasswordHash = "x",
             Salt = "x",
-            AccessControlVersion = accessControlVersion
+            AccessControlVersion = accessControlVersion,
+            PasswordExpiration = passwordExpiration ?? DateTime.MinValue
         };
         _context.Employees.Add(employee);
         _context.SaveChanges();
@@ -66,6 +70,13 @@ public class AuthControllerSecurityTests : IDisposable
         var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value!;
         return (bool)value.GetType().GetProperty("valid")!.GetValue(value)!;
+    }
+
+    private static bool IsPasswordExpired(IActionResult result)
+    {
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var value = ok.Value!;
+        return (bool)value.GetType().GetProperty("passwordExpired")!.GetValue(value)!;
     }
 
     [Fact]
@@ -90,6 +101,20 @@ public class AuthControllerSecurityTests : IDisposable
         var employee = SeedEmployee(active: false, accessControlVersion: 4);
 
         Assert.False(IsValid(await _controller.ValidateToken(employee.Id, 4)));
+    }
+
+    [Fact]
+    public async Task TokenValid_ReportsExpiredPassword()
+    {
+        var employee = SeedEmployee(
+            active: true,
+            accessControlVersion: 4,
+            passwordExpiration: DateTime.UtcNow.AddDays(-1));
+
+        var result = await _controller.ValidateToken(employee.Id, 4);
+
+        Assert.True(IsValid(result));
+        Assert.True(IsPasswordExpired(result));
     }
 
     [Fact]

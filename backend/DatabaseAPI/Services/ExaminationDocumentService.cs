@@ -131,6 +131,37 @@ public class ExaminationDocumentService
         }
     }
 
+    /// <summary>GDPR erasure: remove every examination document of a patient.</summary>
+    public async Task<int> PurgeForPatientAsync(int patientId, CancellationToken cancellationToken = default)
+    {
+        var examinationIds = await _context.Examinations
+            .Where(examination => examination.Event.PatientId == patientId)
+            .Select(examination => examination.Id)
+            .ToListAsync(cancellationToken);
+
+        if (examinationIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var documents = await _context.ExaminationDocuments
+            .Where(document => examinationIds.Contains(document.ExaminationId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var document in documents)
+        {
+            var filePath = Path.Combine(_documentStoragePath, document.EncryptedPath);
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+
+        _context.ExaminationDocuments.RemoveRange(documents);
+        await _context.SaveChangesAsync(cancellationToken);
+        return documents.Count;
+    }
+
     public async Task<bool> DeleteDocumentAsync(int documentId, int? examinationId = null)
     {
         var document = await _context.ExaminationDocuments.FindAsync(documentId);
@@ -145,9 +176,16 @@ public class ExaminationDocumentService
         }
 
         document.IsDeleted = true;
+
+        var filePath = Path.Combine(_documentStoragePath, document.EncryptedPath);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Deleted document {DocumentId}", documentId);
+        _logger.LogInformation("Deleted examination document {DocumentId} and its encrypted file", documentId);
 
         return true;
     }

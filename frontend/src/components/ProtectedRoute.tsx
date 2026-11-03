@@ -24,10 +24,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <>
-      {children}
-      <PasswordChangeModal isOpen={requiresPasswordChange} isForced={true} />
-    </>
-  );
+  // With an expired password the gateway only allows /me, change-password and
+  // logout. Do not render the app shell (and its data queries) until the
+  // password is changed.
+  if (requiresPasswordChange) {
+    return <PasswordChangeModal isOpen={true} isForced={true} />;
+  }
+
+  return <>{children}</>;
 };

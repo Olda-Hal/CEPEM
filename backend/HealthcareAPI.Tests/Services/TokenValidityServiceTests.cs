@@ -65,10 +65,23 @@ public class TokenValidityServiceTests
         var handler = new StubHandler(HttpStatusCode.OK, "{\"valid\":true}");
         var service = CreateService(handler, out _);
 
-        Assert.True(await service.IsTokenValidAsync(7, 2));
-        Assert.True(await service.IsTokenValidAsync(7, 2));
+        Assert.True((await service.ValidateAsync(7, 2)).Valid);
+        Assert.True((await service.ValidateAsync(7, 2)).Valid);
 
         Assert.Equal(1, handler.Requests);
+    }
+
+    [Fact]
+    public async Task PasswordExpired_IsReported()
+    {
+        var handler = new StubHandler(
+            HttpStatusCode.OK, "{\"valid\":true,\"passwordExpired\":true}");
+        var service = CreateService(handler, out _);
+
+        var result = await service.ValidateAsync(7, 2);
+
+        Assert.True(result.Valid);
+        Assert.True(result.PasswordExpired);
     }
 
     [Fact]
@@ -77,7 +90,7 @@ public class TokenValidityServiceTests
         var handler = new StubHandler(HttpStatusCode.OK, "{\"valid\":false}");
         var service = CreateService(handler, out _);
 
-        Assert.False(await service.IsTokenValidAsync(7, 2));
+        Assert.False((await service.ValidateAsync(7, 2)).Valid);
     }
 
     [Fact]
@@ -86,6 +99,6 @@ public class TokenValidityServiceTests
         var handler = new StubHandler(HttpStatusCode.ServiceUnavailable, "down");
         var service = CreateService(handler, out _);
 
-        Assert.False(await service.IsTokenValidAsync(7, 2));
+        Assert.False((await service.ValidateAsync(7, 2)).Valid);
     }
 }

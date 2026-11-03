@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.APIModels;
@@ -36,18 +37,27 @@ namespace DatabaseAPI.Controllers
         {
             var employee = await _context.Employees
                 .Where(e => e.Id == employeeId)
-                .Select(e => new { e.AccessControlVersion, e.Person.Active })
+                .Select(e => new
+                {
+                    e.AccessControlVersion,
+                    e.Person.Active,
+                    e.PasswordExpiration
+                })
                 .FirstOrDefaultAsync();
 
             var valid = employee != null &&
                         employee.Active &&
                         employee.AccessControlVersion == accessControlVersion;
+            var passwordExpired = employee != null &&
+                                  employee.PasswordExpiration != DateTime.MinValue &&
+                                  employee.PasswordExpiration.Date <= DateTime.UtcNow.Date;
 
             return Ok(new
             {
                 valid,
                 accessControlVersion = employee?.AccessControlVersion,
-                active = employee?.Active ?? false
+                active = employee?.Active ?? false,
+                passwordExpired
             });
         }
 
@@ -128,9 +138,9 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Neplatné údaje pro změnu hesla");
             }
 
-            if (request.NewPassword.Length < 6)
+            if (!PasswordPolicy.IsValid(request.NewPassword))
             {
-                return BadRequest("Nové heslo musí mít alespoň 6 znaků");
+                return BadRequest(PasswordPolicy.RequirementMessage);
             }
 
             var result = await _authService.ChangePasswordDetailedAsync(employeeId, request.CurrentPassword, request.NewPassword);
@@ -151,7 +161,7 @@ namespace DatabaseAPI.Controllers
         [HttpPost("create-employee")]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
-            if (string.IsNullOrEmpty(request.FirstName) || 
+            if (string.IsNullOrEmpty(request.FirstName) ||
                 string.IsNullOrEmpty(request.LastName) ||
                 string.IsNullOrEmpty(request.Email) ||
                 string.IsNullOrEmpty(request.PhoneNumber) ||
@@ -162,9 +172,9 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Všechna povinná pole musí být vyplněna");
             }
 
-            if (request.Password.Length < 6)
+            if (!PasswordPolicy.IsValid(request.Password))
             {
-                return BadRequest("Heslo musí mít alespoň 6 znaků");
+                return BadRequest(PasswordPolicy.RequirementMessage);
             }
 
             try

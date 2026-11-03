@@ -124,7 +124,7 @@ public class AuthControllerTests
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("alespoň 8 znaků", badRequestResult.Value?.ToString());
+        Assert.Contains("at least 8", badRequestResult.Value?.ToString());
     }
 
     [Fact]

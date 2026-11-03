@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CreateEmployeeRequest, Hospital, Role } from '../types';
 import { apiClient } from '../utils/api';
+import { isValidPassword } from '../utils/passwordPolicy';
 import { normalizeCountryCode } from '../utils/countryScope';
 import BaseModal from './BaseModal';
 import SearchableMultiSelect from './SearchableMultiSelect';
@@ -85,6 +86,12 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!isValidPassword(formData.password)) {
+      setError(t('common.passwordRequirements'));
+      setLoading(false);
+      return;
+    }
 
     try {
       await apiClient.post('/api/auth/create-employee', formData);

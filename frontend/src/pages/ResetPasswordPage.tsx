@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../utils/api';
+import { isValidPassword } from '../utils/passwordPolicy';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import './LoginPage.css';
 
@@ -24,8 +25,8 @@ export const ResetPasswordPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (newPassword.length < 6) {
-      setError(t('resetPassword.passwordTooShort'));
+    if (!isValidPassword(newPassword)) {
+      setError(t('common.passwordRequirements'));
       return;
     }
     if (newPassword !== confirmPassword) {

@@ -243,9 +243,18 @@ public class PatientDocumentService
         }
 
         document.IsDeleted = true;
+
+        // Do not leave patient data on disk after a delete. The row stays for
+        // audit/link integrity, but the encrypted file is removed immediately.
+        var filePath = Path.Combine(_documentStoragePath, document.EncryptedPath);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Soft deleted document {DocumentId}", documentId);
+        _logger.LogInformation("Deleted document {DocumentId} and its encrypted file", documentId);
 
         return true;
     }

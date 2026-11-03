@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Cepem.Shared;
 using HealthcareAPI.Models;
 using HealthcareAPI.Services;
 using HealthcareAPI.Middleware;
@@ -99,14 +100,9 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Neplatné údaje pro změnu hesla");
             }
 
-            if (request.NewPassword.Length < 8)
+            if (!PasswordPolicy.IsValid(request.NewPassword))
             {
-                return BadRequest("Nové heslo musí mít alespoň 8 znaků");
-            }
-
-            if (!request.NewPassword.Any(char.IsDigit) || !request.NewPassword.Any(char.IsLetter))
-            {
-                return BadRequest("Nové heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
+                return BadRequest(PasswordPolicy.RequirementMessage);
             }
 
             var success = await _authService.ChangePasswordAsync(employeeId, request);

@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="..\Shared\ForwardedHeadersSetup.cs" Link="Infrastructure\ForwardedHeadersSetup.cs" />
     <Compile Include="..\Shared\PiiRedactor.cs" Link="Infrastructure\PiiRedactor.cs" />
+    <Compile Include="..\Shared\PasswordPolicy.cs" Link="Infrastructure\PasswordPolicy.cs" />
   </ItemGroup>
 
   <ItemGroup>

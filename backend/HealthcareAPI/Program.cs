@@ -132,10 +132,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var validator = context.HttpContext.RequestServices
                     .GetRequiredService<ITokenValidityService>();
-                if (!await validator.IsTokenValidAsync(
-                        employeeId, accessControlVersion, context.HttpContext.RequestAborted))
+                var validity = await validator.ValidateAsync(
+                    employeeId, accessControlVersion, context.HttpContext.RequestAborted);
+
+                if (!validity.Valid)
                 {
                     context.Fail("Token has been revoked.");
+                    return;
+                }
+
+                if (validity.PasswordExpired)
+                {
+                    // Only the forced password-change flow, /me and logout may
+                    // be used until the password is changed.
+                    var path = (context.Request.Path.Value ?? string.Empty).TrimEnd('/');
+                    var allowed =
+                        path.Equals("/api/employees/me", StringComparison.OrdinalIgnoreCase) ||
+                        path.Equals("/api/auth/change-password", StringComparison.OrdinalIgnoreCase) ||
+                        path.Equals("/api/auth/logout", StringComparison.OrdinalIgnoreCase);
+
+                    if (!allowed)
+                    {
+                        context.Fail("Password change required.");
+                    }
                 }
             }
         };
