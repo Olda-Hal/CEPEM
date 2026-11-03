@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 
@@ -55,13 +56,13 @@ public class EmailLogWriter : IEmailLogWriter
             contextDb.EmailLogs.Add(new EmailLog
             {
                 CreatedAtUtc = DateTime.UtcNow,
-                ToAddress = Truncate(toAddress, 320) ?? string.Empty,
-                Subject = Truncate(subject, 200) ?? string.Empty,
+                ToAddress = PiiRedactor.MaskEmail(Truncate(toAddress, 320)) ?? string.Empty,
+                Subject = PiiRedactor.MaskEmails(Truncate(subject, 200)) ?? string.Empty,
                 Kind = context?.Kind ?? "Other",
                 Status = status,
-                Error = Truncate(error, 1000),
+                Error = PiiRedactor.MaskEmails(Truncate(error, 1000)),
                 PersonId = context?.PersonId,
-                RecipientName = Truncate(context?.RecipientName, 200),
+                RecipientName = PiiRedactor.MaskName(Truncate(context?.RecipientName, 200)),
                 ReservationSlotId = context?.ReservationSlotId
             });
 
@@ -69,7 +70,8 @@ public class EmailLogWriter : IEmailLogWriter
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not write e-mail log for {Email}", toAddress);
+            _logger.LogError(ex, "Could not write e-mail log for {Email}",
+                PiiRedactor.MaskEmail(toAddress));
         }
     }
 

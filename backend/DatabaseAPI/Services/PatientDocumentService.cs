@@ -1,5 +1,6 @@
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace DatabaseAPI.Services;
@@ -56,18 +57,26 @@ public class PatientDocumentService
         // A .tdb upload additionally feeds the Vyhodnocování queue. Parse it
         // before anything is persisted so a corrupt measurement is rejected
         // instead of leaving an unusable document behind.
+        var isTdb = _tdbAnalysisService.IsTdbFileName(originalFileName) ||
+                    _tdbAnalysisService.IsTdb(documentData);
+        var validationError = FileSignatureValidator.ValidatePatientDocument(documentData, isTdb);
+        if (validationError != null)
+        {
+            throw new InvalidOperationException(validationError);
+        }
+
         TdbAnalysis? tdbAnalysis = null;
-        if (_tdbAnalysisService.IsTdbFileName(originalFileName) || _tdbAnalysisService.IsTdb(documentData))
+        if (isTdb)
         {
             tdbAnalysis = _tdbAnalysisService.Parse(documentData);
         }
 
         var encryptedData = await _encryptionService.EncryptDocumentAsync(documentData);
-        
+
         var fileName = $"patient_{patientId}_{Guid.NewGuid()}.enc";
         var filePath = Path.Combine(_documentStoragePath, fileName);
 
-        await File.WriteAllBytesAsync(filePath, encryptedData);
+        await AtomicFileWriter.WriteAllBytesAsync(filePath, encryptedData);
 
         var document = new PatientDocument
         {
@@ -180,7 +189,42 @@ public class PatientDocumentService
         var encryptedData = await File.ReadAllBytesAsync(filePath);
         var decryptedData = await _encryptionService.DecryptDocumentAsync(encryptedData);
 
+        if (!_encryptionService.IsCurrentFormat(encryptedData))
+        {
+            await TryMigrateLegacyDocumentAsync(
+                filePath, decryptedData, documentId, document.EncryptedPath);
+        }
+
         return decryptedData;
+    }
+
+    /// <summary>
+    /// Lazy migration: the first read of a legacy document rewrites it in the
+    /// authenticated CEPM2 format. Failure never blocks serving the file.
+    /// </summary>
+    private async Task TryMigrateLegacyDocumentAsync(
+        string filePath, byte[] plaintext, int documentId, string fileName)
+    {
+        try
+        {
+            // Do not resurrect a document deleted concurrently (e.g. GDPR purge).
+            var stillReferenced = await _context.PatientDocuments
+                .AnyAsync(document => document.Id == documentId &&
+                                      document.EncryptedPath == fileName &&
+                                      !document.IsDeleted);
+            if (!stillReferenced || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            var reEncrypted = await _encryptionService.EncryptDocumentAsync(plaintext);
+            await AtomicFileWriter.WriteAllBytesAsync(filePath, reEncrypted);
+            _logger.LogInformation("Re-encrypted legacy document file {Path} with CEPM2", filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not re-encrypt legacy document file {Path}", filePath);
+        }
     }
 
     public async Task<bool> DeleteDocumentAsync(int documentId, int? patientId = null)

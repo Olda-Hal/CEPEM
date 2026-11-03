@@ -503,7 +503,7 @@ public class ActivityLogsControllerTests : IDisposable
         var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(3, lines.Length); // header + 2 rows
         Assert.StartsWith("Timestamp;Service;Employee;Method;Action;Status;Details", lines[0]);
-        Assert.Contains("a@example.com", text);
+        Assert.Contains("***@example.com", text);
         // the detail with special characters is quoted and its newlines flattened
         Assert.Contains("\"tricky;\"\"quoted\"\" value\"", text);
         var actionLine = lines.First(line => line.Contains("/api/events"));
@@ -746,16 +746,19 @@ public class ExaminationDocumentsTests : IDisposable
         return examination;
     }
 
+    private static byte[] MinimalPdf() => "%PDF-1.4\n%%EOF\n"u8.ToArray();
+
     private Task<ExaminationDocument> SeedDocument(Examination examination)
     {
         // Goes through the real save path so the encrypted file exists on disk.
-        return _service.SaveDocumentAsync(examination.Id, new byte[] { 1, 2, 3 }, "report.pdf");
+        return _service.SaveDocumentAsync(examination.Id, MinimalPdf(), "report.pdf");
     }
 
     [Fact]
     public async Task Upload_ForMissingExamination_ReturnsBadRequest()
     {
-        var file = new FormFile(new MemoryStream(new byte[] { 1 }), 0, 1, "file", "a.pdf");
+        var pdf = MinimalPdf();
+        var file = new FormFile(new MemoryStream(pdf), 0, pdf.Length, "file", "a.pdf");
 
         var result = await _controller.Upload(99999, file);
 
@@ -787,12 +790,13 @@ public class ExaminationDocumentsTests : IDisposable
     public async Task Download_WithMatchingExamination_ReturnsDecryptedContent()
     {
         var examination = SeedExamination();
-        var stored = await _service.SaveDocumentAsync(examination.Id, new byte[] { 10, 20, 30 }, "report.pdf");
+        var pdf = MinimalPdf();
+        var stored = await _service.SaveDocumentAsync(examination.Id, pdf, "report.pdf");
 
         var result = await _controller.Download(examination.Id, stored.Id);
 
         var file = Assert.IsType<FileContentResult>(result);
-        Assert.Equal(new byte[] { 10, 20, 30 }, file.FileContents);
+        Assert.Equal(pdf, file.FileContents);
         Assert.Equal("report.pdf", file.FileDownloadName);
     }
 

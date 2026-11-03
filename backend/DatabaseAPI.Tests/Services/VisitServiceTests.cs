@@ -159,7 +159,8 @@ public class VisitServiceTests : IDisposable
         var service = CreateService();
         var visit = await service.CreateVisitAsync(patient.Id, new CreateVisitRequest { VisitDate = DateTime.UtcNow.Date }, null, "CZ");
 
-        var doc = await service.AttachDocumentAsync(patient.Id, visit!.Id, new byte[] { 1, 2, 3 }, "napoveda.pdf");
+        var doc = await service.AttachDocumentAsync(
+            patient.Id, visit!.Id, "%PDF-1.4\n%%EOF\n"u8.ToArray(), "napoveda.pdf");
 
         Assert.NotNull(doc);
         var reloaded = await service.GetVisitAsync(patient.Id, visit.Id);
@@ -167,7 +168,8 @@ public class VisitServiceTests : IDisposable
         Assert.Equal("napoveda.pdf", reloaded.Documents[0].OriginalFileName);
 
         // Second attach increments sort order
-        await service.AttachDocumentAsync(patient.Id, visit.Id, new byte[] { 4, 5 }, "druhy.pdf");
+        await service.AttachDocumentAsync(
+            patient.Id, visit.Id, "%PDF-1.4\n%%EOF\n"u8.ToArray(), "druhy.pdf");
         reloaded = await service.GetVisitAsync(patient.Id, visit.Id);
         Assert.Equal(2, reloaded!.Documents.Count);
     }

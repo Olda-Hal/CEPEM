@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using DatabaseAPI.Services;
+using DatabaseAPI.Utils;
 
 namespace DatabaseAPI.Controllers;
 
@@ -47,8 +48,13 @@ public class ExaminationDocumentsController : ControllerBase
 
             using var ms = new MemoryStream();
             await file.CopyToAsync(ms);
+            var documentData = ms.ToArray();
 
-            var document = await _documentService.SaveDocumentAsync(examinationId, ms.ToArray(), file.FileName);
+            var validationError = FileSignatureValidator.ValidateExaminationDocument(documentData);
+            if (validationError != null)
+                return BadRequest(new { Error = validationError });
+
+            var document = await _documentService.SaveDocumentAsync(examinationId, documentData, file.FileName);
 
             return CreatedAtAction(nameof(Download), new { examinationId, documentId = document.Id }, new
             {

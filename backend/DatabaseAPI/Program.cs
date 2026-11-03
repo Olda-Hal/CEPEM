@@ -108,6 +108,9 @@ builder.Services.AddScoped<ExaminationDocumentService>();
 // Periodic cleanup of old activity logs (the table grows without bound)
 builder.Services.AddHostedService<ActivityLogRetentionService>();
 
+// One-shot masking of historical PII in e-mail/activity logs.
+builder.Services.AddHostedService<PiiLogBackfillService>();
+
 // CORS Configuration
 builder.Services.AddCors(options =>
 {

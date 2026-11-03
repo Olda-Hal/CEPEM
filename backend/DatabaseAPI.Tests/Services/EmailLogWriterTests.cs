@@ -45,13 +45,13 @@ public class EmailLogWriterTests : IDisposable
         var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
         var log = await context.EmailLogs.SingleAsync();
 
-        Assert.Equal("eva@example.com", log.ToAddress);
+        Assert.Equal("e***@example.com", log.ToAddress);
         Assert.Equal("CEPEM – test", log.Subject);
         Assert.Equal(EmailLogKinds.IntakeReminder, log.Kind);
         Assert.Equal(EmailLogStatuses.Failed, log.Status);
         Assert.Equal("smtp timeout", log.Error);
         Assert.Equal(12, log.PersonId);
-        Assert.Equal("Eva Test", log.RecipientName);
+        Assert.Equal("E*** T***", log.RecipientName);
         Assert.Equal(34, log.ReservationSlotId);
         Assert.True(log.CreatedAtUtc > DateTime.UtcNow.AddMinutes(-5));
     }

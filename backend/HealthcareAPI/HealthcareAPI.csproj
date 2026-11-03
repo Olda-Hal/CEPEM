@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Compile Include="..\Shared\ForwardedHeadersSetup.cs" Link="Infrastructure\ForwardedHeadersSetup.cs" />
+    <Compile Include="..\Shared\PiiRedactor.cs" Link="Infrastructure\PiiRedactor.cs" />
   </ItemGroup>
 
   <ItemGroup>

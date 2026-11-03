@@ -1,5 +1,6 @@
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace DatabaseAPI.Services;
@@ -36,12 +37,16 @@ public class ExaminationDocumentService
         if (documentData.Length > MaxFileSizeBytes)
             throw new InvalidOperationException($"Document size must not exceed {MaxFileSizeBytes / 1024 / 1024}MB");
 
+        var validationError = FileSignatureValidator.ValidateExaminationDocument(documentData);
+        if (validationError != null)
+            throw new InvalidOperationException(validationError);
+
         var encryptedData = await _encryptionService.EncryptDocumentAsync(documentData);
 
         var fileName = $"examination_{examinationId}_{Guid.NewGuid()}.enc";
         var filePath = Path.Combine(_documentStoragePath, fileName);
 
-        await File.WriteAllBytesAsync(filePath, encryptedData);
+        await AtomicFileWriter.WriteAllBytesAsync(filePath, encryptedData);
 
         var document = new ExaminationDocument
         {
@@ -92,7 +97,38 @@ public class ExaminationDocumentService
         var encryptedData = await File.ReadAllBytesAsync(filePath);
         var decryptedData = await _encryptionService.DecryptDocumentAsync(encryptedData);
 
+        if (!_encryptionService.IsCurrentFormat(encryptedData))
+        {
+            await TryMigrateLegacyDocumentAsync(
+                filePath, decryptedData, documentId, document.EncryptedPath);
+        }
+
         return (decryptedData, document.OriginalFileName);
+    }
+
+    private async Task TryMigrateLegacyDocumentAsync(
+        string filePath, byte[] plaintext, int documentId, string fileName)
+    {
+        try
+        {
+            // Do not resurrect a deleted document concurrently.
+            var stillReferenced = await _context.ExaminationDocuments
+                .AnyAsync(document => document.Id == documentId &&
+                                      document.EncryptedPath == fileName &&
+                                      !document.IsDeleted);
+            if (!stillReferenced || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            var reEncrypted = await _encryptionService.EncryptDocumentAsync(plaintext);
+            await AtomicFileWriter.WriteAllBytesAsync(filePath, reEncrypted);
+            _logger.LogInformation("Re-encrypted legacy examination document {Path} with CEPM2", filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not re-encrypt legacy examination document {Path}", filePath);
+        }
     }
 
     public async Task<bool> DeleteDocumentAsync(int documentId, int? examinationId = null)

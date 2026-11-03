@@ -5,6 +5,7 @@ using DatabaseAPI.Data;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.Services;
+using DatabaseAPI.Utils;
 
 namespace DatabaseAPI.Controllers
 {
@@ -794,6 +795,12 @@ namespace DatabaseAPI.Controllers
                 await photo.CopyToAsync(memoryStream);
                 var photoData = memoryStream.ToArray();
 
+                var photoValidationError = FileSignatureValidator.ValidatePatientPhoto(photoData);
+                if (photoValidationError != null)
+                {
+                    return BadRequest(photoValidationError);
+                }
+
                 var fileName = await _photoService.SavePatientPhotoAsync(id, photoData);
 
                 return Ok(new { photoUrl = $"/api/patients/{id}/photo" });
@@ -892,6 +899,13 @@ namespace DatabaseAPI.Controllers
                 using var memoryStream = new MemoryStream();
                 await document.CopyToAsync(memoryStream);
                 var documentData = memoryStream.ToArray();
+
+                isTdb = isTdb || FileSignatureValidator.IsTdb(documentData);
+                var documentValidationError = FileSignatureValidator.ValidatePatientDocument(documentData, isTdb);
+                if (documentValidationError != null)
+                {
+                    return BadRequest(documentValidationError);
+                }
 
                 var savedDocument = await _documentService.SavePatientDocumentAsync(id, documentData, document.FileName);
 

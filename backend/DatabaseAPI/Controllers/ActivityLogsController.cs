@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
@@ -61,7 +62,7 @@ public class ActivityLogsController : ControllerBase
 
         return Ok(new ActivityLogListResponse
         {
-            Logs = logs,
+            Logs = logs.Select(MaskLog).ToList(),
             TotalCount = totalCount,
             HasMore = hasMore
         });
@@ -89,7 +90,7 @@ public class ActivityLogsController : ControllerBase
 
         var builder = new System.Text.StringBuilder();
         builder.AppendLine("Timestamp;Service;Employee;Method;Action;Status;Details");
-        foreach (var log in logs)
+        foreach (var log in logs.Select(MaskLog))
         {
             builder.AppendLine(string.Join(';',
                 log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
@@ -152,6 +153,15 @@ public class ActivityLogsController : ControllerBase
         return query;
     }
 
+    /// <summary>Masks PII on the way out, including rows written before redaction.</summary>
+    private static ActivityLog MaskLog(ActivityLog log)
+    {
+        log.EmployeeEmail = PiiRedactor.MaskEmail(log.EmployeeEmail);
+        log.Action = PiiRedactor.RedactPath(log.Action);
+        log.Details = PiiRedactor.RedactIpAddresses(log.Details);
+        return log;
+    }
+
     private static string CsvEscape(string value)
     {
         return value.Contains(';') || value.Contains('"') || value.Contains('\n')
@@ -168,6 +178,11 @@ public class ActivityLogsController : ControllerBase
         }
 
         activityLog.Timestamp = DateTime.UtcNow;
+        // Defence in depth: never persist raw tokens, e-mails or IPs even if an
+        // internal caller sends them unmasked.
+        activityLog.Action = PiiRedactor.RedactPath(activityLog.Action);
+        activityLog.EmployeeEmail = PiiRedactor.MaskEmail(activityLog.EmployeeEmail);
+        activityLog.Details = PiiRedactor.RedactIpAddresses(activityLog.Details);
 
         _context.ActivityLogs.Add(activityLog);
         await _context.SaveChangesAsync();

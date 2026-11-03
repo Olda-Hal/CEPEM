@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using HealthcareAPI.Models;
 using HealthcareAPI.Services;
 using Microsoft.AspNetCore.Http;
@@ -33,13 +34,13 @@ namespace HealthcareAPI.Middleware
 
         public async Task InvokeAsync(HttpContext context, IActivityLogService activityLogService)
         {
-            var action = context.Request.Path.ToString();
+            var rawAction = context.Request.Path.ToString();
             var service = "HealthcareAPI";
 
             // Skip logging for activity logs endpoints to prevent infinite loops and spam
-            if (action.Contains("/api/activitylogs", StringComparison.OrdinalIgnoreCase) ||
-                action.Contains("/health", StringComparison.OrdinalIgnoreCase) ||
-                action.Contains("/swagger", StringComparison.OrdinalIgnoreCase))
+            if (rawAction.Contains("/api/activitylogs", StringComparison.OrdinalIgnoreCase) ||
+                rawAction.Contains("/health", StringComparison.OrdinalIgnoreCase) ||
+                rawAction.Contains("/swagger", StringComparison.OrdinalIgnoreCase))
             {
                 await _next(context);
                 return;
@@ -47,14 +48,30 @@ namespace HealthcareAPI.Middleware
 
             var country = ResolveCountry(context);
 
+            // Preview sessions act as the target employee; record who is really
+            // behind the request so the audit trail is attributable.
+            var impersonatorId = context.User.FindFirst("impersonator_id")?.Value;
+            var impersonatorName = context.User.FindFirst("impersonator_name")?.Value;
+            var details = PiiRedactor.RedactIpAddresses(
+                $"Request from {context.Connection.RemoteIpAddress}");
+            if (!string.IsNullOrWhiteSpace(impersonatorId))
+            {
+                var maskedImpersonator = impersonatorName?.Contains('@') == true
+                    ? PiiRedactor.MaskEmail(impersonatorName)
+                    : PiiRedactor.MaskName(impersonatorName);
+                details += $" (impersonated by {maskedImpersonator} #{impersonatorId})";
+            }
+
             var log = new ActivityLog
             {
                 Timestamp = DateTime.UtcNow,
                 Service = service,
-                Action = action,
-                Details = $"Request from {context.Connection.RemoteIpAddress}",
+                // Never persist raw intake-link tokens or full client IPs.
+                Action = PiiRedactor.RedactPath(rawAction),
+                Details = details,
                 EmployeeId = int.TryParse(context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var employeeId) ? employeeId : null,
-                EmployeeEmail = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
+                EmployeeEmail = PiiRedactor.MaskEmail(
+                    context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value),
                 Method = context.Request.Method
             };
 
