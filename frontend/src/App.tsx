@@ -231,11 +231,7 @@ function App() {
                     <Route
                       path="/patients"
                       element={
-                        <RoleRoute
-                          roles={['Country Admin']}
-                          allowAny
-                          excludeRoles={['Doctor', 'Center Admin']}
-                        >
+                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
                           <PatientsPage />
                         </RoleRoute>
                       }
@@ -243,11 +239,7 @@ function App() {
                     <Route
                       path="/patients/add"
                       element={
-                        <RoleRoute
-                          roles={['Country Admin']}
-                          allowAny
-                          excludeRoles={['Doctor', 'Center Admin']}
-                        >
+                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
                           <AddPatientFormPage />
                         </RoleRoute>
                       }
@@ -255,11 +247,7 @@ function App() {
                     <Route
                       path="/patients/:id"
                       element={
-                        <RoleRoute
-                          roles={['Country Admin']}
-                          allowAny
-                          excludeRoles={['Doctor', 'Center Admin']}
-                        >
+                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
                           <PatientDetailPage />
                         </RoleRoute>
                       }
@@ -267,11 +255,7 @@ function App() {
                     <Route
                       path="/patients/:id/visits/:visitId"
                       element={
-                        <RoleRoute
-                          roles={['Country Admin']}
-                          allowAny
-                          excludeRoles={['Doctor', 'Center Admin']}
-                        >
+                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
                           <VisitDetailPage />
                         </RoleRoute>
                       }
@@ -279,11 +263,7 @@ function App() {
                     <Route
                       path="/patients/:id/edit"
                       element={
-                        <RoleRoute
-                          roles={['Country Admin']}
-                          allowAny
-                          excludeRoles={['Doctor', 'Center Admin']}
-                        >
+                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
                           <EditPatientPage />
                         </RoleRoute>
                       }

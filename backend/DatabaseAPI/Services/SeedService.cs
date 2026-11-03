@@ -639,6 +639,11 @@ namespace DatabaseAPI.Services
             {
                 "dashboard.read", "uid.read",
                 "employees.read", "employees.create", "employees.manage",
+                // Center admins have the same patient agenda as country admins
+                // except for cross-center administration.
+                "patients.read", "patients.write", "patients.photo.write",
+                "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
                 "hospitals.read", "hospitals.write",
                 "examinationrooms.read", "examinationrooms.write",
                 "reservations.read", "reservations.write",
@@ -650,6 +655,7 @@ namespace DatabaseAPI.Services
                 "employees.read", "employees.create", "employees.manage",
                 "patients.read", "patients.write", "patients.photo.write",
                 "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
                 "hospitals.read", "hospitals.write",
                 "examinationtypes.read", "examinationtypes.write",
                 "examinationrooms.read", "examinationrooms.write",

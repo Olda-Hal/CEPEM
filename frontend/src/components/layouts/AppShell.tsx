@@ -107,13 +107,8 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
       return isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
     }
     if (section.key === 'patients') {
-      // Patients belong to the clinical staff (Examiner) and Country Admin;
-      // the evaluating doctor and center administration have other agendas.
-      return (
-        isAdmin(user) ||
-        hasRole(user, 'Country Admin') ||
-        (!hasRole(user, 'Doctor') && !hasRole(user, 'Center Admin'))
-      );
+      // Everyone may work with the patient agenda except the evaluating doctor.
+      return isAdmin(user) || !hasRole(user, 'Doctor');
     }
     if (section.key === 'examinations') {
       // Temporarily hidden from the menu (see SHOW_EXAMINATIONS_NAV).
