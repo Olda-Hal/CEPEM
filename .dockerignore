@@ -1,0 +1,29 @@
+# Never send secrets or patient data into a Docker build context.
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# Runtime/patient data and test artifacts
+data
+backups
+test-results
+frontend/test-results
+frontend/coverage
+frontend/junit.xml
+frontend/dist
+frontend/build
+
+# Dependencies and build outputs
+**/node_modules
+**/bin
+**/obj
+.venv
+**/TestResults
+**/*.user
+**/.vs
+**/.vscode
+**/.idea
+
+*.log

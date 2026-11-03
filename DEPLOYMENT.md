@@ -211,9 +211,19 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ### Backup Database
 ```bash
-# Prefer scripts/backup_daily.sh (retention, .env-aware). Manual one-off:
+# Encrypted + verified backup (recommended). Configure BACKUP_ENCRYPTION_PASSPHRASE
+# (or BACKUP_GPG_RECIPIENT) and optionally BACKUP_REMOTE in .env first.
+scripts/backup_daily.sh
+
+# Manual one-off:
 docker exec cepem_mysql mysqldump -u root -p cepem_healthcare > backup_$(date +%Y%m%d).sql
 ```
+
+The script writes the MySQL dump plus `data/` into `backups/<timestamp>/`,
+encrypts both when a passphrase/key is configured, optionally copies them
+offsite with rclone, verifies archive integrity, and (with
+`BACKUP_RESTORE_TEST=true`) restores the dump into a temporary database.
+Keep backups off the application disk and test a restore regularly.
 
 ### Renew SSL (automatic via certbot timer)
 ```bash

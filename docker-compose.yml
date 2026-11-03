@@ -43,6 +43,9 @@ services:
       - DocumentEncryption__IV=${DOCUMENT_ENCRYPTION_IV}
       - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
+      - DocumentRetention__Enabled=${DOCUMENT_RETENTION_ENABLED:-true}
+      - DocumentRetention__RetentionDays=${DOCUMENT_RETENTION_RETENTION_DAYS:-30}
+      - DocumentRetention__CleanupIntervalHours=${DOCUMENT_RETENTION_CLEANUP_INTERVAL_HOURS:-24}
       - DATABASE_CORS_ORIGINS=http://${APP_HOST}:3000,http://127.0.0.1:3000,http://frontend:3000
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
