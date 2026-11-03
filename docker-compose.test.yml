@@ -38,15 +38,18 @@ services:
 
   # Test Results Aggregator
   test-reporter:
-    image: alpine:latest
+    image: alpine:3.20
     depends_on:
-      - healthcare-api-tests
-      - database-api-tests
-      - frontend-tests
+      healthcare-api-tests:
+        condition: service_completed_successfully
+      database-api-tests:
+        condition: service_completed_successfully
+      frontend-tests:
+        condition: service_completed_successfully
     volumes:
       - ./test-results:/results
       - ./scripts:/scripts
-    command: ["/scripts/generate-test-report.sh"]
+    command: ["sh", "-c", "apk add --no-cache bash bc >/dev/null && /scripts/generate-test-report.sh"]
     networks:
       - cepem-test-network
 

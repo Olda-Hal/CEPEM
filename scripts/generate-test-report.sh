@@ -522,13 +522,20 @@ echo "=============================================="
 echo -e "${YELLOW}📋 Overall Test Summary${NC}"
 echo "=============================================="
 
-total_services=4
+total_services=3
 failed_services=0
 
-# Check each service for failures
+# Check each service for results and actual failures.
 for service in healthcare-api database-api frontend; do
-    if [ ! "$(find /results/$service -name '*.xml' -o -name '*.trx' 2>/dev/null)" ]; then
-        ((failed_services++))
+    if [ -z "$(find /results/$service -type f \( -name '*.xml' -o -name '*.trx' \) 2>/dev/null)" ]; then
+        failed_services=$((failed_services + 1))
+        echo -e "${RED}$service: no test results${NC}"
+    elif find /results/$service -name '*.trx' -exec grep -q 'outcome="Failed"' {} \; 2>/dev/null; then
+        failed_services=$((failed_services + 1))
+        echo -e "${RED}$service: failing tests${NC}"
+    elif [ -f "/results/frontend/junit.xml" ] && [ "$service" = "frontend" ] && grep -Eq 'failures="[1-9]|errors="[1-9]' /results/frontend/junit.xml; then
+        failed_services=$((failed_services + 1))
+        echo -e "${RED}$service: failing tests${NC}"
     fi
 done
 

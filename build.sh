@@ -79,31 +79,25 @@ build_platform() {
 # Run tests
 run_tests() {
     echo -e "${BLUE}🧪 Running Tests...${NC}"
-    
-    # Create test results directory
+
     mkdir -p ./test-results
-    
-    # Run test containers - let all tests complete regardless of failures
-    echo "Starting test containers..."
-    docker compose -f docker-compose.test.yml up --build --remove-orphans
-    
-    # Store test results but continue regardless
-    TEST_EXIT_CODE=$?
-    if [ $TEST_EXIT_CODE -eq 0 ]; then
-        echo -e "${GREEN}✅ All tests completed successfully${NC}"
-    else
-        echo -e "${YELLOW}⚠️  Some tests failed (exit code: $TEST_EXIT_CODE)${NC}"
-        echo -e "${YELLOW}⚠️  Platform will start anyway for test result review${NC}"
+    local status=0
+
+    # Run one service at a time so a failing suite fails the whole run.
+    for service in healthcare-api-tests database-api-tests frontend-tests; do
+        echo "Running $service..."
+        if ! docker compose -f docker-compose.test.yml run --build --rm "$service"; then
+            echo -e "${RED}❌ $service failed${NC}"
+            status=1
+        fi
+    done
+
+    if [ $status -eq 0 ]; then
+        docker compose -f docker-compose.test.yml run --rm --no-deps test-reporter || status=$?
     fi
-    
-    # Cleanup test containers
+
     docker compose -f docker-compose.test.yml down --remove-orphans
-    
-    # Generate test report
-    echo -e "${BLUE}📊 Generating test report...${NC}"
-    ./scripts/generate-test-report.sh || echo -e "${YELLOW}⚠️  Test report generation failed${NC}"
-    
-    return 0  # Always return success to continue
+    return $status
 }
 
 # Start platform
@@ -144,7 +138,10 @@ main() {
         
         echo ""
         echo -e "${BLUE}🧪 Running test suite...${NC}"
-        run_tests  # Always continue regardless of test results
+        if ! run_tests; then
+            echo -e "${RED}❌ Tests failed; not starting the platform.${NC}"
+            exit 1
+        fi
         echo ""
         start_platform
     fi

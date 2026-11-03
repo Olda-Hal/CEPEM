@@ -21,7 +21,7 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 RUN reportgenerator -reports:"./TestResults/*/coverage.cobertura.xml" -targetdir:"./TestResults/CoverageReport" -reporttypes:Html || true
 
 # Copy test results for output
-FROM alpine:latest
+FROM alpine:3.20
 WORKDIR /results
-COPY --from=build /app/DatabaseAPI.Tests/TestResults ./
-CMD ["sh", "-c", "cp -r . /results/database-api/ 2>/dev/null || true; find . -name '*.trx' -exec cat {} \\; 2>/dev/null || true; find . -name 'coverage.cobertura.xml' -exec cat {} \\; 2>/dev/null || true"]
+COPY --from=build /app/DatabaseAPI.Tests/TestResults ./TestResults
+CMD ["sh", "-c", "mkdir -p /results/database-api && cp -r /results/TestResults/. /results/database-api/"]

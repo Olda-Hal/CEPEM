@@ -1,5 +1,5 @@
 # Multi-stage build for React frontend
-FROM node:20-alpine AS build
+FROM node:22.12-alpine AS build
 
 WORKDIR /app
 
@@ -16,12 +16,13 @@ COPY frontend/ .
 # Vite inlines these at build time, so they must be present before the build.
 ARG VITE_API_URL
 ARG VITE_GRAFANA_URL
+ARG VITE_SENTRY_DSN
 
 # Build the application
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 # Copy build files to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
