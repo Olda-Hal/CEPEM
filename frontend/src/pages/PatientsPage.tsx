@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import { MdDeleteOutline, MdGroups, MdRestoreFromTrash, MdSearch } from 'react-i
 import { useAuth } from '../contexts/AuthContext';
 import { hasRole, isAdmin } from '../utils/roles';
 import { PatientSearchResponse } from '../types';
-import { apiClient } from '../utils/api';
+import { apiClient, getAuthToken } from '../utils/api';
 import { CreatePatientModal } from '../components/CreatePatientModal';
 import { BaseModal } from '../components/BaseModal';
 import './PatientsPage.css';
@@ -26,6 +26,10 @@ export const PatientsPage: React.FC = () => {
   const [showDeleted, setShowDeleted] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState('lastName');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [aliveFilter, setAliveFilter] = useState<'all' | 'alive' | 'deceased'>('all');
+  const [centerFilter, setCenterFilter] = useState('all');
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastPatientElementRef = useRef<HTMLDivElement | null>(null);
@@ -35,18 +39,37 @@ export const PatientsPage: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  const buildQueryParams = (page: string) => {
+    const queryParams = new URLSearchParams({
+      page,
+      limit: ITEMS_PER_PAGE.toString(),
+      search: debouncedQuery,
+      sortBy,
+      sortOrder,
+      includeDeleted: showDeleted ? 'true' : 'false'
+    });
+    if (aliveFilter !== 'all') {
+      queryParams.set('alive', aliveFilter === 'alive' ? 'true' : 'false');
+    }
+    if (centerFilter !== 'all') {
+      queryParams.set('centerId', centerFilter);
+    }
+    return queryParams;
+  };
+
   const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteQuery({
-      queryKey: ['patients', debouncedQuery, showDeleted],
+      queryKey: [
+        'patients',
+        debouncedQuery,
+        showDeleted,
+        sortBy,
+        sortOrder,
+        aliveFilter,
+        centerFilter
+      ],
       queryFn: async ({ pageParam = 0 }) => {
-        const queryParams = new URLSearchParams({
-          page: pageParam.toString(),
-          limit: ITEMS_PER_PAGE.toString(),
-          search: debouncedQuery,
-          sortBy: 'lastName',
-          sortOrder: 'asc',
-          includeDeleted: showDeleted ? 'true' : 'false'
-        });
+        const queryParams = buildQueryParams(pageParam.toString());
         return apiClient.get<PatientSearchResponse>(`/api/patients/search?${queryParams}`);
       },
       initialPageParam: 0,
@@ -77,6 +100,45 @@ export const PatientsPage: React.FC = () => {
 
   const patients = data?.pages.flatMap((page) => page.patients) ?? [];
   const totalCount = data?.pages[0]?.totalCount ?? 0;
+
+  const centerOptions = useMemo(() => {
+    const centers = new Map<number, string>();
+    patients.forEach((patient) => {
+      if (patient.homeHospitalId) {
+        centers.set(
+          patient.homeHospitalId,
+          patient.homeHospitalName || `#${patient.homeHospitalId}`
+        );
+      }
+    });
+    return Array.from(centers.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [patients]);
+
+  const handleExport = async () => {
+    try {
+      const token = getAuthToken();
+      const params = buildQueryParams('0');
+      params.delete('page');
+      params.delete('limit');
+      const response = await fetch(`/api/patients/export?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download =
+        response.headers.get('Content-Disposition')?.split('filename=')[1] ?? 'patients.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (exportError) {
+      console.error('Patient export failed', exportError);
+      setActionError(t('patients.exportFailed'));
+    }
+  };
 
   const lastPatientElementCallback = useCallback(
     (node: HTMLDivElement | null) => {
@@ -121,6 +183,9 @@ export const PatientsPage: React.FC = () => {
       <div className="page-heading">
         <h1 className="page-title">{t('patients.title')}</h1>
         <div className="page-heading-actions">
+          <button className="btn btn-secondary" type="button" onClick={() => void handleExport()}>
+            {t('patients.export')}
+          </button>
           <button className="btn btn-primary" onClick={() => navigate('/patients/add')}>
             + {t('patients.addPatient')}
           </button>
@@ -152,6 +217,49 @@ export const PatientsPage: React.FC = () => {
             <span>{t('patients.showDeleted')}</span>
           </button>
         )}
+      </div>
+
+      <div className="patients-filters">
+        <label>
+          <span>{t('patients.filters.sortBy')}</span>
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+            <option value="lastName">{t('patients.filters.sortLastName')}</option>
+            <option value="firstName">{t('patients.filters.sortFirstName')}</option>
+            <option value="birthDate">{t('patients.filters.sortBirthDate')}</option>
+          </select>
+        </label>
+        <label>
+          <span>{t('patients.filters.sortOrder')}</span>
+          <select
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value as 'asc' | 'desc')}
+          >
+            <option value="asc">{t('patients.filters.ascending')}</option>
+            <option value="desc">{t('patients.filters.descending')}</option>
+          </select>
+        </label>
+        <label>
+          <span>{t('patients.filters.status')}</span>
+          <select
+            value={aliveFilter}
+            onChange={(event) => setAliveFilter(event.target.value as 'all' | 'alive' | 'deceased')}
+          >
+            <option value="all">{t('patients.filters.allStatuses')}</option>
+            <option value="alive">{t('patients.alive')}</option>
+            <option value="deceased">{t('patients.deceased')}</option>
+          </select>
+        </label>
+        <label>
+          <span>{t('patients.filters.center')}</span>
+          <select value={centerFilter} onChange={(event) => setCenterFilter(event.target.value)}>
+            <option value="all">{t('patients.filters.allCenters')}</option>
+            {centerOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="patients-content">

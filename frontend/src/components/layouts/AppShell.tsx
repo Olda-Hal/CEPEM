@@ -135,6 +135,11 @@ export const AppShell: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [buildVersion, setBuildVersion] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -178,6 +183,17 @@ export const AppShell: React.FC = () => {
             <span className="shell-brand-name">CEPEM</span>
           </Link>
 
+          <button
+            type="button"
+            className="shell-mobile-toggle"
+            aria-label={mobileNavOpen ? t('shell.closeMenu') : t('shell.openMenu')}
+            aria-expanded={mobileNavOpen}
+            aria-controls="shell-main-nav"
+            onClick={() => setMobileNavOpen((open) => !open)}
+          >
+            ☰
+          </button>
+
           <GlobalSearch />
 
           <div className="shell-header-right">
@@ -213,7 +229,7 @@ export const AppShell: React.FC = () => {
           </div>
         </div>
 
-        <div className="shell-header-nav">
+        <div className={`shell-header-nav${mobileNavOpen ? ' open' : ''}`} id="shell-main-nav">
           <nav className="shell-nav" aria-label={t('shell.mainNavigation')}>
             {visibleSections(user).map((section) => (
               <div key={section.key} className="shell-nav-item">

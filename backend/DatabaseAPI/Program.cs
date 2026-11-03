@@ -77,6 +77,7 @@ builder.Services.AddScoped<IUidService, UidService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<PatientMasterDataService>();
+builder.Services.AddScoped<IPatientMergeService, PatientMergeService>();
 builder.Services.AddScoped<IVisitService, VisitService>();
 builder.Services.AddScoped<IEventOptionsService, EventOptionsService>();
 builder.Services.AddScoped<IIntakeFormLinkService, IntakeFormLinkService>();

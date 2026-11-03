@@ -46,6 +46,10 @@ public class PatientDto
     public string? PhotoUrl { get; set; }
     public bool IsDeleted { get; set; }
 
+    /// <summary>Patient's home center (derived from the creator's assignment).</summary>
+    public int? HomeHospitalId { get; set; }
+    public string? HomeHospitalName { get; set; }
+
     /// <summary>Employee who created the patient (null for historical records).</summary>
     public int? CreatedByEmployeeId { get; set; }
 

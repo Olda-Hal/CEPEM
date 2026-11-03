@@ -170,6 +170,8 @@ export interface Patient {
   fullName: string;
   photoUrl?: string;
   isDeleted?: boolean;
+  homeHospitalId?: number | null;
+  homeHospitalName?: string | null;
   createdByEmployeeId?: number | null;
   canDelete?: boolean;
 }
@@ -364,6 +366,44 @@ export interface IntakeChangeRequest {
   createdAtUtc: string;
   reviewedAtUtc?: string | null;
   reviewedByEmployeeId?: number | null;
+}
+
+export interface PatientMergePreview {
+  sourcePatientId: number;
+  targetPatientId: number;
+  sourceName: string;
+  targetName: string;
+  sourceUid: string;
+  targetUid: string;
+  events: number;
+  visits: number;
+  documents: number;
+  formSubmissions: number;
+  consents: number;
+  evaluationCases: number;
+  intakeChanges: number;
+  gdprRequests: number;
+  reservationSlots: number;
+  reservations: number;
+  appointments: number;
+  emailLogs: number;
+  smsLogs: number;
+  intakeLinks: number;
+}
+
+export interface PatientMergeResult {
+  sourcePatientId: number;
+  targetPatientId: number;
+  targetName: string;
+  targetUid: string;
+  movedEvents: number;
+  movedVisits: number;
+  movedDocuments: number;
+  movedFormSubmissions: number;
+  movedConsents: number;
+  movedEvaluationCases: number;
+  movedIntakeChanges: number;
+  movedPersonReferences: number;
 }
 
 export interface ExaminationDocument {

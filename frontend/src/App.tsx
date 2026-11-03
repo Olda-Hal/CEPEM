@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
 import { AppShell } from './components/layouts/AppShell';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { themeManager } from './themes/ThemeManager';
 import './themes/colors.css';
 import './themes/theme-overrides.css';
@@ -69,6 +70,7 @@ const IntakeFormByLinkPage = React.lazy(() =>
   })
 );
 const PublicGdprPage = React.lazy(() => import('./pages/PublicGdprPage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 import './App.css';
 
@@ -103,204 +105,207 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="App">
-              <React.Suspense
-                fallback={
-                  <div className="loading-container">
-                    <div className="loading-spinner">...</div>
-                  </div>
-                }
-              >
-                <Routes>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/intake/:token" element={<IntakeFormByLinkPage />} />
-                  <Route path="/gdpr" element={<PublicGdprPage />} />
-                  <Route
-                    element={
-                      <ProtectedRoute>
-                        <AppShell />
-                      </ProtectedRoute>
-                    }
-                  >
+              <ErrorBoundary>
+                <React.Suspense
+                  fallback={
+                    <div className="loading-container">
+                      <div className="loading-spinner">...</div>
+                    </div>
+                  }
+                >
+                  <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route path="/intake/:token" element={<IntakeFormByLinkPage />} />
+                    <Route path="/gdpr" element={<PublicGdprPage />} />
                     <Route
-                      path="/tests"
                       element={
-                        <RoleRoute roles={[]}>
-                          <TestDashboard />
-                        </RoleRoute>
+                        <ProtectedRoute>
+                          <AppShell />
+                        </ProtectedRoute>
                       }
-                    />
-                    <Route
-                      path="/admin/employees"
-                      element={
-                        <RoleRoute roles={['Center Admin', 'Country Admin']}>
-                          <AdminEmployeesPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/monitoring"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <MonitoringPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/activity-log"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <ActivityLogPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/email-log"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <EmailLogPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/gdpr"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <GdprPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/analytics"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <AnalyticsPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/communication"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <CommunicationTemplatesPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/roles"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <RoleManagementPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/health"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <HealthDashboardPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/centers"
-                      element={
-                        <RoleRoute roles={['Center Admin', 'Country Admin']}>
-                          <CenterManagementPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/administration"
-                      element={
-                        <RoleRoute roles={['Center Admin', 'Country Admin']}>
-                          <AdministrationPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin"
-                      element={
-                        <RoleRoute roles={[]}>
-                          <AdminPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    {/* The evaluating doctor has no patient agenda. */}
-                    <Route
-                      path="/patients"
-                      element={
-                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
-                          <PatientsPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/patients/add"
-                      element={
-                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
-                          <AddPatientFormPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/patients/:id"
-                      element={
-                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
-                          <PatientDetailPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/patients/:id/visits/:visitId"
-                      element={
-                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
-                          <VisitDetailPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/patients/:id/edit"
-                      element={
-                        <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
-                          <EditPatientPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/reservations"
-                      element={
-                        <RoleRoute roles={['Center Admin', 'Country Admin']}>
-                          <ReservationSlotsPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/examinations"
-                      element={
-                        <RoleRoute
-                          roles={['Center Admin', 'Country Admin']}
-                          allowAny
-                          excludeRoles={['Doctor', 'Examiner']}
-                        >
-                          <ExaminationsPage />
-                        </RoleRoute>
-                      }
-                    />
-                    <Route
-                      path="/vyhodnocovani"
-                      element={
-                        <RoleRoute roles={['Doctor', 'Country Admin']}>
-                          <EvaluationPage />
-                        </RoleRoute>
-                      }
-                    />
-                  </Route>
-                  <Route path="/dashboard" element={<LandingRedirect />} />
-                  <Route path="/" element={<LandingRedirect />} />
-                </Routes>
-              </React.Suspense>
+                    >
+                      <Route
+                        path="/tests"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <TestDashboard />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/employees"
+                        element={
+                          <RoleRoute roles={['Center Admin', 'Country Admin']}>
+                            <AdminEmployeesPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/monitoring"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <MonitoringPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/activity-log"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <ActivityLogPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/email-log"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <EmailLogPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/gdpr"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <GdprPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/analytics"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <AnalyticsPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/communication"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <CommunicationTemplatesPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/roles"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <RoleManagementPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/health"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <HealthDashboardPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/centers"
+                        element={
+                          <RoleRoute roles={['Center Admin', 'Country Admin']}>
+                            <CenterManagementPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/administration"
+                        element={
+                          <RoleRoute roles={['Center Admin', 'Country Admin']}>
+                            <AdministrationPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin"
+                        element={
+                          <RoleRoute roles={[]}>
+                            <AdminPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      {/* The evaluating doctor has no patient agenda. */}
+                      <Route
+                        path="/patients"
+                        element={
+                          <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
+                            <PatientsPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/patients/add"
+                        element={
+                          <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
+                            <AddPatientFormPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/patients/:id"
+                        element={
+                          <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
+                            <PatientDetailPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/patients/:id/visits/:visitId"
+                        element={
+                          <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
+                            <VisitDetailPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/patients/:id/edit"
+                        element={
+                          <RoleRoute roles={['Country Admin']} allowAny excludeRoles={['Doctor']}>
+                            <EditPatientPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/reservations"
+                        element={
+                          <RoleRoute roles={['Center Admin', 'Country Admin']}>
+                            <ReservationSlotsPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/examinations"
+                        element={
+                          <RoleRoute
+                            roles={['Center Admin', 'Country Admin']}
+                            allowAny
+                            excludeRoles={['Doctor', 'Examiner']}
+                          >
+                            <ExaminationsPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/vyhodnocovani"
+                        element={
+                          <RoleRoute roles={['Doctor', 'Country Admin']}>
+                            <EvaluationPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route path="*" element={<NotFoundPage />} />
+                    </Route>
+                    <Route path="/dashboard" element={<LandingRedirect />} />
+                    <Route path="/" element={<LandingRedirect />} />
+                  </Routes>
+                </React.Suspense>
+              </ErrorBoundary>
             </div>
           </Router>
         </AuthProvider>

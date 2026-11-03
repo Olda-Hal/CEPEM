@@ -10,6 +10,7 @@ import './PatientDetailPage.css';
 import { useToast } from '../contexts/ToastContext';
 import PatientVisitsSection from '../components/patient/PatientVisitsSection';
 import CameraCaptureModal from '../components/patient/CameraCaptureModal';
+import MergePatientModal from '../components/patient/MergePatientModal';
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +27,7 @@ export const PatientDetailPage: React.FC = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [intakeChanges, setIntakeChanges] = useState<IntakeChangeRequest[]>([]);
   const [reviewingChangeId, setReviewingChangeId] = useState<number | null>(null);
+  const [showMergeModal, setShowMergeModal] = useState(false);
 
   const intakeSummary = useMemo(() => {
     if (!patient) {
@@ -222,6 +224,9 @@ export const PatientDetailPage: React.FC = () => {
             className="btn btn-secondary"
           >
             {t('patients.editPatient')}
+          </button>
+          <button onClick={() => setShowMergeModal(true)} className="btn btn-secondary">
+            {t('patients.merge.button')}
           </button>
           <button onClick={handleBackToPatients} className="btn btn-secondary">
             {t('patients.backToPatients')}
@@ -607,6 +612,17 @@ export const PatientDetailPage: React.FC = () => {
       {showCamera && (
         <CameraCaptureModal onClose={() => setShowCamera(false)} onCapture={handleCapturePhoto} />
       )}
+
+      <MergePatientModal
+        isOpen={showMergeModal}
+        sourcePatientId={patient.id}
+        sourcePatientName={patient.fullName}
+        onClose={() => setShowMergeModal(false)}
+        onMerged={(targetPatientId) => {
+          setShowMergeModal(false);
+          navigate(`/patients/${targetPatientId}`);
+        }}
+      />
     </div>
   );
 };

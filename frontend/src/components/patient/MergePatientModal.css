@@ -1,0 +1,57 @@
+.merge-patient-warning {
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #fff4e5;
+  color: #7a4b00;
+}
+
+.merge-patient-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+
+.merge-patient-hint {
+  color: var(--color-text-secondary);
+}
+
+.merge-patient-results {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.merge-patient-results button {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.merge-patient-results li:last-child button {
+  border-bottom: 0;
+}
+
+.merge-patient-results span {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.merge-patient-target {
+  margin-top: 1rem;
+}
+
+.merge-patient-preview ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.25rem;
+}

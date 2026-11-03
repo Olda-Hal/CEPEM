@@ -104,7 +104,10 @@
     "creatingHospital": "Error creating hospital",
     "creatingExaminationType": "Error creating examination type",
     "deletingExaminationType": "Error deleting examination type",
-    "loadingPatients": "Error loading patients. Please try again."
+    "loadingPatients": "Error loading patients. Please try again.",
+    "boundaryTitle": "Something went wrong",
+    "boundaryDescription": "The page could not be displayed. Please try reloading it.",
+    "reload": "Reload"
   },
   "reservations": {
     "title": "Reservations",
@@ -227,7 +230,15 @@
       "email": "Email",
       "examinationType": "Examination type",
       "selectExaminationType": "Select examination type",
-      "blockButton": "Block selected slot"
+      "blockButton": "Block selected slot",
+      "patientMode": "Patient entry mode",
+      "existingPatient": "Existing patient",
+      "newPatient": "New patient",
+      "searchPatient": "Find patient",
+      "searchPatientPlaceholder": "Name, UID, e-mail or phone…",
+      "noPatients": "No patient found.",
+      "selectedPatient": "Selected patient",
+      "clearSelection": "Clear selection"
     },
     "overview": {
       "title": "Day overview",
@@ -287,7 +298,8 @@
       "updateFailed": "Error updating slot.",
       "releaseFailed": "Error releasing slot.",
       "deleteFailed": "Error deleting slot.",
-      "intakeLinkFailed": "Could not open the intake form."
+      "intakeLinkFailed": "Could not open the intake form.",
+      "selectPatient": "Select a patient."
     }
   },
   "evaluation": {
@@ -676,6 +688,44 @@
       "approve": "Approve",
       "reject": "Reject",
       "failed": "Could not process the change."
+    },
+    "merge": {
+      "button": "Merge duplicate",
+      "title": "Merge duplicate patient",
+      "description": "All data for {{name}} will be moved to the selected record. The source record will be hidden. This cannot be undone.",
+      "searchTarget": "Select the record to keep",
+      "searchPlaceholder": "Name, UID, e-mail or phone…",
+      "noPatients": "No patient found.",
+      "targetSelected": "Target record",
+      "previewDescription": "These records will be moved:",
+      "confirm": "Merge patient",
+      "previewFailed": "Could not load the merge preview.",
+      "failed": "Merge failed.",
+      "counts": {
+        "events": "Events: {{count}}",
+        "visits": "Visits: {{count}}",
+        "documents": "Documents: {{count}}",
+        "formSubmissions": "Form submissions: {{count}}",
+        "consents": "Consents: {{count}}",
+        "evaluationCases": "Evaluations: {{count}}",
+        "reservationSlots": "Reservation slots: {{count}}",
+        "emailLogs": "E-mail logs: {{count}}"
+      }
+    },
+    "export": "Export CSV",
+    "exportFailed": "Could not download the export.",
+    "filters": {
+      "sortBy": "Sort by",
+      "sortLastName": "Last name",
+      "sortFirstName": "First name",
+      "sortBirthDate": "Date of birth",
+      "sortOrder": "Order",
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "status": "Status",
+      "allStatuses": "All",
+      "center": "Center",
+      "allCenters": "All centers"
     }
   },
   "admin": {
@@ -1051,7 +1101,9 @@
     "versionUnknown": "version unknown",
     "impersonationActive": "Preview",
     "impersonationDetail": "You are browsing as {{name}} (signed in as administrator {{admin}}).",
-    "stopImpersonation": "End preview"
+    "stopImpersonation": "End preview",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "administration": {
     "title": "Administration",
@@ -1477,5 +1529,10 @@
     "signatureVectorRaw": "Signature vector raw data",
     "sicknessHistories": "Sickness histories",
     "rawPatientJson": "Raw patient JSON (complete payload)"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This link does not exist or you do not have access to it.",
+    "backHome": "Back to dashboard"
   }
 }

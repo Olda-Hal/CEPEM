@@ -391,3 +391,80 @@
     animation: none;
   }
 }
+
+.booking-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.booking-mode-toggle button {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.booking-mode-toggle button.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.booking-existing-patient {
+  margin-bottom: 1rem;
+}
+
+.booking-hint {
+  margin: 0.5rem 0;
+  color: var(--color-text-secondary);
+}
+
+.booking-patient-results {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.booking-patient-results button {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.booking-patient-results li:last-child button {
+  border-bottom: 0;
+}
+
+.booking-patient-results button.selected,
+.booking-patient-results button:hover {
+  background: var(--color-background-secondary, #f3f4f6);
+}
+
+.booking-patient-results span {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.booking-selected-patient {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-success, #16a34a);
+  border-radius: 6px;
+  background: var(--color-background-secondary, #f3f4f6);
+}

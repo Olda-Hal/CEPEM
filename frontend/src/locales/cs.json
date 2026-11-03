@@ -104,7 +104,10 @@
     "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
     "patientNotFound": "Pacient nebyl nalezen",
     "creatingExaminationType": "Chyba při vytváření typu vyšetření",
-    "deletingExaminationType": "Chyba při mazání typu vyšetření"
+    "deletingExaminationType": "Chyba při mazání typu vyšetření",
+    "boundaryTitle": "Něco se pokazilo",
+    "boundaryDescription": "Stránku se nepodařilo zobrazit. Zkuste ji prosím načíst znovu.",
+    "reload": "Načíst znovu"
   },
   "reservations": {
     "title": "Rezervace",
@@ -227,7 +230,15 @@
       "email": "Email",
       "examinationType": "Typ vyšetření",
       "selectExaminationType": "Vyberte typ vyšetření",
-      "blockButton": "Blokovat vybraný slot"
+      "blockButton": "Blokovat vybraný slot",
+      "patientMode": "Způsob zadání pacienta",
+      "existingPatient": "Existující pacient",
+      "newPatient": "Nový pacient",
+      "searchPatient": "Najít pacienta",
+      "searchPatientPlaceholder": "Jméno, UID, e-mail nebo telefon…",
+      "noPatients": "Žádný pacient nenalezen.",
+      "selectedPatient": "Vybraný pacient",
+      "clearSelection": "Zrušit výběr"
     },
     "overview": {
       "title": "Přehled dne",
@@ -287,7 +298,8 @@
       "updateFailed": "Chyba při úpravě slotu.",
       "releaseFailed": "Chyba při uvolnění slotu.",
       "deleteFailed": "Chyba při mazání slotu.",
-      "intakeLinkFailed": "Nepodařilo se otevřít vstupní formulář."
+      "intakeLinkFailed": "Nepodařilo se otevřít vstupní formulář.",
+      "selectPatient": "Vyberte pacienta."
     }
   },
   "evaluation": {
@@ -676,6 +688,44 @@
       "approve": "Schválit",
       "reject": "Zamítnout",
       "failed": "Změnu se nepodařilo zpracovat."
+    },
+    "merge": {
+      "button": "Sloučit duplicitu",
+      "title": "Sloučit duplicitního pacienta",
+      "description": "Všechna data pacienta {{name}} budou přesunuta na vybranou kartu. Zdrojová karta bude skryta. Tuto akci nelze vrátit.",
+      "searchTarget": "Vyberte kartu, která zůstane",
+      "searchPlaceholder": "Jméno, UID, e-mail nebo telefon…",
+      "noPatients": "Žádný pacient nenalezen.",
+      "targetSelected": "Cílová karta",
+      "previewDescription": "Přesunou se tyto záznamy:",
+      "confirm": "Sloučit pacienta",
+      "previewFailed": "Náhled sloučení se nepodařilo načíst.",
+      "failed": "Sloučení se nepodařilo.",
+      "counts": {
+        "events": "Události: {{count}}",
+        "visits": "Návštěvy: {{count}}",
+        "documents": "Dokumenty: {{count}}",
+        "formSubmissions": "Formuláře: {{count}}",
+        "consents": "Souhlasy: {{count}}",
+        "evaluationCases": "Měření: {{count}}",
+        "reservationSlots": "Rezervační sloty: {{count}}",
+        "emailLogs": "E-mailové logy: {{count}}"
+      }
+    },
+    "export": "Export CSV",
+    "exportFailed": "Export se nepodařilo stáhnout.",
+    "filters": {
+      "sortBy": "Řadit podle",
+      "sortLastName": "Příjmení",
+      "sortFirstName": "Jméno",
+      "sortBirthDate": "Datum narození",
+      "sortOrder": "Pořadí",
+      "ascending": "Vzestupně",
+      "descending": "Sestupně",
+      "status": "Stav",
+      "allStatuses": "Všechny",
+      "center": "Centrum",
+      "allCenters": "Všechna centra"
     }
   },
   "admin": {
@@ -1051,7 +1101,9 @@
     "versionUnknown": "verze neznámá",
     "impersonationActive": "Náhled",
     "impersonationDetail": "Prohlížíte systém jako {{name}} (přihlášen správce {{admin}}).",
-    "stopImpersonation": "Ukončit náhled"
+    "stopImpersonation": "Ukončit náhled",
+    "openMenu": "Otevřít menu",
+    "closeMenu": "Zavřít menu"
   },
   "administration": {
     "title": "Administrativa",
@@ -1477,5 +1529,10 @@
     "signatureVectorRaw": "Surová data podpisu",
     "sicknessHistories": "Historie nemocí",
     "rawPatientJson": "Surová JSON data pacienta (kompletní payload)"
+  },
+  "notFound": {
+    "title": "Stránka nenalezena",
+    "description": "Tento odkaz neexistuje nebo na něj nemáte přístup.",
+    "backHome": "Zpět na dashboard"
   }
 }

@@ -21,6 +21,7 @@ namespace DatabaseAPI.Controllers
         private readonly IEmployeeScopeService _employeeScopeService;
         private readonly IUidService _uidService;
         private readonly IPatientService _patientService;
+        private readonly IPatientMergeService _mergeService;
 
         public PatientsController(
             DatabaseContext context,
@@ -30,7 +31,8 @@ namespace DatabaseAPI.Controllers
             IActorCountryContextService actorCountryContextService,
             IEmployeeScopeService employeeScopeService,
             IUidService uidService,
-            IPatientService patientService)
+            IPatientService patientService,
+            IPatientMergeService mergeService)
         {
             _context = context;
             _logger = logger;
@@ -40,6 +42,42 @@ namespace DatabaseAPI.Controllers
             _employeeScopeService = employeeScopeService;
             _uidService = uidService;
             _patientService = patientService;
+            _mergeService = mergeService;
+        }
+
+        [HttpGet("merge/preview")]
+        public async Task<ActionResult<PatientMergePreviewDto>> PreviewMerge(
+            [FromQuery] int sourcePatientId,
+            [FromQuery] int targetPatientId)
+        {
+            if (!await PatientIsVisibleAsync(sourcePatientId) ||
+                !await PatientIsVisibleAsync(targetPatientId))
+            {
+                return NotFound("Patient not found");
+            }
+
+            var preview = await _mergeService.PreviewAsync(sourcePatientId, targetPatientId);
+            return preview == null
+                ? NotFound("Patient not found or source/target are identical")
+                : Ok(preview);
+        }
+
+        [HttpPost("merge")]
+        public async Task<ActionResult<PatientMergeResultDto>> MergePatients(
+            [FromBody] PatientMergeRequest request)
+        {
+            if (!await PatientIsVisibleAsync(request.SourcePatientId) ||
+                !await PatientIsVisibleAsync(request.TargetPatientId))
+            {
+                return NotFound("Patient not found");
+            }
+
+            var (ok, error, result) = await _mergeService.MergeAsync(
+                request.SourcePatientId,
+                request.TargetPatientId,
+                _actorCountryContextService.GetActorEmployeeId());
+
+            return ok ? Ok(result) : BadRequest(error);
         }
 
         [HttpGet("search")]
@@ -49,7 +87,9 @@ namespace DatabaseAPI.Controllers
             [FromQuery] string search = "",
             [FromQuery] string sortBy = "LastName",
             [FromQuery] string sortOrder = "asc",
-            [FromQuery] bool includeDeleted = false)
+            [FromQuery] bool includeDeleted = false,
+            [FromQuery] bool? alive = null,
+            [FromQuery] int? centerId = null)
         {
             try
             {
@@ -70,12 +110,22 @@ namespace DatabaseAPI.Controllers
                 if (!string.IsNullOrEmpty(search))
                 {
                     search = search.ToLower();
-                    query = query.Where(p => 
+                    query = query.Where(p =>
                         p.Person.FirstName.ToLower().Contains(search) ||
                         p.Person.LastName.ToLower().Contains(search) ||
                         p.Person.UID.ToLower().Contains(search) ||
                         p.Person.ContactToObjects.Any(cto =>
                             cto.Contact.Emails.Any(e => e.Email.ToLower().Contains(search))));
+                }
+
+                if (alive.HasValue)
+                {
+                    query = query.Where(p => p.Alive == alive.Value);
+                }
+
+                if (centerId.HasValue)
+                {
+                    query = query.Where(p => p.HomeHospitalId == centerId.Value);
                 }
 
                 // Apply sorting
@@ -126,6 +176,8 @@ namespace DatabaseAPI.Controllers
                             FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
                             PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p),
                             IsDeleted = p.IsDeleted,
+                            HomeHospitalId = p.HomeHospitalId,
+                            HomeHospitalName = p.HomeHospital != null ? p.HomeHospital.Name : null,
                             CreatedByEmployeeId = p.CreatedByEmployeeId
                         },
                         CreatorSupervisorId = p.CreatedByEmployee != null ? p.CreatedByEmployee.CreatedByEmployeeId : null
@@ -158,7 +210,122 @@ namespace DatabaseAPI.Controllers
             }
         }
 
-[HttpPost]
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportPatients(
+            [FromQuery] string search = "",
+            [FromQuery] bool includeDeleted = false,
+            [FromQuery] bool? alive = null,
+            [FromQuery] int? centerId = null,
+            [FromQuery] string sortBy = "LastName",
+            [FromQuery] string sortOrder = "asc")
+        {
+            var actorScope = await _employeeScopeService.GetActorScopeAsync();
+            if (!actorScope.CanSeeDeletedPatients)
+            {
+                includeDeleted = false;
+            }
+
+            var query = _context.Patients
+                .AsNoTracking()
+                .Include(p => p.Person)
+                    .ThenInclude(person => person.Address)
+                .Include(p => p.Person)
+                    .ThenInclude(person => person.ContactToObjects)
+                        .ThenInclude(link => link.Contact)
+                            .ThenInclude(contact => contact.Emails)
+                .Include(p => p.Person)
+                    .ThenInclude(person => person.ContactToObjects)
+                        .ThenInclude(link => link.Contact)
+                            .ThenInclude(contact => contact.PhoneNumbers)
+                .Include(p => p.HomeHospital)
+                .Where(p => includeDeleted || !p.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(p =>
+                    p.Person.FirstName.ToLower().Contains(term) ||
+                    p.Person.LastName.ToLower().Contains(term) ||
+                    p.Person.UID.ToLower().Contains(term) ||
+                    p.Person.ContactToObjects.Any(link =>
+                        link.Contact.Emails.Any(email => email.Email.ToLower().Contains(term))));
+            }
+            if (alive.HasValue)
+            {
+                query = query.Where(p => p.Alive == alive.Value);
+            }
+            if (centerId.HasValue)
+            {
+                query = query.Where(p => p.HomeHospitalId == centerId.Value);
+            }
+
+            query = sortBy.ToLower() switch
+            {
+                "firstname" => sortOrder.ToLower() == "desc"
+                    ? query.OrderByDescending(p => p.Person.FirstName)
+                    : query.OrderBy(p => p.Person.FirstName),
+                "birthdate" => sortOrder.ToLower() == "desc"
+                    ? query.OrderByDescending(p => p.BirthDate)
+                    : query.OrderBy(p => p.BirthDate),
+                _ => sortOrder.ToLower() == "desc"
+                    ? query.OrderByDescending(p => p.Person.LastName).ThenByDescending(p => p.Person.FirstName)
+                    : query.OrderBy(p => p.Person.LastName).ThenBy(p => p.Person.FirstName)
+            };
+
+            var rows = await query.Take(50_000).Select(p => new
+            {
+                p.Person.UID,
+                p.Person.FirstName,
+                p.Person.LastName,
+                p.BirthDate,
+                p.Person.Gender,
+                p.InsuranceNumber,
+                Email = p.Person.ContactToObjects.SelectMany(link => link.Contact.Emails)
+                    .Select(email => email.Email).FirstOrDefault(),
+                Phone = p.Person.ContactToObjects.SelectMany(link => link.Contact.PhoneNumbers)
+                    .Select(phone => phone.PhoneNumber).FirstOrDefault(),
+                Street = p.Person.Address != null ? p.Person.Address.Street : string.Empty,
+                City = p.Person.Address != null ? p.Person.Address.City : string.Empty,
+                PostalCode = p.Person.Address != null ? p.Person.Address.PostalCode : string.Empty,
+                Center = p.HomeHospital != null ? p.HomeHospital.Name : string.Empty,
+                p.Alive,
+                p.Person.CreatedAt,
+                p.IsDeleted
+            }).ToListAsync();
+
+            var builder = new System.Text.StringBuilder();
+            builder.AppendLine("UID;First name;Last name;Birth date;Gender;Insurance;Email;Phone;Street;City;Postal code;Center;Alive;Created at;Deleted");
+            foreach (var row in rows)
+            {
+                builder.AppendLine(string.Join(';',
+                    CsvEscape(row.UID),
+                    CsvEscape(row.FirstName),
+                    CsvEscape(row.LastName),
+                    row.BirthDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    CsvEscape(row.Gender),
+                    row.InsuranceNumber.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    CsvEscape(row.Email ?? string.Empty),
+                    CsvEscape(row.Phone ?? string.Empty),
+                    CsvEscape(row.Street ?? string.Empty),
+                    CsvEscape(row.City ?? string.Empty),
+                    CsvEscape(row.PostalCode ?? string.Empty),
+                    CsvEscape(row.Center ?? string.Empty),
+                    row.Alive ? "1" : "0",
+                    row.CreatedAt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    row.IsDeleted ? "1" : "0"));
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(builder.ToString());
+            return File(bytes, "text/csv; charset=utf-8",
+                $"patients-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
+        }
+
+        private static string CsvEscape(string value) =>
+            value.Contains(';') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+                ? $"\"{value.Replace("\"", "\"\"")}\""
+                : value;
+
+        [HttpPost]
         public async Task<ActionResult<PatientDto>> CreatePatient([FromBody] CreatePatientRequest request)
         {
             try
