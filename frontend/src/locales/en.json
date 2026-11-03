@@ -404,7 +404,8 @@
     "next": "Next",
     "close": "Close",
     "noData": "No data",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "passwordRequirements": "Password must be at least 8 characters long and contain at least one letter and one digit."
   },
   "intakeLink": {
     "pageTitle": "Intake Form",
@@ -668,7 +669,14 @@
     "capturedPhoto": "Captured patient",
     "photoAlt": "Patient",
     "commentSaveFailed": "Failed to save the comment",
-    "photoUploadFailed": "Failed to upload the photo"
+    "photoUploadFailed": "Failed to upload the photo",
+    "intakeChanges": {
+      "title": "Proposed intake changes",
+      "description": "Changes from the public link are waiting for approval. The patient card is unchanged.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "failed": "Could not process the change."
+    }
   },
   "admin": {
     "employeeManagement": "Employee Management",

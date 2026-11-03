@@ -404,7 +404,8 @@
     "next": "Volgende",
     "close": "Sluiten",
     "noData": "Geen gegevens",
-    "refresh": "Vernieuwen"
+    "refresh": "Vernieuwen",
+    "passwordRequirements": "Het wachtwoord moet minstens 8 tekens lang zijn en minstens één letter en één cijfer bevatten."
   },
   "intakeLink": {
     "pageTitle": "Inschrijfformulier",
@@ -668,7 +669,14 @@
     "capturedPhoto": "Gefotografeerde patiënt",
     "photoAlt": "Patiënt",
     "commentSaveFailed": "Opmerking opslaan mislukt",
-    "photoUploadFailed": "Foto uploaden mislukt"
+    "photoUploadFailed": "Foto uploaden mislukt",
+    "intakeChanges": {
+      "title": "Voorgestelde intake-wijzigingen",
+      "description": "Wijzigingen via de openbare link wachten op goedkeuring. De patiëntkaart blijft ongewijzigd.",
+      "approve": "Goedkeuren",
+      "reject": "Afwijzen",
+      "failed": "De wijziging kon niet worden verwerkt."
+    }
   },
   "admin": {
     "employeeManagement": "Personeelsbeheer",

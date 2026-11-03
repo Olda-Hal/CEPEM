@@ -341,6 +341,31 @@ export interface PatientDetail {
   documents: PatientDocument[];
 }
 
+/** Master-data values proposed by a public intake submission. */
+export interface MasterDataChanges {
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  insuranceNumber?: number | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+}
+
+export interface IntakeChangeRequest {
+  id: number;
+  patientId: number;
+  intakeEventId?: number | null;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  summary?: string | null;
+  changes: MasterDataChanges;
+  createdAtUtc: string;
+  reviewedAtUtc?: string | null;
+  reviewedByEmployeeId?: number | null;
+}
+
 export interface ExaminationDocument {
   id: number;
   fileName: string;

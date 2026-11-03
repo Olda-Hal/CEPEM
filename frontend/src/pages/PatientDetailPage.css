@@ -1210,3 +1210,35 @@
 .camera-actions .btn-capture:hover {
   background: var(--color-primary-hover);
 }
+
+.patient-intake-changes-card {
+  border-left: 4px solid var(--color-warning, #d97706);
+}
+
+.intake-change-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.intake-change-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background-secondary, transparent);
+}
+
+.intake-change-summary {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.intake-change-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}

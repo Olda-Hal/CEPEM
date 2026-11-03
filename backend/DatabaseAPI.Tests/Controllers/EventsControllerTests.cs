@@ -51,6 +51,8 @@ public class EventsControllerTests : IDisposable
             new EventOptionsService(_context),
             _linkService,
             _visitServiceMock.Object,
+            new PatientMasterDataService(_context),
+            new PatientService(_context, uidMock.Object, actorCountryMock.Object),
             NullLogger<EventsController>.Instance);
     }
 
@@ -501,6 +503,30 @@ public class EventsControllerTests : IDisposable
         Assert.Equal("2", consent.Version);
         Assert.Equal("IntakeForm", consent.Source);
         Assert.NotNull(consent.IntakeEventId);
+    }
+
+    [Fact]
+    public async Task SubmitIntakeFormByLink_WithChangedMasterData_QueuesApproval()
+    {
+        var person = SeedPerson(firstName: "Eva", lastName: "Kralova");
+        SeedEventType();
+        var (token, _) = await CreateValidLink(person);
+
+        var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            FirstName = "Evicka",
+            Email = "new@example.com",
+            GdprAccepted = true
+        });
+
+        Assert.Null(result.Result);
+        var change = await _context.IntakeChangeRequests.SingleAsync();
+        Assert.Equal(IntakeChangeStatuses.Pending, change.Status);
+        Assert.Contains("Evicka", change.ChangesJson);
+
+        var unchanged = await _context.Persons.SingleAsync(entry => entry.Id == person.Id);
+        Assert.Equal("Eva", unchanged.FirstName);
     }
 
     [Fact]

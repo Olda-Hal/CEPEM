@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { PatientDetail, QuickPreviewSettings } from '../types';
+import { IntakeChangeRequest, PatientDetail, QuickPreviewSettings } from '../types';
 import { parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
@@ -24,6 +24,8 @@ export const PatientDetailPage: React.FC = () => {
   const [editingComment, setEditingComment] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showCamera, setShowCamera] = useState(false);
+  const [intakeChanges, setIntakeChanges] = useState<IntakeChangeRequest[]>([]);
+  const [reviewingChangeId, setReviewingChangeId] = useState<number | null>(null);
 
   const intakeSummary = useMemo(() => {
     if (!patient) {
@@ -85,6 +87,17 @@ export const PatientDetailPage: React.FC = () => {
       setPatient(response);
       setCommentText(response.comment || '');
       setError(null);
+
+      try {
+        setIntakeChanges(
+          await apiClient.get<IntakeChangeRequest[]>(
+            `/api/patients/${patientId}/intake-changes/pending`
+          )
+        );
+      } catch (changesError) {
+        console.error('Error loading pending intake changes:', changesError);
+        setIntakeChanges([]);
+      }
     } catch (error) {
       console.error('Error loading patient detail:', error);
       setError(t('errors.loadingPatientDetail'));
@@ -108,6 +121,20 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving quick preview settings:', error);
+    }
+  };
+
+  const handleReviewIntakeChange = async (changeId: number, action: 'approve' | 'reject') => {
+    if (!patient) return;
+    setReviewingChangeId(changeId);
+    try {
+      await apiClient.post(`/api/patients/${patient.id}/intake-changes/${changeId}/${action}`, {});
+      await loadPatientDetail(patient.id);
+    } catch (reviewError) {
+      console.error('Error reviewing intake change:', reviewError);
+      toast.error(t('patients.intakeChanges.failed'));
+    } finally {
+      setReviewingChangeId(null);
     }
   };
 
@@ -203,6 +230,44 @@ export const PatientDetailPage: React.FC = () => {
       </div>
 
       <div className="patient-detail-content">
+        {intakeChanges.length > 0 && (
+          <div className="patient-intake-card patient-intake-changes-card">
+            <div className="card-header">
+              <div>
+                <h2>{t('patients.intakeChanges.title')}</h2>
+                <p className="intake-card-description">{t('patients.intakeChanges.description')}</p>
+              </div>
+            </div>
+            <div className="intake-change-list">
+              {intakeChanges.map((change) => (
+                <div className="intake-change-item" key={change.id}>
+                  <p className="intake-change-summary">
+                    {change.summary || t('common.notProvided')}
+                  </p>
+                  <div className="intake-change-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={reviewingChangeId === change.id}
+                      onClick={() => void handleReviewIntakeChange(change.id, 'approve')}
+                    >
+                      {t('patients.intakeChanges.approve')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={reviewingChangeId === change.id}
+                      onClick={() => void handleReviewIntakeChange(change.id, 'reject')}
+                    >
+                      {t('patients.intakeChanges.reject')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Patient Basic Info */}
         <div className="patient-info-card">
           <div className="patient-header">

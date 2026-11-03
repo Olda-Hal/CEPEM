@@ -1376,6 +1376,49 @@ namespace DatabaseAPI.Migrations
                     b.ToTable("InjuryTypes");
                 });
 
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.IntakeChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChangesJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("IntakeEventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ReviewedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntakeEventId");
+
+                    b.HasIndex("PatientId", "Status");
+
+                    b.ToTable("IntakeChangeRequests");
+                });
+
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.IntakeFormLink", b =>
                 {
                     b.Property<int>("Id")
@@ -2763,6 +2806,24 @@ namespace DatabaseAPI.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("NameTranslation");
+                });
+
+            modelBuilder.Entity("DatabaseAPI.DatabaseModels.IntakeChangeRequest", b =>
+                {
+                    b.HasOne("DatabaseAPI.DatabaseModels.Event", "IntakeEvent")
+                        .WithMany()
+                        .HasForeignKey("IntakeEventId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DatabaseAPI.DatabaseModels.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IntakeEvent");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("DatabaseAPI.DatabaseModels.IntakeFormLink", b =>

@@ -404,7 +404,8 @@
     "next": "Další",
     "close": "Zavřít",
     "noData": "Žádná data",
-    "refresh": "Obnovit"
+    "refresh": "Obnovit",
+    "passwordRequirements": "Heslo musí mít alespoň 8 znaků a obsahovat alespoň jedno písmeno a jednu číslici."
   },
   "intakeLink": {
     "pageTitle": "Vstupní formulář",
@@ -668,7 +669,14 @@
     "capturedPhoto": "Vyfocený pacient",
     "photoAlt": "Pacient",
     "commentSaveFailed": "Nepodařilo se uložit komentář",
-    "photoUploadFailed": "Nepodařilo se nahrát fotografii"
+    "photoUploadFailed": "Nepodařilo se nahrát fotografii",
+    "intakeChanges": {
+      "title": "Navržené změny z intake formuláře",
+      "description": "Změny z veřejného odkazu čekají na schválení. Karta pacienta zůstává beze změny.",
+      "approve": "Schválit",
+      "reject": "Zamítnout",
+      "failed": "Změnu se nepodařilo zpracovat."
+    }
   },
   "admin": {
     "employeeManagement": "Správa zaměstnanců",

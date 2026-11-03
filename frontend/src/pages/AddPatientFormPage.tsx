@@ -201,7 +201,7 @@ export const AddPatientFormPage: React.FC = () => {
         return;
       }
 
-      const payload: any = {
+      const patientPayload: any = {
         firstName: form.firstName,
         lastName: form.lastName,
         birthDate: form.dateOfBirth,
@@ -213,106 +213,104 @@ export const AddPatientFormPage: React.FC = () => {
         height: form.height ? parseFloat(form.height) : undefined
       };
 
-      const response = await apiClient.post<any>('/api/patients', payload);
-      const newId = response?.id;
+      const intakePayload = {
+        firstName: form.firstName || undefined,
+        lastName: form.lastName || undefined,
+        dateOfBirth: form.dateOfBirth || undefined,
+        gender: form.gender || undefined,
+        insuranceNumber: form.insuranceCompany ? parseInt(form.insuranceCompany) : undefined,
+        email: form.email || undefined,
+        phoneNumber: form.phone || undefined,
+        address: form.address || undefined,
+        postalCode: form.postalCode || undefined,
+        weight: form.weight ? parseFloat(form.weight) : undefined,
+        height: form.height ? parseFloat(form.height) : undefined,
+        medBloodPressure: form.medBloodPressure,
+        medHeart: form.medHeart,
+        medCholesterol: form.medCholesterol,
+        medBloodThinners: form.medBloodThinners,
+        medDiabetes: form.medDiabetes,
+        medThyroid: form.medThyroid,
+        medNerves: form.medNerves,
+        medPsych: form.medPsych,
+        medDigestion: form.medDigestion,
+        medPain: form.medPain,
+        medDehydration: form.medDehydration,
+        medBreathing: form.medBreathing,
+        medAntibiotics: form.medAntibiotics,
+        medSupplements: form.medSupplements,
+        medAllergies: form.medAllergies,
+        poorSleep: form.poorSleep,
+        digestiveIssues: form.digestiveIssues,
+        physicalStress: form.physicalStress,
+        mentalStress: form.mentalStress,
+        smoking: form.smoking,
+        fatigue: form.fatigue,
+        lastMealHours: form.lastMealHours || undefined,
+        hadCovid: form.hadCovid,
+        covidWhen: form.covidWhen || undefined,
+        covidVaccine: form.covidVaccine,
+        vaccinesAfter2023: form.vaccinesAfter2023,
+        lastMenstruationDate: form.lastMenstruationDate || undefined,
+        menstruationCycleDays: form.menstruationCycleDays
+          ? parseInt(form.menstruationCycleDays)
+          : undefined,
+        yearsSinceLastMenstruation: form.yearsSinceLastMenstruation
+          ? parseInt(form.yearsSinceLastMenstruation)
+          : undefined,
+        gaveBirth: form.gaveBirth,
+        birthCount: form.birthCount ? parseInt(form.birthCount) : undefined,
+        birthWhen: form.birthWhen || undefined,
+        breastfed: form.breastfed,
+        breastfeedingMonths: form.breastfeedingMonths
+          ? parseInt(form.breastfeedingMonths)
+          : undefined,
+        breastfeedingInflammation: form.breastfeedingInflammation,
+        endedWithInflammation: form.endedWithInflammation,
+        contraception: form.contraception,
+        contraceptionDuration: form.contraceptionDuration || undefined,
+        estrogen: form.estrogen,
+        estrogenType: form.estrogenType || undefined,
+        interruption: form.interruption,
+        interruptionCount: form.interruptionCount ? parseInt(form.interruptionCount) : undefined,
+        miscarriage: form.miscarriage,
+        miscarriageCount: form.miscarriageCount ? parseInt(form.miscarriageCount) : undefined,
+        breastInjury: form.breastInjury,
+        mammogram: form.mammogram,
+        mammogramCount: form.mammogramCount ? parseInt(form.mammogramCount) : undefined,
+        breastBiopsy: form.breastBiopsy,
+        breastImplants: form.breastImplants,
+        breastSurgery: form.breastSurgery,
+        breastSurgeryType: form.breastSurgeryType || undefined,
+        familyTumors: form.familyTumors,
+        familyTumorType: form.familyTumorType || undefined,
+        confirmAccuracy: form.confirmAccuracy,
+        termsAccepted: form.termsAccepted,
+        gdprAccepted: form.gdprAccepted,
+        gdprLanguage: i18n.language,
+        signaturePlace: form.signaturePlace || undefined,
+        signatureDate: form.signatureDate || undefined,
+        signatureVector: form.signatureVector,
+        additionalHealthInfo: form.additionalHealthInfo || undefined,
+        sicknessHistories:
+          form.hadCovid || form.covidVaccine || !!form.covidWhen
+            ? [
+                {
+                  sicknessName: 'COVID-19',
+                  hadSickness: form.hadCovid,
+                  sicknessWhen: form.covidWhen || undefined,
+                  vaccinated: form.covidVaccine,
+                  notes: form.vaccinesAfter2023 ? 'Other vaccines after 2023: yes' : undefined
+                }
+              ]
+            : []
+      };
 
-      if (newId) {
-        const intakePayload = {
-          patientId: newId,
-          firstName: form.firstName || undefined,
-          lastName: form.lastName || undefined,
-          dateOfBirth: form.dateOfBirth || undefined,
-          gender: form.gender || undefined,
-          insuranceNumber: form.insuranceCompany ? parseInt(form.insuranceCompany) : undefined,
-          email: form.email || undefined,
-          phoneNumber: form.phone || undefined,
-          address: form.address || undefined,
-          postalCode: form.postalCode || undefined,
-          weight: form.weight ? parseFloat(form.weight) : undefined,
-          height: form.height ? parseFloat(form.height) : undefined,
-          medBloodPressure: form.medBloodPressure,
-          medHeart: form.medHeart,
-          medCholesterol: form.medCholesterol,
-          medBloodThinners: form.medBloodThinners,
-          medDiabetes: form.medDiabetes,
-          medThyroid: form.medThyroid,
-          medNerves: form.medNerves,
-          medPsych: form.medPsych,
-          medDigestion: form.medDigestion,
-          medPain: form.medPain,
-          medDehydration: form.medDehydration,
-          medBreathing: form.medBreathing,
-          medAntibiotics: form.medAntibiotics,
-          medSupplements: form.medSupplements,
-          medAllergies: form.medAllergies,
-          poorSleep: form.poorSleep,
-          digestiveIssues: form.digestiveIssues,
-          physicalStress: form.physicalStress,
-          mentalStress: form.mentalStress,
-          smoking: form.smoking,
-          fatigue: form.fatigue,
-          lastMealHours: form.lastMealHours || undefined,
-          hadCovid: form.hadCovid,
-          covidWhen: form.covidWhen || undefined,
-          covidVaccine: form.covidVaccine,
-          vaccinesAfter2023: form.vaccinesAfter2023,
-          lastMenstruationDate: form.lastMenstruationDate || undefined,
-          menstruationCycleDays: form.menstruationCycleDays
-            ? parseInt(form.menstruationCycleDays)
-            : undefined,
-          yearsSinceLastMenstruation: form.yearsSinceLastMenstruation
-            ? parseInt(form.yearsSinceLastMenstruation)
-            : undefined,
-          gaveBirth: form.gaveBirth,
-          birthCount: form.birthCount ? parseInt(form.birthCount) : undefined,
-          birthWhen: form.birthWhen || undefined,
-          breastfed: form.breastfed,
-          breastfeedingMonths: form.breastfeedingMonths
-            ? parseInt(form.breastfeedingMonths)
-            : undefined,
-          breastfeedingInflammation: form.breastfeedingInflammation,
-          endedWithInflammation: form.endedWithInflammation,
-          contraception: form.contraception,
-          contraceptionDuration: form.contraceptionDuration || undefined,
-          estrogen: form.estrogen,
-          estrogenType: form.estrogenType || undefined,
-          interruption: form.interruption,
-          interruptionCount: form.interruptionCount ? parseInt(form.interruptionCount) : undefined,
-          miscarriage: form.miscarriage,
-          miscarriageCount: form.miscarriageCount ? parseInt(form.miscarriageCount) : undefined,
-          breastInjury: form.breastInjury,
-          mammogram: form.mammogram,
-          mammogramCount: form.mammogramCount ? parseInt(form.mammogramCount) : undefined,
-          breastBiopsy: form.breastBiopsy,
-          breastImplants: form.breastImplants,
-          breastSurgery: form.breastSurgery,
-          breastSurgeryType: form.breastSurgeryType || undefined,
-          familyTumors: form.familyTumors,
-          familyTumorType: form.familyTumorType || undefined,
-          confirmAccuracy: form.confirmAccuracy,
-          termsAccepted: form.termsAccepted,
-          gdprAccepted: form.gdprAccepted,
-          gdprLanguage: i18n.language,
-          signaturePlace: form.signaturePlace || undefined,
-          signatureDate: form.signatureDate || undefined,
-          signatureVector: form.signatureVector,
-          additionalHealthInfo: form.additionalHealthInfo || undefined,
-          sicknessHistories:
-            form.hadCovid || form.covidVaccine || !!form.covidWhen
-              ? [
-                  {
-                    sicknessName: 'COVID-19',
-                    hadSickness: form.hadCovid,
-                    sicknessWhen: form.covidWhen || undefined,
-                    vaccinated: form.covidVaccine,
-                    notes: form.vaccinesAfter2023 ? 'Other vaccines after 2023: yes' : undefined
-                  }
-                ]
-              : []
-        };
-
-        await apiClient.post('/api/events/intake-form', intakePayload);
-      }
+      const created = await apiClient.post<{ patientId?: number }>(
+        '/api/events/intake-form/patient',
+        { patient: patientPayload, intake: intakePayload }
+      );
+      const newId = created?.patientId;
 
       if (photoFile && newId) {
         const formData = new FormData();

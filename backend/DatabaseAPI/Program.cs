@@ -76,6 +76,7 @@ builder.Services.AddScoped<IEmployeeScopeService, EmployeeScopeService>();
 builder.Services.AddScoped<IUidService, UidService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<PatientMasterDataService>();
 builder.Services.AddScoped<IVisitService, VisitService>();
 builder.Services.AddScoped<IEventOptionsService, EventOptionsService>();
 builder.Services.AddScoped<IIntakeFormLinkService, IntakeFormLinkService>();
@@ -110,6 +111,9 @@ builder.Services.AddHostedService<ActivityLogRetentionService>();
 
 // One-shot masking of historical PII in e-mail/activity logs.
 builder.Services.AddHostedService<PiiLogBackfillService>();
+
+// Purge soft-deleted patient/examination documents after the retention window.
+builder.Services.AddHostedService<DocumentRetentionService>();
 
 // CORS Configuration
 builder.Services.AddCors(options =>

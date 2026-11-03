@@ -5,6 +5,7 @@ using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Services;
 using System.Globalization;
+using System.Text.Json;
 
 namespace DatabaseAPI.Controllers;
 
@@ -20,6 +21,8 @@ public class EventsController : ControllerBase
     private readonly IIntakeFormLinkService _intakeFormLinkService;
     private readonly IVisitService _visitService;
     private readonly ILogger<EventsController> _logger;
+    private readonly PatientMasterDataService _patientMasterDataService;
+    private readonly IPatientService _patientService;
 
     public EventsController(
         DatabaseContext context,
@@ -29,6 +32,8 @@ public class EventsController : ControllerBase
         IEventOptionsService eventOptionsService,
         IIntakeFormLinkService intakeFormLinkService,
         IVisitService visitService,
+        PatientMasterDataService patientMasterDataService,
+        IPatientService patientService,
         ILogger<EventsController> logger)
     {
         _context = context;
@@ -38,6 +43,8 @@ public class EventsController : ControllerBase
         _eventOptionsService = eventOptionsService;
         _intakeFormLinkService = intakeFormLinkService;
         _visitService = visitService;
+        _patientMasterDataService = patientMasterDataService;
+        _patientService = patientService;
         _logger = logger;
     }
 
@@ -151,8 +158,77 @@ public class EventsController : ControllerBase
     }
 
     [HttpPost("intake-form")]
-    public async Task<ActionResult<IntakeFormEventDto>> CreateIntakeFormEvent([FromBody] CreateIntakeFormEventRequest request)
+    public Task<ActionResult<IntakeFormEventDto>> CreateIntakeFormEvent(
+        [FromBody] CreateIntakeFormEventRequest request) =>
+        CreateIntakeFormEventCore(request, requireMasterDataApproval: false);
+
+    /// <summary>
+    /// Atomically creates the patient and its intake submission. Used by the
+    /// staff "add patient" flow so a failed intake never leaves a patient
+    /// without a form.
+    /// </summary>
+    [HttpPost("intake-form/patient")]
+    public async Task<ActionResult<IntakeFormEventDto>> CreatePatientWithIntake(
+        [FromBody] CreatePatientWithIntakeRequest request)
     {
+        var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
+            var patient = await _patientService.CreatePatientAsync(request.Patient, actorCountryCode);
+
+            var intake = request.Intake;
+            intake.PatientId = patient.Id;
+            intake.FirstName ??= request.Patient.FirstName;
+            intake.LastName ??= request.Patient.LastName;
+            intake.DateOfBirth ??= request.Patient.BirthDate;
+            intake.Gender ??= request.Patient.Gender;
+            intake.InsuranceNumber ??= request.Patient.InsuranceNumber;
+            intake.Email ??= request.Patient.Email;
+            intake.PhoneNumber ??= request.Patient.PhoneNumber;
+
+            var result = await CreateIntakeFormEventCore(
+                intake, requireMasterDataApproval: false);
+
+            if (result.Result is ObjectResult error && error.StatusCode >= 400)
+            {
+                await transaction.RollbackAsync();
+                return error;
+            }
+
+            var dto = result.Value
+                      ?? (result.Result as OkObjectResult)?.Value as IntakeFormEventDto
+                      ?? throw new InvalidOperationException("Intake form did not return a result");
+            dto.PatientId = patient.Id;
+
+            await transaction.CommitAsync();
+            return Ok(dto);
+        }
+        catch (ScopeViolationException ex)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error creating patient with intake");
+            return StatusCode(500, $"Error creating patient with intake: {ex.Message}");
+        }
+        finally
+        {
+            await transaction.DisposeAsync();
+        }
+    }
+
+    private async Task<ActionResult<IntakeFormEventDto>> CreateIntakeFormEventCore(
+        CreateIntakeFormEventRequest request,
+        bool requireMasterDataApproval)
+    {
+        var transaction = _context.Database.CurrentTransaction == null
+            ? await _context.Database.BeginTransactionAsync()
+            : null;
+
         try
         {
             var patient = await _context.Patients
@@ -199,13 +275,9 @@ public class EventsController : ControllerBase
             if (intakeFormEventType == null)
                 return BadRequest("Intake Form event type not found. Ensure seed data is applied.");
 
-            // Build change summary
+            // Build the summary before any write; it compares the submitted
+            // values with the current patient card.
             var changesSummary = BuildChangesSummary(patient, request);
-            
-            // Update patient data
-            await UpdatePatientData(patient, request);
-
-            // Build comment with medical data
             var commentText = BuildIntakeFormComment(request, changesSummary);
 
             Comment? comment = null;
@@ -227,6 +299,29 @@ public class EventsController : ControllerBase
             _context.Events.Add(intakeFormEvent);
             await _context.SaveChangesAsync();
 
+            if (requireMasterDataApproval)
+            {
+                // Public links must not overwrite the patient card directly.
+                // Staff review the proposed master data and approve/reject it.
+                if (_patientMasterDataService.HasMasterDataChanges(patient, request))
+                {
+                    _context.IntakeChangeRequests.Add(new IntakeChangeRequest
+                    {
+                        PatientId = patient.Id,
+                        IntakeEventId = intakeFormEvent.Id,
+                        Status = IntakeChangeStatuses.Pending,
+                        ChangesJson = JsonSerializer.Serialize(request),
+                        Summary = changesSummary,
+                        CreatedAtUtc = DateTime.UtcNow
+                    });
+                }
+            }
+            else
+            {
+                // Staff-entered intake is trusted and applied immediately.
+                await _patientMasterDataService.UpdatePatientDataAsync(patient, request);
+            }
+
             await SaveFormSubmissionData(request, patient, intakeFormEvent.Id);
 
             // Every accepted intake form is also a recorded consent history
@@ -244,9 +339,15 @@ public class EventsController : ControllerBase
             });
             await _context.SaveChangesAsync();
 
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+
             return Ok(new IntakeFormEventDto
             {
                 EventId = intakeFormEvent.Id,
+                PatientId = patient.Id,
                 Weight = request.Weight,
                 Height = request.Height,
                 Comment = commentText,
@@ -256,7 +357,18 @@ public class EventsController : ControllerBase
         }
         catch (Exception ex)
         {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
             return StatusCode(500, $"Error creating intake form event: {ex.Message}");
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 
@@ -354,6 +466,9 @@ public class EventsController : ControllerBase
     [HttpPost("intake-form-links/{token}/submit")]
     public async Task<ActionResult<IntakeFormEventDto>> SubmitIntakeFormByLink(string token, [FromBody] CreateIntakeFormEventRequest request)
     {
+        // Public submission (patient creation/promotion, event, form data,
+        // consent, visit link and link marking) is one transaction.
+        var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var link = await _intakeFormLinkService.FindLinkAsync(token);
@@ -409,7 +524,8 @@ public class EventsController : ControllerBase
 
             request.PatientId = patient.Id;
 
-            var intakeResult = await CreateIntakeFormEvent(request);
+            var intakeResult = await CreateIntakeFormEventCore(
+                request, requireMasterDataApproval: true);
             if (intakeResult.Result is ObjectResult objectResult && objectResult.StatusCode >= 400)
             {
                 return objectResult;
@@ -438,11 +554,17 @@ public class EventsController : ControllerBase
 
             await _intakeFormLinkService.MarkUsedAsync(link);
 
+            await transaction.CommitAsync();
             return dto;
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             return StatusCode(500, $"Error submitting intake form by link: {ex.Message}");
+        }
+        finally
+        {
+            await transaction.DisposeAsync();
         }
     }
 
@@ -545,6 +667,42 @@ public class EventsController : ControllerBase
         if (patient == null)
         {
             return prefill;
+        }
+
+        // Public submissions no longer write master data directly. If a
+        // pending change exists, show its proposed values so the patient can
+        // continue editing what they submitted.
+        var pendingChange = await _context.IntakeChangeRequests
+            .Where(change => change.PatientId == patient.Id &&
+                             change.Status == IntakeChangeStatuses.Pending)
+            .OrderByDescending(change => change.CreatedAtUtc)
+            .ThenByDescending(change => change.Id)
+            .FirstOrDefaultAsync();
+
+        if (pendingChange != null)
+        {
+            try
+            {
+                var proposed = JsonSerializer.Deserialize<CreateIntakeFormEventRequest>(
+                    pendingChange.ChangesJson);
+                if (proposed != null)
+                {
+                    prefill.FirstName = proposed.FirstName ?? prefill.FirstName;
+                    prefill.LastName = proposed.LastName ?? prefill.LastName;
+                    prefill.Gender = proposed.Gender ?? prefill.Gender;
+                    prefill.Email = proposed.Email ?? prefill.Email;
+                    prefill.PhoneNumber = proposed.PhoneNumber ?? prefill.PhoneNumber;
+                    prefill.Address = proposed.Address ?? prefill.Address;
+                    prefill.PostalCode = proposed.PostalCode ?? prefill.PostalCode;
+                    prefill.DateOfBirth = proposed.DateOfBirth?.Date ?? prefill.DateOfBirth;
+                    prefill.InsuranceNumber = proposed.InsuranceNumber ?? prefill.InsuranceNumber;
+                }
+            }
+            catch (JsonException)
+            {
+                // Ignore a corrupt pending payload; the patient card prefill
+                // is still usable.
+            }
         }
 
         var latest = await _context.FormSubmissions
@@ -755,193 +913,6 @@ public class EventsController : ControllerBase
         return string.Join("\n", parts);
     }
 
-    private async Task UpdatePatientData(Patient patient, CreateIntakeFormEventRequest request)
-    {
-        var hasChanges = false;
-
-        // Update FirstName
-        if (!string.IsNullOrEmpty(request.FirstName) && request.FirstName != patient.Person.FirstName)
-        {
-            // Close any open history record before adding a new one
-            var openHistory = patient.Person.FirstNameHistories.FirstOrDefault(h => h.UsedTo == DateTime.MaxValue || h.UsedTo > DateTime.UtcNow.Date.AddDays(1));
-            if (openHistory == null)
-            {
-                var history = new FirstNameHistory
-                {
-                    PersonId = patient.Person.Id,
-                    FirstName = patient.Person.FirstName,
-                    UsedFrom = patient.Person.CreatedAt,
-                    UsedTo = DateTime.UtcNow
-                };
-                _context.FirstNameHistories.Add(history);
-            }
-
-            patient.Person.FirstName = request.FirstName;
-            hasChanges = true;
-        }
-
-        // Update LastName
-        if (!string.IsNullOrEmpty(request.LastName) && request.LastName != patient.Person.LastName)
-        {
-            var openHistory = patient.Person.LastNameHistories.FirstOrDefault(h => h.UsedTo == DateTime.MaxValue || h.UsedTo > DateTime.UtcNow.Date.AddDays(1));
-            if (openHistory == null)
-            {
-                var history = new LastNameHistory
-                {
-                    PersonId = patient.Person.Id,
-                    LastName = patient.Person.LastName,
-                    UsedFrom = patient.Person.CreatedAt,
-                    UsedTo = DateTime.UtcNow
-                };
-                _context.LastNameHistories.Add(history);
-            }
-
-            patient.Person.LastName = request.LastName;
-            hasChanges = true;
-        }
-
-        // Update InsuranceNumber
-        if (request.InsuranceNumber.HasValue && request.InsuranceNumber != patient.InsuranceNumber)
-        {
-            patient.InsuranceNumber = request.InsuranceNumber.Value;
-            hasChanges = true;
-        }
-
-        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value.Date != patient.BirthDate.Date)
-        {
-            patient.BirthDate = request.DateOfBirth.Value.Date;
-            hasChanges = true;
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Gender) && request.Gender != patient.Person.Gender)
-        {
-            patient.Person.Gender = request.Gender;
-            hasChanges = true;
-        }
-
-        // Update Email and PhoneNumber via Contact
-        var contact = patient.Person.ContactToObjects.FirstOrDefault()?.Contact;
-        
-        if (!string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.PhoneNumber))
-        {
-            if (contact == null)
-            {
-                contact = new Contact();
-                _context.Contacts.Add(contact);
-                await _context.SaveChangesAsync();
-
-                _context.ContactToObjects.Add(new ContactToObject
-                {
-                    ContactId = contact.Id,
-                    ObjectId = patient.Person.Id,
-                    ObjectType = ContactObjectType.Person,
-                    PersonId = patient.Person.Id
-                });
-            }
-
-            // Update Email
-            if (!string.IsNullOrEmpty(request.Email))
-            {
-                var currentEmail = contact.Emails.FirstOrDefault();
-                if (currentEmail == null)
-                {
-                    _context.ContactEmails.Add(new ContactEmail
-                    {
-                        ContactId = contact.Id,
-                        Email = request.Email
-                    });
-                }
-                else if (currentEmail.Email != request.Email)
-                {
-                    var openEmailHistory = patient.Person.EmailHistories.FirstOrDefault(h => h.UsedTo == DateTime.MaxValue || h.UsedTo > DateTime.UtcNow.Date.AddDays(1));
-                    if (openEmailHistory == null)
-                    {
-                        var emailHistory = new EmailHistory
-                        {
-                            PersonId = patient.Person.Id,
-                            Email = currentEmail.Email,
-                            UsedFrom = patient.Person.CreatedAt,
-                            UsedTo = DateTime.UtcNow
-                        };
-                        _context.EmailHistories.Add(emailHistory);
-                    }
-
-                    currentEmail.Email = request.Email;
-                }
-                hasChanges = true;
-            }
-
-            // Update PhoneNumber
-            if (!string.IsNullOrEmpty(request.PhoneNumber))
-            {
-                var currentPhone = contact.PhoneNumbers.FirstOrDefault();
-                if (currentPhone == null)
-                {
-                    _context.ContactPhoneNumbers.Add(new ContactPhoneNumber
-                    {
-                        ContactId = contact.Id,
-                        PhoneNumber = request.PhoneNumber
-                    });
-                }
-                else if (currentPhone.PhoneNumber != request.PhoneNumber)
-                {
-                    var openPhoneHistory = patient.Person.PhoneNumberHistories.FirstOrDefault(h => h.UsedTo == DateTime.MaxValue || h.UsedTo > DateTime.UtcNow.Date.AddDays(1));
-                    if (openPhoneHistory == null)
-                    {
-                        var phoneHistory = new PhoneNumberHistory
-                        {
-                            PersonId = patient.Person.Id,
-                            PhoneNumber = currentPhone.PhoneNumber,
-                            UsedFrom = patient.Person.CreatedAt,
-                            UsedTo = DateTime.UtcNow
-                        };
-                        _context.PhoneNumberHistories.Add(phoneHistory);
-                    }
-
-                    currentPhone.PhoneNumber = request.PhoneNumber;
-                }
-                hasChanges = true;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Address) || !string.IsNullOrWhiteSpace(request.PostalCode))
-        {
-            var (street, city) = ParseAddress(request.Address);
-
-            if (patient.Person.Address == null)
-            {
-                patient.Person.Address = new Address
-                {
-                    Street = street,
-                    City = city,
-                    PostalCode = request.PostalCode ?? string.Empty,
-                    Country = patient.Person.CountryCode
-                };
-            }
-            else
-            {
-                if (!string.IsNullOrWhiteSpace(street))
-                    patient.Person.Address.Street = street;
-
-                if (!string.IsNullOrWhiteSpace(city))
-                    patient.Person.Address.City = city;
-
-                if (!string.IsNullOrWhiteSpace(request.PostalCode))
-                    patient.Person.Address.PostalCode = request.PostalCode;
-
-                if (string.IsNullOrWhiteSpace(patient.Person.Address.Country))
-                    patient.Person.Address.Country = patient.Person.CountryCode;
-            }
-
-            hasChanges = true;
-        }
-
-        if (hasChanges)
-        {
-            await _context.SaveChangesAsync();
-        }
-    }
-
     private async Task SaveFormSubmissionData(CreateIntakeFormEventRequest request, Patient patient, int eventId)
     {
         var submission = new FormSubmission
@@ -1100,21 +1071,6 @@ public class EventsController : ControllerBase
             return localParsed;
 
         return null;
-    }
-
-    private static (string street, string city) ParseAddress(string? rawAddress)
-    {
-        if (string.IsNullOrWhiteSpace(rawAddress))
-            return (string.Empty, string.Empty);
-
-        var segments = rawAddress.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length == 0)
-            return (string.Empty, string.Empty);
-
-        if (segments.Length == 1)
-            return (segments[0], string.Empty);
-
-        return (segments[0], segments[1]);
     }
 
     private static string BuildPersonName(string firstName, string lastName)

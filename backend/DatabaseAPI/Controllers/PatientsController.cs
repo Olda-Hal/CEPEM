@@ -597,6 +597,11 @@ namespace DatabaseAPI.Controllers
                 var upcomingAppointments = mergedAppointments.Where(a => a.StartTime >= DateTime.Now).ToList();
                 var lastEvent = patient.Events.OrderByDescending(e => e.HappenedAt).FirstOrDefault();
 
+                var latestSubmission = patient.FormSubmissions
+                    .OrderByDescending(submission => submission.SubmittedAtUtc)
+                    .ThenByDescending(submission => submission.Id)
+                    .FirstOrDefault();
+
                 var patientDetailDto = new PatientDetailDto
                 {
                     Id = patient.Id,
@@ -631,85 +636,85 @@ namespace DatabaseAPI.Controllers
                         LastVisitType = lastEvent?.EventType.NameTranslation?.EN
                     },
                     QuickPreviewSettings = new QuickPreviewSettingsDto(),
-                    FormSubmission = patient.FormSubmissions.FirstOrDefault() != null ? new FormSubmissionDto
+                    FormSubmission = latestSubmission != null ? new FormSubmissionDto
                     {
-                        Id = patient.FormSubmissions.First().Id,
-                        PatientId = patient.FormSubmissions.First().PatientId,
-                        EventId = patient.FormSubmissions.First().EventId,
-                        SubmittedAtUtc = patient.FormSubmissions.First().SubmittedAtUtc,
-                        Medication = patient.FormSubmissions.First().Medication != null ? new FormSubmissionMedicationDto
+                        Id = latestSubmission.Id,
+                        PatientId = latestSubmission.PatientId,
+                        EventId = latestSubmission.EventId,
+                        SubmittedAtUtc = latestSubmission.SubmittedAtUtc,
+                        Medication = latestSubmission.Medication != null ? new FormSubmissionMedicationDto
                         {
-                            Id = patient.FormSubmissions.First().Medication.Id,
-                            MedBloodPressure = patient.FormSubmissions.First().Medication.MedBloodPressure,
-                            MedHeart = patient.FormSubmissions.First().Medication.MedHeart,
-                            MedCholesterol = patient.FormSubmissions.First().Medication.MedCholesterol,
-                            MedBloodThinners = patient.FormSubmissions.First().Medication.MedBloodThinners,
-                            MedDiabetes = patient.FormSubmissions.First().Medication.MedDiabetes,
-                            MedThyroid = patient.FormSubmissions.First().Medication.MedThyroid,
-                            MedNerves = patient.FormSubmissions.First().Medication.MedNerves,
-                            MedPsych = patient.FormSubmissions.First().Medication.MedPsych,
-                            MedDigestion = patient.FormSubmissions.First().Medication.MedDigestion,
-                            MedPain = patient.FormSubmissions.First().Medication.MedPain,
-                            MedDehydration = patient.FormSubmissions.First().Medication.MedDehydration,
-                            MedBreathing = patient.FormSubmissions.First().Medication.MedBreathing,
-                            MedAntibiotics = patient.FormSubmissions.First().Medication.MedAntibiotics,
-                            MedSupplements = patient.FormSubmissions.First().Medication.MedSupplements,
-                            MedAllergies = patient.FormSubmissions.First().Medication.MedAllergies
+                            Id = latestSubmission.Medication.Id,
+                            MedBloodPressure = latestSubmission.Medication.MedBloodPressure,
+                            MedHeart = latestSubmission.Medication.MedHeart,
+                            MedCholesterol = latestSubmission.Medication.MedCholesterol,
+                            MedBloodThinners = latestSubmission.Medication.MedBloodThinners,
+                            MedDiabetes = latestSubmission.Medication.MedDiabetes,
+                            MedThyroid = latestSubmission.Medication.MedThyroid,
+                            MedNerves = latestSubmission.Medication.MedNerves,
+                            MedPsych = latestSubmission.Medication.MedPsych,
+                            MedDigestion = latestSubmission.Medication.MedDigestion,
+                            MedPain = latestSubmission.Medication.MedPain,
+                            MedDehydration = latestSubmission.Medication.MedDehydration,
+                            MedBreathing = latestSubmission.Medication.MedBreathing,
+                            MedAntibiotics = latestSubmission.Medication.MedAntibiotics,
+                            MedSupplements = latestSubmission.Medication.MedSupplements,
+                            MedAllergies = latestSubmission.Medication.MedAllergies
                         } : null,
-                        Lifestyle = patient.FormSubmissions.First().Lifestyle != null ? new FormSubmissionLifestyleDto
+                        Lifestyle = latestSubmission.Lifestyle != null ? new FormSubmissionLifestyleDto
                         {
-                            Id = patient.FormSubmissions.First().Lifestyle.Id,
-                            PoorSleep = patient.FormSubmissions.First().Lifestyle.PoorSleep,
-                            DigestiveIssues = patient.FormSubmissions.First().Lifestyle.DigestiveIssues,
-                            PhysicalStress = patient.FormSubmissions.First().Lifestyle.PhysicalStress,
-                            MentalStress = patient.FormSubmissions.First().Lifestyle.MentalStress,
-                            Smoking = patient.FormSubmissions.First().Lifestyle.Smoking,
-                            Fatigue = patient.FormSubmissions.First().Lifestyle.Fatigue,
-                            LastMealHours = patient.FormSubmissions.First().Lifestyle.LastMealHours,
-                            VaccinesAfter2023 = patient.FormSubmissions.First().Lifestyle.VaccinesAfter2023,
-                            AdditionalHealthInfo = patient.FormSubmissions.First().Lifestyle.AdditionalHealthInfo
+                            Id = latestSubmission.Lifestyle.Id,
+                            PoorSleep = latestSubmission.Lifestyle.PoorSleep,
+                            DigestiveIssues = latestSubmission.Lifestyle.DigestiveIssues,
+                            PhysicalStress = latestSubmission.Lifestyle.PhysicalStress,
+                            MentalStress = latestSubmission.Lifestyle.MentalStress,
+                            Smoking = latestSubmission.Lifestyle.Smoking,
+                            Fatigue = latestSubmission.Lifestyle.Fatigue,
+                            LastMealHours = latestSubmission.Lifestyle.LastMealHours,
+                            VaccinesAfter2023 = latestSubmission.Lifestyle.VaccinesAfter2023,
+                            AdditionalHealthInfo = latestSubmission.Lifestyle.AdditionalHealthInfo
                         } : null,
-                        ReproductiveHealth = patient.FormSubmissions.First().ReproductiveHealth != null ? new FormSubmissionReproductiveHealthDto
+                        ReproductiveHealth = latestSubmission.ReproductiveHealth != null ? new FormSubmissionReproductiveHealthDto
                         {
-                            Id = patient.FormSubmissions.First().ReproductiveHealth.Id,
-                            LastMenstruationDate = patient.FormSubmissions.First().ReproductiveHealth.LastMenstruationDate,
-                            MenstruationCycleDays = patient.FormSubmissions.First().ReproductiveHealth.MenstruationCycleDays,
-                            YearsSinceLastMenstruation = patient.FormSubmissions.First().ReproductiveHealth.YearsSinceLastMenstruation,
-                            GaveBirth = patient.FormSubmissions.First().ReproductiveHealth.GaveBirth,
-                            BirthCount = patient.FormSubmissions.First().ReproductiveHealth.BirthCount,
-                            BirthWhen = patient.FormSubmissions.First().ReproductiveHealth.BirthWhen,
-                            Breastfed = patient.FormSubmissions.First().ReproductiveHealth.Breastfed,
-                            BreastfeedingMonths = patient.FormSubmissions.First().ReproductiveHealth.BreastfeedingMonths,
-                            BreastfeedingInflammation = patient.FormSubmissions.First().ReproductiveHealth.BreastfeedingInflammation,
-                            EndedWithInflammation = patient.FormSubmissions.First().ReproductiveHealth.EndedWithInflammation,
-                            Contraception = patient.FormSubmissions.First().ReproductiveHealth.Contraception,
-                            ContraceptionDuration = patient.FormSubmissions.First().ReproductiveHealth.ContraceptionDuration,
-                            Estrogen = patient.FormSubmissions.First().ReproductiveHealth.Estrogen,
-                            EstrogenType = patient.FormSubmissions.First().ReproductiveHealth.EstrogenType,
-                            Interruption = patient.FormSubmissions.First().ReproductiveHealth.Interruption,
-                            InterruptionCount = patient.FormSubmissions.First().ReproductiveHealth.InterruptionCount,
-                            Miscarriage = patient.FormSubmissions.First().ReproductiveHealth.Miscarriage,
-                            MiscarriageCount = patient.FormSubmissions.First().ReproductiveHealth.MiscarriageCount,
-                            BreastInjury = patient.FormSubmissions.First().ReproductiveHealth.BreastInjury,
-                            Mammogram = patient.FormSubmissions.First().ReproductiveHealth.Mammogram,
-                            MammogramCount = patient.FormSubmissions.First().ReproductiveHealth.MammogramCount,
-                            BreastBiopsy = patient.FormSubmissions.First().ReproductiveHealth.BreastBiopsy,
-                            BreastImplants = patient.FormSubmissions.First().ReproductiveHealth.BreastImplants,
-                            BreastSurgery = patient.FormSubmissions.First().ReproductiveHealth.BreastSurgery,
-                            BreastSurgeryType = patient.FormSubmissions.First().ReproductiveHealth.BreastSurgeryType,
-                            FamilyTumors = patient.FormSubmissions.First().ReproductiveHealth.FamilyTumors,
-                            FamilyTumorType = patient.FormSubmissions.First().ReproductiveHealth.FamilyTumorType
+                            Id = latestSubmission.ReproductiveHealth.Id,
+                            LastMenstruationDate = latestSubmission.ReproductiveHealth.LastMenstruationDate,
+                            MenstruationCycleDays = latestSubmission.ReproductiveHealth.MenstruationCycleDays,
+                            YearsSinceLastMenstruation = latestSubmission.ReproductiveHealth.YearsSinceLastMenstruation,
+                            GaveBirth = latestSubmission.ReproductiveHealth.GaveBirth,
+                            BirthCount = latestSubmission.ReproductiveHealth.BirthCount,
+                            BirthWhen = latestSubmission.ReproductiveHealth.BirthWhen,
+                            Breastfed = latestSubmission.ReproductiveHealth.Breastfed,
+                            BreastfeedingMonths = latestSubmission.ReproductiveHealth.BreastfeedingMonths,
+                            BreastfeedingInflammation = latestSubmission.ReproductiveHealth.BreastfeedingInflammation,
+                            EndedWithInflammation = latestSubmission.ReproductiveHealth.EndedWithInflammation,
+                            Contraception = latestSubmission.ReproductiveHealth.Contraception,
+                            ContraceptionDuration = latestSubmission.ReproductiveHealth.ContraceptionDuration,
+                            Estrogen = latestSubmission.ReproductiveHealth.Estrogen,
+                            EstrogenType = latestSubmission.ReproductiveHealth.EstrogenType,
+                            Interruption = latestSubmission.ReproductiveHealth.Interruption,
+                            InterruptionCount = latestSubmission.ReproductiveHealth.InterruptionCount,
+                            Miscarriage = latestSubmission.ReproductiveHealth.Miscarriage,
+                            MiscarriageCount = latestSubmission.ReproductiveHealth.MiscarriageCount,
+                            BreastInjury = latestSubmission.ReproductiveHealth.BreastInjury,
+                            Mammogram = latestSubmission.ReproductiveHealth.Mammogram,
+                            MammogramCount = latestSubmission.ReproductiveHealth.MammogramCount,
+                            BreastBiopsy = latestSubmission.ReproductiveHealth.BreastBiopsy,
+                            BreastImplants = latestSubmission.ReproductiveHealth.BreastImplants,
+                            BreastSurgery = latestSubmission.ReproductiveHealth.BreastSurgery,
+                            BreastSurgeryType = latestSubmission.ReproductiveHealth.BreastSurgeryType,
+                            FamilyTumors = latestSubmission.ReproductiveHealth.FamilyTumors,
+                            FamilyTumorType = latestSubmission.ReproductiveHealth.FamilyTumorType
                         } : null,
-                        Consent = patient.FormSubmissions.First().Consent != null ? new FormSubmissionConsentDto
+                        Consent = latestSubmission.Consent != null ? new FormSubmissionConsentDto
                         {
-                            Id = patient.FormSubmissions.First().Consent.Id,
-                            ConfirmAccuracy = patient.FormSubmissions.First().Consent.ConfirmAccuracy,
-                            TermsAccepted = patient.FormSubmissions.First().Consent.TermsAccepted,
-                            SignaturePlace = patient.FormSubmissions.First().Consent.SignaturePlace,
-                            SignatureDate = patient.FormSubmissions.First().Consent.SignatureDate,
-                            SignatureVector = patient.FormSubmissions.First().Consent.SignatureVector
+                            Id = latestSubmission.Consent.Id,
+                            ConfirmAccuracy = latestSubmission.Consent.ConfirmAccuracy,
+                            TermsAccepted = latestSubmission.Consent.TermsAccepted,
+                            SignaturePlace = latestSubmission.Consent.SignaturePlace,
+                            SignatureDate = latestSubmission.Consent.SignatureDate,
+                            SignatureVector = latestSubmission.Consent.SignatureVector
                         } : null,
-                        SicknessHistories = patient.FormSubmissions.First().SicknessHistories.Select(sh => new SicknessHistoryDto
+                        SicknessHistories = latestSubmission.SicknessHistories.Select(sh => new SicknessHistoryDto
                         {
                             Id = sh.Id,
                             SicknessName = sh.SicknessName,
