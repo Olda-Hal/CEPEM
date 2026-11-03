@@ -9,7 +9,7 @@ const login = async (page: Page, email: string, password: string) => {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/heslo|password/i).fill(password);
-  await page.getByRole('button', { name: /přihlásit|login/i }).click();
+  await page.getByRole('button', { name: /přihlásit|sign in|login/i }).click();
 };
 
 const authHeaders = async (page: Page) => {
@@ -27,7 +27,10 @@ const createCountryAdmin = async (
   const rolesResponse = await request.get('/api/admin/roles', {
     headers: { Authorization: `Bearer ${adminToken}` }
   });
-  expect(rolesResponse.ok()).toBeTruthy();
+  expect(
+    rolesResponse.ok(),
+    `${rolesResponse.status()} ${await rolesResponse.text()}`
+  ).toBeTruthy();
   const roles = (await rolesResponse.json()) as Array<{ id: number; name: string }>;
   const countryAdminRole = roles.find((role) => role.name === 'Country Admin');
   expect(countryAdminRole, 'seeded Country Admin role').toBeTruthy();
