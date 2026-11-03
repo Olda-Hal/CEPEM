@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import {
-  applyTheme,
-  getCurrentTheme,
-  initializeTheme,
-  setTheme,
-  toggleTheme
-} from '../theme';
+import { applyTheme, getCurrentTheme, initializeTheme, setTheme, toggleTheme } from '../theme';
 
 describe('light/dark theme', () => {
   beforeEach(() => {
