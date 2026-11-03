@@ -1,59 +1,63 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 using DatabaseAPI.Controllers;
 using DatabaseAPI.APIModels;
+using DatabaseAPI.Data;
 
 namespace DatabaseAPI.Tests.Controllers;
 
 public class HealthControllerTests
 {
-    private readonly HealthController _controller;
-
-    public HealthControllerTests()
+    private static HealthController CreateController()
     {
-        _controller = new HealthController();
+        var options = new DbContextOptionsBuilder<DatabaseContext>()
+            .UseInMemoryDatabase($"health-{Guid.NewGuid()}")
+            .Options;
+        return new HealthController(new DatabaseContext(options));
     }
 
     [Fact]
-    public void GetHealth_ReturnsOkResult()
+    public async Task GetHealth_ReturnsOkWhenDatabaseIsReachable()
     {
-        // Act
-        var result = _controller.GetHealth();
+        var result = await CreateController().GetHealth();
 
-        // Assert
-        Assert.IsType<ActionResult<HealthResponse>>(result);
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var okResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(200, okResult.StatusCode);
         Assert.NotNull(okResult.Value);
     }
 
     [Fact]
-    public void GetHealth_ReturnsCorrectHealthData()
+    public async Task GetHealth_ReturnsCorrectHealthData()
     {
-        // Act
-        var result = _controller.GetHealth();
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var result = await CreateController().GetHealth();
+        var okResult = Assert.IsType<ObjectResult>(result.Result);
         var healthResponse = Assert.IsType<HealthResponse>(okResult.Value);
 
-        // Assert
         Assert.Equal("Healthy", healthResponse.Status);
         Assert.Equal("Database API", healthResponse.Service);
         Assert.Equal("1.0.0", healthResponse.Version);
     }
 
     [Fact]
-    public void GetHealth_TimestampIsRecent()
+    public async Task GetHealth_TimestampIsRecent()
     {
-        // Arrange
         var beforeTest = DateTime.UtcNow;
 
-        // Act
-        var result = _controller.GetHealth();
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var result = await CreateController().GetHealth();
+        var okResult = Assert.IsType<ObjectResult>(result.Result);
         var healthResponse = Assert.IsType<HealthResponse>(okResult.Value);
 
-        // Assert
         var afterTest = DateTime.UtcNow;
         Assert.True(healthResponse.Timestamp >= beforeTest);
         Assert.True(healthResponse.Timestamp <= afterTest);
+    }
+
+    [Fact]
+    public void GetLiveness_ReturnsOkWithoutDatabaseRoundTrip()
+    {
+        var result = CreateController().GetLiveness();
+
+        Assert.IsType<OkObjectResult>(result.Result);
     }
 }

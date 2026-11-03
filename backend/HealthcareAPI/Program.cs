@@ -32,6 +32,20 @@ builder.Host.UseSerilog((context, configuration) =>
     {
         configuration.WriteTo.Console(new JsonFormatter());
     }
+
+    // Optional error tracking. Leaving SENTRY_DSN empty disables it.
+    var sentryDsn = context.Configuration["Sentry:Dsn"]
+        ?? Environment.GetEnvironmentVariable("SENTRY_DSN");
+    if (!string.IsNullOrWhiteSpace(sentryDsn))
+    {
+        configuration.WriteTo.Sentry(options =>
+        {
+            options.Dsn = sentryDsn;
+            options.Environment = context.HostingEnvironment.EnvironmentName;
+            options.MinimumBreadcrumbLevel = Serilog.Events.LogEventLevel.Information;
+            options.MinimumEventLevel = Serilog.Events.LogEventLevel.Error;
+        });
+    }
 });
 
 // Add services to the container.
@@ -120,6 +134,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = async context =>
             {
                 var principal = context.Principal;
+
+                // Refresh tokens are signed by the same key but must never be
+                // usable as bearer access tokens (missing claim = legacy token).
+                if (principal?.FindFirst("token_type")?.Value == "refresh")
+                {
+                    context.Fail("Refresh token cannot be used as an access token.");
+                    return;
+                }
+
                 var employeeIdValue = principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 var versionValue = principal?.FindFirst("acl_version")?.Value;
 

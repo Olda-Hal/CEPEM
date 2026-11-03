@@ -14,6 +14,7 @@ public class ServiceAuthMiddleware
     {
         "/health",
         "/api/health",
+        "/api/health/live",
         // Read-only Prometheus scrape endpoint (proxy-only on the private
         // network; carries no patient data)
         "/metrics"

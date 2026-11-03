@@ -26,6 +26,20 @@ builder.Host.UseSerilog((context, configuration) =>
     {
         configuration.WriteTo.Console(new JsonFormatter());
     }
+
+    // Optional error tracking. Leaving SENTRY_DSN empty disables it.
+    var sentryDsn = context.Configuration["Sentry:Dsn"]
+        ?? Environment.GetEnvironmentVariable("SENTRY_DSN");
+    if (!string.IsNullOrWhiteSpace(sentryDsn))
+    {
+        configuration.WriteTo.Sentry(options =>
+        {
+            options.Dsn = sentryDsn;
+            options.Environment = context.HostingEnvironment.EnvironmentName;
+            options.MinimumBreadcrumbLevel = Serilog.Events.LogEventLevel.Information;
+            options.MinimumEventLevel = Serilog.Events.LogEventLevel.Error;
+        });
+    }
 });
 
 // Add services to the container.
@@ -102,6 +116,10 @@ builder.Services.AddScoped<IExaminationsService, ExaminationsService>();
 builder.Services.AddScoped<PhotoEncryptionService>();
 builder.Services.AddScoped<PatientPhotoService>();
 
+// Antivirus scanning for every uploaded file (clamd INSTREAM).
+builder.Services.Configure<ClamAvOptions>(builder.Configuration.GetSection(ClamAvOptions.SectionName));
+builder.Services.AddSingleton<IAntivirusScanner, ClamAvScanner>();
+
 // Register document services
 builder.Services.AddScoped<DocumentEncryptionService>();
 builder.Services.AddScoped<PatientDocumentService>();
@@ -162,35 +180,32 @@ app.MapControllers();
 app.UseMetricServer(); // /metrics for Prometheus
 app.UseHttpMetrics();
 
-// Apply database migrations and seed data
-using (var scope = app.Services.CreateScope())
+// Apply database migrations and seed data. Fail fast: serving requests on a
+// half-migrated database is worse than letting the container restart.
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var migrationService = scope.ServiceProvider.GetRequiredService<IMigrationService>();
     var seedService = scope.ServiceProvider.GetRequiredService<ISeedService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
+
     try
     {
-        // Check database connection
-        var canConnect = await migrationService.CanConnectAsync();
-        if (!canConnect)
+        if (!await migrationService.CanConnectAsync())
         {
-            logger.LogWarning("Cannot connect to database. Will retry on startup...");
+            throw new InvalidOperationException(
+                "Database is not reachable during startup; refusing to serve requests.");
         }
-        else
-        {
-            // Apply migrations
-            await migrationService.ApplyMigrationsAsync();
-            logger.LogInformation("Database ready - migrations applied.");
-            
-            // Seed initial data
-            await seedService.SeedAsync();
-        }
+
+        await migrationService.ApplyMigrationsAsync();
+        logger.LogInformation("Database ready - migrations applied.");
+
+        await seedService.SeedAsync();
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred during database initialization.");
-        // Don't throw - let the application start and handle database issues gracefully
+        logger.LogCritical(ex, "Database initialization failed; stopping the application.");
+        throw;
     }
 }
 

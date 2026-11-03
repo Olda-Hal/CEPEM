@@ -48,6 +48,19 @@ namespace HealthcareAPI.Controllers
         }
 
         /// <summary>
+        /// Exchange the long-lived refresh token for a fresh access token.
+        /// Access tokens are short-lived; the refresh token stays revocable
+        /// through the same ACL version as the access token.
+        /// </summary>
+        [HttpPost("refresh")]
+        [EnableRateLimiting("login")]
+        public async Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            var response = await _authService.RefreshAsync(request.RefreshToken);
+            return response == null ? Unauthorized("Neplatná nebo expirovaná relace") : Ok(response);
+        }
+
+        /// <summary>
         /// Forgot-pass flow: forwards to DatabaseAPI which sends a reset link
         /// when the e-mail belongs to an employee (non-enumerating).
         /// </summary>

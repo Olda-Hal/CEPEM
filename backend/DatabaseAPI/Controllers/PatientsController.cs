@@ -22,6 +22,7 @@ namespace DatabaseAPI.Controllers
         private readonly IUidService _uidService;
         private readonly IPatientService _patientService;
         private readonly IPatientMergeService _mergeService;
+        private readonly IAntivirusScanner _antivirusScanner;
 
         public PatientsController(
             DatabaseContext context,
@@ -32,7 +33,8 @@ namespace DatabaseAPI.Controllers
             IEmployeeScopeService employeeScopeService,
             IUidService uidService,
             IPatientService patientService,
-            IPatientMergeService mergeService)
+            IPatientMergeService mergeService,
+            IAntivirusScanner? antivirusScanner = null)
         {
             _context = context;
             _logger = logger;
@@ -43,6 +45,7 @@ namespace DatabaseAPI.Controllers
             _uidService = uidService;
             _patientService = patientService;
             _mergeService = mergeService;
+            _antivirusScanner = antivirusScanner ?? new NullAntivirusScanner();
         }
 
         [HttpGet("merge/preview")]
@@ -973,6 +976,12 @@ namespace DatabaseAPI.Controllers
                     return BadRequest(photoValidationError);
                 }
 
+                var photoScan = await _antivirusScanner.ScanAsync(photoData);
+                if (!photoScan.Clean)
+                {
+                    return AntivirusFailure(photoScan);
+                }
+
                 var fileName = await _photoService.SavePatientPhotoAsync(id, photoData);
 
                 return Ok(new { photoUrl = $"/api/patients/{id}/photo" });
@@ -1077,6 +1086,12 @@ namespace DatabaseAPI.Controllers
                 if (documentValidationError != null)
                 {
                     return BadRequest(documentValidationError);
+                }
+
+                var documentScan = await _antivirusScanner.ScanAsync(documentData);
+                if (!documentScan.Clean)
+                {
+                    return AntivirusFailure(documentScan);
                 }
 
                 var savedDocument = await _documentService.SavePatientDocumentAsync(id, documentData, document.FileName);
@@ -1227,6 +1242,19 @@ namespace DatabaseAPI.Controllers
         /// (the one who created their account), or a (Sys)Admin.
         /// </summary>
         /// <summary>Hidden patients behave as not found for every patient-scoped endpoint.</summary>
+        private ObjectResult AntivirusFailure(AntivirusScanResult scan)
+        {
+            if (scan.ThreatName != null)
+            {
+                _logger.LogWarning("Rejected malicious upload: {Threat}", scan.ThreatName);
+                return BadRequest("File failed antivirus scan.");
+            }
+
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                scan.Error ?? "Antivirus scan is unavailable; the file was not stored.");
+        }
+
         private Task<bool> PatientIsVisibleAsync(int id) =>
             _context.Patients.AnyAsync(p => p.Id == id && !p.IsDeleted);
 

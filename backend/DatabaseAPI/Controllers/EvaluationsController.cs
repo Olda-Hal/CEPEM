@@ -51,29 +51,21 @@ public class EvaluationsController : ControllerBase
             return Unauthorized();
         }
 
-        var cases = await _context.EvaluationCases
+        var query = _context.EvaluationCases
             .Include(c => c.Patient)
                 .ThenInclude(p => p!.Person)
             .Include(c => c.Reviews)
             .Where(c => c.ImageKey == "tdb")
-            .ToListAsync();
+            .Where(c => c.Reviews.Count < MaxReviews)
+            .Where(c => !c.Reviews.Any(r => r.EmployeeId == actorId));
 
         var actor = await _employeeScopeService.GetActorScopeAsync();
-        IEnumerable<EvaluationCase> candidates = cases
-            .Where(c => c.Reviews.Count < MaxReviews)
-            .Where(c => c.Reviews.All(r => r.EmployeeId != actorId));
+        query = ApplyCountryScope(query, actor);
 
-        if (actor.IsCountryAdmin && !actor.HasFullAccess)
-        {
-            candidates = candidates.Where(c => c.Patient == null ||
-                actor.AdministeredCountryScopeIds.Contains(
-                    DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(c.Patient.CountryCode)));
-        }
-
-        var next = candidates
+        var next = await query
             .OrderBy(c => c.Reviews.Count)      // unreviewed first…
             .ThenBy(c => c.CreatedAtUtc)        // …oldest first
-            .FirstOrDefault();
+            .FirstOrDefaultAsync();
 
         if (next == null)
         {
@@ -85,13 +77,15 @@ public class EvaluationsController : ControllerBase
     }
 
     [HttpGet("cases")]
-    public async Task<ActionResult<List<EvaluationCaseDto>>> GetCases([FromQuery] bool includeEvaluated = false)
+    public async Task<ActionResult<List<EvaluationCaseDto>>> GetCases(
+        [FromQuery] bool includeEvaluated = false,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 50)
     {
-        var query = _context.EvaluationCases
-            .Include(c => c.Patient)
-                .ThenInclude(p => p!.Person)
-            .Include(c => c.Reviews)
-            .AsQueryable();
+        page = Math.Max(0, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = _context.EvaluationCases.AsNoTracking();
 
         if (!includeEvaluated)
         {
@@ -99,22 +93,42 @@ public class EvaluationsController : ControllerBase
         }
 
         var actor = await _employeeScopeService.GetActorScopeAsync();
+        query = ApplyCountryScope(query, actor);
+
+        // Keep the filtering, ordering and paging in SQL; the queue can grow
+        // to thousands of measurements.
         var cases = await query
+            .Include(c => c.Patient)
+                .ThenInclude(p => p!.Person)
             .OrderBy(c => c.CreatedAtUtc)
+            .Skip(page * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        // A Country Admin only sees cases for patients in administered
-        // countries; doctors and full admins see the whole queue.
-        if (actor.IsCountryAdmin && !actor.HasFullAccess)
+        return Ok(cases.Select(c => ToDto(c, includeSlices: false, includeReviews: false)).ToList());
+    }
+
+    /// <summary>
+    /// A Country Admin only sees cases for patients in administered countries;
+    /// doctors and full admins see the whole queue.
+    /// </summary>
+    private IQueryable<EvaluationCase> ApplyCountryScope(
+        IQueryable<EvaluationCase> query,
+        ActorScope actor)
+    {
+        if (!actor.IsCountryAdmin || actor.HasFullAccess)
         {
-            cases = cases
-                .Where(c => c.Patient == null ||
-                    actor.AdministeredCountryScopeIds.Contains(
-                        DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(c.Patient.CountryCode)))
-                .ToList();
+            return query;
         }
 
-        return Ok(cases.Select(c => ToDto(c, includeSlices: false, includeReviews: false)).ToList());
+        var countryCodes = actor.AdministeredCountryScopeIds
+            .Select(DatabaseAPI.Utils.CountryScopeMapper.ToCountryCode)
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(code => code!)
+            .ToList();
+
+        return query.Where(c => c.Patient == null ||
+            (c.Patient.CountryCode != null && countryCodes.Contains(c.Patient.CountryCode)));
     }
 
     [HttpGet("cases/{id}")]

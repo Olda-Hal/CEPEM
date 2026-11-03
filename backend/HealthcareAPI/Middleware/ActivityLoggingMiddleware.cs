@@ -40,6 +40,7 @@ namespace HealthcareAPI.Middleware
             // Skip logging for activity logs endpoints to prevent infinite loops and spam
             if (rawAction.Contains("/api/activitylogs", StringComparison.OrdinalIgnoreCase) ||
                 rawAction.Contains("/health", StringComparison.OrdinalIgnoreCase) ||
+                rawAction.Contains("/metrics", StringComparison.OrdinalIgnoreCase) ||
                 rawAction.Contains("/swagger", StringComparison.OrdinalIgnoreCase))
             {
                 await _next(context);

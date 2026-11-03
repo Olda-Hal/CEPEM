@@ -283,4 +283,34 @@ public class AuthControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(nextUid, okResult.Value);
     }
+
+    [Fact]
+    public async Task Refresh_ReturnsNewTokens_ForAValidRefreshToken()
+    {
+        var response = new LoginResponse
+        {
+            Token = "new-access",
+            RefreshToken = "new-refresh",
+            Email = "user@example.com",
+            FullName = "Test User"
+        };
+        _mockAuthService.Setup(service => service.RefreshAsync("valid-refresh"))
+            .ReturnsAsync(response);
+
+        var result = await _controller.Refresh(new RefreshTokenRequest { RefreshToken = "valid-refresh" });
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(response, okResult.Value);
+    }
+
+    [Fact]
+    public async Task Refresh_ReturnsUnauthorized_ForAnInvalidRefreshToken()
+    {
+        _mockAuthService.Setup(service => service.RefreshAsync("bad-refresh"))
+            .ReturnsAsync((LoginResponse?)null);
+
+        var result = await _controller.Refresh(new RefreshTokenRequest { RefreshToken = "bad-refresh" });
+
+        Assert.IsType<UnauthorizedObjectResult>(result.Result);
+    }
 }

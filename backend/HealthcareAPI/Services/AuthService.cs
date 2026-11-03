@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http.Json;
 using HealthcareAPI.Models;
 using System.Diagnostics;
 
@@ -36,6 +37,8 @@ namespace HealthcareAPI.Services
                 }
 
                 var token = GenerateJwtToken(employeeInfo);
+                var refreshToken = GenerateJwtToken(employeeInfo, isRefreshToken: true);
+                var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenDays);
 
                 // Check if password has expired
                 var requiresPasswordChange = employeeInfo.PasswordExpiration.HasValue && 
@@ -44,6 +47,8 @@ namespace HealthcareAPI.Services
                 return new LoginResponse
                 {
                     Token = token,
+                    RefreshToken = refreshToken,
+                    RefreshTokenExpiresAt = refreshTokenExpiresAt,
                     Email = employeeInfo.Email,
                     FullName = employeeInfo.FullName,
                     PasswordExpiration = employeeInfo.PasswordExpiration,
@@ -138,7 +143,7 @@ namespace HealthcareAPI.Services
                     employeeInfo,
                     impersonatorEmployeeId,
                     impersonatorName,
-                    lifetimeHours: 1);
+                    lifetimeMinutes: 60);
 
                 return new ImpersonationResponse
                 {
@@ -156,11 +161,13 @@ namespace HealthcareAPI.Services
             }
         }
 
-        private string GenerateJwtToken(
-            EmployeeAuthInfo employeeInfo,
-            int? impersonatorEmployeeId = null,
-            string? impersonatorName = null,
-            int lifetimeHours = 8)
+        private int AccessTokenMinutes =>
+            Math.Max(5, _configuration.GetValue("JWT:AccessTokenMinutes", 30));
+
+        private int RefreshTokenDays =>
+            Math.Max(1, _configuration.GetValue("JWT:RefreshTokenDays", 7));
+
+        private (string Key, string? Issuer, string? Audience) GetJwtSettings()
         {
             var jwtSettings = _configuration.GetSection("JWT");
             var secretKey = jwtSettings["SecretKey"]
@@ -170,10 +177,21 @@ namespace HealthcareAPI.Services
                 throw new InvalidOperationException(
                     "JWT secret key is not configured. Set the JWT__SecretKey configuration value or the JWT_SECRET_KEY environment variable.");
             }
-            var issuer = jwtSettings["Issuer"]
-                ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
-            var audience = jwtSettings["Audience"]
-                ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
+            return (
+                secretKey,
+                jwtSettings["Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER"),
+                jwtSettings["Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE"));
+        }
+
+        private string GenerateJwtToken(
+            EmployeeAuthInfo employeeInfo,
+            int? impersonatorEmployeeId = null,
+            string? impersonatorName = null,
+            int? lifetimeMinutes = null,
+            bool isRefreshToken = false)
+        {
+            var (secretKey, issuer, audience) = GetJwtSettings();
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -184,7 +202,8 @@ namespace HealthcareAPI.Services
                 new Claim(ClaimTypes.Email, employeeInfo.Email),
                 new Claim(ClaimTypes.Name, employeeInfo.FullName),
                 new Claim("acl_version", employeeInfo.AccessControlVersion.ToString()),
-                new Claim("country_code", employeeInfo.CountryCode)
+                new Claim("country_code", employeeInfo.CountryCode),
+                new Claim("token_type", isRefreshToken ? "refresh" : "access")
             };
 
             // Add role claims
@@ -201,15 +220,150 @@ namespace HealthcareAPI.Services
                 claims.Add(new Claim("impersonator_name", impersonatorName ?? string.Empty));
             }
 
+            var expires = isRefreshToken
+                ? DateTime.UtcNow.AddDays(RefreshTokenDays)
+                : DateTime.UtcNow.AddMinutes(lifetimeMinutes ?? AccessTokenMinutes);
+
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(lifetimeHours),
+                expires: expires,
                 signingCredentials: credentials
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<LoginResponse?> RefreshAsync(string refreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return null;
+            }
+
+            var principal = ValidateRefreshToken(refreshToken);
+            if (principal == null)
+            {
+                return null;
+            }
+
+            var employeeIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
+            var aclClaim = principal.FindFirst("acl_version");
+            if (employeeIdClaim == null ||
+                !int.TryParse(employeeIdClaim.Value, out var employeeId) ||
+                aclClaim == null ||
+                !int.TryParse(aclClaim.Value, out var aclVersion))
+            {
+                return null;
+            }
+
+            if (!await IsTokenStillValidAsync(employeeId, aclVersion))
+            {
+                return null;
+            }
+
+            var employeeInfo = await FetchEmployeeInfoAsync(employeeId);
+            if (employeeInfo == null || !employeeInfo.Active)
+            {
+                return null;
+            }
+
+            var requiresPasswordChange = employeeInfo.PasswordExpiration.HasValue &&
+                                         employeeInfo.PasswordExpiration.Value.Date <= DateTime.UtcNow.Date;
+
+            return new LoginResponse
+            {
+                Token = GenerateJwtToken(employeeInfo),
+                RefreshToken = GenerateJwtToken(employeeInfo, isRefreshToken: true),
+                RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenDays),
+                Email = employeeInfo.Email,
+                FullName = employeeInfo.FullName,
+                PasswordExpiration = employeeInfo.PasswordExpiration,
+                RequiresPasswordChange = requiresPasswordChange
+            };
+        }
+
+        private ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
+        {
+            try
+            {
+                var (secretKey, issuer, audience) = GetJwtSettings();
+                var parameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                    ValidateIssuer = !string.IsNullOrWhiteSpace(issuer),
+                    ValidIssuer = issuer,
+                    ValidateAudience = !string.IsNullOrWhiteSpace(audience),
+                    ValidAudience = audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                };
+
+                var principal = new JwtSecurityTokenHandler().ValidateToken(
+                    refreshToken,
+                    parameters,
+                    out var validatedToken);
+
+                if (validatedToken is not JwtSecurityToken jwt ||
+                    !string.Equals(jwt.Header.Alg, SecurityAlgorithms.HmacSha256, StringComparison.Ordinal) ||
+                    principal.FindFirst("token_type")?.Value != "refresh")
+                {
+                    return null;
+                }
+
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private async Task<bool> IsTokenStillValidAsync(int employeeId, int aclVersion)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync(
+                    $"/api/auth/token-valid?employeeId={employeeId}&accessControlVersion={aclVersion}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+
+                var payload = await response.Content.ReadFromJsonAsync<TokenValidityPayload>();
+                return payload?.Valid == true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task<EmployeeAuthInfo?> FetchEmployeeInfoAsync(int employeeId)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("DatabaseAPI");
+                var response = await client.GetAsync($"/api/employees/{employeeId}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                return await response.Content.ReadFromJsonAsync<EmployeeAuthInfo>();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private sealed class TokenValidityPayload
+        {
+            public bool Valid { get; set; }
         }
 
         public async Task<bool> ChangePasswordAsync(int employeeId, ChangePasswordRequest request)

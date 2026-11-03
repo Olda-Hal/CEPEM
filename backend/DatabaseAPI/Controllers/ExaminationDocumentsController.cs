@@ -10,11 +10,16 @@ public class ExaminationDocumentsController : ControllerBase
 {
     private readonly ExaminationDocumentService _documentService;
     private readonly ILogger<ExaminationDocumentsController> _logger;
+    private readonly IAntivirusScanner _antivirusScanner;
 
-    public ExaminationDocumentsController(ExaminationDocumentService documentService, ILogger<ExaminationDocumentsController> logger)
+    public ExaminationDocumentsController(
+        ExaminationDocumentService documentService,
+        ILogger<ExaminationDocumentsController> logger,
+        IAntivirusScanner? antivirusScanner = null)
     {
         _documentService = documentService;
         _logger = logger;
+        _antivirusScanner = antivirusScanner ?? new NullAntivirusScanner();
     }
 
     [HttpGet]
@@ -53,6 +58,16 @@ public class ExaminationDocumentsController : ControllerBase
             var validationError = FileSignatureValidator.ValidateExaminationDocument(documentData);
             if (validationError != null)
                 return BadRequest(new { Error = validationError });
+
+            var scan = await _antivirusScanner.ScanAsync(documentData);
+            if (!scan.Clean)
+            {
+                return scan.ThreatName != null
+                    ? BadRequest(new { Error = "File failed antivirus scan." })
+                    : StatusCode(
+                        StatusCodes.Status503ServiceUnavailable,
+                        new { Error = scan.Error ?? "Antivirus scan is unavailable; the file was not stored." });
+            }
 
             var document = await _documentService.SaveDocumentAsync(examinationId, documentData, file.FileName);
 
