@@ -3,6 +3,7 @@ import { test, expect, Page, APIRequestContext } from '@playwright/test';
 const EMAIL = process.env.E2E_EMAIL;
 const PASSWORD = process.env.E2E_PASSWORD;
 const NEW_PASSWORD = 'E2ePass123!';
+const FINAL_PASSWORD = 'E2ePass456!';
 
 const login = async (page: Page, email: string, password: string) => {
   await page.goto('/login');
@@ -50,6 +51,24 @@ const createCountryAdmin = async (
   });
   expect(response.ok(), await response.text()).toBeTruthy();
 
+  // New accounts must change the first-login password before any business
+  // endpoint is available. Change it once so the scoped-admin checks can run.
+  const firstLogin = await request.post('/api/auth/login', {
+    data: { email, password: NEW_PASSWORD }
+  });
+  expect(firstLogin.ok(), await firstLogin.text()).toBeTruthy();
+  const firstSession = (await firstLogin.json()) as { token: string };
+
+  const changeResponse = await request.post('/api/auth/change-password', {
+    headers: { Authorization: `Bearer ${firstSession.token}` },
+    data: {
+      currentPassword: NEW_PASSWORD,
+      newPassword: FINAL_PASSWORD,
+      confirmPassword: FINAL_PASSWORD
+    }
+  });
+  expect(changeResponse.ok(), await changeResponse.text()).toBeTruthy();
+
   return email;
 };
 
@@ -66,7 +85,7 @@ test.describe('TOP 1 flows', () => {
     const nlEmail = await createCountryAdmin(request, headers.Authorization, 'NL', suffix);
 
     const loginResponse = await request.post('/api/auth/login', {
-      data: { email: czEmail, password: NEW_PASSWORD }
+      data: { email: czEmail, password: FINAL_PASSWORD }
     });
     expect(loginResponse.ok(), await loginResponse.text()).toBeTruthy();
     const czSession = (await loginResponse.json()) as { token: string };
@@ -83,7 +102,7 @@ test.describe('TOP 1 flows', () => {
 
     // The menu entry is usable for a scoped admin and the page renders.
     await page.evaluate(() => localStorage.clear());
-    await login(page, czEmail, NEW_PASSWORD);
+    await login(page, czEmail, FINAL_PASSWORD);
     await page.goto('/admin/employees');
     await expect(page.locator('table.data-table')).toBeVisible({ timeout: 20_000 });
   });
