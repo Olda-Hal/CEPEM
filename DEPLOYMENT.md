@@ -196,6 +196,42 @@ used as a datasource. The repo's `nginx-reverse-proxy.conf` contains the
   - Verify the label: `curl -s http://127.0.0.1:5000/metrics | grep cepem_http_requests_by_country_total`.
   - The dashboard is re-provisioned every 30 s; if the panel is still missing, run `docker compose -f docker-compose.prod.yml up -d --force-recreate grafana`. The map only fills from requests made after the updated HealthcareAPI/nginx are running.
 
+## Antivirus scanning
+
+Uploaded photos, PDFs and MEIK `.tdb` measurements are scanned by ClamAV
+before they are encrypted and stored. `docker-compose.prod.yml` starts a
+`clamav` container and `database-api` waits for its healthcheck.
+
+```bash
+CLAMAV_ENABLED=true
+CLAMAV_HOST=clamav
+CLAMAV_PORT=3310
+CLAMAV_TIMEOUT_SECONDS=20
+CLAMAV_FAIL_OPEN=false   # reject uploads while clamd is unreachable
+```
+
+Set `CLAMAV_ENABLED=false` only if you deliberately run without scanning.
+Uploads then skip the scan; magic-byte validation still applies.
+
+## Alerting and error tracking
+
+Prometheus evaluates `deploy/prometheus/alerts.yml` (service down, failing
+blackbox probe, 5xx rate, p95 latency) and forwards to Alertmanager. The
+Alertmanager UI is on `127.0.0.1:9093`; configure the SMTP variables from
+`.env.example` to receive e-mail. The blackbox exporter probes
+`http://frontend:3000/health` every 15 seconds.
+
+Optional Sentry error tracking is enabled by setting `SENTRY_DSN` (backend)
+and `VITE_SENTRY_DSN` (frontend build arg). Empty values keep both disabled.
+
+## Sessions
+
+Access tokens live for `JWT_ACCESS_TOKEN_MINUTES` (default 30) and are
+renewed by the SPA with a `JWT_REFRESH_TOKEN_DAYS` (default 7) refresh token.
+The refresh token carries the same `acl_version`, so logout, password change,
+deactivation and role changes revoke it as well. A refresh token is rejected
+as a bearer access token by the gateway.
+
 ## Maintenance
 
 ### View Logs
