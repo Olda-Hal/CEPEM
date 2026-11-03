@@ -171,12 +171,21 @@ namespace DatabaseAPI.Services
             }
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
+            // Production keeps the forced first-login password change. CI/E2E
+            // can opt out with ADMIN_PASSWORD_CHANGE_REQUIRED=false.
+            var requirePasswordChange = !string.Equals(
+                Environment.GetEnvironmentVariable("ADMIN_PASSWORD_CHANGE_REQUIRED"),
+                "false",
+                StringComparison.OrdinalIgnoreCase);
+
             var adminEmployee = new Employee
             {
                 PersonId = adminPerson.Id,
                 PasswordHash = passwordHash,
                 Salt = "", // BCrypt doesn't need separate salt
-                PasswordExpiration = new DateTime(2000, 1, 1), // Old date to force password change
+                PasswordExpiration = requirePasswordChange
+                    ? new DateTime(2000, 1, 1)
+                    : DateTime.UtcNow.AddDays(90),
                 LastLoginAt = null
             };
 

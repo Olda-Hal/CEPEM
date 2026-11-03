@@ -165,6 +165,7 @@ jobs:
           FRONTEND_PORT=3000
           GRAFANA_PORT=3002
           ADMIN_INITIAL_PASSWORD=E2eCiTest123!
+          ADMIN_PASSWORD_CHANGE_REQUIRED=false
           ENV
           docker compose up -d --build
 
