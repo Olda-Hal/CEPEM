@@ -21,15 +21,16 @@ ARG VITE_SENTRY_DSN
 # Build the application
 RUN npm run build
 
+# Record the image build version in the static bundle (the unprivileged
+# runtime image cannot write into /usr/share/nginx/html).
+ARG BUILD_NUMBER=dev
+RUN echo "$BUILD_NUMBER" > dist/build_number.txt
+
 # Production stage
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 # Copy build files to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Record the image build version (CI can pass -build-arg BUILD_NUMBER=<n>)
-ARG BUILD_NUMBER=dev
-RUN echo "$BUILD_NUMBER" > /usr/share/nginx/html/build_number.txt
 
 # Copy nginx configuration
 COPY frontend/nginx.conf /etc/nginx/nginx.conf
