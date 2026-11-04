@@ -122,6 +122,7 @@ test.describe('TOP 1 flows', () => {
     // The menu entry is usable for a scoped admin and the page renders.
     await page.evaluate(() => localStorage.clear());
     await login(page, czEmail, FINAL_PASSWORD);
+    await expect(page).toHaveURL(/\/(patients|administration)/, { timeout: 15_000 });
     await page.goto('/admin/employees');
     await expect(page.locator('table.data-table')).toBeVisible({ timeout: 20_000 });
   });
@@ -199,7 +200,7 @@ test.describe('TOP 1 flows', () => {
     const detailResponse = await request.get(`/api/patients/${patientId}`, {
       headers: digitiserHeaders
     });
-    expect(detailResponse.ok()).toBeTruthy();
+    expect(detailResponse.ok(), await detailResponse.text()).toBeTruthy();
     const detail = (await detailResponse.json()) as {
       formSubmission?: { id: number };
     };
