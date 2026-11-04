@@ -174,6 +174,33 @@ public class EventsController : ControllerBase
         var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            // A retried submission (e.g. the browser showed an error after the
+            // first request had already committed) must not create the same
+            // person again. Match on name + birth date among live patients.
+            var firstName = (request.Patient.FirstName ?? string.Empty).Trim().ToLowerInvariant();
+            var lastName = (request.Patient.LastName ?? string.Empty).Trim().ToLowerInvariant();
+            if (firstName.Length > 0 && lastName.Length > 0)
+            {
+                var existingPatient = await _context.Patients
+                    .AsNoTracking()
+                    .Where(p => !p.IsDeleted &&
+                                p.BirthDate.Date == request.Patient.BirthDate.Date &&
+                                p.Person.FirstName.ToLower() == firstName &&
+                                p.Person.LastName.ToLower() == lastName)
+                    .Select(p => new { p.Id })
+                    .FirstOrDefaultAsync();
+                if (existingPatient != null)
+                {
+                    await transaction.RollbackAsync();
+                    return Conflict(new
+                    {
+                        message = "Pacient se stejným jménem a datem narození už existuje. " +
+                                  "Otevřete existující kartu místo zakládání duplicity.",
+                        existingPatientId = existingPatient.Id
+                    });
+                }
+            }
+
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             var patient = await _patientService.CreatePatientAsync(request.Patient, actorCountryCode);
 
@@ -474,11 +501,17 @@ public class EventsController : ControllerBase
             var link = await _intakeFormLinkService.FindLinkAsync(token);
 
             if (link == null)
+            {
+                await transaction.RollbackAsync();
                 return NotFound("Intake link not found");
+            }
 
             var invalidReason = _intakeFormLinkService.GetInvalidityReason(link);
             if (invalidReason != null)
+            {
+                await transaction.RollbackAsync();
                 return BadRequest(invalidReason);
+            }
 
             // Validate GDPR before creating/promoting a patient: a rejected
             // submission must not leave a half-created patient behind.
@@ -488,6 +521,7 @@ public class EventsController : ControllerBase
                 request, link.Person.CountryCode);
             if (gdprError != null)
             {
+                await transaction.RollbackAsync();
                 return BadRequest(gdprError);
             }
             // Pin the exact version the patient saw so a version published
@@ -528,6 +562,7 @@ public class EventsController : ControllerBase
                 request, requireMasterDataApproval: true);
             if (intakeResult.Result is ObjectResult objectResult && objectResult.StatusCode >= 400)
             {
+                await transaction.RollbackAsync();
                 return objectResult;
             }
 

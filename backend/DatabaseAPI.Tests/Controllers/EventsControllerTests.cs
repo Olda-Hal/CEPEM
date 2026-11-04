@@ -728,4 +728,39 @@ public class EventsControllerTests : IDisposable
         Assert.True(info.Prefill.CovidVaccine);
         Assert.Equal("note", info.Prefill.AdditionalHealthInfo);
     }
+
+    [Fact]
+    public async Task CreatePatientWithIntake_RejectsAnIdenticalLivePatient()
+    {
+        // Simulates a retried "add patient" submission: the first request may
+        // have committed even though the browser showed an error.
+        var person = SeedPerson("Jana", "Novakova", "00000077");
+        var existing = SeedPatient(person);
+        var patientCount = _context.Patients.Count();
+
+        var result = await _controller.CreatePatientWithIntake(new CreatePatientWithIntakeRequest
+        {
+            Patient = new CreatePatientRequest
+            {
+                FirstName = "Jana",
+                LastName = "Novakova",
+                BirthDate = new DateTime(1980, 1, 1),
+                Gender = "F"
+            },
+            Intake = new CreateIntakeFormEventRequest
+            {
+                ConfirmAccuracy = true,
+                GdprAccepted = true,
+                TermsAccepted = true
+            }
+        });
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result.Result);
+        var existingId = conflict.Value!
+            .GetType()
+            .GetProperty("existingPatientId")!
+            .GetValue(conflict.Value);
+        Assert.Equal(existing.Id, existingId);
+        Assert.Equal(patientCount, _context.Patients.Count());
+    }
 }

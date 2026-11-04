@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { apiClient } from '../utils/api';
+import { apiClient, ApiError } from '../utils/api';
 import { PatientFormFields, PatientFormData } from '../components/PatientFormFields';
 import './AddPatientFormPage.css';
 import { useToast } from '../contexts/ToastContext';
@@ -328,11 +328,13 @@ export const AddPatientFormPage: React.FC = () => {
       } else {
         setError(t('patients.errors.createFailed'));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      // ApiError.message carries the server-provided reason (např. chybějící
-      // přiřazení účtu k centru); fallback is the generic failure message.
-      setError(err?.response?.data?.message || err?.message || 'Chyba při vytváření pacienta');
+      // ApiError.message carries the server-provided reason (e.g. a missing
+      // center assignment or a duplicate patient); fallback is generic.
+      const message =
+        err instanceof ApiError && err.message ? err.message : t('patients.errors.createFailed');
+      setError(message);
     } finally {
       setLoading(false);
     }
