@@ -66,3 +66,38 @@ Nejsou to závazky; v každé skupině jsou seřazené zhruba podle hodnoty.
 - **Web nemá nizozemštinu** — `CEPEM-website` má jen cs/en, zatímco CEPEM už nl používá; doplnit `nl` locale a jazyk rezervace (`src/i18n/resources/`).
 - **Chybí GDPR souhlas před odesláním rezervace** — formulář sbírá jméno, e-mail a telefon bez checkboxu souhlasu a odkazu na zásady; doplnit consent a uložit jeho verzi (`Reservation.tsx`).
 - **Legacy availability endpoint a waitlist** — `/api/clinics/{id}/availability` má hardcoded otevírací hodiny 8–17 a mrtvý `Reservation` model; uklidit, případně přidat waitlist/„upozornit, až bude volný termín“ (`CEPEM-website/backend/app/main.py`).
+
+## Nápady na nové funkce (2026-11-04)
+
+Není to seznam oprav — jde o nové schopnosti, které by platformu posunuly dál.
+Seřazené podle poměru přínos / náročnost.
+
+### Klinická hodnota
+
+- **Srovnání měření v čase** — na detailu pacienta překrýt aktuální a předchozí `.tdb` pro stejnou stranu/polohu, zobrazit delta mapu a trend (nové ložisko, změna denzity). Navazuje na hotovou vizualizaci `.tdb`.
+- **AI předčtení měření** — model označí podezřelé řezy/oblasti jako „druhý názor“ s vysvětlením a jistotou; lékař vždy potvrdí nebo zamítne. Nesmí nahradit dvoučlenné hodnocení, jen zkrátit čas.
+- **Doporučení jako sledovaný úkol** — z vyhodnocení vytvořit follow-up (kontrola za X měsíců, mamografie, biopsie, doporučení praktikovi), přiřadit odpovědnost a hlídat splnění; přehled otevřených doporučení na dashboardu.
+- **Kvalita a akreditace** — míra shody dvou lékařů (inter-rater), čas od měření k reportu, recall rate, podíl „OK vs. Findings“ po centrech a lékařích; export pro audit.
+- **Kontrola kvality přístroje** — evidence kalibrací MEIK zařízení, párování měření se zařízením a upozornění na rostoucí šum / odchylku proti referenci.
+
+### Pacient a komunikace
+
+- **Pacientský portál** — bezpečný magic link: nadcházející termín, předvyplnění intake, souhlasy, vysvětlení výsledku lidskou řečí a potvrzení doporučení.
+- **Samoobslužné potvrzení/zrušení/přesun termínu** — signed odkaz v e-mailu/SMS, automatické uvolnění slotu a nabídka waitlistu.
+- **Rozšířený reminder engine** — kaskáda připomínek (7 dní / 1 den / 2 hodiny), jazyk podle země, eskalace při nepotvrzení a automatické doplnění slotu z waitlistu.
+- **Souhlasová kampaň** — hromadná obnova GDPR souhlasů s verzováním textu, expirací a přehledem, kdo ještě nepotvrdil.
+
+### Provoz a integrace
+
+- **Tablet intake v offline režimu** — PWA s lokální frontou odpovědí; při výpadku Wi-Fi se formulář uloží a odešle po obnovení spojení.
+- **Dávkové operace** — hromadné uzavření návštěv, export dokumentace, odeslání připomínek a přiřazení doporučení.
+- **Napojení na NIS/FHIR** — export pacienta, návštěvy a reportu do nemocničního systému; import laborních výsledků a DICOM dostupných vyšetření.
+- **Příchozí složka z MEIK zařízení** — automatické načtení `.tdb` z watch folderu, přiřazení podle UID/termínu a upozornění na nespárované soubory.
+- **PDF/ZIP balík návštěvy** — kompletní dokumentace (poznámka, intake, renderované `.tdb`, hodnocení, doporučení) jedním klikem pro tisk nebo předání.
+
+### Platforma a bezpečnost
+
+- **Passkeys / SSO** — WebAuthn a přihlášení přes Azure AD/Google pro zaměstnance, krátkodobé session a step-up ověření před GDPR exportem.
+- **Auditní časová osa a obnovení** — kdo co kdy změnil u pacienta/návštěvy, diff hodnot a bezpečné vrácení omylem upraveného záznamu.
+- **Chytré hledání** — fulltext přes OCR text dokumentů, `.tdb` podmínky (strana, poloha) a uložené filtry napříč sekcemi.
+- **Provozní alerty do týmu** — pravidla „nevyhodnoceno > 48 h“, „intake chybí u dnešní návštěvy“, „fronta roste“ s doručením e-mailem/Teams/Slack.
