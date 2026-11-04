@@ -29,7 +29,6 @@ services:
     build:
       context: ./backend
       dockerfile: HealthcareAPI/Dockerfile
-    container_name: cepem_healthcare_api
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -64,7 +63,6 @@ services:
   # Antivirus scanning for uploaded photos, PDFs and MEIK measurements.
   clamav:
     image: clamav/clamav:1.4
-    container_name: cepem_clamav
     restart: unless-stopped
     logging: *default-logging
     healthcheck:
@@ -80,7 +78,6 @@ services:
   ai-service:
     build:
       context: ./backend/AIService
-    container_name: cepem_ai_service
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -101,7 +98,6 @@ services:
     build:
       context: ./backend
       dockerfile: DatabaseAPI/Dockerfile
-    container_name: cepem_database_api
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -182,7 +178,6 @@ services:
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     ports:
       - "127.0.0.1:3000:3000"
-    container_name: cepem_frontend
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -201,7 +196,6 @@ services:
   # repo. Access Grafana at http://127.0.0.1:${GRAFANA_PORT}.
   alertmanager:
     image: prom/alertmanager:v0.27.0
-    container_name: cepem_alertmanager
     restart: unless-stopped
     logging: *default-logging
     volumes:
@@ -224,7 +218,6 @@ services:
 
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.25.0
-    container_name: cepem_blackbox_exporter
     restart: unless-stopped
     logging: *default-logging
     volumes:
@@ -234,7 +227,6 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.53.0
-    container_name: cepem_prometheus
     restart: unless-stopped
     logging: *default-logging
     volumes:
@@ -255,7 +247,6 @@ services:
 
   grafana:
     image: grafana/grafana:11.1.0
-    container_name: cepem_grafana
     restart: unless-stopped
     logging: *default-logging
     environment:
