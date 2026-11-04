@@ -197,14 +197,13 @@ test.describe('TOP 1 flows', () => {
     await expect(page.getByText(lastName).first()).toBeVisible();
 
     // The atomic create endpoint returns the patient and its intake.
-    const detailResponse = await request.get(`/api/patients/${patientId}`, {
+    const detailResponse = await request.get(`/api/patients/${patientId}/detail`, {
       headers: digitiserHeaders
     });
     expect(detailResponse.ok(), await detailResponse.text()).toBeTruthy();
     const detail = (await detailResponse.json()) as {
       formSubmission?: { id: number };
     };
-    console.log('Patient detail keys:', Object.keys(detail));
     expect(detail.formSubmission?.id, JSON.stringify(detail).slice(0, 600)).toBeGreaterThan(0);
 
     // Visits start from the new patient and are listed back by the API.
