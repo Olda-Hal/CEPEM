@@ -111,7 +111,7 @@ start_platform() {
     echo "📱 Frontend:          http://localhost:3000"
     echo "🏥 HealthcareAPI:     http://localhost:5000"
     echo "🗃️  DatabaseAPI:       http://localhost:5001"
-    echo "🤖 AI Service:        http://localhost:8000"
+    echo "🤖 AI Service:        interní (bez publikovaného portu)"
     echo "🗄️  MySQL Database:    localhost:3306"
     echo ""
     echo "To stop: docker compose down"

@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using HealthcareAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HealthcareAPI.Controllers;
 
@@ -24,6 +25,7 @@ public class AiController : ControllerBase
     /// </summary>
     [HttpPost("intake/extract")]
     [RequirePermission("intake.digitise")]
+    [EnableRateLimiting("api-write")]
     [RequestSizeLimit(MaxUploadBytes)]
     public async Task<IActionResult> ExtractIntake(IFormFile file, CancellationToken cancellationToken)
     {
