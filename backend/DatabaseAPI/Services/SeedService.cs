@@ -52,6 +52,10 @@ namespace DatabaseAPI.Services
         private async Task SeedRolesAsync()
         {
             await EnsureRoleExistsAsync("SysAdmin");
+            // "Admin" is a full-access operator without the system-only area
+            // (role management, tests, audit log, permissions). From /admin it
+            // opens the operational overview, GDPR and communication templates.
+            await EnsureRoleExistsAsync("Admin");
             await EnsureRoleExistsAsync("Examiner");
             await EnsureRoleExistsAsync("Doctor");
             await EnsureRoleExistsAsync("Center Admin");
@@ -630,6 +634,21 @@ namespace DatabaseAPI.Services
             await _context.SaveChangesAsync();
 
             await SeedRoleGrantsAsync("SysAdmin", PermissionCatalog.Select(p => p.Code).ToArray());
+
+            // Admin: everything except the system-only administration area.
+            // GDPR and communication stay available because they are part of
+            // the operator's /admin hub; the audit log is intentionally not.
+            string[] adminOnlyPermissions =
+            {
+                "tests.read", "audit.read", "roles.manage", "permissions.manage"
+            };
+            await SeedRoleGrantsAsync(
+                "Admin",
+                PermissionCatalog
+                    .Select(p => p.Code)
+                    .Where(code => !adminOnlyPermissions.Contains(code))
+                    .ToArray());
+            await RevokeRoleGrantsAsync("Admin", adminOnlyPermissions);
             // Examiner works only with the patient agenda (no employee or
             // evaluation administration).
             await SeedRoleGrantsAsync("Examiner", new[]

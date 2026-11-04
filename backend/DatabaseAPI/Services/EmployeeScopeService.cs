@@ -23,7 +23,8 @@ public record ActorScope(
     IReadOnlyList<int> HospitalIds,
     IReadOnlyList<int> AdministeredCountryScopeIds)
 {
-    public bool HasFullAccess => Roles.Contains("SysAdmin") || Roles.Contains("Admin");
+    public bool IsSysAdmin => Roles.Contains("SysAdmin");
+    public bool HasFullAccess => IsSysAdmin || Roles.Contains("Admin");
     public bool IsCountryAdmin => Roles.Contains("Country Admin");
     public bool IsCenterAdmin => Roles.Contains("Center Admin");
 
@@ -39,10 +40,13 @@ public record ActorScope(
     /// Center Admin → only Examiner/Doctor.
     /// </summary>
     public IReadOnlyList<string> AssignableRoleNames =>
-        HasFullAccess ? new List<string>()
-                        : IsCountryAdmin ? new List<string> { "Center Admin", "Examiner", "Doctor" }
-                        : IsCenterAdmin ? new List<string> { "Examiner", "Doctor" }
-                        : new List<string>();
+        IsSysAdmin ? new List<string>()
+                   : Roles.Contains("Admin")
+                       // Admin manages people, but cannot mint another SysAdmin.
+                       ? new List<string> { "Admin", "Country Admin", "Center Admin", "Examiner", "Doctor", "Digitiser" }
+                   : IsCountryAdmin ? new List<string> { "Center Admin", "Examiner", "Doctor" }
+                   : IsCenterAdmin ? new List<string> { "Examiner", "Doctor" }
+                   : new List<string>();
 }
 
 public interface IEmployeeScopeService
@@ -192,7 +196,12 @@ public class EmployeeScopeService : IEmployeeScopeService
     public async Task<string?> ValidateAssignableRolesAsync(IReadOnlyList<int> roleIds, CancellationToken cancellationToken = default)
     {
         var actor = await GetActorScopeAsync(cancellationToken);
-        if (!actor.IsScopedAdmin || roleIds.Count == 0)
+        if (roleIds.Count == 0)
+        {
+            return null;
+        }
+
+        if (actor.IsSysAdmin)
         {
             return null;
         }
@@ -201,6 +210,21 @@ public class EmployeeScopeService : IEmployeeScopeService
             .Where(r => roleIds.Contains(r.Id))
             .Select(r => r.NameTranslation != null ? r.NameTranslation.EN : "")
             .ToListAsync(cancellationToken);
+
+        if (actor.Roles.Contains("Admin"))
+        {
+            var rejectedByAdmin = roleNames
+                .Where(name => !actor.AssignableRoleNames.Contains(name))
+                .ToList();
+            return rejectedByAdmin.Count == 0
+                ? null
+                : $"Role nelze udělit: {string.Join(", ", rejectedByAdmin)}";
+        }
+
+        if (!actor.IsScopedAdmin)
+        {
+            return null;
+        }
 
         var allowed = actor.AssignableRoleNames;
         var rejected = roleNames.Where(name => !allowed.Contains(name)).ToList();
