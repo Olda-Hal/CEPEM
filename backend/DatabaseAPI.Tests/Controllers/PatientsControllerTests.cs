@@ -49,7 +49,8 @@ public class PatientsControllerTests : IAsyncLifetime
             new Mock<IPatientService>().Object,
             new PatientMergeService(
                 _context,
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<PatientMergeService>.Instance));
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<PatientMergeService>.Instance),
+            new TdbAnalysisService());
     }
 
     public async Task InitializeAsync()

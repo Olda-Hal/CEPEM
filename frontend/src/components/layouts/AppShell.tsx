@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { hasRole, isAdmin } from '../../utils/roles';
+import { hasRole, isAdmin, isSysAdmin } from '../../utils/roles';
 import { GlobalSearch } from '../../components/GlobalSearch';
 import { useTheme } from '../../themes/useTheme';
 import './AppShell.css';
@@ -21,6 +21,8 @@ interface NavSubItem {
   key: string;
   to: string;
   labelKey: string;
+  /** System-only entry (roles, tests, audit, monitoring, health). */
+  sysAdminOnly?: boolean;
 }
 
 interface NavSection {
@@ -38,16 +40,32 @@ const ADMINISTRATION_CHILDREN: NavSubItem[] = [
   { key: 'employees', to: '/admin/employees', labelKey: 'administration.employeesTitle' }
 ];
 
+// The "Admin" role only sees its own three entries; the rest is SysAdmin-only.
 const ADMIN_CHILDREN: NavSubItem[] = [
-  { key: 'monitoring', to: '/admin/monitoring', labelKey: 'adminPage.monitoringTitle' },
-  { key: 'audit-log', to: '/admin/activity-log', labelKey: 'adminPage.auditLogTitle' },
-  { key: 'email-log', to: '/admin/email-log', labelKey: 'adminPage.emailLogTitle' },
-  { key: 'communication', to: '/admin/communication', labelKey: 'adminPage.communicationTitle' },
-  { key: 'gdpr', to: '/admin/gdpr', labelKey: 'adminPage.gdprTitle' },
   { key: 'analytics', to: '/admin/analytics', labelKey: 'adminPage.analyticsTitle' },
-  { key: 'tests', to: '/tests', labelKey: 'adminPage.testsTitle' },
-  { key: 'roles', to: '/admin/roles', labelKey: 'adminPage.rolesTitle' },
-  { key: 'health', to: '/admin/health', labelKey: 'adminPage.healthTitle' }
+  { key: 'gdpr', to: '/admin/gdpr', labelKey: 'adminPage.gdprTitle' },
+  { key: 'communication', to: '/admin/communication', labelKey: 'adminPage.communicationTitle' },
+  {
+    key: 'monitoring',
+    to: '/admin/monitoring',
+    labelKey: 'adminPage.monitoringTitle',
+    sysAdminOnly: true
+  },
+  {
+    key: 'audit-log',
+    to: '/admin/activity-log',
+    labelKey: 'adminPage.auditLogTitle',
+    sysAdminOnly: true
+  },
+  {
+    key: 'email-log',
+    to: '/admin/email-log',
+    labelKey: 'adminPage.emailLogTitle',
+    sysAdminOnly: true
+  },
+  { key: 'tests', to: '/tests', labelKey: 'adminPage.testsTitle', sysAdminOnly: true },
+  { key: 'roles', to: '/admin/roles', labelKey: 'adminPage.rolesTitle', sysAdminOnly: true },
+  { key: 'health', to: '/admin/health', labelKey: 'adminPage.healthTitle', sysAdminOnly: true }
 ];
 
 // The Examinations overview is temporarily hidden from the navigation while
@@ -57,6 +75,12 @@ const SHOW_EXAMINATIONS_NAV = false;
 
 const NAV_SECTIONS: NavSection[] = [
   { key: 'patients', to: '/patients', labelKey: 'patients.title', matchPrefixes: ['/patients'] },
+  {
+    key: 'mereni',
+    to: '/mereni',
+    labelKey: 'measurements.title',
+    matchPrefixes: ['/mereni']
+  },
   {
     key: 'reservations',
     to: '/reservations',
@@ -102,6 +126,11 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
     if (section.key === 'admin') {
       return isAdmin(user);
     }
+    if (section.key === 'mereni') {
+      // Measurements overview follows the patient agenda; the evaluating
+      // doctor has Vyhodnocování instead.
+      return isAdmin(user) || !hasRole(user, 'Doctor');
+    }
     if (section.key === 'reservations') {
       // Slots are center/country administration, not part of the doctor or
       // examiner agenda.
@@ -123,7 +152,14 @@ const visibleSections = (user: ReturnType<typeof useAuth>['user']): NavSection[]
       return isAdmin(user) || hasRole(user, 'Doctor') || hasRole(user, 'Country Admin');
     }
     return true;
-  });
+  }).map((section) =>
+    section.children
+      ? {
+          ...section,
+          children: section.children.filter((child) => !child.sysAdminOnly || isSysAdmin(user))
+        }
+      : section
+  );
 
 /**
  * Application shell: header with brand + account info + settings gear,

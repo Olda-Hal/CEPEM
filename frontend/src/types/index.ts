@@ -933,6 +933,8 @@ export interface EvaluationCase {
   tdb?: TdbMeasurement | null;
   evaluatedAtUtc?: string | null;
   isEvaluated: boolean;
+  /** Closed from the measurements overview instead of two doctor reviews. */
+  isManuallyEvaluated?: boolean;
   reviewCount: number;
   maxReviews: number;
   reviews?: EvaluationReview[] | null;
@@ -946,6 +948,7 @@ export interface VisitEvaluationSummary {
   posture?: string | null;
   reviewCount: number;
   lastEvaluatedAtUtc?: string | null;
+  isManuallyEvaluated?: boolean;
 }
 
 /** Visit ("návštěva") of a patient. */
@@ -964,6 +967,37 @@ export interface VisitDocumentItem {
   originalFileName: string;
   uploadedAt: string;
   fileSize: number;
+  /** MEIK .tdb measurement: rendered in-app, never opened as PDF. */
+  isTdb: boolean;
+}
+
+/** One .tdb file in the measurements overview. */
+export interface MeasurementDocument {
+  documentId: number;
+  originalFileName: string;
+  uploadedAt: string;
+  fileSize: number;
+  evaluationCaseId?: number | null;
+}
+
+/** One visit row in the measurements overview. */
+export interface MeasurementVisit {
+  visitId: number;
+  patientId: number;
+  patientName: string;
+  patientUid: string;
+  visitDate: string;
+  status: 'evaluated' | 'partial' | 'pending';
+  evaluationCaseCount: number;
+  evaluatedCaseCount: number;
+  isManuallyEvaluated: boolean;
+  lastEvaluatedAtUtc?: string | null;
+  documents: MeasurementDocument[];
+}
+
+export interface MeasurementListResponse {
+  total: number;
+  items: MeasurementVisit[];
 }
 
 export interface VisitDetail {

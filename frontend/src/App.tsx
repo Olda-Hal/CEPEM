@@ -31,6 +31,7 @@ const CenterManagementPage = React.lazy(() => import('./pages/CenterManagementPa
 const HealthDashboardPage = React.lazy(() => import('./pages/HealthDashboardPage'));
 const AdministrationPage = React.lazy(() => import('./pages/AdministrationPage'));
 const EvaluationPage = React.lazy(() => import('./pages/EvaluationPage'));
+const MeasurementsPage = React.lazy(() => import('./pages/MeasurementsPage'));
 const AdminPage = React.lazy(() => import('./pages/AdminPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const PatientsPage = React.lazy(() =>
@@ -127,7 +128,7 @@ function App() {
                       <Route
                         path="/tests"
                         element={
-                          <RoleRoute roles={[]}>
+                          <RoleRoute roles={[]} sysAdminOnly>
                             <TestDashboard />
                           </RoleRoute>
                         }
@@ -143,7 +144,7 @@ function App() {
                       <Route
                         path="/admin/monitoring"
                         element={
-                          <RoleRoute roles={[]}>
+                          <RoleRoute roles={[]} sysAdminOnly>
                             <MonitoringPage />
                           </RoleRoute>
                         }
@@ -151,7 +152,7 @@ function App() {
                       <Route
                         path="/admin/activity-log"
                         element={
-                          <RoleRoute roles={[]}>
+                          <RoleRoute roles={[]} sysAdminOnly>
                             <ActivityLogPage />
                           </RoleRoute>
                         }
@@ -159,7 +160,7 @@ function App() {
                       <Route
                         path="/admin/email-log"
                         element={
-                          <RoleRoute roles={[]}>
+                          <RoleRoute roles={[]} sysAdminOnly>
                             <EmailLogPage />
                           </RoleRoute>
                         }
@@ -191,7 +192,7 @@ function App() {
                       <Route
                         path="/admin/roles"
                         element={
-                          <RoleRoute roles={[]}>
+                          <RoleRoute roles={[]} sysAdminOnly>
                             <RoleManagementPage />
                           </RoleRoute>
                         }
@@ -199,7 +200,7 @@ function App() {
                       <Route
                         path="/admin/health"
                         element={
-                          <RoleRoute roles={[]}>
+                          <RoleRoute roles={[]} sysAdminOnly>
                             <HealthDashboardPage />
                           </RoleRoute>
                         }
@@ -287,6 +288,18 @@ function App() {
                             excludeRoles={['Doctor', 'Examiner']}
                           >
                             <ExaminationsPage />
+                          </RoleRoute>
+                        }
+                      />
+                      <Route
+                        path="/mereni"
+                        element={
+                          <RoleRoute
+                            roles={['Examiner', 'Digitiser']}
+                            allowAny
+                            excludeRoles={['Doctor']}
+                          >
+                            <MeasurementsPage />
                           </RoleRoute>
                         }
                       />

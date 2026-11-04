@@ -137,6 +137,10 @@ public static class ProxyConfig
         yield return Route("evaluations-report", "/api/evaluations/cases/{id}/report", "GET", "patients.read");
         yield return Route("evaluations-evaluate", "/api/evaluations/cases/{id}/evaluate", "POST", "evaluations.write");
 
+        // Measurements overview (patient + visit + .tdb files)
+        yield return Route("measurements-mark-evaluated", "/api/measurements/visits/{visitId}/mark-evaluated", "POST", "evaluations.write");
+        yield return Route("measurements-get", "/api/measurements/{**rest}", "GET", "patients.read");
+
         // Settings
         yield return Route("settings-get", "/api/settings/{**rest}", "GET", "settings.read");
         yield return Route("settings-put", "/api/settings/{**rest}", "PUT", "settings.write");

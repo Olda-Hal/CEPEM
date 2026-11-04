@@ -355,7 +355,8 @@
     "reportLoadFailed": "Vyhodnocení se nepodařilo načíst.",
     "unknownDoctor": "Neznámý lékař",
     "noFindings": "Bez nálezů",
-    "noMarkerNote": "Bez popisu"
+    "noMarkerNote": "Bez popisu",
+    "manuallyEvaluated": "Měření bylo označeno jako vyhodnocené ručně (bez dvou lékařských posudků)."
   },
   "examinations": {
     "title": "Vyšetření",
@@ -777,7 +778,9 @@
       "examiner": "Vyšetřující",
       "doctor": "Doktor",
       "centerAdmin": "Administrátor centra",
-      "countryAdmin": "Administrátor země"
+      "countryAdmin": "Administrátor země",
+      "admin": "Admin",
+      "digitiser": "Digitalizátor"
     },
     "accessRules": {
       "title": "Přístupová pravidla: {{name}}",
@@ -1393,7 +1396,14 @@
     "intakeMissingWarning": "Formulář k této návštěvě nebyl vyplněn. Můžete ho vyplnit na tabletu výše.",
     "intakeMissingBadge": "bez formuláře",
     "otherVisits": "Další návštěvy",
-    "patientSearchPlaceholder": "Hledat pacienta…"
+    "patientSearchPlaceholder": "Hledat pacienta…",
+    "tdbViewerTitle": "Měření .tdb – {{fileName}}",
+    "tdbViewFailed": "Měření se nepodařilo zobrazit.",
+    "tdbLayers": "{{count}} vrstev",
+    "tdbNoise": "Šum: {{value}}",
+    "tdbReadonlyHint": "Náhled měření. Případné nálezy zapisujte ve Vyhodnocování.",
+    "tdbBadge": ".tdb",
+    "tdbDownload": "Stáhnout .tdb"
   },
   "patientForm": {
     "accuracyConfirmation": "Potvrzuji správnost vyplnění výše uvedených údajů",
@@ -1532,5 +1542,36 @@
     "reviewWarning": "Formulář byl přečten, ale ručně psané údaje je nutné zkontrolovat.",
     "notIntake": "Nahraný soubor nevypadá jako vstupní formulář CEPEM.",
     "failed": "PDF se nepodařilo zpracovat."
+  },
+  "measurements": {
+    "title": "Měření",
+    "lead": "Návštěvy s nahranými soubory .tdb. Kliknutím na řádek otevřete návštěvu.",
+    "searchPlaceholder": "Hledat pacienta nebo soubor…",
+    "filterLabel": "Stav vyhodnocení",
+    "filter": {
+      "all": "Vše",
+      "evaluated": "Vyhodnocené",
+      "notEvaluated": "Nevyhodnocené",
+      "partial": "Částečně"
+    },
+    "count": "{{count}} návštěv",
+    "empty": "Žádná měření neodpovídají filtru.",
+    "loadFailed": "Měření se nepodařilo načíst.",
+    "patient": "Pacient",
+    "visitDate": "Datum návštěvy",
+    "documents": "Soubory .tdb",
+    "statusLabel": "Stav",
+    "actions": "Akce",
+    "status": {
+      "evaluated": "Vyhodnoceno",
+      "partial": "Částečně",
+      "pending": "Nevyhodnoceno"
+    },
+    "manualBadge": "Ručně vyhodnoceno",
+    "markConfirm": "Označit návštěvu {{name}} jako vyhodnocenou? Měření zmizí z fronty Vyhodnocování.",
+    "markSuccess": "Návštěva byla označena jako vyhodnocená.",
+    "markFailed": "Návštěvu se nepodařilo označit jako vyhodnocenou.",
+    "markHint": "Uzavře měření stejně jako vyhodnocení dvěma lékaři.",
+    "markEvaluated": "Označit jako vyhodnocené"
   }
 }

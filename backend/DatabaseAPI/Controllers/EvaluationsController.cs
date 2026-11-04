@@ -56,6 +56,9 @@ public class EvaluationsController : ControllerBase
                 .ThenInclude(p => p!.Person)
             .Include(c => c.Reviews)
             .Where(c => c.ImageKey == "tdb")
+            // Cases completed manually from the measurements overview no
+            // longer need a doctor's review.
+            .Where(c => c.EvaluatedAtUtc == null)
             .Where(c => c.Reviews.Count < MaxReviews)
             .Where(c => !c.Reviews.Any(r => r.EmployeeId == actorId));
 
@@ -89,7 +92,7 @@ public class EvaluationsController : ControllerBase
 
         if (!includeEvaluated)
         {
-            query = query.Where(c => !c.Reviews.Any());
+            query = query.Where(c => !c.Reviews.Any() && c.EvaluatedAtUtc == null);
         }
 
         var actor = await _employeeScopeService.GetActorScopeAsync();
@@ -170,7 +173,7 @@ public class EvaluationsController : ControllerBase
 
         if (evaluationCase == null ||
             evaluationCase.VisitId == null ||
-            evaluationCase.Reviews.Count == 0)
+            (evaluationCase.Reviews.Count == 0 && evaluationCase.EvaluatedAtUtc == null))
         {
             return NotFound("Vyhodnocení není dostupné.");
         }
@@ -227,6 +230,11 @@ public class EvaluationsController : ControllerBase
         if (isTdb && string.IsNullOrEmpty(outcome))
         {
             return BadRequest("Chybí výsledek vyšetření.");
+        }
+
+        if (evaluationCase.EvaluatedAtUtc != null)
+        {
+            return Conflict("Měření už bylo označeno jako vyhodnocené.");
         }
 
         if (evaluationCase.Reviews.Count >= MaxReviews)
@@ -327,9 +335,12 @@ public class EvaluationsController : ControllerBase
             Posture = c.SourcePosture,
             Conditions = c.SourceConditions,
             Tdb = includeSlices && isTdb ? DeserializeSlices(c.SlicesJson) : null,
-            EvaluatedAtUtc = isTdb ? latestReview?.EvaluatedAtUtc : c.EvaluatedAtUtc,
-            IsEvaluated = isTdb ? reviews.Count > 0 : c.EvaluatedAtUtc != null,
-            ReviewCount = reviews.Count,
+            EvaluatedAtUtc = isTdb
+                ? latestReview?.EvaluatedAtUtc ?? c.EvaluatedAtUtc
+                : c.EvaluatedAtUtc,
+            IsEvaluated = isTdb ? (reviews.Count > 0 || c.EvaluatedAtUtc != null) : c.EvaluatedAtUtc != null,
+            IsManuallyEvaluated = isTdb && c.EvaluatedAtUtc != null && reviews.Count == 0,
+            ReviewCount = isTdb && c.EvaluatedAtUtc != null ? MaxReviews : reviews.Count,
             MaxReviews = MaxReviews,
             Reviews = includeReviews
                 ? reviews.Select(ToReviewDto).ToList()
@@ -390,6 +401,9 @@ public class EvaluationsController : ControllerBase
         public TdbSlicesDto? Tdb { get; set; }
         public DateTime? EvaluatedAtUtc { get; set; }
         public bool IsEvaluated { get; set; }
+
+        /// <summary>Completed from the measurements overview instead of two reviews.</summary>
+        public bool IsManuallyEvaluated { get; set; }
         public int ReviewCount { get; set; }
         public int MaxReviews { get; set; }
         public List<EvaluationReviewDto>? Reviews { get; set; }

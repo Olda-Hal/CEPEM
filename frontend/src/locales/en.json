@@ -355,7 +355,8 @@
     "reportLoadFailed": "The evaluation could not be loaded.",
     "unknownDoctor": "Unknown doctor",
     "noFindings": "No findings",
-    "noMarkerNote": "No description"
+    "noMarkerNote": "No description",
+    "manuallyEvaluated": "The measurement was marked as evaluated manually (without two doctor reviews)."
   },
   "examinations": {
     "title": "Examinations",
@@ -777,7 +778,9 @@
       "examiner": "Examiner",
       "doctor": "Doctor",
       "centerAdmin": "Center Admin",
-      "countryAdmin": "Country Admin"
+      "countryAdmin": "Country Admin",
+      "admin": "Admin",
+      "digitiser": "Digitiser"
     },
     "accessRules": {
       "title": "Access Rules: {{name}}",
@@ -1393,7 +1396,14 @@
     "intakeMissingWarning": "No intake form was filled for this visit. You can fill it on the tablet above.",
     "intakeMissingBadge": "no form",
     "otherVisits": "Other visits",
-    "patientSearchPlaceholder": "Search patients…"
+    "patientSearchPlaceholder": "Search patients…",
+    "tdbViewerTitle": ".tdb measurement – {{fileName}}",
+    "tdbViewFailed": "The measurement could not be displayed.",
+    "tdbLayers": "{{count}} layers",
+    "tdbNoise": "Noise: {{value}}",
+    "tdbReadonlyHint": "Measurement preview. Record findings in the evaluation.",
+    "tdbBadge": ".tdb",
+    "tdbDownload": "Download .tdb"
   },
   "patientForm": {
     "accuracyConfirmation": "I confirm that the information provided above is accurate",
@@ -1532,5 +1542,36 @@
     "reviewWarning": "The form was read, but handwritten values need a manual review.",
     "notIntake": "The uploaded file does not look like a CEPEM intake form.",
     "failed": "The PDF could not be processed."
+  },
+  "measurements": {
+    "title": "Measurements",
+    "lead": "Visits with uploaded .tdb files. Click a row to open the visit.",
+    "searchPlaceholder": "Search patient or file…",
+    "filterLabel": "Evaluation status",
+    "filter": {
+      "all": "All",
+      "evaluated": "Evaluated",
+      "notEvaluated": "Not evaluated",
+      "partial": "Partially"
+    },
+    "count": "{{count}} visits",
+    "empty": "No measurements match the filter.",
+    "loadFailed": "Measurements could not be loaded.",
+    "patient": "Patient",
+    "visitDate": "Visit date",
+    "documents": ".tdb files",
+    "statusLabel": "Status",
+    "actions": "Actions",
+    "status": {
+      "evaluated": "Evaluated",
+      "partial": "Partially",
+      "pending": "Not evaluated"
+    },
+    "manualBadge": "Manually evaluated",
+    "markConfirm": "Mark the visit of {{name}} as evaluated? The measurement will leave the evaluation queue.",
+    "markSuccess": "The visit was marked as evaluated.",
+    "markFailed": "The visit could not be marked as evaluated.",
+    "markHint": "Closes the measurement like two doctor reviews.",
+    "markEvaluated": "Mark as evaluated"
   }
 }

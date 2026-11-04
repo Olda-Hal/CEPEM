@@ -22,6 +22,7 @@ namespace DatabaseAPI.Controllers
         private readonly IUidService _uidService;
         private readonly IPatientService _patientService;
         private readonly IPatientMergeService _mergeService;
+        private readonly ITdbAnalysisService _tdbAnalysisService;
         private readonly IAntivirusScanner _antivirusScanner;
 
         public PatientsController(
@@ -34,6 +35,7 @@ namespace DatabaseAPI.Controllers
             IUidService uidService,
             IPatientService patientService,
             IPatientMergeService mergeService,
+            ITdbAnalysisService tdbAnalysisService,
             IAntivirusScanner? antivirusScanner = null)
         {
             _context = context;
@@ -45,6 +47,7 @@ namespace DatabaseAPI.Controllers
             _uidService = uidService;
             _patientService = patientService;
             _mergeService = mergeService;
+            _tdbAnalysisService = tdbAnalysisService;
             _antivirusScanner = antivirusScanner ?? new NullAntivirusScanner();
         }
 
@@ -1146,13 +1149,26 @@ namespace DatabaseAPI.Controllers
         }
 
         [HttpGet("{patientId}/documents/{documentId}")]
-        public async Task<IActionResult> GetPatientDocument(int patientId, int documentId)
+        public async Task<IActionResult> GetPatientDocument(
+            int patientId,
+            int documentId,
+            [FromQuery] bool download = false)
         {
             try
             {
                 if (!await PatientIsVisibleAsync(patientId))
                 {
                     return NotFound("Patient not found");
+                }
+
+                var document = await _context.PatientDocuments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == documentId &&
+                                              d.PatientId == patientId &&
+                                              !d.IsDeleted);
+                if (document == null)
+                {
+                    return NotFound("Document not found");
                 }
 
                 var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
@@ -1162,12 +1178,75 @@ namespace DatabaseAPI.Controllers
                     return NotFound("Document not found");
                 }
 
-                return File(documentData, "application/pdf");
+                // A .tdb measurement is not a PDF. Without an explicit filename
+                // and a binary content type the browser opens it in the PDF
+                // viewer and shows a broken document.
+                var isTdb = _tdbAnalysisService.IsTdbFileName(document.OriginalFileName) ||
+                            _tdbAnalysisService.IsTdb(documentData);
+                if (isTdb)
+                {
+                    return File(documentData, "application/octet-stream", document.OriginalFileName);
+                }
+
+                return download
+                    ? File(documentData, "application/pdf", document.OriginalFileName)
+                    : File(documentData, "application/pdf");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while getting patient document");
                 return StatusCode(500, "An error occurred while getting document");
+            }
+        }
+
+        /// <summary>
+        /// Parsed MEIK .tdb measurement for the in-app viewer. The raw file is
+        /// never sent to the PDF viewer; the visit document list uses this
+        /// endpoint to render the seven slices instead.
+        /// </summary>
+        [HttpGet("{patientId}/documents/{documentId}/tdb")]
+        public async Task<IActionResult> GetPatientTdbMeasurement(int patientId, int documentId)
+        {
+            try
+            {
+                if (!await PatientIsVisibleAsync(patientId))
+                {
+                    return NotFound("Patient not found");
+                }
+
+                var document = await _context.PatientDocuments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == documentId &&
+                                              d.PatientId == patientId &&
+                                              !d.IsDeleted);
+                if (document == null)
+                {
+                    return NotFound("Document not found");
+                }
+
+                var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
+                if (documentData == null)
+                {
+                    return NotFound("Document not found");
+                }
+
+                if (!_tdbAnalysisService.IsTdb(documentData))
+                {
+                    return BadRequest("Soubor není měření MEIK TOMODB v2.0 (.tdb).");
+                }
+
+                var analysis = _tdbAnalysisService.Parse(documentData);
+                return Content(_tdbAnalysisService.ToJson(analysis), "application/json");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Rejected .tdb document {DocumentId}", documentId);
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while parsing patient .tdb document");
+                return StatusCode(500, "An error occurred while reading the measurement");
             }
         }
 

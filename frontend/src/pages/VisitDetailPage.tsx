@@ -1,18 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MdAssignment, MdOutlineDescription, MdPerson } from 'react-icons/md';
+import {
+  MdAssignment,
+  MdDownload,
+  MdOutlineDescription,
+  MdPerson,
+  MdTimeline
+} from 'react-icons/md';
 import { apiClient } from '../utils/api';
 import {
   Patient,
   PatientDetail,
   PatientSearchResponse,
   VisitDetail,
+  VisitDocumentItem,
   VisitListItem
 } from '../types';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { AddIntakeFormEventModal } from '../components/AddIntakeFormEventModal';
 import { EvaluationReportModal } from '../components/evaluation/EvaluationReportModal';
+import { TdbViewerModal } from '../components/evaluation/TdbViewerModal';
+import { downloadPatientDocument } from '../utils/documentDownload';
 import { useToast } from '../contexts/ToastContext';
 import './VisitDetailPage.css';
 
@@ -40,6 +49,7 @@ const VisitDetailPage: React.FC = () => {
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [creatingIntakeLink, setCreatingIntakeLink] = useState(false);
   const [reportCaseId, setReportCaseId] = useState<number | null>(null);
+  const [tdbDocument, setTdbDocument] = useState<VisitDocumentItem | null>(null);
   const awaitingIntakeRef = useRef(false);
 
   const [patientSearch, setPatientSearch] = useState('');
@@ -192,11 +202,32 @@ const VisitDetailPage: React.FC = () => {
     }
   };
 
-  const handleDocumentView = async (documentId: number) => {
+  const handleDocumentView = async (document: VisitDocumentItem) => {
+    // A MEIK .tdb measurement is not a PDF. Render it in-app instead of
+    // handing the bytes to the browser's PDF viewer.
+    if (document.isTdb) {
+      setTdbDocument(document);
+      return;
+    }
+
     try {
-      const blob = await apiClient.getBlob(`/api/patients/${patientId}/documents/${documentId}`);
+      const blob = await apiClient.getBlob(
+        `/api/patients/${patientId}/documents/${document.documentId}`
+      );
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : t('patients.documents.errors.viewFailed')
+      );
+    }
+  };
+
+  const handleDocumentDownload = async (document: VisitDocumentItem) => {
+    try {
+      await downloadPatientDocument(patientId, document.documentId, document.originalFileName);
     } catch (err) {
       toast.error(
         err instanceof Error && err.message
@@ -400,17 +431,28 @@ const VisitDetailPage: React.FC = () => {
               <ul className="visit-document-list">
                 {visit.documents.map((doc) => (
                   <li key={doc.documentId}>
-                    <button
-                      className="visit-doc-name"
-                      onClick={() => handleDocumentView(doc.documentId)}
-                    >
-                      <MdOutlineDescription size={15} />
-                      {doc.originalFileName}
-                    </button>
-                    <span className="visit-doc-meta">
-                      {new Date(doc.uploadedAt).toLocaleDateString(i18n.language)} ·{' '}
-                      {Math.ceil(doc.fileSize / 1024)} KB
-                    </span>
+                    <div className="visit-doc-main">
+                      <button className="visit-doc-name" onClick={() => handleDocumentView(doc)}>
+                        {doc.isTdb ? <MdTimeline size={15} /> : <MdOutlineDescription size={15} />}
+                        {doc.originalFileName}
+                        {doc.isTdb && <span className="visit-doc-tag">{t('visits.tdbBadge')}</span>}
+                      </button>
+                      <span className="visit-doc-meta">
+                        {new Date(doc.uploadedAt).toLocaleDateString(i18n.language)} ·{' '}
+                        {Math.ceil(doc.fileSize / 1024)} KB
+                      </span>
+                    </div>
+                    {doc.isTdb && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm visit-doc-download"
+                        title={t('visits.tdbDownload')}
+                        onClick={() => void handleDocumentDownload(doc)}
+                      >
+                        <MdDownload size={16} />
+                        {t('visits.tdbDownload')}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -492,6 +534,15 @@ const VisitDetailPage: React.FC = () => {
 
       {reportCaseId !== null && (
         <EvaluationReportModal caseId={reportCaseId} onClose={() => setReportCaseId(null)} />
+      )}
+
+      {tdbDocument && (
+        <TdbViewerModal
+          patientId={patientId}
+          documentId={tdbDocument.documentId}
+          fileName={tdbDocument.originalFileName}
+          onClose={() => setTdbDocument(null)}
+        />
       )}
 
       {showIntakeModal && (

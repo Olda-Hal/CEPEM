@@ -355,7 +355,8 @@
     "reportLoadFailed": "De beoordeling kon niet worden geladen.",
     "unknownDoctor": "Onbekende arts",
     "noFindings": "Geen bevindingen",
-    "noMarkerNote": "Geen beschrijving"
+    "noMarkerNote": "Geen beschrijving",
+    "manuallyEvaluated": "De meting is handmatig als beoordeeld gemarkeerd (zonder twee artsbeoordelingen)."
   },
   "examinations": {
     "title": "Onderzoeken",
@@ -777,7 +778,9 @@
       "examiner": "Beoordelaar",
       "doctor": "Arts",
       "centerAdmin": "Centrumbeheerder",
-      "countryAdmin": "Landbeheerder"
+      "countryAdmin": "Landbeheerder",
+      "admin": "Beheerder",
+      "digitiser": "Digitaliseerder"
     },
     "accessRules": {
       "title": "Toegangsregels: {{name}}",
@@ -1393,7 +1396,14 @@
     "intakeMissingWarning": "Voor dit bezoek is geen inschrijfformulier ingevuld. U kunt het hierboven op de tablet invullen.",
     "intakeMissingBadge": "geen formulier",
     "otherVisits": "Andere bezoeken",
-    "patientSearchPlaceholder": "Patiënten zoeken…"
+    "patientSearchPlaceholder": "Patiënten zoeken…",
+    "tdbViewerTitle": ".tdb-meting – {{fileName}}",
+    "tdbViewFailed": "De meting kon niet worden weergegeven.",
+    "tdbLayers": "{{count}} lagen",
+    "tdbNoise": "Ruis: {{value}}",
+    "tdbReadonlyHint": "Voorbeeld van de meting. Noteer bevindingen in de beoordeling.",
+    "tdbBadge": ".tdb",
+    "tdbDownload": ".tdb downloaden"
   },
   "patientForm": {
     "accuracyConfirmation": "Ik bevestig dat de bovenstaande gegevens correct zijn",
@@ -1532,5 +1542,36 @@
     "reviewWarning": "Het formulier is gelezen, maar handgeschreven waarden moeten handmatig worden gecontroleerd.",
     "notIntake": "Het geüploade bestand lijkt geen CEPEM-intakeformulier te zijn.",
     "failed": "De PDF kon niet worden verwerkt."
+  },
+  "measurements": {
+    "title": "Metingen",
+    "lead": "Bezoeken met geüploade .tdb-bestanden. Klik op een rij om het bezoek te openen.",
+    "searchPlaceholder": "Zoek patiënt of bestand…",
+    "filterLabel": "Beoordelingsstatus",
+    "filter": {
+      "all": "Alles",
+      "evaluated": "Beoordeeld",
+      "notEvaluated": "Niet beoordeeld",
+      "partial": "Gedeeltelijk"
+    },
+    "count": "{{count}} bezoeken",
+    "empty": "Geen metingen voldoen aan het filter.",
+    "loadFailed": "Metingen konden niet worden geladen.",
+    "patient": "Patiënt",
+    "visitDate": "Bezoekdatum",
+    "documents": ".tdb-bestanden",
+    "statusLabel": "Status",
+    "actions": "Acties",
+    "status": {
+      "evaluated": "Beoordeeld",
+      "partial": "Gedeeltelijk",
+      "pending": "Niet beoordeeld"
+    },
+    "manualBadge": "Handmatig beoordeeld",
+    "markConfirm": "Het bezoek van {{name}} als beoordeeld markeren? De meting verdwijnt uit de beoordelingswachtrij.",
+    "markSuccess": "Het bezoek is als beoordeeld gemarkeerd.",
+    "markFailed": "Het bezoek kon niet als beoordeeld worden gemarkeerd.",
+    "markHint": "Sluit de meting zoals twee artsbeoordelingen.",
+    "markEvaluated": "Als beoordeeld markeren"
   }
 }

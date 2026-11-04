@@ -133,6 +133,10 @@ export const EvaluationReportModal: React.FC<EvaluationReportModalProps> = ({
               </span>
             </div>
 
+            {report.isManuallyEvaluated && (
+              <div className="alert alert-info">{t('evaluation.manuallyEvaluated')}</div>
+            )}
+
             <div className="tdb-scan-row">
               {report.tdb.slices.map((slice) => (
                 <TdbSliceCard
