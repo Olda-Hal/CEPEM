@@ -204,7 +204,8 @@ test.describe('TOP 1 flows', () => {
     const detail = (await detailResponse.json()) as {
       formSubmission?: { id: number };
     };
-    expect(detail.formSubmission?.id).toBeGreaterThan(0);
+    console.log('Patient detail keys:', Object.keys(detail));
+    expect(detail.formSubmission?.id, JSON.stringify(detail).slice(0, 600)).toBeGreaterThan(0);
 
     // Visits start from the new patient and are listed back by the API.
     const visitResponse = await request.post(`/api/patients/${patientId}/visits`, {
