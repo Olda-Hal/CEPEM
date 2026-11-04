@@ -79,6 +79,16 @@ if (string.IsNullOrWhiteSpace(databaseApiServiceKey))
         "DatabaseAPI service key is not configured. Set the DatabaseApiServiceKey configuration value or the DATABASE_API_SERVICE_KEY environment variable.");
 }
 
+// AI intake-form digitisation runs in a separate Python service.
+var aiServiceUrl = builder.Configuration["AiServiceUrl"]
+    ?? Environment.GetEnvironmentVariable("AI_SERVICE_URL")
+    ?? "http://ai-service:8000";
+builder.Services.AddHttpClient("AiService", client =>
+{
+    client.BaseAddress = new Uri(aiServiceUrl);
+    client.Timeout = TimeSpan.FromMinutes(3);
+});
+
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
     client.BaseAddress = new Uri(databaseApiUrl);

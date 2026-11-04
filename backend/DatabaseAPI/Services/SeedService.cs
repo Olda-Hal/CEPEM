@@ -56,6 +56,7 @@ namespace DatabaseAPI.Services
             await EnsureRoleExistsAsync("Doctor");
             await EnsureRoleExistsAsync("Center Admin");
             await EnsureRoleExistsAsync("Country Admin");
+            await EnsureRoleExistsAsync("Digitiser");
 
             // The evaluating doctor lands on Vyhodnocování; center admins land
             // on the administration hub (they have no patient agenda). Admins
@@ -399,7 +400,8 @@ namespace DatabaseAPI.Services
             ("evaluations.read", "View evaluation cases (Vyhodnocování)"),
             ("evaluations.write", "Evaluate cases and write recommendations"),
             ("gdpr.manage", "Export, anonymize and manage patient consents"),
-            ("communication.manage", "Browse and edit e-mail/SMS templates and delivery logs")
+            ("communication.manage", "Browse and edit e-mail/SMS templates and delivery logs"),
+            ("intake.digitise", "Read scanned paper intake forms and prefill the digital form")
         };
 
         /// <summary>
@@ -643,6 +645,16 @@ namespace DatabaseAPI.Services
             {
                 "dashboard.read", "hospitals.read",
                 "evaluations.read", "evaluations.write"
+            });
+            // Digitiser turns scanned paper forms into patient records. The
+            // SPA only exposes the PDF upload to this role.
+            await SeedRoleGrantsAsync("Digitiser", new[]
+            {
+                "dashboard.read", "uid.read",
+                "patients.read", "patients.write", "patients.photo.write",
+                "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
+                "intake.digitise"
             });
             await SeedRoleGrantsAsync("Center Admin", new[]
             {

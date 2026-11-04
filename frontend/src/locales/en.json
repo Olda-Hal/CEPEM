@@ -1522,5 +1522,15 @@
     "title": "Page not found",
     "description": "This link does not exist or you do not have access to it.",
     "backHome": "Back to dashboard"
+  },
+  "intakeDigitise": {
+    "title": "Digitise the paper form",
+    "description": "Upload a scanned intake form (PDF). The AI service will try to read it and prefill the fields; please review the values.",
+    "button": "Upload form PDF",
+    "uploading": "Processing PDF…",
+    "success": "The form was read and the fields were prefilled.",
+    "reviewWarning": "The form was read, but handwritten values need a manual review.",
+    "notIntake": "The uploaded file does not look like a CEPEM intake form.",
+    "failed": "The PDF could not be processed."
   }
 }

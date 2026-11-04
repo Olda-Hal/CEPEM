@@ -43,11 +43,14 @@ services:
       - JWT__AccessTokenMinutes=${JWT_ACCESS_TOKEN_MINUTES:-30}
       - JWT__RefreshTokenDays=${JWT_REFRESH_TOKEN_DAYS:-7}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - AI_SERVICE_URL=http://ai-service:8000
       - DatabaseApiUrl=http://database-api:5001
       - DatabaseApiServiceKey=${SERVICE_AUTH_KEY}
       - HEALTHCARE_CORS_ORIGINS=https://${DOMAIN_NAME}
     depends_on:
       database-api:
+        condition: service_healthy
+      ai-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost/health"]
@@ -70,6 +73,27 @@ services:
       timeout: 10s
       retries: 10
       start_period: 120s
+    networks:
+      - cepem_network
+
+  # Paper intake-form digitisation (OCR + optional vision model).
+  ai-service:
+    build:
+      context: ./backend/AIService
+    container_name: cepem_ai_service
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      - TESSERACT_LANG=${TESSERACT_LANG:-ces+eng}
+      - VISION_API_URL=${VISION_API_URL:-}
+      - VISION_API_KEY=${VISION_API_KEY:-}
+      - VISION_MODEL=${VISION_MODEL:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - cepem_network
 

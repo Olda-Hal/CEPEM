@@ -213,6 +213,25 @@ CLAMAV_FAIL_OPEN=false   # reject uploads while clamd is unreachable
 Set `CLAMAV_ENABLED=false` only if you deliberately run without scanning.
 Uploads then skip the scan; magic-byte validation still applies.
 
+## Paper intake digitisation (AI service)
+
+`ai-service` renders uploaded PDFs with PyMuPDF, reads the printed layout with
+Tesseract (`ces+eng`) and detects ticked boxes with OpenCV. A user with the
+`Digitiser` role sees **Upload form PDF** above every intake-form variant;
+the extracted values are only a prefill and must be confirmed by the user.
+
+For handwritten fields, configure any OpenAI-compatible vision endpoint:
+
+```bash
+VISION_API_URL=https://api.example.com/v1
+VISION_API_KEY=...
+VISION_MODEL=gpt-4o-mini
+```
+
+The service is internal-only (no published port). Without a vision endpoint
+it stays fully local; handwritten values are returned with a review warning.
+`examples/` contains sample scans and is intentionally git-ignored.
+
 ## Alerting and error tracking
 
 Prometheus evaluates `deploy/prometheus/alerts.yml` (service down, failing

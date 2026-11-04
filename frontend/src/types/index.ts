@@ -976,3 +976,13 @@ export interface VisitDetail {
   evaluations: VisitEvaluationSummary[];
   intakeForm?: string | null;
 }
+
+/** Result of the paper intake-form digitisation (AI service). */
+export interface IntakeDigitisationResult {
+  isIntakeForm: boolean;
+  confidence: number;
+  language: string;
+  fields: Record<string, string | number | boolean | null>;
+  warnings: string[];
+  text?: string;
+}

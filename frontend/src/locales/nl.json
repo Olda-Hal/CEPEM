@@ -1522,5 +1522,15 @@
     "title": "Pagina niet gevonden",
     "description": "Deze link bestaat niet of u heeft er geen toegang toe.",
     "backHome": "Terug naar dashboard"
+  },
+  "intakeDigitise": {
+    "title": "Papieren formulier digitaliseren",
+    "description": "Upload een gescand intakeformulier (PDF). De AI-service leest het en vult de velden voor; controleer de waarden.",
+    "button": "Formulier-PDF uploaden",
+    "uploading": "PDF verwerken…",
+    "success": "Het formulier is gelezen en de velden zijn voorgevuld.",
+    "reviewWarning": "Het formulier is gelezen, maar handgeschreven waarden moeten handmatig worden gecontroleerd.",
+    "notIntake": "Het geüploade bestand lijkt geen CEPEM-intakeformulier te zijn.",
+    "failed": "De PDF kon niet worden verwerkt."
   }
 }

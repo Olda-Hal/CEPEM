@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { DigitiseIntakeButton } from './intake/DigitiseIntakeButton';
 
 export interface PatientFormData {
   firstName: string;
@@ -256,8 +257,25 @@ export const PatientFormFields: React.FC<PatientFormFieldsProps> = ({
   const { t, i18n } = useTranslation();
   const gdprHref = `/gdpr?lang=${(i18n.language || 'cs').split('-')[0]}`;
 
+  const applyDigitisedFields = (fields: Record<string, unknown>) => {
+    Object.entries(fields).forEach(([key, value]) => {
+      if (!(key in form) || value === null || value === undefined || value === '') return;
+
+      const current = form[key as keyof PatientFormData];
+      if (typeof current === 'boolean') {
+        onChange(
+          key as keyof PatientFormData,
+          value === true || value === 'true' || value === 'A' || value === 'a'
+        );
+      } else {
+        onChange(key as keyof PatientFormData, String(value));
+      }
+    });
+  };
+
   return (
     <>
+      {!disabled && <DigitiseIntakeButton onExtracted={applyDigitisedFields} />}
       {/* Základní údaje */}
       <section className={className}>
         <h2>{t('patientForm.basicInfo')}</h2>

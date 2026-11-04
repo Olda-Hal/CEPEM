@@ -1522,5 +1522,15 @@
     "title": "Stránka nenalezena",
     "description": "Tento odkaz neexistuje nebo na něj nemáte přístup.",
     "backHome": "Zpět na dashboard"
+  },
+  "intakeDigitise": {
+    "title": "Digitalizace papírového formuláře",
+    "description": "Nahrajte naskenovaný vstupní formulář (PDF). AI služba se jej pokusí přečíst a předvyplnit pole; údaje poté zkontrolujte.",
+    "button": "Nahrát PDF formuláře",
+    "uploading": "Zpracovávám PDF…",
+    "success": "Formulář byl přečten a pole předvyplněna.",
+    "reviewWarning": "Formulář byl přečten, ale ručně psané údaje je nutné zkontrolovat.",
+    "notIntake": "Nahraný soubor nevypadá jako vstupní formulář CEPEM.",
+    "failed": "PDF se nepodařilo zpracovat."
   }
 }
