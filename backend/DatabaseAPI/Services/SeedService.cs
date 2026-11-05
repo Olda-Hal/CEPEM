@@ -52,10 +52,15 @@ namespace DatabaseAPI.Services
         private async Task SeedRolesAsync()
         {
             await EnsureRoleExistsAsync("SysAdmin");
+            // "Admin" is a full-access operator without the system-only area
+            // (role management, tests, audit log, permissions). From /admin it
+            // opens the operational overview, GDPR and communication templates.
+            await EnsureRoleExistsAsync("Admin");
             await EnsureRoleExistsAsync("Examiner");
             await EnsureRoleExistsAsync("Doctor");
             await EnsureRoleExistsAsync("Center Admin");
             await EnsureRoleExistsAsync("Country Admin");
+            await EnsureRoleExistsAsync("Digitiser");
 
             // The evaluating doctor lands on Vyhodnocování; center admins land
             // on the administration hub (they have no patient agenda). Admins
@@ -171,12 +176,21 @@ namespace DatabaseAPI.Services
             }
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
+            // Production keeps the forced first-login password change. CI/E2E
+            // can opt out with ADMIN_PASSWORD_CHANGE_REQUIRED=false.
+            var requirePasswordChange = !string.Equals(
+                Environment.GetEnvironmentVariable("ADMIN_PASSWORD_CHANGE_REQUIRED"),
+                "false",
+                StringComparison.OrdinalIgnoreCase);
+
             var adminEmployee = new Employee
             {
                 PersonId = adminPerson.Id,
                 PasswordHash = passwordHash,
                 Salt = "", // BCrypt doesn't need separate salt
-                PasswordExpiration = new DateTime(2000, 1, 1), // Old date to force password change
+                PasswordExpiration = requirePasswordChange
+                    ? new DateTime(2000, 1, 1)
+                    : DateTime.UtcNow.AddDays(90),
                 LastLoginAt = null
             };
 
@@ -390,7 +404,8 @@ namespace DatabaseAPI.Services
             ("evaluations.read", "View evaluation cases (Vyhodnocování)"),
             ("evaluations.write", "Evaluate cases and write recommendations"),
             ("gdpr.manage", "Export, anonymize and manage patient consents"),
-            ("communication.manage", "Browse and edit e-mail/SMS templates and delivery logs")
+            ("communication.manage", "Browse and edit e-mail/SMS templates and delivery logs"),
+            ("intake.digitise", "Read scanned paper intake forms and prefill the digital form")
         };
 
         /// <summary>
@@ -619,6 +634,21 @@ namespace DatabaseAPI.Services
             await _context.SaveChangesAsync();
 
             await SeedRoleGrantsAsync("SysAdmin", PermissionCatalog.Select(p => p.Code).ToArray());
+
+            // Admin: everything except the system-only administration area.
+            // GDPR and communication stay available because they are part of
+            // the operator's /admin hub; the audit log is intentionally not.
+            string[] adminOnlyPermissions =
+            {
+                "tests.read", "audit.read", "roles.manage", "permissions.manage"
+            };
+            await SeedRoleGrantsAsync(
+                "Admin",
+                PermissionCatalog
+                    .Select(p => p.Code)
+                    .Where(code => !adminOnlyPermissions.Contains(code))
+                    .ToArray());
+            await RevokeRoleGrantsAsync("Admin", adminOnlyPermissions);
             // Examiner works only with the patient agenda (no employee or
             // evaluation administration).
             await SeedRoleGrantsAsync("Examiner", new[]
@@ -635,10 +665,25 @@ namespace DatabaseAPI.Services
                 "dashboard.read", "hospitals.read",
                 "evaluations.read", "evaluations.write"
             });
+            // Digitiser turns scanned paper forms into patient records. The
+            // SPA only exposes the PDF upload to this role.
+            await SeedRoleGrantsAsync("Digitiser", new[]
+            {
+                "dashboard.read", "uid.read",
+                "patients.read", "patients.write", "patients.photo.write",
+                "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
+                "intake.digitise"
+            });
             await SeedRoleGrantsAsync("Center Admin", new[]
             {
                 "dashboard.read", "uid.read",
                 "employees.read", "employees.create", "employees.manage",
+                // Center admins have the same patient agenda as country admins
+                // except for cross-center administration.
+                "patients.read", "patients.write", "patients.photo.write",
+                "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
                 "hospitals.read", "hospitals.write",
                 "examinationrooms.read", "examinationrooms.write",
                 "reservations.read", "reservations.write",
@@ -650,6 +695,7 @@ namespace DatabaseAPI.Services
                 "employees.read", "employees.create", "employees.manage",
                 "patients.read", "patients.write", "patients.photo.write",
                 "patients.documents.read", "patients.documents.write",
+                "events.read", "events.write",
                 "hospitals.read", "hospitals.write",
                 "examinationtypes.read", "examinationtypes.write",
                 "examinationrooms.read", "examinationrooms.write",

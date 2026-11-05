@@ -33,7 +33,7 @@ export const PatientEventsSection: React.FC<PatientEventsSectionProps> = ({
         </h2>
         <div className="button-group">
           <button className="add-event-btn" onClick={onAddIntakeForm}>
-            📋 Vstupní Formulář
+            📋 {t('patients.intakeForm')}
           </button>
           <button className="add-event-btn" onClick={onGenerateIntakeLink}>
             {t('patients.generateIntakeLink')}

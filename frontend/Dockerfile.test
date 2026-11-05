@@ -1,4 +1,4 @@
-FROM node:20-alpine AS test
+FROM node:22-alpine AS test
 
 WORKDIR /app
 
@@ -9,12 +9,11 @@ RUN npm ci --legacy-peer-deps --no-audit --no-fund
 # Copy source code
 COPY . .
 
-# Run tests with coverage - ignore thresholds to prevent build failures
-RUN npm run test:coverage:tolerant || echo "Tests completed with possible failures - continuing build"
+# Fail the build on any failing test — no swallowing of the exit code.
+RUN npm run test:coverage -- --reporter=default --reporter=junit --outputFile=junit.xml
 
-# Copy test results for output
-FROM alpine:latest
+FROM alpine:3.20
 WORKDIR /results
 COPY --from=test /app/coverage ./coverage
-COPY --from=test /app/junit.xml ./
-CMD ["sh", "-c", "cp -r . /results/frontend/ 2>/dev/null || true; cat junit.xml 2>/dev/null || true; find coverage -name '*.json' -exec cat {} \\; 2>/dev/null || true"]
+COPY --from=test /app/junit.xml ./junit.xml
+CMD ["sh", "-c", "mkdir -p /results/frontend && cp -r /results/coverage /results/frontend/ && cp /results/junit.xml /results/frontend/junit.xml"]

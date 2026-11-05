@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { useAuth } from '../contexts/AuthContext';
-import { hasRole, isAdmin } from '../utils/roles';
+import { hasRole, isAdmin, isSysAdmin } from '../utils/roles';
 
 interface RoleRouteProps {
   /** Role names, any of which grants access (SysAdmin/Admin always pass) */
@@ -11,6 +11,8 @@ interface RoleRouteProps {
   excludeRoles?: string[];
   /** Allow every authenticated user not covered by excludeRoles */
   allowAny?: boolean;
+  /** System-only pages: only SysAdmin passes, Admin is rejected. */
+  sysAdminOnly?: boolean;
   children: React.ReactNode;
 }
 
@@ -23,9 +25,18 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({
   roles,
   excludeRoles = [],
   allowAny = false,
+  sysAdminOnly = false,
   children
 }) => {
   const { user } = useAuth();
+
+  if (sysAdminOnly) {
+    return (
+      <ProtectedRoute>
+        {isSysAdmin(user) ? children : <Navigate to="/dashboard" replace />}
+      </ProtectedRoute>
+    );
+  }
 
   const admin = isAdmin(user);
   const explicitlyAllowed = roles.some((role) => hasRole(user, role));

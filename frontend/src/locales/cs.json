@@ -104,7 +104,10 @@
     "loadingPatientDetail": "Chyba při načítání detailu pacienta. Zkuste to prosím znovu.",
     "patientNotFound": "Pacient nebyl nalezen",
     "creatingExaminationType": "Chyba při vytváření typu vyšetření",
-    "deletingExaminationType": "Chyba při mazání typu vyšetření"
+    "deletingExaminationType": "Chyba při mazání typu vyšetření",
+    "boundaryTitle": "Něco se pokazilo",
+    "boundaryDescription": "Stránku se nepodařilo zobrazit. Zkuste ji prosím načíst znovu.",
+    "reload": "Načíst znovu"
   },
   "reservations": {
     "title": "Rezervace",
@@ -227,7 +230,15 @@
       "email": "Email",
       "examinationType": "Typ vyšetření",
       "selectExaminationType": "Vyberte typ vyšetření",
-      "blockButton": "Blokovat vybraný slot"
+      "blockButton": "Blokovat vybraný slot",
+      "patientMode": "Způsob zadání pacienta",
+      "existingPatient": "Existující pacient",
+      "newPatient": "Nový pacient",
+      "searchPatient": "Najít pacienta",
+      "searchPatientPlaceholder": "Jméno, UID, e-mail nebo telefon…",
+      "noPatients": "Žádný pacient nenalezen.",
+      "selectedPatient": "Vybraný pacient",
+      "clearSelection": "Zrušit výběr"
     },
     "overview": {
       "title": "Přehled dne",
@@ -287,7 +298,8 @@
       "updateFailed": "Chyba při úpravě slotu.",
       "releaseFailed": "Chyba při uvolnění slotu.",
       "deleteFailed": "Chyba při mazání slotu.",
-      "intakeLinkFailed": "Nepodařilo se otevřít vstupní formulář."
+      "intakeLinkFailed": "Nepodařilo se otevřít vstupní formulář.",
+      "selectPatient": "Vyberte pacienta."
     }
   },
   "evaluation": {
@@ -343,7 +355,8 @@
     "reportLoadFailed": "Vyhodnocení se nepodařilo načíst.",
     "unknownDoctor": "Neznámý lékař",
     "noFindings": "Bez nálezů",
-    "noMarkerNote": "Bez popisu"
+    "noMarkerNote": "Bez popisu",
+    "manuallyEvaluated": "Měření bylo označeno jako vyhodnocené ručně (bez dvou lékařských posudků)."
   },
   "examinations": {
     "title": "Vyšetření",
@@ -401,7 +414,11 @@
     "confirmDelete": "Jste si jisti?",
     "search": "Hledat",
     "previous": "Předchozí",
-    "next": "Další"
+    "next": "Další",
+    "close": "Zavřít",
+    "noData": "Žádná data",
+    "refresh": "Obnovit",
+    "passwordRequirements": "Heslo musí mít alespoň 8 znaků a obsahovat alespoň jedno písmeno a jednu číslici."
   },
   "intakeLink": {
     "pageTitle": "Vstupní formulář",
@@ -413,7 +430,6 @@
     "gdprRequired": "Musíte souhlasit se zpracováním osobních údajů (GDPR).",
     "gdprUnavailable": "Znění GDPR zatím není zveřejněné. Kontaktujte prosím kliniku.",
     "termsRequired": "Musíte souhlasit se smluvními podmínkami.",
-    "signatureRequired": "Podpis je povinný.",
     "submitFailed": "Nepodařilo se odeslat formulář.",
     "thankYouTitle": "Děkujeme",
     "thankYouDescription": "Formulář byl úspěšně odeslán.",
@@ -441,7 +457,8 @@
     "coverageReport": "Zpráva o Pokrytí",
     "autoRefresh": "Automatické Obnovení",
     "refresh": "Obnovit",
-    "description": "Zobrazit výsledky testů a reporty pokrytí"
+    "description": "Zobrazit výsledky testů a reporty pokrytí",
+    "failed": "Selhalo"
   },
   "passwordChange": {
     "title": "Změna hesla",
@@ -547,7 +564,8 @@
       "insuranceNumberInvalid": "Číslo pojišťovny musí obsahovat pouze číslice",
       "emailInvalid": "Neplatný formát emailové adresy",
       "phoneInvalid": "Neplatný formát telefonního čísla",
-      "createFailed": "Nepodařilo se vytvořit pacienta"
+      "createFailed": "Nepodařilo se vytvořit pacienta",
+      "nameAndBirthDateRequired": "Vyplňte jméno, příjmení a datum narození"
     },
     "regenerateUid": "Vygenerovat nové UID",
     "photo": "Fotografie",
@@ -558,7 +576,8 @@
       "capture": "Vyfotit",
       "retake": "Vyfotit znovu",
       "confirm": "Použít tuto fotku",
-      "accessDenied": "Přístup ke kameře byl odepřen. Povolte přístup v nastavení prohlížeče."
+      "accessDenied": "Přístup ke kameře byl odepřen. Povolte přístup v nastavení prohlížeče.",
+      "startFailed": "Nepodařilo se spustit kameru. Zkontrolujte oprávnění."
     },
     "patientDetail": "Detail pacienta",
     "yearsOld": "let",
@@ -657,6 +676,57 @@
       "upload": "Nahrát dokument",
       "empty": "Zatím žádné dokumenty.",
       "uploadSuccess": "Dokument nahrán"
+    },
+    "addPatientFormTitle": "Vstupní formulář klienta",
+    "photoPreview": "Náhled fotky",
+    "capturedPhoto": "Vyfocený pacient",
+    "photoAlt": "Pacient",
+    "commentSaveFailed": "Nepodařilo se uložit komentář",
+    "photoUploadFailed": "Nepodařilo se nahrát fotografii",
+    "intakeChanges": {
+      "title": "Navržené změny z intake formuláře",
+      "description": "Změny z veřejného odkazu čekají na schválení. Karta pacienta zůstává beze změny.",
+      "approve": "Schválit",
+      "reject": "Zamítnout",
+      "failed": "Změnu se nepodařilo zpracovat."
+    },
+    "merge": {
+      "button": "Sloučit duplicitu",
+      "title": "Sloučit duplicitního pacienta",
+      "description": "Všechna data pacienta {{name}} budou přesunuta na vybranou kartu. Zdrojová karta bude skryta. Tuto akci nelze vrátit.",
+      "searchTarget": "Vyberte kartu, která zůstane",
+      "searchPlaceholder": "Jméno, UID, e-mail nebo telefon…",
+      "noPatients": "Žádný pacient nenalezen.",
+      "targetSelected": "Cílová karta",
+      "previewDescription": "Přesunou se tyto záznamy:",
+      "confirm": "Sloučit pacienta",
+      "previewFailed": "Náhled sloučení se nepodařilo načíst.",
+      "failed": "Sloučení se nepodařilo.",
+      "counts": {
+        "events": "Události: {{count}}",
+        "visits": "Návštěvy: {{count}}",
+        "documents": "Dokumenty: {{count}}",
+        "formSubmissions": "Formuláře: {{count}}",
+        "consents": "Souhlasy: {{count}}",
+        "evaluationCases": "Měření: {{count}}",
+        "reservationSlots": "Rezervační sloty: {{count}}",
+        "emailLogs": "E-mailové logy: {{count}}"
+      }
+    },
+    "export": "Export CSV",
+    "exportFailed": "Export se nepodařilo stáhnout.",
+    "filters": {
+      "sortBy": "Řadit podle",
+      "sortLastName": "Příjmení",
+      "sortFirstName": "Jméno",
+      "sortBirthDate": "Datum narození",
+      "sortOrder": "Pořadí",
+      "ascending": "Vzestupně",
+      "descending": "Sestupně",
+      "status": "Stav",
+      "allStatuses": "Všechny",
+      "center": "Centrum",
+      "allCenters": "Všechna centra"
     }
   },
   "admin": {
@@ -708,7 +778,9 @@
       "examiner": "Vyšetřující",
       "doctor": "Doktor",
       "centerAdmin": "Administrátor centra",
-      "countryAdmin": "Administrátor země"
+      "countryAdmin": "Administrátor země",
+      "admin": "Admin",
+      "digitiser": "Digitalizátor"
     },
     "accessRules": {
       "title": "Přístupová pravidla: {{name}}",
@@ -982,20 +1054,9 @@
     "examinationDocumentsSelected_other": "Vybráno {{count}} souborů k vyšetření",
     "uploadingDocuments": "Nahrávání dokumentů...",
     "groupUploadNotSupported": "Nahrávání dokumentů k vyšetření je dostupné pouze mimo skupinový režim.",
-    "addToList": "Přidat \"{{name}}\" do seznamu"
-  },
-  "themes": {
-    "lightThemes": "Světlé motivy",
-    "darkThemes": "Tmavé motivy",
-    "aurora": "Polární záře",
-    "nebulaBlue": "Modrá mlhovina",
-    "emeraldDawn": "Smaragdový úsvit",
-    "mysticViolet": "Mystická fialová",
-    "obsidian": "Obsidián",
-    "cyberAzure": "Kybernet azur",
-    "forestShadow": "Lesní stín",
-    "cosmicPurple": "Kosmická purpur",
-    "crimsonNight": "Karmínová noc"
+    "addToList": "Přidat \"{{name}}\" do seznamu",
+    "newIntakeForm": "Nový Vstupní Formulář",
+    "examinationDocumentsSelected": "Vybrané dokumenty vyšetření: {{count}}"
   },
   "activityLog": {
     "title": "Audit log",
@@ -1029,7 +1090,11 @@
     "versionUnknown": "verze neznámá",
     "impersonationActive": "Náhled",
     "impersonationDetail": "Prohlížíte systém jako {{name}} (přihlášen správce {{admin}}).",
-    "stopImpersonation": "Ukončit náhled"
+    "stopImpersonation": "Ukončit náhled",
+    "openMenu": "Otevřít menu",
+    "closeMenu": "Zavřít menu",
+    "switchToLight": "Přepnout na světlý režim",
+    "switchToDark": "Přepnout na tmavý režim"
   },
   "administration": {
     "title": "Administrativa",
@@ -1091,7 +1156,10 @@
     "searchPlaceholder": "Hledat v kódu nebo textu…",
     "channel": "Kanál",
     "allChannels": "Všechny kanály",
-    "channels": { "email": "E-mail", "sms": "SMS" },
+    "channels": {
+      "email": "E-mail",
+      "sms": "SMS"
+    },
     "code": "Kód",
     "allCodes": "Všechny kódy",
     "codes": {
@@ -1108,7 +1176,11 @@
     "allLanguages": "Všechny jazyky",
     "scope": "Rozsah",
     "allScopes": "Všechny rozsahy",
-    "scopes": { "Global": "Globální", "Country": "Země", "Center": "Centrum" },
+    "scopes": {
+      "Global": "Globální",
+      "Country": "Země",
+      "Center": "Centrum"
+    },
     "country": "Země",
     "center": "Centrum",
     "selectCenter": "Vyberte centrum",
@@ -1324,7 +1396,14 @@
     "intakeMissingWarning": "Formulář k této návštěvě nebyl vyplněn. Můžete ho vyplnit na tabletu výše.",
     "intakeMissingBadge": "bez formuláře",
     "otherVisits": "Další návštěvy",
-    "patientSearchPlaceholder": "Hledat pacienta…"
+    "patientSearchPlaceholder": "Hledat pacienta…",
+    "tdbViewerTitle": "Měření .tdb – {{fileName}}",
+    "tdbViewFailed": "Měření se nepodařilo zobrazit.",
+    "tdbLayers": "{{count}} vrstev",
+    "tdbNoise": "Šum: {{value}}",
+    "tdbReadonlyHint": "Náhled měření. Případné nálezy zapisujte ve Vyhodnocování.",
+    "tdbBadge": ".tdb",
+    "tdbDownload": "Stáhnout .tdb"
   },
   "patientForm": {
     "accuracyConfirmation": "Potvrzuji správnost vyplnění výše uvedených údajů",
@@ -1434,5 +1513,65 @@
       "en": "English",
       "nl": "Nizozemština"
     }
+  },
+  "editPatient": {
+    "structuredSubmission": "Strukturovaná data formuláře (všechna pole)",
+    "submissionId": "ID formuláře",
+    "patientId": "ID pacienta",
+    "eventId": "ID události",
+    "submittedAt": "Odesláno",
+    "medication": "Léky",
+    "lifestyle": "Životní styl",
+    "reproductiveHealth": "Reprodukční zdraví",
+    "consent": "Souhlasy",
+    "signatureVectorRaw": "Surová data podpisu",
+    "sicknessHistories": "Historie nemocí",
+    "rawPatientJson": "Surová JSON data pacienta (kompletní payload)"
+  },
+  "notFound": {
+    "title": "Stránka nenalezena",
+    "description": "Tento odkaz neexistuje nebo na něj nemáte přístup.",
+    "backHome": "Zpět na dashboard"
+  },
+  "intakeDigitise": {
+    "title": "Digitalizace papírového formuláře",
+    "description": "Nahrajte naskenovaný vstupní formulář (PDF). AI služba se jej pokusí přečíst a předvyplnit pole; údaje poté zkontrolujte.",
+    "button": "Nahrát PDF formuláře",
+    "uploading": "Zpracovávám PDF…",
+    "success": "Formulář byl přečten a pole předvyplněna.",
+    "reviewWarning": "Formulář byl přečten, ale ručně psané údaje je nutné zkontrolovat.",
+    "notIntake": "Nahraný soubor nevypadá jako vstupní formulář CEPEM.",
+    "failed": "PDF se nepodařilo zpracovat."
+  },
+  "measurements": {
+    "title": "Měření",
+    "lead": "Návštěvy s nahranými soubory .tdb. Kliknutím na řádek otevřete návštěvu.",
+    "searchPlaceholder": "Hledat pacienta nebo soubor…",
+    "filterLabel": "Stav vyhodnocení",
+    "filter": {
+      "all": "Vše",
+      "evaluated": "Vyhodnocené",
+      "notEvaluated": "Nevyhodnocené",
+      "partial": "Částečně"
+    },
+    "count": "{{count}} návštěv",
+    "empty": "Žádná měření neodpovídají filtru.",
+    "loadFailed": "Měření se nepodařilo načíst.",
+    "patient": "Pacient",
+    "visitDate": "Datum návštěvy",
+    "documents": "Soubory .tdb",
+    "statusLabel": "Stav",
+    "actions": "Akce",
+    "status": {
+      "evaluated": "Vyhodnoceno",
+      "partial": "Částečně",
+      "pending": "Nevyhodnoceno"
+    },
+    "manualBadge": "Ručně vyhodnoceno",
+    "markConfirm": "Označit návštěvu {{name}} jako vyhodnocenou? Měření zmizí z fronty Vyhodnocování.",
+    "markSuccess": "Návštěva byla označena jako vyhodnocená.",
+    "markFailed": "Návštěvu se nepodařilo označit jako vyhodnocenou.",
+    "markHint": "Uzavře měření stejně jako vyhodnocení dvěma lékaři.",
+    "markEvaluated": "Označit jako vyhodnocené"
   }
 }

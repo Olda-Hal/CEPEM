@@ -1,0 +1,24 @@
+.digitise-intake {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px dashed var(--color-border-focus);
+  border-radius: 0.6rem;
+  background: var(--color-primary-light);
+}
+
+.digitise-intake p {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+@media (width <= 700px) {
+  .digitise-intake {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

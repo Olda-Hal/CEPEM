@@ -73,6 +73,7 @@ public class DatabaseContext : DbContext
     public DbSet<FormSubmissionReproductiveHealth> FormSubmissionReproductiveHealths { get; set; }
     public DbSet<FormSubmissionConsent> FormSubmissionConsents { get; set; }
     public DbSet<SicknessHistory> SicknessHistories { get; set; }
+    public DbSet<IntakeChangeRequest> IntakeChangeRequests { get; set; }
 
     // Contact entities
     public DbSet<Contact> Contacts { get; set; }
@@ -203,7 +204,22 @@ public class DatabaseContext : DbContext
         modelBuilder.Entity<VisitDocument>()
             .HasIndex(vd => new { vd.VisitId, vd.PatientDocumentId })
             .IsUnique();
-            
+
+        modelBuilder.Entity<IntakeChangeRequest>()
+            .HasOne(change => change.Patient)
+            .WithMany()
+            .HasForeignKey(change => change.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<IntakeChangeRequest>()
+            .HasOne(change => change.IntakeEvent)
+            .WithMany()
+            .HasForeignKey(change => change.IntakeEventId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<IntakeChangeRequest>()
+            .HasIndex(change => new { change.PatientId, change.Status });
+
         // Patient -> PatientDocument (1:many)
         modelBuilder.Entity<PatientDocument>()
             .HasOne(pd => pd.Patient)

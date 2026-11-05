@@ -30,6 +30,7 @@ WORKDIR /app
 # configured tool is missing, so this is not a hard runtime requirement.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wget \
+        gosu \
         poppler-utils \
         tesseract-ocr \
         tesseract-ocr-ces \
@@ -40,6 +41,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=publish /app/publish .
+COPY DatabaseAPI/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port
 EXPOSE 80
@@ -49,4 +52,4 @@ EXPOSE 5001
 ENV ASPNETCORE_URLS=http://+:5001
 ENV ASPNETCORE_ENVIRONMENT=Development
 
-ENTRYPOINT ["/wait-for-it.sh", "mysql:3306", "--timeout=60", "--", "dotnet", "DatabaseAPI.dll"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

@@ -2,6 +2,7 @@ import BaseModal from './BaseModal';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { isValidPassword } from '../utils/passwordPolicy';
 import './PasswordChangeModal.css';
 
 interface PasswordChangeModalProps {
@@ -32,8 +33,8 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
     setLoading(true);
 
     // Validation
-    if (newPassword.length < 8) {
-      setError(t('passwordChange.passwordMinLength'));
+    if (!isValidPassword(newPassword)) {
+      setError(t('common.passwordRequirements'));
       setLoading(false);
       return;
     }

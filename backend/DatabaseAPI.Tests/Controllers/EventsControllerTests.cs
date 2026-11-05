@@ -51,6 +51,8 @@ public class EventsControllerTests : IDisposable
             new EventOptionsService(_context),
             _linkService,
             _visitServiceMock.Object,
+            new PatientMasterDataService(_context),
+            new PatientService(_context, uidMock.Object, actorCountryMock.Object),
             NullLogger<EventsController>.Instance);
     }
 
@@ -504,6 +506,30 @@ public class EventsControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task SubmitIntakeFormByLink_WithChangedMasterData_QueuesApproval()
+    {
+        var person = SeedPerson(firstName: "Eva", lastName: "Kralova");
+        SeedEventType();
+        var (token, _) = await CreateValidLink(person);
+
+        var result = await _controller.SubmitIntakeFormByLink(token, new CreateIntakeFormEventRequest
+        {
+            DateOfBirth = new DateTime(1990, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            FirstName = "Evicka",
+            Email = "new@example.com",
+            GdprAccepted = true
+        });
+
+        Assert.Null(result.Result);
+        var change = await _context.IntakeChangeRequests.SingleAsync();
+        Assert.Equal(IntakeChangeStatuses.Pending, change.Status);
+        Assert.Contains("Evicka", change.ChangesJson);
+
+        var unchanged = await _context.Persons.SingleAsync(entry => entry.Id == person.Id);
+        Assert.Equal("Eva", unchanged.FirstName);
+    }
+
+    [Fact]
     public async Task SubmitIntakeFormByLink_WithoutGdprConsent_ReturnsBadRequest()
     {
         var person = SeedPerson();
@@ -701,5 +727,40 @@ public class EventsControllerTests : IDisposable
         Assert.Equal("2021", info.Prefill.CovidWhen);
         Assert.True(info.Prefill.CovidVaccine);
         Assert.Equal("note", info.Prefill.AdditionalHealthInfo);
+    }
+
+    [Fact]
+    public async Task CreatePatientWithIntake_RejectsAnIdenticalLivePatient()
+    {
+        // Simulates a retried "add patient" submission: the first request may
+        // have committed even though the browser showed an error.
+        var person = SeedPerson("Jana", "Novakova", "00000077");
+        var existing = SeedPatient(person);
+        var patientCount = _context.Patients.Count();
+
+        var result = await _controller.CreatePatientWithIntake(new CreatePatientWithIntakeRequest
+        {
+            Patient = new CreatePatientRequest
+            {
+                FirstName = "Jana",
+                LastName = "Novakova",
+                BirthDate = new DateTime(1980, 1, 1),
+                Gender = "F"
+            },
+            Intake = new CreateIntakeFormEventRequest
+            {
+                ConfirmAccuracy = true,
+                GdprAccepted = true,
+                TermsAccepted = true
+            }
+        });
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result.Result);
+        var existingId = conflict.Value!
+            .GetType()
+            .GetProperty("existingPatientId")!
+            .GetValue(conflict.Value);
+        Assert.Equal(existing.Id, existingId);
+        Assert.Equal(patientCount, _context.Patients.Count());
     }
 }

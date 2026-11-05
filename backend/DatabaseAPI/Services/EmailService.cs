@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using Cepem.Shared;
 using DatabaseAPI.DatabaseModels;
 
 namespace DatabaseAPI.Services;
@@ -44,15 +45,18 @@ public class EmailService : IEmailService
     private readonly SmtpOptions _options;
     private readonly IEmailLogWriter _emailLogWriter;
     private readonly ILogger<EmailService> _logger;
+    private readonly IHostEnvironment? _environment;
 
     public EmailService(
         ILogger<EmailService> logger,
         Microsoft.Extensions.Options.IOptions<SmtpOptions> options,
-        IEmailLogWriter emailLogWriter)
+        IEmailLogWriter emailLogWriter,
+        IHostEnvironment? environment = null)
     {
         _logger = logger;
         _options = options.Value;
         _emailLogWriter = emailLogWriter;
+        _environment = environment;
     }
 
     public bool IsConfigured => _options.IsConfigured;
@@ -110,10 +114,21 @@ public class EmailService : IEmailService
         if (!IsConfigured)
         {
             // Development/CI convenience: with no SMTP configured the message
-            // (including its link) still lands in the container log.
-            _logger.LogWarning(
-                "SMTP is not configured – e-mail to {Email} ({Subject}):\n{Body}",
-                toEmail, subject, body);
+            // (including reset/intake links) lands in the container log. In
+            // other environments the body is suppressed so tokens and PII do
+            // not leak into production logs.
+            if (_environment?.IsDevelopment() == true)
+            {
+                _logger.LogWarning(
+                    "SMTP is not configured – e-mail to {Email} ({Subject}):\n{Body}",
+                    toEmail, subject, body);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "SMTP is not configured – e-mail to {Email} ({Subject}) was not sent; body suppressed",
+                    PiiRedactor.MaskEmail(toEmail), subject);
+            }
 
             await _emailLogWriter.WriteAsync(
                 toEmail, subject, EmailLogStatuses.LoggedOnly,
@@ -143,7 +158,8 @@ public class EmailService : IEmailService
             }
 
             await client.SendMailAsync(message);
-            _logger.LogInformation("E-mail sent to {Email} ({Subject})", toEmail, subject);
+            _logger.LogInformation("E-mail sent to {Email} ({Subject})",
+                PiiRedactor.MaskEmail(toEmail), subject);
 
             await _emailLogWriter.WriteAsync(
                 toEmail, subject, EmailLogStatuses.Sent, null, context);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CreateEmployeeRequest, Hospital, Role } from '../types';
 import { apiClient } from '../utils/api';
+import { isValidPassword } from '../utils/passwordPolicy';
 import { normalizeCountryCode } from '../utils/countryScope';
 import BaseModal from './BaseModal';
 import SearchableMultiSelect from './SearchableMultiSelect';
@@ -86,6 +87,12 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
     setLoading(true);
     setError('');
 
+    if (!isValidPassword(formData.password)) {
+      setError(t('common.passwordRequirements'));
+      setLoading(false);
+      return;
+    }
+
     try {
       await apiClient.post('/api/auth/create-employee', formData);
       onEmployeeCreated();
@@ -120,10 +127,12 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
       SysAdmin: 'admin.roleNames.sysAdmin',
+      Admin: 'admin.roleNames.admin',
       Examiner: 'admin.roleNames.examiner',
       Doctor: 'admin.roleNames.doctor',
       'Center Admin': 'admin.roleNames.centerAdmin',
-      'Country Admin': 'admin.roleNames.countryAdmin'
+      'Country Admin': 'admin.roleNames.countryAdmin',
+      Digitiser: 'admin.roleNames.digitiser'
     };
 
     const key = keyMap[roleName];

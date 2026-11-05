@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Cepem.Shared;
 using HealthcareAPI.Models;
 using HealthcareAPI.Services;
 using HealthcareAPI.Middleware;
@@ -44,6 +45,19 @@ namespace HealthcareAPI.Controllers
                 // Return specific error message for deactivated accounts or invalid credentials
                 return Unauthorized(ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Exchange the long-lived refresh token for a fresh access token.
+        /// Access tokens are short-lived; the refresh token stays revocable
+        /// through the same ACL version as the access token.
+        /// </summary>
+        [HttpPost("refresh")]
+        [EnableRateLimiting("login")]
+        public async Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            var response = await _authService.RefreshAsync(request.RefreshToken);
+            return response == null ? Unauthorized("Neplatná nebo expirovaná relace") : Ok(response);
         }
 
         /// <summary>
@@ -99,14 +113,9 @@ namespace HealthcareAPI.Controllers
                 return BadRequest("Neplatné údaje pro změnu hesla");
             }
 
-            if (request.NewPassword.Length < 8)
+            if (!PasswordPolicy.IsValid(request.NewPassword))
             {
-                return BadRequest("Nové heslo musí mít alespoň 8 znaků");
-            }
-
-            if (!request.NewPassword.Any(char.IsDigit) || !request.NewPassword.Any(char.IsLetter))
-            {
-                return BadRequest("Nové heslo musí obsahovat alespoň jedno písmeno a jednu číslici");
+                return BadRequest(PasswordPolicy.RequirementMessage);
             }
 
             var success = await _authService.ChangePasswordAsync(employeeId, request);
@@ -117,6 +126,27 @@ namespace HealthcareAPI.Controllers
             }
 
             return Ok(new { message = "Heslo bylo úspěšně změněno" });
+        }
+
+        /// <summary>
+        /// Server-side logout: bumps the employee's ACL version so every JWT
+        /// issued so far stops validating immediately.
+        /// </summary>
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            var employeeIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (employeeIdClaim == null || !int.TryParse(employeeIdClaim.Value, out var employeeId))
+            {
+                return Unauthorized();
+            }
+
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.PostAsync($"/api/auth/logout/{employeeId}", null);
+            return response.IsSuccessStatusCode
+                ? NoContent()
+                : StatusCode((int)response.StatusCode);
         }
 
         [RequirePermission("employees.create")]

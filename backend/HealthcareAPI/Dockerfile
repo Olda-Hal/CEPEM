@@ -24,6 +24,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 
 COPY --from=build /app/out .
 
+# Run the API as the unprivileged user shipped with the .NET image.
+USER app
+
 # Expose port
 EXPOSE 80
 

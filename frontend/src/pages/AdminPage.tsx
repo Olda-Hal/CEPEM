@@ -13,7 +13,7 @@ import {
   MdSms
 } from 'react-icons/md';
 import { useAuth } from '../contexts/AuthContext';
-import { isAdmin } from '../utils/roles';
+import { isAdmin, isSysAdmin } from '../utils/roles';
 import './AdministrationPage.css';
 
 interface AdminMenuItem {
@@ -34,7 +34,9 @@ const AdminPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const sysAdminOnly = isAdmin(user);
+  // The "Admin" role gets the operator entries only; system tools stay SysAdmin.
+  const adminAreaOnly = isSysAdmin(user);
+  const operatorAccess = isAdmin(user);
 
   const items: AdminMenuItem[] = [
     {
@@ -43,7 +45,7 @@ const AdminPage: React.FC = () => {
       icon: <MdQueryStats size={28} />,
       titleKey: 'adminPage.monitoringTitle',
       descriptionKey: 'adminPage.monitoringDescription',
-      allowed: sysAdminOnly
+      allowed: adminAreaOnly
     },
     {
       key: 'audit-log',
@@ -51,7 +53,7 @@ const AdminPage: React.FC = () => {
       icon: <MdAssignment size={28} />,
       titleKey: 'adminPage.auditLogTitle',
       descriptionKey: 'adminPage.auditLogDescription',
-      allowed: sysAdminOnly
+      allowed: adminAreaOnly
     },
     {
       key: 'email-log',
@@ -59,7 +61,7 @@ const AdminPage: React.FC = () => {
       icon: <MdMailOutline size={28} />,
       titleKey: 'adminPage.emailLogTitle',
       descriptionKey: 'adminPage.emailLogDescription',
-      allowed: sysAdminOnly
+      allowed: adminAreaOnly
     },
     {
       key: 'communication',
@@ -67,7 +69,7 @@ const AdminPage: React.FC = () => {
       icon: <MdSms size={28} />,
       titleKey: 'adminPage.communicationTitle',
       descriptionKey: 'adminPage.communicationDescription',
-      allowed: sysAdminOnly
+      allowed: operatorAccess
     },
     {
       key: 'gdpr',
@@ -75,7 +77,7 @@ const AdminPage: React.FC = () => {
       icon: <MdPrivacyTip size={28} />,
       titleKey: 'adminPage.gdprTitle',
       descriptionKey: 'adminPage.gdprDescription',
-      allowed: sysAdminOnly
+      allowed: operatorAccess
     },
     {
       key: 'analytics',
@@ -83,7 +85,7 @@ const AdminPage: React.FC = () => {
       icon: <MdBarChart size={28} />,
       titleKey: 'adminPage.analyticsTitle',
       descriptionKey: 'adminPage.analyticsDescription',
-      allowed: sysAdminOnly
+      allowed: operatorAccess
     },
     {
       key: 'tests',
@@ -91,7 +93,7 @@ const AdminPage: React.FC = () => {
       icon: <MdScience size={28} />,
       titleKey: 'adminPage.testsTitle',
       descriptionKey: 'adminPage.testsDescription',
-      allowed: sysAdminOnly
+      allowed: adminAreaOnly
     },
     {
       key: 'roles',
@@ -99,7 +101,7 @@ const AdminPage: React.FC = () => {
       icon: <MdAdminPanelSettings size={28} />,
       titleKey: 'adminPage.rolesTitle',
       descriptionKey: 'adminPage.rolesDescription',
-      allowed: sysAdminOnly
+      allowed: adminAreaOnly
     },
     {
       key: 'health',
@@ -107,7 +109,7 @@ const AdminPage: React.FC = () => {
       icon: <MdMonitorHeart size={28} />,
       titleKey: 'adminPage.healthTitle',
       descriptionKey: 'adminPage.healthDescription',
-      allowed: sysAdminOnly
+      allowed: adminAreaOnly
     }
   ].filter((item) => item.allowed);
 

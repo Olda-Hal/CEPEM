@@ -47,9 +47,18 @@ public class GdprServiceTests : IDisposable
             new PhotoEncryptionService(configuration, NullLogger<PhotoEncryptionService>.Instance),
             configuration,
             NullLogger<PatientPhotoService>.Instance);
+        var examinationDocumentService = new ExaminationDocumentService(
+            _context,
+            new DocumentEncryptionService(configuration, NullLogger<DocumentEncryptionService>.Instance),
+            configuration,
+            NullLogger<ExaminationDocumentService>.Instance);
 
         _service = new GdprService(
-            _context, documentService, photoService, NullLogger<GdprService>.Instance);
+            _context,
+            documentService,
+            photoService,
+            examinationDocumentService,
+            NullLogger<GdprService>.Instance);
     }
 
     public void Dispose()

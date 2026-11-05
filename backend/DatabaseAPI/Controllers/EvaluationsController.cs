@@ -51,29 +51,24 @@ public class EvaluationsController : ControllerBase
             return Unauthorized();
         }
 
-        var cases = await _context.EvaluationCases
+        var query = _context.EvaluationCases
             .Include(c => c.Patient)
                 .ThenInclude(p => p!.Person)
             .Include(c => c.Reviews)
             .Where(c => c.ImageKey == "tdb")
-            .ToListAsync();
+            // Cases completed manually from the measurements overview no
+            // longer need a doctor's review.
+            .Where(c => c.EvaluatedAtUtc == null)
+            .Where(c => c.Reviews.Count < MaxReviews)
+            .Where(c => !c.Reviews.Any(r => r.EmployeeId == actorId));
 
         var actor = await _employeeScopeService.GetActorScopeAsync();
-        IEnumerable<EvaluationCase> candidates = cases
-            .Where(c => c.Reviews.Count < MaxReviews)
-            .Where(c => c.Reviews.All(r => r.EmployeeId != actorId));
+        query = ApplyCountryScope(query, actor);
 
-        if (actor.IsCountryAdmin && !actor.HasFullAccess)
-        {
-            candidates = candidates.Where(c => c.Patient == null ||
-                actor.AdministeredCountryScopeIds.Contains(
-                    DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(c.Patient.CountryCode)));
-        }
-
-        var next = candidates
+        var next = await query
             .OrderBy(c => c.Reviews.Count)      // unreviewed first…
             .ThenBy(c => c.CreatedAtUtc)        // …oldest first
-            .FirstOrDefault();
+            .FirstOrDefaultAsync();
 
         if (next == null)
         {
@@ -85,36 +80,58 @@ public class EvaluationsController : ControllerBase
     }
 
     [HttpGet("cases")]
-    public async Task<ActionResult<List<EvaluationCaseDto>>> GetCases([FromQuery] bool includeEvaluated = false)
+    public async Task<ActionResult<List<EvaluationCaseDto>>> GetCases(
+        [FromQuery] bool includeEvaluated = false,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 50)
     {
-        var query = _context.EvaluationCases
-            .Include(c => c.Patient)
-                .ThenInclude(p => p!.Person)
-            .Include(c => c.Reviews)
-            .AsQueryable();
+        page = Math.Max(0, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = _context.EvaluationCases.AsNoTracking();
 
         if (!includeEvaluated)
         {
-            query = query.Where(c => !c.Reviews.Any());
+            query = query.Where(c => !c.Reviews.Any() && c.EvaluatedAtUtc == null);
         }
 
         var actor = await _employeeScopeService.GetActorScopeAsync();
+        query = ApplyCountryScope(query, actor);
+
+        // Keep the filtering, ordering and paging in SQL; the queue can grow
+        // to thousands of measurements.
         var cases = await query
+            .Include(c => c.Patient)
+                .ThenInclude(p => p!.Person)
             .OrderBy(c => c.CreatedAtUtc)
+            .Skip(page * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        // A Country Admin only sees cases for patients in administered
-        // countries; doctors and full admins see the whole queue.
-        if (actor.IsCountryAdmin && !actor.HasFullAccess)
+        return Ok(cases.Select(c => ToDto(c, includeSlices: false, includeReviews: false)).ToList());
+    }
+
+    /// <summary>
+    /// A Country Admin only sees cases for patients in administered countries;
+    /// doctors and full admins see the whole queue.
+    /// </summary>
+    private IQueryable<EvaluationCase> ApplyCountryScope(
+        IQueryable<EvaluationCase> query,
+        ActorScope actor)
+    {
+        if (!actor.IsCountryAdmin || actor.HasFullAccess)
         {
-            cases = cases
-                .Where(c => c.Patient == null ||
-                    actor.AdministeredCountryScopeIds.Contains(
-                        DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(c.Patient.CountryCode)))
-                .ToList();
+            return query;
         }
 
-        return Ok(cases.Select(c => ToDto(c, includeSlices: false, includeReviews: false)).ToList());
+        var countryCodes = actor.AdministeredCountryScopeIds
+            .Select(DatabaseAPI.Utils.CountryScopeMapper.ToCountryCode)
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(code => code!)
+            .ToList();
+
+        return query.Where(c => c.Patient == null ||
+            (c.Patient.CountryCode != null && countryCodes.Contains(c.Patient.CountryCode)));
     }
 
     [HttpGet("cases/{id}")]
@@ -156,7 +173,7 @@ public class EvaluationsController : ControllerBase
 
         if (evaluationCase == null ||
             evaluationCase.VisitId == null ||
-            evaluationCase.Reviews.Count == 0)
+            (evaluationCase.Reviews.Count == 0 && evaluationCase.EvaluatedAtUtc == null))
         {
             return NotFound("Vyhodnocení není dostupné.");
         }
@@ -213,6 +230,11 @@ public class EvaluationsController : ControllerBase
         if (isTdb && string.IsNullOrEmpty(outcome))
         {
             return BadRequest("Chybí výsledek vyšetření.");
+        }
+
+        if (evaluationCase.EvaluatedAtUtc != null)
+        {
+            return Conflict("Měření už bylo označeno jako vyhodnocené.");
         }
 
         if (evaluationCase.Reviews.Count >= MaxReviews)
@@ -313,9 +335,12 @@ public class EvaluationsController : ControllerBase
             Posture = c.SourcePosture,
             Conditions = c.SourceConditions,
             Tdb = includeSlices && isTdb ? DeserializeSlices(c.SlicesJson) : null,
-            EvaluatedAtUtc = isTdb ? latestReview?.EvaluatedAtUtc : c.EvaluatedAtUtc,
-            IsEvaluated = isTdb ? reviews.Count > 0 : c.EvaluatedAtUtc != null,
-            ReviewCount = reviews.Count,
+            EvaluatedAtUtc = isTdb
+                ? latestReview?.EvaluatedAtUtc ?? c.EvaluatedAtUtc
+                : c.EvaluatedAtUtc,
+            IsEvaluated = isTdb ? (reviews.Count > 0 || c.EvaluatedAtUtc != null) : c.EvaluatedAtUtc != null,
+            IsManuallyEvaluated = isTdb && c.EvaluatedAtUtc != null && reviews.Count == 0,
+            ReviewCount = isTdb && c.EvaluatedAtUtc != null ? MaxReviews : reviews.Count,
             MaxReviews = MaxReviews,
             Reviews = includeReviews
                 ? reviews.Select(ToReviewDto).ToList()
@@ -376,6 +401,9 @@ public class EvaluationsController : ControllerBase
         public TdbSlicesDto? Tdb { get; set; }
         public DateTime? EvaluatedAtUtc { get; set; }
         public bool IsEvaluated { get; set; }
+
+        /// <summary>Completed from the measurements overview instead of two reviews.</summary>
+        public bool IsManuallyEvaluated { get; set; }
         public int ReviewCount { get; set; }
         public int MaxReviews { get; set; }
         public List<EvaluationReviewDto>? Reviews { get; set; }

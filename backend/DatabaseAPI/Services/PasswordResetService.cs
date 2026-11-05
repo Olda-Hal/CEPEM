@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using Cepem.Shared;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 
@@ -26,7 +27,7 @@ public interface IPasswordResetService
 public class PasswordResetService : IPasswordResetService
 {
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(15);
-    public const int MinPasswordLength = 6;
+    public const int MinPasswordLength = PasswordPolicy.MinimumLength;
 
     private readonly DatabaseContext _context;
     private readonly IEmailService _emailService;
@@ -85,9 +86,9 @@ public class PasswordResetService : IPasswordResetService
             return (false, "Token is required");
         }
 
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < MinPasswordLength)
+        if (!PasswordPolicy.IsValid(newPassword))
         {
-            return (false, $"Nové heslo musí mít alespoň {MinPasswordLength} znaků");
+            return (false, PasswordPolicy.RequirementMessage);
         }
 
         var tokenHash = ComputeHash(token);
@@ -108,6 +109,8 @@ public class PasswordResetService : IPasswordResetService
         employee.PasswordExpiration = DateTime.UtcNow.AddDays(90);
         employee.FailedLoginAttempts = 0;
         employee.LockedUntil = null;
+        // Invalidate every previously issued JWT for this employee.
+        employee.AccessControlVersion++;
 
         resetToken.UsedAtUtc = DateTime.UtcNow;
         await _context.SaveChangesAsync();

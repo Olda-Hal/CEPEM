@@ -101,7 +101,7 @@ const TestDashboard: React.FC = () => {
       <div className="test-dashboard">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>{t('loading')}</p>
+          <p>{t('common.loading')}</p>
         </div>
       </div>
     );

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { PatientDetail, QuickPreviewSettings } from '../types';
+import { IntakeChangeRequest, PatientDetail, QuickPreviewSettings } from '../types';
 import { parseIntakeSummary, formSubmissionToIntakeSummary } from '../utils/intakeSummary';
 import { apiClient } from '../utils/api';
 import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
@@ -10,6 +10,7 @@ import './PatientDetailPage.css';
 import { useToast } from '../contexts/ToastContext';
 import PatientVisitsSection from '../components/patient/PatientVisitsSection';
 import CameraCaptureModal from '../components/patient/CameraCaptureModal';
+import MergePatientModal from '../components/patient/MergePatientModal';
 
 export const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,9 @@ export const PatientDetailPage: React.FC = () => {
   const [editingComment, setEditingComment] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showCamera, setShowCamera] = useState(false);
+  const [intakeChanges, setIntakeChanges] = useState<IntakeChangeRequest[]>([]);
+  const [reviewingChangeId, setReviewingChangeId] = useState<number | null>(null);
+  const [showMergeModal, setShowMergeModal] = useState(false);
 
   const intakeSummary = useMemo(() => {
     if (!patient) {
@@ -85,6 +89,17 @@ export const PatientDetailPage: React.FC = () => {
       setPatient(response);
       setCommentText(response.comment || '');
       setError(null);
+
+      try {
+        setIntakeChanges(
+          await apiClient.get<IntakeChangeRequest[]>(
+            `/api/patients/${patientId}/intake-changes/pending`
+          )
+        );
+      } catch (changesError) {
+        console.error('Error loading pending intake changes:', changesError);
+        setIntakeChanges([]);
+      }
     } catch (error) {
       console.error('Error loading patient detail:', error);
       setError(t('errors.loadingPatientDetail'));
@@ -111,6 +126,20 @@ export const PatientDetailPage: React.FC = () => {
     }
   };
 
+  const handleReviewIntakeChange = async (changeId: number, action: 'approve' | 'reject') => {
+    if (!patient) return;
+    setReviewingChangeId(changeId);
+    try {
+      await apiClient.post(`/api/patients/${patient.id}/intake-changes/${changeId}/${action}`, {});
+      await loadPatientDetail(patient.id);
+    } catch (reviewError) {
+      console.error('Error reviewing intake change:', reviewError);
+      toast.error(t('patients.intakeChanges.failed'));
+    } finally {
+      setReviewingChangeId(null);
+    }
+  };
+
   const handleSaveComment = async () => {
     if (!patient) return;
 
@@ -123,7 +152,7 @@ export const PatientDetailPage: React.FC = () => {
       setEditingComment(false);
     } catch (error) {
       console.error('Error updating comment:', error);
-      toast.info('Nepodařilo se uložit komentář');
+      toast.info(t('patients.commentSaveFailed'));
     }
   };
 
@@ -141,7 +170,7 @@ export const PatientDetailPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
-      toast.error('Nepodařilo se nahrát fotografii');
+      toast.error(t('patients.photoUploadFailed'));
     }
   };
 
@@ -196,6 +225,9 @@ export const PatientDetailPage: React.FC = () => {
           >
             {t('patients.editPatient')}
           </button>
+          <button onClick={() => setShowMergeModal(true)} className="btn btn-secondary">
+            {t('patients.merge.button')}
+          </button>
           <button onClick={handleBackToPatients} className="btn btn-secondary">
             {t('patients.backToPatients')}
           </button>
@@ -203,6 +235,44 @@ export const PatientDetailPage: React.FC = () => {
       </div>
 
       <div className="patient-detail-content">
+        {intakeChanges.length > 0 && (
+          <div className="patient-intake-card patient-intake-changes-card">
+            <div className="card-header">
+              <div>
+                <h2>{t('patients.intakeChanges.title')}</h2>
+                <p className="intake-card-description">{t('patients.intakeChanges.description')}</p>
+              </div>
+            </div>
+            <div className="intake-change-list">
+              {intakeChanges.map((change) => (
+                <div className="intake-change-item" key={change.id}>
+                  <p className="intake-change-summary">
+                    {change.summary || t('common.notProvided')}
+                  </p>
+                  <div className="intake-change-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={reviewingChangeId === change.id}
+                      onClick={() => void handleReviewIntakeChange(change.id, 'approve')}
+                    >
+                      {t('patients.intakeChanges.approve')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={reviewingChangeId === change.id}
+                      onClick={() => void handleReviewIntakeChange(change.id, 'reject')}
+                    >
+                      {t('patients.intakeChanges.reject')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Patient Basic Info */}
         <div className="patient-info-card">
           <div className="patient-header">
@@ -231,7 +301,7 @@ export const PatientDetailPage: React.FC = () => {
               <button
                 className="photo-button"
                 onClick={() => setShowCamera(true)}
-                title="Vyfotit pacienta"
+                title={t('patients.takePhoto')}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   <path
@@ -542,6 +612,17 @@ export const PatientDetailPage: React.FC = () => {
       {showCamera && (
         <CameraCaptureModal onClose={() => setShowCamera(false)} onCapture={handleCapturePhoto} />
       )}
+
+      <MergePatientModal
+        isOpen={showMergeModal}
+        sourcePatientId={patient.id}
+        sourcePatientName={patient.fullName}
+        onClose={() => setShowMergeModal(false)}
+        onMerged={(targetPatientId) => {
+          setShowMergeModal(false);
+          navigate(`/patients/${targetPatientId}`);
+        }}
+      />
     </div>
   );
 };

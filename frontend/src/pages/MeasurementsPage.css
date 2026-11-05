@@ -1,0 +1,143 @@
+.measurements-page {
+  padding: 1.5rem;
+}
+
+.measurements-toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.measurements-search {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.measurements-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--color-muted, #6b7280);
+}
+
+.measurements-filter select {
+  min-width: 170px;
+}
+
+.measurements-count {
+  margin-left: auto;
+  color: var(--color-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.measurements-table-wrapper {
+  overflow-x: auto;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 8px;
+}
+
+.measurements-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.measurements-table th,
+.measurements-table td {
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.measurements-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-muted, #6b7280);
+  background: var(--color-surface-alt, #f9fafb);
+}
+
+.measurements-row {
+  cursor: pointer;
+}
+
+.measurements-row:hover,
+.measurements-row:focus {
+  background: var(--color-surface-alt, #f3f4f6);
+  outline: none;
+}
+
+.measurements-patient-name {
+  display: block;
+}
+
+.measurements-patient-uid {
+  display: block;
+  color: var(--color-muted, #6b7280);
+  font-size: 0.8rem;
+}
+
+.measurements-documents {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.measurements-documents li {
+  word-break: break-all;
+}
+
+.measurements-status {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.measurements-status.evaluated {
+  background: var(--color-success-light, #dcfce7);
+  color: var(--color-success, #15803d);
+}
+
+.measurements-status.partial {
+  background: var(--color-warning-light, #fef3c7);
+  color: var(--color-warning, #b45309);
+}
+
+.measurements-status.pending {
+  background: var(--color-error-light, #fee2e2);
+  color: var(--color-error, #b91c1c);
+}
+
+.measurements-manual {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--color-muted, #6b7280);
+  font-size: 0.75rem;
+}
+
+.measurements-actions-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.measurements-empty {
+  color: var(--color-muted, #6b7280);
+}
+
+@media (width <= 720px) {
+  .measurements-count {
+    margin-left: 0;
+  }
+
+  .measurements-table th:nth-child(3),
+  .measurements-table td:nth-child(3) {
+    display: none;
+  }
+}

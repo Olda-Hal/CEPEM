@@ -19,19 +19,22 @@ public class VisitsController : ControllerBase
     private readonly IIntakeFormLinkService _intakeFormLinkService;
     private readonly DatabaseContext _context;
     private readonly ILogger<VisitsController> _logger;
+    private readonly IAntivirusScanner _antivirusScanner;
 
     public VisitsController(
         IVisitService visitService,
         IActorCountryContextService actorCountryContextService,
         IIntakeFormLinkService intakeFormLinkService,
         DatabaseContext context,
-        ILogger<VisitsController> logger)
+        ILogger<VisitsController> logger,
+        IAntivirusScanner? antivirusScanner = null)
     {
         _visitService = visitService;
         _actorCountryContextService = actorCountryContextService;
         _intakeFormLinkService = intakeFormLinkService;
         _context = context;
         _logger = logger;
+        _antivirusScanner = antivirusScanner ?? new NullAntivirusScanner();
     }
 
     [HttpGet]
@@ -147,7 +150,23 @@ public class VisitsController : ControllerBase
         {
             using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream);
-            var document = await _visitService.AttachDocumentAsync(patientId, visitId, memoryStream.ToArray(), file.FileName);
+            var documentData = memoryStream.ToArray();
+
+            var scan = await _antivirusScanner.ScanAsync(documentData);
+            if (!scan.Clean)
+            {
+                if (scan.ThreatName != null)
+                {
+                    _logger.LogWarning("Rejected malicious visit upload {VisitId}: {Threat}", visitId, scan.ThreatName);
+                    return BadRequest("File failed antivirus scan.");
+                }
+
+                return StatusCode(
+                    StatusCodes.Status503ServiceUnavailable,
+                    scan.Error ?? "Antivirus scan is unavailable; the file was not stored.");
+            }
+
+            var document = await _visitService.AttachDocumentAsync(patientId, visitId, documentData, file.FileName);
             if (document == null)
             {
                 return NotFound("Visit not found");

@@ -1,37 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Theme, themeManager, availableThemes } from './ThemeManager';
+import { useEffect, useState } from 'react';
+import { getCurrentTheme, subscribeToTheme, Theme, toggleTheme } from './theme';
 
+/** Reads the active light/dark theme and re-renders after a toggle. */
 export const useTheme = () => {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(themeManager.getCurrentTheme());
+  const [theme, setTheme] = useState<Theme>(getCurrentTheme);
 
-  useEffect(() => {
-    const handleThemeChange = (theme: Theme) => {
-      setCurrentTheme(theme);
-    };
+  useEffect(() => subscribeToTheme(setTheme), []);
 
-    themeManager.addThemeListener(handleThemeChange);
-
-    return () => {
-      themeManager.removeThemeListener(handleThemeChange);
-    };
-  }, []);
-
-  const changeTheme = (theme: Theme) => {
-    themeManager.markManualThemeChange();
-    themeManager.setTheme(theme);
-  };
-
-  return {
-    currentTheme,
-    changeTheme,
-    toggleCategory: () => {
-      themeManager.markManualThemeChange();
-      themeManager.toggleThemeCategory();
-    },
-    nextTheme: () => {
-      themeManager.markManualThemeChange();
-      themeManager.setTheme(themeManager.getNextTheme());
-    },
-    availableThemes
-  };
+  return { theme, toggleTheme };
 };

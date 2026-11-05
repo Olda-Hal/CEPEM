@@ -112,9 +112,16 @@ public class SicknessHistoryRequestItem
     public string? Notes { get; set; }
 }
 
+public class CreatePatientWithIntakeRequest
+{
+    public CreatePatientRequest Patient { get; set; } = new();
+    public CreateIntakeFormEventRequest Intake { get; set; } = new();
+}
+
 public class IntakeFormEventDto
 {
     public int EventId { get; set; }
+    public int PatientId { get; set; }
     public float? Weight { get; set; }
     public float? Height { get; set; }
     public string? Comment { get; set; }

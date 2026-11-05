@@ -95,10 +95,12 @@ const RoleManagementPage: React.FC = () => {
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
       SysAdmin: 'admin.roleNames.sysAdmin',
+      Admin: 'admin.roleNames.admin',
       Examiner: 'admin.roleNames.examiner',
       Doctor: 'admin.roleNames.doctor',
       'Center Admin': 'admin.roleNames.centerAdmin',
-      'Country Admin': 'admin.roleNames.countryAdmin'
+      'Country Admin': 'admin.roleNames.countryAdmin',
+      Digitiser: 'admin.roleNames.digitiser'
     };
 
     const key = keyMap[roleName];

@@ -247,7 +247,7 @@ export const CreatePatientModal: React.FC<CreatePatientModalProps> = ({
               <label>{t('patients.photo')}</label>
               {photoPreview ? (
                 <div className="photo-preview-container">
-                  <img src={photoPreview} alt="Patient" className="photo-preview" />
+                  <img src={photoPreview} alt={t('patients.photoAlt')} className="photo-preview" />
                   <button
                     type="button"
                     className="button secondary small"

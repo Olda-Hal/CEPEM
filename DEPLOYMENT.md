@@ -160,14 +160,27 @@ Notes:
 
 ## Grafana
 
-Grafana and Prometheus are bound to `127.0.0.1` only. From your workstation use an SSH tunnel:
+Grafana is bound to `127.0.0.1:3001` and published by nginx at
+`https://${DOMAIN_NAME}/grafana/`; Prometheus stays on loopback and is only
+used as a datasource. The repo's `nginx-reverse-proxy.conf` contains the
+`/grafana/` location (including WebSocket upgrade and same-origin framing).
 
-```bash
-ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
-# then open http://localhost:3001
-```
-
-- `GRAFANA_ROOT_URL` must match the URL you use. For the tunnel use `http://localhost:3001`; for a public path use e.g. `https://your-domain.com/grafana/` **and** `GRAFANA_SERVE_FROM_SUB_PATH=true` plus an nginx `location /grafana/`. Without it Grafana redirects to its default `http://localhost:3000`.
+- `DOMAIN_NAME` must be set in the production `.env`; compose derives
+  `GRAFANA_ROOT_URL=https://${DOMAIN_NAME}/grafana/` and enables
+  `GRAFANA_SERVE_FROM_SUB_PATH` plus secure cookies from it.
+- The frontend link is built by Vite. `VITE_GRAFANA_URL` is passed as a Docker
+  **build arg**; when it is empty the SPA uses the same-origin `/grafana`
+  path, so the link works on any hostname. After changing it, rebuild the
+  frontend (a runtime env change is not enough):
+  `docker compose -f docker-compose.prod.yml up -d --build frontend`.
+- For an SSH tunnel instead of public hosting, set
+  `GRAFANA_ROOT_URL=http://localhost:3001`,
+  `GRAFANA_SERVE_FROM_SUB_PATH=false`, `GRAFANA_COOKIE_SECURE=false`, and
+  build the frontend with `VITE_GRAFANA_URL=http://localhost:3001`:
+  ```bash
+  ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
+  # then open http://localhost:3001
+  ```
 - Prometheus must find the provisioned datasource at `http://prometheus:9090` (not `localhost`). Check `deploy/grafana/provisioning/datasources/prometheus.yml` on the server; if it still says localhost, update it and recreate Grafana.
 - Check scrape targets and raw metrics:
   ```bash
@@ -182,6 +195,61 @@ ssh -L 3001:127.0.0.1:3001 -L 9090:127.0.0.1:9090 user@your-server
   - Reload nginx and recreate `healthcare-api`: `sudo nginx -t && sudo systemctl reload nginx && docker compose -f docker-compose.prod.yml up -d healthcare-api`.
   - Verify the label: `curl -s http://127.0.0.1:5000/metrics | grep cepem_http_requests_by_country_total`.
   - The dashboard is re-provisioned every 30 s; if the panel is still missing, run `docker compose -f docker-compose.prod.yml up -d --force-recreate grafana`. The map only fills from requests made after the updated HealthcareAPI/nginx are running.
+
+## Antivirus scanning
+
+Uploaded photos, PDFs and MEIK `.tdb` measurements are scanned by ClamAV
+before they are encrypted and stored. `docker-compose.prod.yml` starts a
+`clamav` container and `database-api` waits for its healthcheck.
+
+```bash
+CLAMAV_ENABLED=true
+CLAMAV_HOST=clamav
+CLAMAV_PORT=3310
+CLAMAV_TIMEOUT_SECONDS=20
+CLAMAV_FAIL_OPEN=false   # reject uploads while clamd is unreachable
+```
+
+Set `CLAMAV_ENABLED=false` only if you deliberately run without scanning.
+Uploads then skip the scan; magic-byte validation still applies.
+
+## Paper intake digitisation (AI service)
+
+`ai-service` renders uploaded PDFs with PyMuPDF, reads the printed layout with
+Tesseract (`ces+eng`) and detects ticked boxes with OpenCV. A user with the
+`Digitiser` role sees **Upload form PDF** above every intake-form variant;
+the extracted values are only a prefill and must be confirmed by the user.
+
+For handwritten fields, configure any OpenAI-compatible vision endpoint:
+
+```bash
+VISION_API_URL=https://api.example.com/v1
+VISION_API_KEY=...
+VISION_MODEL=gpt-4o-mini
+```
+
+The service is internal-only (no published port). Without a vision endpoint
+it stays fully local; handwritten values are returned with a review warning.
+`examples/` contains sample scans and is intentionally git-ignored.
+
+## Alerting and error tracking
+
+Prometheus evaluates `deploy/prometheus/alerts.yml` (service down, failing
+blackbox probe, 5xx rate, p95 latency) and forwards to Alertmanager. The
+Alertmanager UI is on `127.0.0.1:9093`; configure the SMTP variables from
+`.env.example` to receive e-mail. The blackbox exporter probes
+`http://frontend:3000/health` every 15 seconds.
+
+Optional Sentry error tracking is enabled by setting `SENTRY_DSN` (backend)
+and `VITE_SENTRY_DSN` (frontend build arg). Empty values keep both disabled.
+
+## Sessions
+
+Access tokens live for `JWT_ACCESS_TOKEN_MINUTES` (default 30) and are
+renewed by the SPA with a `JWT_REFRESH_TOKEN_DAYS` (default 7) refresh token.
+The refresh token carries the same `acl_version`, so logout, password change,
+deactivation and role changes revoke it as well. A refresh token is rejected
+as a bearer access token by the gateway.
 
 ## Maintenance
 
@@ -198,9 +266,19 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ### Backup Database
 ```bash
-# Prefer scripts/backup_daily.sh (retention, .env-aware). Manual one-off:
+# Encrypted + verified backup (recommended). Configure BACKUP_ENCRYPTION_PASSPHRASE
+# (or BACKUP_GPG_RECIPIENT) and optionally BACKUP_REMOTE in .env first.
+scripts/backup_daily.sh
+
+# Manual one-off:
 docker exec cepem_mysql mysqldump -u root -p cepem_healthcare > backup_$(date +%Y%m%d).sql
 ```
+
+The script writes the MySQL dump plus `data/` into `backups/<timestamp>/`,
+encrypts both when a passphrase/key is configured, optionally copies them
+offsite with rclone, verifies archive integrity, and (with
+`BACKUP_RESTORE_TEST=true`) restores the dump into a temporary database.
+Keep backups off the application disk and test a restore regularly.
 
 ### Renew SSL (automatic via certbot timer)
 ```bash

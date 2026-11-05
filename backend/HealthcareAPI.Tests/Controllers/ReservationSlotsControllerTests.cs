@@ -162,9 +162,27 @@ public class ActivityLoggingMiddlewareTests
         Assert.Equal("/api/patients", log.Action);
         Assert.Equal("POST", log.Method);
         Assert.Equal(3, log.EmployeeId);
-        Assert.Equal("user@example.com", log.EmployeeEmail);
+        Assert.Equal("u***@example.com", log.EmployeeEmail);
         Assert.Equal(201, log.StatusCode);
         Assert.Equal("HealthcareAPI", log.Service);
+    }
+
+    [Fact]
+    public async Task Invoke_RedactsIntakeTokensAndClientIps()
+    {
+        var logs = new RecordingLogService();
+        var middleware = new ActivityLoggingMiddleware(_ => Task.CompletedTask);
+
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/api/events/intake-form-links/abcdef1234567890/submit";
+        context.Request.Method = "POST";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("10.1.2.3");
+
+        await middleware.InvokeAsync(context, logs);
+
+        var log = Assert.Single(logs.Logs);
+        Assert.Equal("/api/events/intake-form-links/abcd***/submit", log.Action);
+        Assert.Equal("Request from 10.1.*.*", log.Details);
     }
 
     [Fact]

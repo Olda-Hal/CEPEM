@@ -17,7 +17,7 @@ import SearchableMultiSelect from '../components/SearchableMultiSelect';
 import { SavedViews } from '../components/SavedViews';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../contexts/AuthContext';
-import { hasRole } from '../utils/roles';
+import { hasRole, isSysAdmin } from '../utils/roles';
 import { countryCodeByScopeId, countryOptions, normalizeCountryCode } from '../utils/countryScope';
 
 const EMPLOYEES_PER_PAGE = 25;
@@ -115,9 +115,12 @@ const AdminEmployeesPage: React.FC = () => {
     return false;
   };
 
-  // Role checkboxes the actor may grant (full access → everything)
+  // Role checkboxes the actor may grant. Admin has full agenda scope but may
+  // never mint another SysAdmin.
   const assignableRoles = (data?.roles ?? []).filter(
-    (role) => !isScopedAdmin || !scope || scope.assignableRoleNames.includes(role.name)
+    (role) =>
+      (isSysAdmin(user) || role.name !== 'SysAdmin') &&
+      (!isScopedAdmin || !scope || scope.assignableRoleNames.includes(role.name))
   );
 
   // Country options the actor may assign
@@ -142,10 +145,12 @@ const AdminEmployeesPage: React.FC = () => {
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
       SysAdmin: 'admin.roleNames.sysAdmin',
+      Admin: 'admin.roleNames.admin',
       Examiner: 'admin.roleNames.examiner',
       Doctor: 'admin.roleNames.doctor',
       'Center Admin': 'admin.roleNames.centerAdmin',
-      'Country Admin': 'admin.roleNames.countryAdmin'
+      'Country Admin': 'admin.roleNames.countryAdmin',
+      Digitiser: 'admin.roleNames.digitiser'
     };
 
     const key = keyMap[roleName];
@@ -525,10 +530,12 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   const translateRoleName = (roleName: string) => {
     const keyMap: Record<string, string> = {
       SysAdmin: 'admin.roleNames.sysAdmin',
+      Admin: 'admin.roleNames.admin',
       Examiner: 'admin.roleNames.examiner',
       Doctor: 'admin.roleNames.doctor',
       'Center Admin': 'admin.roleNames.centerAdmin',
-      'Country Admin': 'admin.roleNames.countryAdmin'
+      'Country Admin': 'admin.roleNames.countryAdmin',
+      Digitiser: 'admin.roleNames.digitiser'
     };
 
     const key = keyMap[roleName];

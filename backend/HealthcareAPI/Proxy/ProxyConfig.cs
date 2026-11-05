@@ -40,6 +40,10 @@ public static class ProxyConfig
         yield return Route("patients-post-visits", "/api/patients/{id}/visits", "POST", "patients.write");
         // Opening the tablet form is a read-level action (creates only a token).
         yield return Route("patients-post-visit-intake-link", "/api/patients/{id}/visits/{visitId}/intake-link", "POST", "patients.read");
+        yield return Route("patients-merge", "/api/patients/merge", "POST", "patients.write");
+        // Public-intake master-data changes require staff approval.
+        yield return Route("patients-approve-intake-change", "/api/patients/{id}/intake-changes/{changeId}/approve", "POST", "patients.write");
+        yield return Route("patients-reject-intake-change", "/api/patients/{id}/intake-changes/{changeId}/reject", "POST", "patients.write");
         yield return Route("patients-post-visit-documents", "/api/patients/{id}/visits/{visitId}/documents", "POST", "patients.documents.write");
         yield return Route("patients-put", "/api/patients/{**rest}", "PUT", "patients.write");
         yield return Route("patients-patch", "/api/patients/{**rest}", "PATCH", "patients.write");
@@ -132,6 +136,10 @@ public static class ProxyConfig
         // patient-facing staff (patients.read) can open it as well.
         yield return Route("evaluations-report", "/api/evaluations/cases/{id}/report", "GET", "patients.read");
         yield return Route("evaluations-evaluate", "/api/evaluations/cases/{id}/evaluate", "POST", "evaluations.write");
+
+        // Measurements overview (patient + visit + .tdb files)
+        yield return Route("measurements-mark-evaluated", "/api/measurements/visits/{visitId}/mark-evaluated", "POST", "evaluations.write");
+        yield return Route("measurements-get", "/api/measurements/{**rest}", "GET", "patients.read");
 
         // Settings
         yield return Route("settings-get", "/api/settings/{**rest}", "GET", "settings.read");

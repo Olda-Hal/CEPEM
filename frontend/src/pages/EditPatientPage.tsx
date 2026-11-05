@@ -637,30 +637,30 @@ export const EditPatientPage: React.FC = () => {
             </div>
 
             <div className="overview-panel full-width">
-              <h3>Structured FormSubmission (all fields)</h3>
+              <h3>{t('editPatient.structuredSubmission')}</h3>
               {patient.formSubmission ? (
                 <>
                   <div className="overview-row">
-                    <span>Submission ID</span>
+                    <span>{t('editPatient.submissionId')}</span>
                     <strong>{patient.formSubmission.id}</strong>
                   </div>
                   <div className="overview-row">
-                    <span>Patient ID</span>
+                    <span>{t('editPatient.patientId')}</span>
                     <strong>{patient.formSubmission.patientId}</strong>
                   </div>
                   <div className="overview-row">
-                    <span>Event ID</span>
+                    <span>{t('editPatient.eventId')}</span>
                     <strong>{patient.formSubmission.eventId}</strong>
                   </div>
                   <div className="overview-row">
-                    <span>Submitted At</span>
+                    <span>{t('editPatient.submittedAt')}</span>
                     <strong>
                       {new Date(patient.formSubmission.submittedAtUtc).toLocaleString()}
                     </strong>
                   </div>
 
                   <div className="overview-subsection">
-                    <h4>Medication</h4>
+                    <h4>{t('editPatient.medication')}</h4>
                     {patient.formSubmission.medication ? (
                       Object.entries(patient.formSubmission.medication).map(([key, value]) => (
                         <div className="overview-row" key={`med-${key}`}>
@@ -674,7 +674,7 @@ export const EditPatientPage: React.FC = () => {
                   </div>
 
                   <div className="overview-subsection">
-                    <h4>Lifestyle</h4>
+                    <h4>{t('editPatient.lifestyle')}</h4>
                     {patient.formSubmission.lifestyle ? (
                       Object.entries(patient.formSubmission.lifestyle).map(([key, value]) => (
                         <div className="overview-row" key={`life-${key}`}>
@@ -688,7 +688,7 @@ export const EditPatientPage: React.FC = () => {
                   </div>
 
                   <div className="overview-subsection">
-                    <h4>Reproductive Health</h4>
+                    <h4>{t('editPatient.reproductiveHealth')}</h4>
                     {patient.formSubmission.reproductiveHealth ? (
                       Object.entries(patient.formSubmission.reproductiveHealth).map(
                         ([key, value]) => (
@@ -704,7 +704,7 @@ export const EditPatientPage: React.FC = () => {
                   </div>
 
                   <div className="overview-subsection">
-                    <h4>Consent</h4>
+                    <h4>{t('editPatient.consent')}</h4>
                     {patient.formSubmission.consent ? (
                       <>
                         {Object.entries(patient.formSubmission.consent)
@@ -716,7 +716,7 @@ export const EditPatientPage: React.FC = () => {
                             </div>
                           ))}
                         <div className="overview-subsection">
-                          <h4>Signature Vector Raw Data</h4>
+                          <h4>{t('editPatient.signatureVectorRaw')}</h4>
                           <pre className="raw-data-pre">
                             {patient.formSubmission.consent.signatureVector ||
                               t('common.notProvided')}
@@ -729,7 +729,7 @@ export const EditPatientPage: React.FC = () => {
                   </div>
 
                   <div className="overview-subsection">
-                    <h4>Sickness Histories</h4>
+                    <h4>{t('editPatient.sicknessHistories')}</h4>
                     {patient.formSubmission.sicknessHistories?.length ? (
                       patient.formSubmission.sicknessHistories.map((history, idx) => (
                         <div className="simple-list-item" key={`history-${history.id}-${idx}`}>
@@ -857,7 +857,7 @@ export const EditPatientPage: React.FC = () => {
             </div>
 
             <div className="overview-panel full-width">
-              <h3>Raw Patient JSON (complete payload)</h3>
+              <h3>{t('editPatient.rawPatientJson')}</h3>
               <pre className="raw-data-pre">{JSON.stringify(patient, null, 2)}</pre>
             </div>
           </div>

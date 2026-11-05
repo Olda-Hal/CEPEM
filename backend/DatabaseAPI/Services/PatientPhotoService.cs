@@ -1,5 +1,6 @@
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
+using DatabaseAPI.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace DatabaseAPI.Services;
@@ -37,6 +38,12 @@ public class PatientPhotoService
             throw new InvalidOperationException($"Patient with ID {patientId} not found");
         }
 
+        var validationError = FileSignatureValidator.ValidatePatientPhoto(photoData);
+        if (validationError != null)
+        {
+            throw new InvalidOperationException(validationError);
+        }
+
         if (patient.PhotoPath != null)
         {
             await DeletePatientPhotoAsync(patientId);
@@ -47,7 +54,7 @@ public class PatientPhotoService
         var fileName = $"patient_{patientId}_{Guid.NewGuid()}.enc";
         var filePath = Path.Combine(_photoStoragePath, fileName);
 
-        await File.WriteAllBytesAsync(filePath, encryptedData);
+        await AtomicFileWriter.WriteAllBytesAsync(filePath, encryptedData);
 
         patient.PhotoPath = fileName;
         await _context.SaveChangesAsync();
@@ -75,7 +82,40 @@ public class PatientPhotoService
         var encryptedData = await File.ReadAllBytesAsync(filePath);
         var decryptedData = await _encryptionService.DecryptPhotoAsync(encryptedData);
 
+        if (!_encryptionService.IsCurrentFormat(encryptedData))
+        {
+            await TryMigrateLegacyPhotoAsync(
+                filePath, decryptedData, patientId, patient.PhotoPath);
+        }
+
         return decryptedData;
+    }
+
+    /// <summary>
+    /// Lazy migration: the first read of a CEPM1/raw-CBC photo rewrites it in
+    /// the authenticated CEPM2 format. Failure never blocks serving the photo.
+    /// </summary>
+    private async Task TryMigrateLegacyPhotoAsync(
+        string filePath, byte[] plaintext, int patientId, string fileName)
+    {
+        try
+        {
+            // Do not resurrect a photo deleted concurrently (e.g. GDPR purge).
+            var stillReferenced = await _context.Patients
+                .AnyAsync(patient => patient.Id == patientId && patient.PhotoPath == fileName);
+            if (!stillReferenced || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            var reEncrypted = await _encryptionService.EncryptPhotoAsync(plaintext);
+            await AtomicFileWriter.WriteAllBytesAsync(filePath, reEncrypted);
+            _logger.LogInformation("Re-encrypted legacy photo file {Path} with CEPM2", filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not re-encrypt legacy photo file {Path}", filePath);
+        }
     }
 
     public async Task<bool> DeletePatientPhotoAsync(int patientId)

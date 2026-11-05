@@ -71,8 +71,10 @@ public class VisitService : IVisitService
         }
 
         var detail = MapDetail(visit);
+        // A case counts as evaluated when two doctors reviewed it or when it
+        // was completed manually from the measurements overview.
         detail.Evaluations = await _context.EvaluationCases
-            .Where(c => c.VisitId == visitId && c.Reviews.Any())
+            .Where(c => c.VisitId == visitId && (c.Reviews.Any() || c.EvaluatedAtUtc != null))
             .OrderBy(c => c.CreatedAtUtc)
             .Select(c => new VisitEvaluationSummaryDto
             {
@@ -80,8 +82,10 @@ public class VisitService : IVisitService
                 Title = c.Title,
                 Side = c.SourceSide,
                 Posture = c.SourcePosture,
-                ReviewCount = c.Reviews.Count(),
-                LastEvaluatedAtUtc = c.Reviews.Max(r => (DateTime?)r.EvaluatedAtUtc)
+                ReviewCount = c.EvaluatedAtUtc != null ? 2 : c.Reviews.Count(),
+                LastEvaluatedAtUtc = c.EvaluatedAtUtc ??
+                    c.Reviews.Max(r => (DateTime?)r.EvaluatedAtUtc),
+                IsManuallyEvaluated = c.EvaluatedAtUtc != null && !c.Reviews.Any()
             })
             .ToListAsync();
 
@@ -295,7 +299,9 @@ public class VisitService : IVisitService
                 FileName = d.PatientDocument.FileName,
                 OriginalFileName = d.PatientDocument.OriginalFileName,
                 UploadedAt = d.PatientDocument.UploadedAt,
-                FileSize = d.PatientDocument.FileSize
+                FileSize = d.PatientDocument.FileSize,
+                IsTdb = d.PatientDocument.OriginalFileName.EndsWith(
+                    ".tdb", StringComparison.OrdinalIgnoreCase)
             })
             .ToList(),
         IntakeForm = visit.SourceEvent?.Comment?.Text

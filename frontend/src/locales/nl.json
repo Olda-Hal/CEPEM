@@ -104,7 +104,10 @@
     "creatingHospital": "Fout bij het aanmaken van een ziekenhuis",
     "creatingExaminationType": "Fout bij het aanmaken van een onderzoekstype",
     "deletingExaminationType": "Fout bij het verwijderen van een onderzoekstype",
-    "loadingPatients": "Fout bij het laden van patiënten. Probeer het opnieuw."
+    "loadingPatients": "Fout bij het laden van patiënten. Probeer het opnieuw.",
+    "boundaryTitle": "Er ging iets mis",
+    "boundaryDescription": "De pagina kon niet worden weergegeven. Probeer deze opnieuw te laden.",
+    "reload": "Opnieuw laden"
   },
   "reservations": {
     "title": "Reserveringen",
@@ -227,7 +230,15 @@
       "email": "E-mail",
       "examinationType": "Onderzoekstype",
       "selectExaminationType": "Selecteer type onderzoek",
-      "blockButton": "Blokkeer het geselecteerde tijdslot"
+      "blockButton": "Blokkeer het geselecteerde tijdslot",
+      "patientMode": "Wijze van patiëntinvoer",
+      "existingPatient": "Bestaande patiënt",
+      "newPatient": "Nieuwe patiënt",
+      "searchPatient": "Patiënt zoeken",
+      "searchPatientPlaceholder": "Naam, UID, e-mail of telefoon…",
+      "noPatients": "Geen patiënt gevonden.",
+      "selectedPatient": "Geselecteerde patiënt",
+      "clearSelection": "Selectie wissen"
     },
     "overview": {
       "title": "Overzicht per dag",
@@ -287,7 +298,8 @@
       "updateFailed": "Fout bij het bijwerken van een slot.",
       "releaseFailed": "Fout bij het vrijgeven van een slot.",
       "deleteFailed": "Fout bij het verwijderen van een slot.",
-      "intakeLinkFailed": "Het inschrijfformulier kon niet worden geopend."
+      "intakeLinkFailed": "Het inschrijfformulier kon niet worden geopend.",
+      "selectPatient": "Selecteer een patiënt."
     }
   },
   "evaluation": {
@@ -343,7 +355,8 @@
     "reportLoadFailed": "De beoordeling kon niet worden geladen.",
     "unknownDoctor": "Onbekende arts",
     "noFindings": "Geen bevindingen",
-    "noMarkerNote": "Geen beschrijving"
+    "noMarkerNote": "Geen beschrijving",
+    "manuallyEvaluated": "De meting is handmatig als beoordeeld gemarkeerd (zonder twee artsbeoordelingen)."
   },
   "examinations": {
     "title": "Onderzoeken",
@@ -401,7 +414,11 @@
     "confirmDelete": "Weet u zeker?",
     "search": "Zoeken",
     "previous": "Vorige",
-    "next": "Volgende"
+    "next": "Volgende",
+    "close": "Sluiten",
+    "noData": "Geen gegevens",
+    "refresh": "Vernieuwen",
+    "passwordRequirements": "Het wachtwoord moet minstens 8 tekens lang zijn en minstens één letter en één cijfer bevatten."
   },
   "intakeLink": {
     "pageTitle": "Inschrijfformulier",
@@ -413,7 +430,6 @@
     "gdprRequired": "U moet instemmen met de verwerking van persoonsgegevens (GDPR).",
     "gdprUnavailable": "De GDPR-tekst is nog niet gepubliceerd. Neem contact op met de kliniek.",
     "termsRequired": "U moet de algemene voorwaarden accepteren.",
-    "signatureRequired": "Handtekening vereist.",
     "submitFailed": "Het formulier kon niet worden verzonden.",
     "thankYouTitle": "Bedankt",
     "thankYouDescription": "Het formulier is succesvol ingediend.",
@@ -441,7 +457,8 @@
     "coverageReport": "Deekkingsrapport",
     "autoRefresh": "Automatisch vernieuwen",
     "refresh": "Vernieuwen",
-    "description": "Bekijk testresultaten en deekkingsrapporten"
+    "description": "Bekijk testresultaten en deekkingsrapporten",
+    "failed": "Mislukt"
   },
   "passwordChange": {
     "title": "Wachtwoord wijzigen",
@@ -547,7 +564,8 @@
       "insuranceNumberInvalid": "Verzekeringsnummer mag alleen cijfers bevatten",
       "emailInvalid": "Ongeldig e-mailadresformaat",
       "phoneInvalid": "Ongeldig telefoonnummerformaat",
-      "createFailed": "Het aanmaken van de patiënt is mislukt"
+      "createFailed": "Het aanmaken van de patiënt is mislukt",
+      "nameAndBirthDateRequired": "Vul voornaam, achternaam en geboortedatum in"
     },
     "regenerateUid": "Nieuw UID genereren",
     "photo": "Foto",
@@ -558,7 +576,8 @@
       "capture": "Opnemen",
       "retake": "Nogmaals opnemen",
       "confirm": "Gebruik deze foto",
-      "accessDenied": "De toegang tot de camera is geweigerd. Geef toestemming in de browserinstellingen."
+      "accessDenied": "De toegang tot de camera is geweigerd. Geef toestemming in de browserinstellingen.",
+      "startFailed": "De camera kon niet worden gestart. Controleer de machtigingen."
     },
     "patientDetail": "Patiëntgegevens",
     "yearsOld": "jaar oud",
@@ -657,6 +676,57 @@
       "upload": "Document uploaden",
       "empty": "Geen documenten nog.",
       "uploadSuccess": "Document geüpload"
+    },
+    "addPatientFormTitle": "Intakeformulier voor cliënt",
+    "photoPreview": "Foto voorbeeld",
+    "capturedPhoto": "Gefotografeerde patiënt",
+    "photoAlt": "Patiënt",
+    "commentSaveFailed": "Opmerking opslaan mislukt",
+    "photoUploadFailed": "Foto uploaden mislukt",
+    "intakeChanges": {
+      "title": "Voorgestelde intake-wijzigingen",
+      "description": "Wijzigingen via de openbare link wachten op goedkeuring. De patiëntkaart blijft ongewijzigd.",
+      "approve": "Goedkeuren",
+      "reject": "Afwijzen",
+      "failed": "De wijziging kon niet worden verwerkt."
+    },
+    "merge": {
+      "button": "Duplicaat samenvoegen",
+      "title": "Duplicaatpatiënt samenvoegen",
+      "description": "Alle gegevens van {{name}} worden naar de geselecteerde kaart verplaatst. De bronkaart wordt verborgen. Dit kan niet ongedaan worden gemaakt.",
+      "searchTarget": "Selecteer de kaart die blijft",
+      "searchPlaceholder": "Naam, UID, e-mail of telefoon…",
+      "noPatients": "Geen patiënt gevonden.",
+      "targetSelected": "Doelkaart",
+      "previewDescription": "Deze records worden verplaatst:",
+      "confirm": "Patiënt samenvoegen",
+      "previewFailed": "Het voorbeeld kon niet worden geladen.",
+      "failed": "Samenvoegen mislukt.",
+      "counts": {
+        "events": "Gebeurtenissen: {{count}}",
+        "visits": "Bezoeken: {{count}}",
+        "documents": "Documenten: {{count}}",
+        "formSubmissions": "Formulieren: {{count}}",
+        "consents": "Toestemmingen: {{count}}",
+        "evaluationCases": "Metingen: {{count}}",
+        "reservationSlots": "Reserveringsslots: {{count}}",
+        "emailLogs": "E-maillogs: {{count}}"
+      }
+    },
+    "export": "CSV exporteren",
+    "exportFailed": "De export kon niet worden gedownload.",
+    "filters": {
+      "sortBy": "Sorteren op",
+      "sortLastName": "Achternaam",
+      "sortFirstName": "Voornaam",
+      "sortBirthDate": "Geboortedatum",
+      "sortOrder": "Volgorde",
+      "ascending": "Oplopend",
+      "descending": "Aflopend",
+      "status": "Status",
+      "allStatuses": "Alle",
+      "center": "Centrum",
+      "allCenters": "Alle centra"
     }
   },
   "admin": {
@@ -708,7 +778,9 @@
       "examiner": "Beoordelaar",
       "doctor": "Arts",
       "centerAdmin": "Centrumbeheerder",
-      "countryAdmin": "Landbeheerder"
+      "countryAdmin": "Landbeheerder",
+      "admin": "Beheerder",
+      "digitiser": "Digitaliseerder"
     },
     "accessRules": {
       "title": "Toegangsregels: {{name}}",
@@ -931,19 +1003,6 @@
       "saveAllowedExaminations": "Het opslaan van beschikbare onderzoeken is mislukt."
     }
   },
-  "themes": {
-    "lightThemes": "Lichtthema's",
-    "darkThemes": "Donkerethema's",
-    "aurora": "Aurora",
-    "nebulaBlue": "Nebula Blauw",
-    "emeraldDawn": "Smaragd Zonsopgang",
-    "mysticViolet": "Mystiek Violet",
-    "obsidian": "Obsidiaan",
-    "cyberAzure": "Cyber Azuur",
-    "forestShadow": "Bos Schaduw",
-    "cosmicPurple": "Kosmisch Paars",
-    "crimsonNight": "Karmozijn Nacht"
-  },
   "events": {
     "addEvent": "Gebeurtenis toevoegen",
     "basicInfo": "Basisinformatie",
@@ -995,7 +1054,9 @@
     "examinationDocumentsSelected_many": "{{count}} bestanden geselecteerd voor onderzoek",
     "uploadingDocuments": "Documenten uploaden...",
     "groupUploadNotSupported": "Het uploaden van onderzoeksdocumenten is alleen mogelijk buiten groepsmodus.",
-    "addToList": "Voeg \"{{name}}\" toe aan de lijst"
+    "addToList": "Voeg \"{{name}}\" toe aan de lijst",
+    "newIntakeForm": "Nieuw intakeformulier",
+    "examinationDocumentsSelected": "Geselecteerde onderzoeksdocumenten: {{count}}"
   },
   "activityLog": {
     "title": "Auditlogboek",
@@ -1029,7 +1090,11 @@
     "versionUnknown": "versie onbekend",
     "impersonationActive": "Voorbeeld",
     "impersonationDetail": "U bladert als {{name}} (ingelogd als beheerder {{admin}}).",
-    "stopImpersonation": "Voorbeeld beëindigen"
+    "stopImpersonation": "Voorbeeld beëindigen",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten",
+    "switchToLight": "Overschakelen naar lichte modus",
+    "switchToDark": "Overschakelen naar donkere modus"
   },
   "administration": {
     "title": "Beheer",
@@ -1091,7 +1156,10 @@
     "searchPlaceholder": "Zoek in code of tekst…",
     "channel": "Kanaal",
     "allChannels": "Alle kanalen",
-    "channels": { "email": "E-mail", "sms": "Sms" },
+    "channels": {
+      "email": "E-mail",
+      "sms": "Sms"
+    },
     "code": "Code",
     "allCodes": "Alle codes",
     "codes": {
@@ -1108,7 +1176,11 @@
     "allLanguages": "Alle talen",
     "scope": "Bereik",
     "allScopes": "Alle bereiken",
-    "scopes": { "Global": "Globaal", "Country": "Land", "Center": "Centrum" },
+    "scopes": {
+      "Global": "Globaal",
+      "Country": "Land",
+      "Center": "Centrum"
+    },
     "country": "Land",
     "center": "Centrum",
     "selectCenter": "Selecteer een centrum",
@@ -1324,7 +1396,14 @@
     "intakeMissingWarning": "Voor dit bezoek is geen inschrijfformulier ingevuld. U kunt het hierboven op de tablet invullen.",
     "intakeMissingBadge": "geen formulier",
     "otherVisits": "Andere bezoeken",
-    "patientSearchPlaceholder": "Patiënten zoeken…"
+    "patientSearchPlaceholder": "Patiënten zoeken…",
+    "tdbViewerTitle": ".tdb-meting – {{fileName}}",
+    "tdbViewFailed": "De meting kon niet worden weergegeven.",
+    "tdbLayers": "{{count}} lagen",
+    "tdbNoise": "Ruis: {{value}}",
+    "tdbReadonlyHint": "Voorbeeld van de meting. Noteer bevindingen in de beoordeling.",
+    "tdbBadge": ".tdb",
+    "tdbDownload": ".tdb downloaden"
   },
   "patientForm": {
     "accuracyConfirmation": "Ik bevestig dat de bovenstaande gegevens correct zijn",
@@ -1434,5 +1513,65 @@
       "en": "English",
       "nl": "Nederlands"
     }
+  },
+  "editPatient": {
+    "structuredSubmission": "Gestructureerde formuliergegevens (alle velden)",
+    "submissionId": "Formulier-ID",
+    "patientId": "Patiënt-ID",
+    "eventId": "Gebeurtenis-ID",
+    "submittedAt": "Verzonden op",
+    "medication": "Medicatie",
+    "lifestyle": "Leefstijl",
+    "reproductiveHealth": "Voortplantingsgezondheid",
+    "consent": "Toestemmingen",
+    "signatureVectorRaw": "Ruwe handtekeninggegevens",
+    "sicknessHistories": "Ziektegeschiedenis",
+    "rawPatientJson": "Ruwe JSON van patiënt (volledige payload)"
+  },
+  "notFound": {
+    "title": "Pagina niet gevonden",
+    "description": "Deze link bestaat niet of u heeft er geen toegang toe.",
+    "backHome": "Terug naar dashboard"
+  },
+  "intakeDigitise": {
+    "title": "Papieren formulier digitaliseren",
+    "description": "Upload een gescand intakeformulier (PDF). De AI-service leest het en vult de velden voor; controleer de waarden.",
+    "button": "Formulier-PDF uploaden",
+    "uploading": "PDF verwerken…",
+    "success": "Het formulier is gelezen en de velden zijn voorgevuld.",
+    "reviewWarning": "Het formulier is gelezen, maar handgeschreven waarden moeten handmatig worden gecontroleerd.",
+    "notIntake": "Het geüploade bestand lijkt geen CEPEM-intakeformulier te zijn.",
+    "failed": "De PDF kon niet worden verwerkt."
+  },
+  "measurements": {
+    "title": "Metingen",
+    "lead": "Bezoeken met geüploade .tdb-bestanden. Klik op een rij om het bezoek te openen.",
+    "searchPlaceholder": "Zoek patiënt of bestand…",
+    "filterLabel": "Beoordelingsstatus",
+    "filter": {
+      "all": "Alles",
+      "evaluated": "Beoordeeld",
+      "notEvaluated": "Niet beoordeeld",
+      "partial": "Gedeeltelijk"
+    },
+    "count": "{{count}} bezoeken",
+    "empty": "Geen metingen voldoen aan het filter.",
+    "loadFailed": "Metingen konden niet worden geladen.",
+    "patient": "Patiënt",
+    "visitDate": "Bezoekdatum",
+    "documents": ".tdb-bestanden",
+    "statusLabel": "Status",
+    "actions": "Acties",
+    "status": {
+      "evaluated": "Beoordeeld",
+      "partial": "Gedeeltelijk",
+      "pending": "Niet beoordeeld"
+    },
+    "manualBadge": "Handmatig beoordeeld",
+    "markConfirm": "Het bezoek van {{name}} als beoordeeld markeren? De meting verdwijnt uit de beoordelingswachtrij.",
+    "markSuccess": "Het bezoek is als beoordeeld gemarkeerd.",
+    "markFailed": "Het bezoek kon niet als beoordeeld worden gemarkeerd.",
+    "markHint": "Sluit de meting zoals twee artsbeoordelingen.",
+    "markEvaluated": "Als beoordeeld markeren"
   }
 }

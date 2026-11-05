@@ -1,5 +1,8 @@
+using Cepem.Shared;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.APIModels;
+using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 using System.Diagnostics;
 
@@ -11,11 +14,66 @@ namespace DatabaseAPI.Controllers
     {
         private readonly IEmployeeAuthService _authService;
         private readonly IPasswordResetService _passwordResetService;
+        private readonly DatabaseContext _context;
 
-        public AuthController(IEmployeeAuthService authService, IPasswordResetService passwordResetService)
+        public AuthController(
+            IEmployeeAuthService authService,
+            IPasswordResetService passwordResetService,
+            DatabaseContext context)
         {
             _authService = authService;
             _passwordResetService = passwordResetService;
+            _context = context;
+        }
+
+        /// <summary>
+        /// Checks whether a JWT's acl_version still matches the employee and
+        /// the account is active. Called by the gateway on token validation.
+        /// </summary>
+        [HttpGet("token-valid")]
+        public async Task<IActionResult> ValidateToken(
+            [FromQuery] int employeeId,
+            [FromQuery] int accessControlVersion)
+        {
+            var employee = await _context.Employees
+                .Where(e => e.Id == employeeId)
+                .Select(e => new
+                {
+                    e.AccessControlVersion,
+                    e.Person.Active,
+                    e.PasswordExpiration
+                })
+                .FirstOrDefaultAsync();
+
+            var valid = employee != null &&
+                        employee.Active &&
+                        employee.AccessControlVersion == accessControlVersion;
+            var passwordExpired = employee != null &&
+                                  employee.PasswordExpiration != DateTime.MinValue &&
+                                  employee.PasswordExpiration.Date <= DateTime.UtcNow.Date;
+
+            return Ok(new
+            {
+                valid,
+                accessControlVersion = employee?.AccessControlVersion,
+                active = employee?.Active ?? false,
+                passwordExpired
+            });
+        }
+
+        /// <summary>Server-side logout: revoke every token issued to the employee.</summary>
+        [HttpPost("logout/{employeeId:int}")]
+        public async Task<IActionResult> Logout(int employeeId)
+        {
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null)
+            {
+                return NotFound("Employee not found");
+            }
+
+            employee.AccessControlVersion++;
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         [HttpPost("authenticate")]
@@ -80,9 +138,9 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Neplatné údaje pro změnu hesla");
             }
 
-            if (request.NewPassword.Length < 6)
+            if (!PasswordPolicy.IsValid(request.NewPassword))
             {
-                return BadRequest("Nové heslo musí mít alespoň 6 znaků");
+                return BadRequest(PasswordPolicy.RequirementMessage);
             }
 
             var result = await _authService.ChangePasswordDetailedAsync(employeeId, request.CurrentPassword, request.NewPassword);
@@ -103,7 +161,7 @@ namespace DatabaseAPI.Controllers
         [HttpPost("create-employee")]
         public async Task<ActionResult<CreateEmployeeResponse>> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
-            if (string.IsNullOrEmpty(request.FirstName) || 
+            if (string.IsNullOrEmpty(request.FirstName) ||
                 string.IsNullOrEmpty(request.LastName) ||
                 string.IsNullOrEmpty(request.Email) ||
                 string.IsNullOrEmpty(request.PhoneNumber) ||
@@ -114,9 +172,9 @@ namespace DatabaseAPI.Controllers
                 return BadRequest("Všechna povinná pole musí být vyplněna");
             }
 
-            if (request.Password.Length < 6)
+            if (!PasswordPolicy.IsValid(request.Password))
             {
-                return BadRequest("Heslo musí mít alespoň 6 znaků");
+                return BadRequest(PasswordPolicy.RequirementMessage);
             }
 
             try

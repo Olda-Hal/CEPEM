@@ -1,9 +1,15 @@
+x-logging: &default-logging
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # MySQL Database (Development only - use AWS Aurora in production)
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.40
     container_name: cepem_mysql
     restart: unless-stopped
+    logging: *default-logging
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -22,13 +28,48 @@ services:
     networks:
       - cepem_network
 
+  # Antivirus scanning for uploaded photos, PDFs and MEIK measurements.
+  # Set CLAMAV_ENABLED=false to skip scans (clamd stays idle).
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    networks:
+      - cepem_network
+
   # Database API
+  # Paper intake-form digitisation (OCR + optional vision model).
+  ai-service:
+    build:
+      context: ./backend/AIService
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      - TESSERACT_LANG=${TESSERACT_LANG:-ces+eng}
+      - VISION_API_URL=${VISION_API_URL:-}
+      - VISION_API_KEY=${VISION_API_KEY:-}
+      - VISION_MODEL=${VISION_MODEL:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cepem_network
+
   database-api:
     build:
       context: ./backend
       dockerfile: DatabaseAPI/Dockerfile
-    container_name: cepem_database_api
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "127.0.0.1:${DATABASE_API_PORT}:5001"
     extra_hosts:
@@ -43,9 +84,18 @@ services:
       - DocumentEncryption__IV=${DOCUMENT_ENCRYPTION_IV}
       - PhotoStorage__Path=${PHOTO_STORAGE_PATH}
       - DocumentStorage__Path=${DOCUMENT_STORAGE_PATH}
+      - DocumentRetention__Enabled=${DOCUMENT_RETENTION_ENABLED:-true}
+      - DocumentRetention__RetentionDays=${DOCUMENT_RETENTION_RETENTION_DAYS:-30}
+      - DocumentRetention__CleanupIntervalHours=${DOCUMENT_RETENTION_CLEANUP_INTERVAL_HOURS:-24}
+      - ClamAv__Enabled=${CLAMAV_ENABLED:-false}
+      - ClamAv__Host=${CLAMAV_HOST:-clamav}
+      - ClamAv__Port=${CLAMAV_PORT:-3310}
+      - ClamAv__TimeoutSeconds=${CLAMAV_TIMEOUT_SECONDS:-10}
+      - ClamAv__FailOpen=${CLAMAV_FAIL_OPEN:-false}
       - DATABASE_CORS_ORIGINS=http://${APP_HOST}:3000,http://127.0.0.1:3000,http://frontend:3000
       - SERVICE_AUTH_KEY=${SERVICE_AUTH_KEY}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
+      - ADMIN_PASSWORD_CHANGE_REQUIRED=${ADMIN_PASSWORD_CHANGE_REQUIRED:-true}
       - Smtp__Host=${SMTP_HOST:-mailpit}
       - Smtp__Port=${SMTP_PORT:-1025}
       - Smtp__FromAddress=${SMTP_FROM:-noreply@cepem.local}
@@ -70,8 +120,8 @@ services:
     build:
       context: ./backend
       dockerfile: HealthcareAPI/Dockerfile
-    container_name: cepem_healthcare_api
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "${HEALTHCARE_API_PORT}:80"
     extra_hosts:
@@ -82,12 +132,18 @@ services:
       - JWT__SecretKey=${JWT_SECRET_KEY}
       - JWT__Issuer=${JWT_ISSUER}
       - JWT__Audience=${JWT_AUDIENCE}
+      - JWT__AccessTokenMinutes=${JWT_ACCESS_TOKEN_MINUTES:-30}
+      - JWT__RefreshTokenDays=${JWT_REFRESH_TOKEN_DAYS:-7}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - AI_SERVICE_URL=http://ai-service:8000
       - DatabaseApiUrl=${DATABASE_API_URL}
       - DatabaseApiServiceKey=${SERVICE_AUTH_KEY}
       - RateLimiting__LoginPermitLimit=${RATE_LIMITING__LOGINPERMITLIMIT:-10}
       - HEALTHCARE_CORS_ORIGINS=http://${APP_HOST}:3000,http://127.0.0.1:3000,http://frontend:3000
     depends_on:
       database-api:
+        condition: service_healthy
+      ai-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost/health"]
@@ -105,8 +161,10 @@ services:
       dockerfile: ./frontend/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-}
-    container_name: cepem_frontend
+        VITE_GRAFANA_URL: ${VITE_GRAFANA_URL:-http://localhost:3001}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "${FRONTEND_PORT}:3000"
     depends_on:
@@ -124,16 +182,52 @@ services:
   # Observability (dev): Prometheus scrapes /metrics of both APIs, Grafana
   # renders the provisioned dashboard. Grafana: http://127.0.0.1:3001
   # (anonymous viewer enabled; admin user/password from .env)
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --config.expand-env=true
+      - --storage.path=/alertmanager
+    environment:
+      - ALERTMANAGER_SMTP_SMARTHOST=${ALERTMANAGER_SMTP_SMARTHOST:-localhost:25}
+      - ALERTMANAGER_SMTP_FROM=${ALERTMANAGER_SMTP_FROM:-alertmanager@cepem.local}
+      - ALERTMANAGER_SMTP_USER=${ALERTMANAGER_SMTP_USER:-}
+      - ALERTMANAGER_SMTP_PASSWORD=${ALERTMANAGER_SMTP_PASSWORD:-}
+      - ALERTMANAGER_SMTP_REQUIRE_TLS=${ALERTMANAGER_SMTP_REQUIRE_TLS:-false}
+      - ALERTMANAGER_EMAIL_TO=${ALERTMANAGER_EMAIL_TO:-admin@cepem.local}
+    ports:
+      - "127.0.0.1:9093:9093"
+    networks:
+      - cepem_network
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - ./deploy/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - cepem_network
+
   prometheus:
     image: prom/prometheus:v2.53.0
-    container_name: cepem_prometheus
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+      - --storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE:-5GB}
+    depends_on:
+      - alertmanager
+      - blackbox-exporter
     ports:
       - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
     networks:
@@ -141,8 +235,8 @@ services:
 
   grafana:
     image: grafana/grafana:11.1.0
-    container_name: cepem_grafana
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
@@ -164,8 +258,8 @@ services:
   # Mailpit mailbox instead of a real MTA (web UI on http://localhost:8025).
   mailpit:
     image: axllent/mailpit:v1.21
-    container_name: cepem_mailpit
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
       - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"

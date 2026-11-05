@@ -63,7 +63,7 @@ public class EmailLogsControllerTests : IDisposable
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<EmailLogsController.EmailLogListResponse>(ok.Value);
-        Assert.Equal("b@example.com", Assert.Single(response.Logs).ToAddress);
+        Assert.Equal("***@example.com", Assert.Single(response.Logs).ToAddress);
 
         var failed = await _controller.GetLogs(status: EmailLogStatuses.Failed);
         var failedResponse = Assert.IsType<EmailLogsController.EmailLogListResponse>(
@@ -80,12 +80,12 @@ public class EmailLogsControllerTests : IDisposable
         var byName = await _controller.GetLogs(search: "Kralova");
         var byNameResponse = Assert.IsType<EmailLogsController.EmailLogListResponse>(
             Assert.IsType<OkObjectResult>(byName.Result).Value);
-        Assert.Equal("eva@example.com", Assert.Single(byNameResponse.Logs).ToAddress);
+        Assert.Equal("e***@example.com", Assert.Single(byNameResponse.Logs).ToAddress);
 
         var bySubject = await _controller.GetLogs(search: "reminder");
         var bySubjectResponse = Assert.IsType<EmailLogsController.EmailLogListResponse>(
             Assert.IsType<OkObjectResult>(bySubject.Result).Value);
-        Assert.Equal("jan@example.com", Assert.Single(bySubjectResponse.Logs).ToAddress);
+        Assert.Equal("j***@example.com", Assert.Single(bySubjectResponse.Logs).ToAddress);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class EmailLogsControllerTests : IDisposable
 
         var file = Assert.IsType<FileContentResult>(result);
         var csv = Encoding.UTF8.GetString(file.FileContents);
-        Assert.Contains("jan@example.com", csv);
+        Assert.Contains("j***@example.com", csv);
         Assert.Contains("timeout", csv);
         Assert.DoesNotContain("eva@example.com", csv);
     }

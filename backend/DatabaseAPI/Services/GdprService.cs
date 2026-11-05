@@ -32,17 +32,20 @@ public class GdprService : IGdprService
     private readonly DatabaseContext _context;
     private readonly PatientDocumentService _documentService;
     private readonly PatientPhotoService _photoService;
+    private readonly ExaminationDocumentService _examinationDocumentService;
     private readonly ILogger<GdprService> _logger;
 
     public GdprService(
         DatabaseContext context,
         PatientDocumentService documentService,
         PatientPhotoService photoService,
+        ExaminationDocumentService examinationDocumentService,
         ILogger<GdprService> logger)
     {
         _context = context;
         _documentService = documentService;
         _photoService = photoService;
+        _examinationDocumentService = examinationDocumentService;
         _logger = logger;
     }
 
@@ -575,11 +578,15 @@ public class GdprService : IGdprService
             link.RevokedAtUtc = DateTime.UtcNow;
         }
 
+        var examinationDocumentsDeleted = await _examinationDocumentService
+            .PurgeForPatientAsync(patientId, cancellationToken);
+
         var summary = new
         {
             patientId,
             photoDeleted,
             documentsDeleted,
+            examinationDocumentsDeleted,
             visitsAnonymized = visits.Count,
             eventsAnonymized = events.Count,
             formSubmissionsAnonymized = submissions.Count,
@@ -596,7 +603,7 @@ public class GdprService : IGdprService
             RequestedByEmployeeId = requestedByEmployeeId,
             RequestedAtUtc = DateTime.UtcNow,
             CompletedAtUtc = DateTime.UtcNow,
-            Details = $"photo={photoDeleted}, documents={documentsDeleted}, visits={visits.Count}, events={events.Count}"
+            Details = $"photo={photoDeleted}, documents={documentsDeleted}, examinationDocuments={examinationDocumentsDeleted}, visits={visits.Count}, events={events.Count}"
         });
 
         await _context.SaveChangesAsync(cancellationToken);

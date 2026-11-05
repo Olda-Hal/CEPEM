@@ -140,6 +140,8 @@ export interface ChangePasswordRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken?: string;
+  refreshTokenExpiresAt?: string;
   email: string;
   fullName: string;
   passwordExpiration?: string;
@@ -170,6 +172,8 @@ export interface Patient {
   fullName: string;
   photoUrl?: string;
   isDeleted?: boolean;
+  homeHospitalId?: number | null;
+  homeHospitalName?: string | null;
   createdByEmployeeId?: number | null;
   canDelete?: boolean;
 }
@@ -339,6 +343,69 @@ export interface PatientDetail {
   events: PatientEvent[];
   appointments: PatientAppointment[];
   documents: PatientDocument[];
+}
+
+/** Master-data values proposed by a public intake submission. */
+export interface MasterDataChanges {
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  insuranceNumber?: number | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+}
+
+export interface IntakeChangeRequest {
+  id: number;
+  patientId: number;
+  intakeEventId?: number | null;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  summary?: string | null;
+  changes: MasterDataChanges;
+  createdAtUtc: string;
+  reviewedAtUtc?: string | null;
+  reviewedByEmployeeId?: number | null;
+}
+
+export interface PatientMergePreview {
+  sourcePatientId: number;
+  targetPatientId: number;
+  sourceName: string;
+  targetName: string;
+  sourceUid: string;
+  targetUid: string;
+  events: number;
+  visits: number;
+  documents: number;
+  formSubmissions: number;
+  consents: number;
+  evaluationCases: number;
+  intakeChanges: number;
+  gdprRequests: number;
+  reservationSlots: number;
+  reservations: number;
+  appointments: number;
+  emailLogs: number;
+  smsLogs: number;
+  intakeLinks: number;
+}
+
+export interface PatientMergeResult {
+  sourcePatientId: number;
+  targetPatientId: number;
+  targetName: string;
+  targetUid: string;
+  movedEvents: number;
+  movedVisits: number;
+  movedDocuments: number;
+  movedFormSubmissions: number;
+  movedConsents: number;
+  movedEvaluationCases: number;
+  movedIntakeChanges: number;
+  movedPersonReferences: number;
 }
 
 export interface ExaminationDocument {
@@ -779,7 +846,8 @@ export interface AuthContextType {
   user: Employee | null;
   token: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  /** Clear the session; notifyServer=false is used for 401-driven cleanup. */
+  logout: (notifyServer?: boolean) => void;
   changePassword: (
     currentPassword: string,
     newPassword: string,
@@ -865,6 +933,8 @@ export interface EvaluationCase {
   tdb?: TdbMeasurement | null;
   evaluatedAtUtc?: string | null;
   isEvaluated: boolean;
+  /** Closed from the measurements overview instead of two doctor reviews. */
+  isManuallyEvaluated?: boolean;
   reviewCount: number;
   maxReviews: number;
   reviews?: EvaluationReview[] | null;
@@ -878,6 +948,7 @@ export interface VisitEvaluationSummary {
   posture?: string | null;
   reviewCount: number;
   lastEvaluatedAtUtc?: string | null;
+  isManuallyEvaluated?: boolean;
 }
 
 /** Visit ("návštěva") of a patient. */
@@ -896,6 +967,37 @@ export interface VisitDocumentItem {
   originalFileName: string;
   uploadedAt: string;
   fileSize: number;
+  /** MEIK .tdb measurement: rendered in-app, never opened as PDF. */
+  isTdb: boolean;
+}
+
+/** One .tdb file in the measurements overview. */
+export interface MeasurementDocument {
+  documentId: number;
+  originalFileName: string;
+  uploadedAt: string;
+  fileSize: number;
+  evaluationCaseId?: number | null;
+}
+
+/** One visit row in the measurements overview. */
+export interface MeasurementVisit {
+  visitId: number;
+  patientId: number;
+  patientName: string;
+  patientUid: string;
+  visitDate: string;
+  status: 'evaluated' | 'partial' | 'pending';
+  evaluationCaseCount: number;
+  evaluatedCaseCount: number;
+  isManuallyEvaluated: boolean;
+  lastEvaluatedAtUtc?: string | null;
+  documents: MeasurementDocument[];
+}
+
+export interface MeasurementListResponse {
+  total: number;
+  items: MeasurementVisit[];
 }
 
 export interface VisitDetail {
@@ -907,4 +1009,14 @@ export interface VisitDetail {
   documents: VisitDocumentItem[];
   evaluations: VisitEvaluationSummary[];
   intakeForm?: string | null;
+}
+
+/** Result of the paper intake-form digitisation (AI service). */
+export interface IntakeDigitisationResult {
+  isIntakeForm: boolean;
+  confidence: number;
+  language: string;
+  fields: Record<string, string | number | boolean | null>;
+  warnings: string[];
+  text?: string;
 }

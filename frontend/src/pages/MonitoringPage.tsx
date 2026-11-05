@@ -8,8 +8,12 @@ import './MonitoringPage.css';
  * endpoint, status codes, latency, source IPs) served by the observability
  * stack (prometheus + grafana services).
  */
+// VITE_GRAFANA_URL is baked at build time. In production it defaults to the
+// same-origin /grafana path proxied by nginx, so a missing build arg no longer
+// points users at their own localhost.
 const GRAFANA_BASE_URL =
-  (import.meta.env.VITE_GRAFANA_URL as string | undefined) ?? 'http://localhost:3001';
+  (import.meta.env.VITE_GRAFANA_URL as string | undefined) ||
+  (import.meta.env.DEV ? 'http://localhost:3001' : '/grafana');
 
 const DASHBOARD_URL = `${GRAFANA_BASE_URL}/d/cepem-http?kiosk`;
 

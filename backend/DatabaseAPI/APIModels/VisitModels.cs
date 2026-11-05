@@ -17,6 +17,9 @@ public class VisitDocumentDto
     public string OriginalFileName { get; set; } = string.Empty;
     public DateTime UploadedAt { get; set; }
     public long FileSize { get; set; }
+
+    /// <summary>True for a MEIK .tdb measurement (rendered in-app, not as PDF).</summary>
+    public bool IsTdb { get; set; }
 }
 
 public class VisitEvaluationSummaryDto
@@ -27,6 +30,9 @@ public class VisitEvaluationSummaryDto
     public string? Posture { get; set; }
     public int ReviewCount { get; set; }
     public DateTime? LastEvaluatedAtUtc { get; set; }
+
+    /// <summary>Completed manually from the measurements overview (no doctor reviews).</summary>
+    public bool IsManuallyEvaluated { get; set; }
 }
 
 public class VisitDetailDto

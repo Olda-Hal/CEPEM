@@ -5,6 +5,7 @@ using DatabaseAPI.Data;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.DatabaseModels;
 using DatabaseAPI.Services;
+using DatabaseAPI.Utils;
 
 namespace DatabaseAPI.Controllers
 {
@@ -20,6 +21,9 @@ namespace DatabaseAPI.Controllers
         private readonly IEmployeeScopeService _employeeScopeService;
         private readonly IUidService _uidService;
         private readonly IPatientService _patientService;
+        private readonly IPatientMergeService _mergeService;
+        private readonly ITdbAnalysisService _tdbAnalysisService;
+        private readonly IAntivirusScanner _antivirusScanner;
 
         public PatientsController(
             DatabaseContext context,
@@ -29,7 +33,10 @@ namespace DatabaseAPI.Controllers
             IActorCountryContextService actorCountryContextService,
             IEmployeeScopeService employeeScopeService,
             IUidService uidService,
-            IPatientService patientService)
+            IPatientService patientService,
+            IPatientMergeService mergeService,
+            ITdbAnalysisService tdbAnalysisService,
+            IAntivirusScanner? antivirusScanner = null)
         {
             _context = context;
             _logger = logger;
@@ -39,6 +46,44 @@ namespace DatabaseAPI.Controllers
             _employeeScopeService = employeeScopeService;
             _uidService = uidService;
             _patientService = patientService;
+            _mergeService = mergeService;
+            _tdbAnalysisService = tdbAnalysisService;
+            _antivirusScanner = antivirusScanner ?? new NullAntivirusScanner();
+        }
+
+        [HttpGet("merge/preview")]
+        public async Task<ActionResult<PatientMergePreviewDto>> PreviewMerge(
+            [FromQuery] int sourcePatientId,
+            [FromQuery] int targetPatientId)
+        {
+            if (!await PatientIsVisibleAsync(sourcePatientId) ||
+                !await PatientIsVisibleAsync(targetPatientId))
+            {
+                return NotFound("Patient not found");
+            }
+
+            var preview = await _mergeService.PreviewAsync(sourcePatientId, targetPatientId);
+            return preview == null
+                ? NotFound("Patient not found or source/target are identical")
+                : Ok(preview);
+        }
+
+        [HttpPost("merge")]
+        public async Task<ActionResult<PatientMergeResultDto>> MergePatients(
+            [FromBody] PatientMergeRequest request)
+        {
+            if (!await PatientIsVisibleAsync(request.SourcePatientId) ||
+                !await PatientIsVisibleAsync(request.TargetPatientId))
+            {
+                return NotFound("Patient not found");
+            }
+
+            var (ok, error, result) = await _mergeService.MergeAsync(
+                request.SourcePatientId,
+                request.TargetPatientId,
+                _actorCountryContextService.GetActorEmployeeId());
+
+            return ok ? Ok(result) : BadRequest(error);
         }
 
         [HttpGet("search")]
@@ -48,7 +93,9 @@ namespace DatabaseAPI.Controllers
             [FromQuery] string search = "",
             [FromQuery] string sortBy = "LastName",
             [FromQuery] string sortOrder = "asc",
-            [FromQuery] bool includeDeleted = false)
+            [FromQuery] bool includeDeleted = false,
+            [FromQuery] bool? alive = null,
+            [FromQuery] int? centerId = null)
         {
             try
             {
@@ -69,12 +116,22 @@ namespace DatabaseAPI.Controllers
                 if (!string.IsNullOrEmpty(search))
                 {
                     search = search.ToLower();
-                    query = query.Where(p => 
+                    query = query.Where(p =>
                         p.Person.FirstName.ToLower().Contains(search) ||
                         p.Person.LastName.ToLower().Contains(search) ||
                         p.Person.UID.ToLower().Contains(search) ||
                         p.Person.ContactToObjects.Any(cto =>
                             cto.Contact.Emails.Any(e => e.Email.ToLower().Contains(search))));
+                }
+
+                if (alive.HasValue)
+                {
+                    query = query.Where(p => p.Alive == alive.Value);
+                }
+
+                if (centerId.HasValue)
+                {
+                    query = query.Where(p => p.HomeHospitalId == centerId.Value);
                 }
 
                 // Apply sorting
@@ -125,6 +182,8 @@ namespace DatabaseAPI.Controllers
                             FullName = $"{p.Person.LastName}, {p.Person.FirstName}",
                             PhotoUrl = _photoService.GetPatientPhotoUrl(p.Id, p),
                             IsDeleted = p.IsDeleted,
+                            HomeHospitalId = p.HomeHospitalId,
+                            HomeHospitalName = p.HomeHospital != null ? p.HomeHospital.Name : null,
                             CreatedByEmployeeId = p.CreatedByEmployeeId
                         },
                         CreatorSupervisorId = p.CreatedByEmployee != null ? p.CreatedByEmployee.CreatedByEmployeeId : null
@@ -157,7 +216,122 @@ namespace DatabaseAPI.Controllers
             }
         }
 
-[HttpPost]
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportPatients(
+            [FromQuery] string search = "",
+            [FromQuery] bool includeDeleted = false,
+            [FromQuery] bool? alive = null,
+            [FromQuery] int? centerId = null,
+            [FromQuery] string sortBy = "LastName",
+            [FromQuery] string sortOrder = "asc")
+        {
+            var actorScope = await _employeeScopeService.GetActorScopeAsync();
+            if (!actorScope.CanSeeDeletedPatients)
+            {
+                includeDeleted = false;
+            }
+
+            var query = _context.Patients
+                .AsNoTracking()
+                .Include(p => p.Person)
+                    .ThenInclude(person => person.Address)
+                .Include(p => p.Person)
+                    .ThenInclude(person => person.ContactToObjects)
+                        .ThenInclude(link => link.Contact)
+                            .ThenInclude(contact => contact.Emails)
+                .Include(p => p.Person)
+                    .ThenInclude(person => person.ContactToObjects)
+                        .ThenInclude(link => link.Contact)
+                            .ThenInclude(contact => contact.PhoneNumbers)
+                .Include(p => p.HomeHospital)
+                .Where(p => includeDeleted || !p.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(p =>
+                    p.Person.FirstName.ToLower().Contains(term) ||
+                    p.Person.LastName.ToLower().Contains(term) ||
+                    p.Person.UID.ToLower().Contains(term) ||
+                    p.Person.ContactToObjects.Any(link =>
+                        link.Contact.Emails.Any(email => email.Email.ToLower().Contains(term))));
+            }
+            if (alive.HasValue)
+            {
+                query = query.Where(p => p.Alive == alive.Value);
+            }
+            if (centerId.HasValue)
+            {
+                query = query.Where(p => p.HomeHospitalId == centerId.Value);
+            }
+
+            query = sortBy.ToLower() switch
+            {
+                "firstname" => sortOrder.ToLower() == "desc"
+                    ? query.OrderByDescending(p => p.Person.FirstName)
+                    : query.OrderBy(p => p.Person.FirstName),
+                "birthdate" => sortOrder.ToLower() == "desc"
+                    ? query.OrderByDescending(p => p.BirthDate)
+                    : query.OrderBy(p => p.BirthDate),
+                _ => sortOrder.ToLower() == "desc"
+                    ? query.OrderByDescending(p => p.Person.LastName).ThenByDescending(p => p.Person.FirstName)
+                    : query.OrderBy(p => p.Person.LastName).ThenBy(p => p.Person.FirstName)
+            };
+
+            var rows = await query.Take(50_000).Select(p => new
+            {
+                p.Person.UID,
+                p.Person.FirstName,
+                p.Person.LastName,
+                p.BirthDate,
+                p.Person.Gender,
+                p.InsuranceNumber,
+                Email = p.Person.ContactToObjects.SelectMany(link => link.Contact.Emails)
+                    .Select(email => email.Email).FirstOrDefault(),
+                Phone = p.Person.ContactToObjects.SelectMany(link => link.Contact.PhoneNumbers)
+                    .Select(phone => phone.PhoneNumber).FirstOrDefault(),
+                Street = p.Person.Address != null ? p.Person.Address.Street : string.Empty,
+                City = p.Person.Address != null ? p.Person.Address.City : string.Empty,
+                PostalCode = p.Person.Address != null ? p.Person.Address.PostalCode : string.Empty,
+                Center = p.HomeHospital != null ? p.HomeHospital.Name : string.Empty,
+                p.Alive,
+                p.Person.CreatedAt,
+                p.IsDeleted
+            }).ToListAsync();
+
+            var builder = new System.Text.StringBuilder();
+            builder.AppendLine("UID;First name;Last name;Birth date;Gender;Insurance;Email;Phone;Street;City;Postal code;Center;Alive;Created at;Deleted");
+            foreach (var row in rows)
+            {
+                builder.AppendLine(string.Join(';',
+                    CsvEscape(row.UID),
+                    CsvEscape(row.FirstName),
+                    CsvEscape(row.LastName),
+                    row.BirthDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    CsvEscape(row.Gender),
+                    row.InsuranceNumber.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    CsvEscape(row.Email ?? string.Empty),
+                    CsvEscape(row.Phone ?? string.Empty),
+                    CsvEscape(row.Street ?? string.Empty),
+                    CsvEscape(row.City ?? string.Empty),
+                    CsvEscape(row.PostalCode ?? string.Empty),
+                    CsvEscape(row.Center ?? string.Empty),
+                    row.Alive ? "1" : "0",
+                    row.CreatedAt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    row.IsDeleted ? "1" : "0"));
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(builder.ToString());
+            return File(bytes, "text/csv; charset=utf-8",
+                $"patients-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
+        }
+
+        private static string CsvEscape(string value) =>
+            value.Contains(';') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+                ? $"\"{value.Replace("\"", "\"\"")}\""
+                : value;
+
+        [HttpPost]
         public async Task<ActionResult<PatientDto>> CreatePatient([FromBody] CreatePatientRequest request)
         {
             try
@@ -596,6 +770,11 @@ namespace DatabaseAPI.Controllers
                 var upcomingAppointments = mergedAppointments.Where(a => a.StartTime >= DateTime.Now).ToList();
                 var lastEvent = patient.Events.OrderByDescending(e => e.HappenedAt).FirstOrDefault();
 
+                var latestSubmission = patient.FormSubmissions
+                    .OrderByDescending(submission => submission.SubmittedAtUtc)
+                    .ThenByDescending(submission => submission.Id)
+                    .FirstOrDefault();
+
                 var patientDetailDto = new PatientDetailDto
                 {
                     Id = patient.Id,
@@ -630,85 +809,85 @@ namespace DatabaseAPI.Controllers
                         LastVisitType = lastEvent?.EventType.NameTranslation?.EN
                     },
                     QuickPreviewSettings = new QuickPreviewSettingsDto(),
-                    FormSubmission = patient.FormSubmissions.FirstOrDefault() != null ? new FormSubmissionDto
+                    FormSubmission = latestSubmission != null ? new FormSubmissionDto
                     {
-                        Id = patient.FormSubmissions.First().Id,
-                        PatientId = patient.FormSubmissions.First().PatientId,
-                        EventId = patient.FormSubmissions.First().EventId,
-                        SubmittedAtUtc = patient.FormSubmissions.First().SubmittedAtUtc,
-                        Medication = patient.FormSubmissions.First().Medication != null ? new FormSubmissionMedicationDto
+                        Id = latestSubmission.Id,
+                        PatientId = latestSubmission.PatientId,
+                        EventId = latestSubmission.EventId,
+                        SubmittedAtUtc = latestSubmission.SubmittedAtUtc,
+                        Medication = latestSubmission.Medication != null ? new FormSubmissionMedicationDto
                         {
-                            Id = patient.FormSubmissions.First().Medication.Id,
-                            MedBloodPressure = patient.FormSubmissions.First().Medication.MedBloodPressure,
-                            MedHeart = patient.FormSubmissions.First().Medication.MedHeart,
-                            MedCholesterol = patient.FormSubmissions.First().Medication.MedCholesterol,
-                            MedBloodThinners = patient.FormSubmissions.First().Medication.MedBloodThinners,
-                            MedDiabetes = patient.FormSubmissions.First().Medication.MedDiabetes,
-                            MedThyroid = patient.FormSubmissions.First().Medication.MedThyroid,
-                            MedNerves = patient.FormSubmissions.First().Medication.MedNerves,
-                            MedPsych = patient.FormSubmissions.First().Medication.MedPsych,
-                            MedDigestion = patient.FormSubmissions.First().Medication.MedDigestion,
-                            MedPain = patient.FormSubmissions.First().Medication.MedPain,
-                            MedDehydration = patient.FormSubmissions.First().Medication.MedDehydration,
-                            MedBreathing = patient.FormSubmissions.First().Medication.MedBreathing,
-                            MedAntibiotics = patient.FormSubmissions.First().Medication.MedAntibiotics,
-                            MedSupplements = patient.FormSubmissions.First().Medication.MedSupplements,
-                            MedAllergies = patient.FormSubmissions.First().Medication.MedAllergies
+                            Id = latestSubmission.Medication.Id,
+                            MedBloodPressure = latestSubmission.Medication.MedBloodPressure,
+                            MedHeart = latestSubmission.Medication.MedHeart,
+                            MedCholesterol = latestSubmission.Medication.MedCholesterol,
+                            MedBloodThinners = latestSubmission.Medication.MedBloodThinners,
+                            MedDiabetes = latestSubmission.Medication.MedDiabetes,
+                            MedThyroid = latestSubmission.Medication.MedThyroid,
+                            MedNerves = latestSubmission.Medication.MedNerves,
+                            MedPsych = latestSubmission.Medication.MedPsych,
+                            MedDigestion = latestSubmission.Medication.MedDigestion,
+                            MedPain = latestSubmission.Medication.MedPain,
+                            MedDehydration = latestSubmission.Medication.MedDehydration,
+                            MedBreathing = latestSubmission.Medication.MedBreathing,
+                            MedAntibiotics = latestSubmission.Medication.MedAntibiotics,
+                            MedSupplements = latestSubmission.Medication.MedSupplements,
+                            MedAllergies = latestSubmission.Medication.MedAllergies
                         } : null,
-                        Lifestyle = patient.FormSubmissions.First().Lifestyle != null ? new FormSubmissionLifestyleDto
+                        Lifestyle = latestSubmission.Lifestyle != null ? new FormSubmissionLifestyleDto
                         {
-                            Id = patient.FormSubmissions.First().Lifestyle.Id,
-                            PoorSleep = patient.FormSubmissions.First().Lifestyle.PoorSleep,
-                            DigestiveIssues = patient.FormSubmissions.First().Lifestyle.DigestiveIssues,
-                            PhysicalStress = patient.FormSubmissions.First().Lifestyle.PhysicalStress,
-                            MentalStress = patient.FormSubmissions.First().Lifestyle.MentalStress,
-                            Smoking = patient.FormSubmissions.First().Lifestyle.Smoking,
-                            Fatigue = patient.FormSubmissions.First().Lifestyle.Fatigue,
-                            LastMealHours = patient.FormSubmissions.First().Lifestyle.LastMealHours,
-                            VaccinesAfter2023 = patient.FormSubmissions.First().Lifestyle.VaccinesAfter2023,
-                            AdditionalHealthInfo = patient.FormSubmissions.First().Lifestyle.AdditionalHealthInfo
+                            Id = latestSubmission.Lifestyle.Id,
+                            PoorSleep = latestSubmission.Lifestyle.PoorSleep,
+                            DigestiveIssues = latestSubmission.Lifestyle.DigestiveIssues,
+                            PhysicalStress = latestSubmission.Lifestyle.PhysicalStress,
+                            MentalStress = latestSubmission.Lifestyle.MentalStress,
+                            Smoking = latestSubmission.Lifestyle.Smoking,
+                            Fatigue = latestSubmission.Lifestyle.Fatigue,
+                            LastMealHours = latestSubmission.Lifestyle.LastMealHours,
+                            VaccinesAfter2023 = latestSubmission.Lifestyle.VaccinesAfter2023,
+                            AdditionalHealthInfo = latestSubmission.Lifestyle.AdditionalHealthInfo
                         } : null,
-                        ReproductiveHealth = patient.FormSubmissions.First().ReproductiveHealth != null ? new FormSubmissionReproductiveHealthDto
+                        ReproductiveHealth = latestSubmission.ReproductiveHealth != null ? new FormSubmissionReproductiveHealthDto
                         {
-                            Id = patient.FormSubmissions.First().ReproductiveHealth.Id,
-                            LastMenstruationDate = patient.FormSubmissions.First().ReproductiveHealth.LastMenstruationDate,
-                            MenstruationCycleDays = patient.FormSubmissions.First().ReproductiveHealth.MenstruationCycleDays,
-                            YearsSinceLastMenstruation = patient.FormSubmissions.First().ReproductiveHealth.YearsSinceLastMenstruation,
-                            GaveBirth = patient.FormSubmissions.First().ReproductiveHealth.GaveBirth,
-                            BirthCount = patient.FormSubmissions.First().ReproductiveHealth.BirthCount,
-                            BirthWhen = patient.FormSubmissions.First().ReproductiveHealth.BirthWhen,
-                            Breastfed = patient.FormSubmissions.First().ReproductiveHealth.Breastfed,
-                            BreastfeedingMonths = patient.FormSubmissions.First().ReproductiveHealth.BreastfeedingMonths,
-                            BreastfeedingInflammation = patient.FormSubmissions.First().ReproductiveHealth.BreastfeedingInflammation,
-                            EndedWithInflammation = patient.FormSubmissions.First().ReproductiveHealth.EndedWithInflammation,
-                            Contraception = patient.FormSubmissions.First().ReproductiveHealth.Contraception,
-                            ContraceptionDuration = patient.FormSubmissions.First().ReproductiveHealth.ContraceptionDuration,
-                            Estrogen = patient.FormSubmissions.First().ReproductiveHealth.Estrogen,
-                            EstrogenType = patient.FormSubmissions.First().ReproductiveHealth.EstrogenType,
-                            Interruption = patient.FormSubmissions.First().ReproductiveHealth.Interruption,
-                            InterruptionCount = patient.FormSubmissions.First().ReproductiveHealth.InterruptionCount,
-                            Miscarriage = patient.FormSubmissions.First().ReproductiveHealth.Miscarriage,
-                            MiscarriageCount = patient.FormSubmissions.First().ReproductiveHealth.MiscarriageCount,
-                            BreastInjury = patient.FormSubmissions.First().ReproductiveHealth.BreastInjury,
-                            Mammogram = patient.FormSubmissions.First().ReproductiveHealth.Mammogram,
-                            MammogramCount = patient.FormSubmissions.First().ReproductiveHealth.MammogramCount,
-                            BreastBiopsy = patient.FormSubmissions.First().ReproductiveHealth.BreastBiopsy,
-                            BreastImplants = patient.FormSubmissions.First().ReproductiveHealth.BreastImplants,
-                            BreastSurgery = patient.FormSubmissions.First().ReproductiveHealth.BreastSurgery,
-                            BreastSurgeryType = patient.FormSubmissions.First().ReproductiveHealth.BreastSurgeryType,
-                            FamilyTumors = patient.FormSubmissions.First().ReproductiveHealth.FamilyTumors,
-                            FamilyTumorType = patient.FormSubmissions.First().ReproductiveHealth.FamilyTumorType
+                            Id = latestSubmission.ReproductiveHealth.Id,
+                            LastMenstruationDate = latestSubmission.ReproductiveHealth.LastMenstruationDate,
+                            MenstruationCycleDays = latestSubmission.ReproductiveHealth.MenstruationCycleDays,
+                            YearsSinceLastMenstruation = latestSubmission.ReproductiveHealth.YearsSinceLastMenstruation,
+                            GaveBirth = latestSubmission.ReproductiveHealth.GaveBirth,
+                            BirthCount = latestSubmission.ReproductiveHealth.BirthCount,
+                            BirthWhen = latestSubmission.ReproductiveHealth.BirthWhen,
+                            Breastfed = latestSubmission.ReproductiveHealth.Breastfed,
+                            BreastfeedingMonths = latestSubmission.ReproductiveHealth.BreastfeedingMonths,
+                            BreastfeedingInflammation = latestSubmission.ReproductiveHealth.BreastfeedingInflammation,
+                            EndedWithInflammation = latestSubmission.ReproductiveHealth.EndedWithInflammation,
+                            Contraception = latestSubmission.ReproductiveHealth.Contraception,
+                            ContraceptionDuration = latestSubmission.ReproductiveHealth.ContraceptionDuration,
+                            Estrogen = latestSubmission.ReproductiveHealth.Estrogen,
+                            EstrogenType = latestSubmission.ReproductiveHealth.EstrogenType,
+                            Interruption = latestSubmission.ReproductiveHealth.Interruption,
+                            InterruptionCount = latestSubmission.ReproductiveHealth.InterruptionCount,
+                            Miscarriage = latestSubmission.ReproductiveHealth.Miscarriage,
+                            MiscarriageCount = latestSubmission.ReproductiveHealth.MiscarriageCount,
+                            BreastInjury = latestSubmission.ReproductiveHealth.BreastInjury,
+                            Mammogram = latestSubmission.ReproductiveHealth.Mammogram,
+                            MammogramCount = latestSubmission.ReproductiveHealth.MammogramCount,
+                            BreastBiopsy = latestSubmission.ReproductiveHealth.BreastBiopsy,
+                            BreastImplants = latestSubmission.ReproductiveHealth.BreastImplants,
+                            BreastSurgery = latestSubmission.ReproductiveHealth.BreastSurgery,
+                            BreastSurgeryType = latestSubmission.ReproductiveHealth.BreastSurgeryType,
+                            FamilyTumors = latestSubmission.ReproductiveHealth.FamilyTumors,
+                            FamilyTumorType = latestSubmission.ReproductiveHealth.FamilyTumorType
                         } : null,
-                        Consent = patient.FormSubmissions.First().Consent != null ? new FormSubmissionConsentDto
+                        Consent = latestSubmission.Consent != null ? new FormSubmissionConsentDto
                         {
-                            Id = patient.FormSubmissions.First().Consent.Id,
-                            ConfirmAccuracy = patient.FormSubmissions.First().Consent.ConfirmAccuracy,
-                            TermsAccepted = patient.FormSubmissions.First().Consent.TermsAccepted,
-                            SignaturePlace = patient.FormSubmissions.First().Consent.SignaturePlace,
-                            SignatureDate = patient.FormSubmissions.First().Consent.SignatureDate,
-                            SignatureVector = patient.FormSubmissions.First().Consent.SignatureVector
+                            Id = latestSubmission.Consent.Id,
+                            ConfirmAccuracy = latestSubmission.Consent.ConfirmAccuracy,
+                            TermsAccepted = latestSubmission.Consent.TermsAccepted,
+                            SignaturePlace = latestSubmission.Consent.SignaturePlace,
+                            SignatureDate = latestSubmission.Consent.SignatureDate,
+                            SignatureVector = latestSubmission.Consent.SignatureVector
                         } : null,
-                        SicknessHistories = patient.FormSubmissions.First().SicknessHistories.Select(sh => new SicknessHistoryDto
+                        SicknessHistories = latestSubmission.SicknessHistories.Select(sh => new SicknessHistoryDto
                         {
                             Id = sh.Id,
                             SicknessName = sh.SicknessName,
@@ -793,6 +972,18 @@ namespace DatabaseAPI.Controllers
                 using var memoryStream = new MemoryStream();
                 await photo.CopyToAsync(memoryStream);
                 var photoData = memoryStream.ToArray();
+
+                var photoValidationError = FileSignatureValidator.ValidatePatientPhoto(photoData);
+                if (photoValidationError != null)
+                {
+                    return BadRequest(photoValidationError);
+                }
+
+                var photoScan = await _antivirusScanner.ScanAsync(photoData);
+                if (!photoScan.Clean)
+                {
+                    return AntivirusFailure(photoScan);
+                }
 
                 var fileName = await _photoService.SavePatientPhotoAsync(id, photoData);
 
@@ -893,6 +1084,19 @@ namespace DatabaseAPI.Controllers
                 await document.CopyToAsync(memoryStream);
                 var documentData = memoryStream.ToArray();
 
+                isTdb = isTdb || FileSignatureValidator.IsTdb(documentData);
+                var documentValidationError = FileSignatureValidator.ValidatePatientDocument(documentData, isTdb);
+                if (documentValidationError != null)
+                {
+                    return BadRequest(documentValidationError);
+                }
+
+                var documentScan = await _antivirusScanner.ScanAsync(documentData);
+                if (!documentScan.Clean)
+                {
+                    return AntivirusFailure(documentScan);
+                }
+
                 var savedDocument = await _documentService.SavePatientDocumentAsync(id, documentData, document.FileName);
 
                 return Ok(new 
@@ -945,13 +1149,26 @@ namespace DatabaseAPI.Controllers
         }
 
         [HttpGet("{patientId}/documents/{documentId}")]
-        public async Task<IActionResult> GetPatientDocument(int patientId, int documentId)
+        public async Task<IActionResult> GetPatientDocument(
+            int patientId,
+            int documentId,
+            [FromQuery] bool download = false)
         {
             try
             {
                 if (!await PatientIsVisibleAsync(patientId))
                 {
                     return NotFound("Patient not found");
+                }
+
+                var document = await _context.PatientDocuments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == documentId &&
+                                              d.PatientId == patientId &&
+                                              !d.IsDeleted);
+                if (document == null)
+                {
+                    return NotFound("Document not found");
                 }
 
                 var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
@@ -961,12 +1178,75 @@ namespace DatabaseAPI.Controllers
                     return NotFound("Document not found");
                 }
 
-                return File(documentData, "application/pdf");
+                // A .tdb measurement is not a PDF. Without an explicit filename
+                // and a binary content type the browser opens it in the PDF
+                // viewer and shows a broken document.
+                var isTdb = _tdbAnalysisService.IsTdbFileName(document.OriginalFileName) ||
+                            _tdbAnalysisService.IsTdb(documentData);
+                if (isTdb)
+                {
+                    return File(documentData, "application/octet-stream", document.OriginalFileName);
+                }
+
+                return download
+                    ? File(documentData, "application/pdf", document.OriginalFileName)
+                    : File(documentData, "application/pdf");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while getting patient document");
                 return StatusCode(500, "An error occurred while getting document");
+            }
+        }
+
+        /// <summary>
+        /// Parsed MEIK .tdb measurement for the in-app viewer. The raw file is
+        /// never sent to the PDF viewer; the visit document list uses this
+        /// endpoint to render the seven slices instead.
+        /// </summary>
+        [HttpGet("{patientId}/documents/{documentId}/tdb")]
+        public async Task<IActionResult> GetPatientTdbMeasurement(int patientId, int documentId)
+        {
+            try
+            {
+                if (!await PatientIsVisibleAsync(patientId))
+                {
+                    return NotFound("Patient not found");
+                }
+
+                var document = await _context.PatientDocuments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == documentId &&
+                                              d.PatientId == patientId &&
+                                              !d.IsDeleted);
+                if (document == null)
+                {
+                    return NotFound("Document not found");
+                }
+
+                var documentData = await _documentService.GetDocumentDataAsync(documentId, patientId);
+                if (documentData == null)
+                {
+                    return NotFound("Document not found");
+                }
+
+                if (!_tdbAnalysisService.IsTdb(documentData))
+                {
+                    return BadRequest("Soubor není měření MEIK TOMODB v2.0 (.tdb).");
+                }
+
+                var analysis = _tdbAnalysisService.Parse(documentData);
+                return Content(_tdbAnalysisService.ToJson(analysis), "application/json");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Rejected .tdb document {DocumentId}", documentId);
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while parsing patient .tdb document");
+                return StatusCode(500, "An error occurred while reading the measurement");
             }
         }
 
@@ -1041,6 +1321,19 @@ namespace DatabaseAPI.Controllers
         /// (the one who created their account), or a (Sys)Admin.
         /// </summary>
         /// <summary>Hidden patients behave as not found for every patient-scoped endpoint.</summary>
+        private ObjectResult AntivirusFailure(AntivirusScanResult scan)
+        {
+            if (scan.ThreatName != null)
+            {
+                _logger.LogWarning("Rejected malicious upload: {Threat}", scan.ThreatName);
+                return BadRequest("File failed antivirus scan.");
+            }
+
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                scan.Error ?? "Antivirus scan is unavailable; the file was not stored.");
+        }
+
         private Task<bool> PatientIsVisibleAsync(int id) =>
             _context.Patients.AnyAsync(p => p.Id == id && !p.IsDeleted);
 

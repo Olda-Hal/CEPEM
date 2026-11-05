@@ -273,4 +273,21 @@ public class EmployeeScopeServiceTests : IDisposable
         Assert.Null(await service.ValidateHospitalAssignmentAsync(new[] { czech.Id }));
         Assert.NotNull(await service.ValidateHospitalAssignmentAsync(new[] { german.Id }));
     }
+
+    [Fact]
+    public async Task Admin_HasFullAgendaScope_ButCannotGrantSysAdmin()
+    {
+        var adminRole = SeedRole("Admin");
+        var sysAdminRole = SeedRole("SysAdmin");
+        var admin = SeedEmployee("admin", "CZ", adminRole);
+        _actorMock.Setup(s => s.GetActorEmployeeId()).Returns(admin.Id);
+
+        var scope = await CreateService().GetActorScopeAsync();
+        Assert.True(scope.HasFullAccess);
+        Assert.False(scope.IsSysAdmin);
+        Assert.DoesNotContain("SysAdmin", scope.AssignableRoleNames);
+        Assert.Contains("Country Admin", scope.AssignableRoleNames);
+
+        Assert.NotNull(await CreateService().ValidateAssignableRolesAsync(new[] { sysAdminRole.Id }));
+    }
 }

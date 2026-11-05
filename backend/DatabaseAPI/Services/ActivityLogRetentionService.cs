@@ -94,10 +94,16 @@ public static class EmailLogRetention
     public static async Task<int> DeleteOlderThanAsync(DatabaseContext context, int retentionDays, CancellationToken cancellationToken = default)
     {
         var cutoff = DateTime.UtcNow.AddDays(-retentionDays);
-        var oldLogs = await context.EmailLogs
-            .Where(log => log.CreatedAtUtc < cutoff)
-            .ToListAsync(cancellationToken);
+        var query = context.EmailLogs.Where(log => log.CreatedAtUtc < cutoff);
 
+        // ExecuteDelete keeps the whole table out of memory on MySQL; the
+        // in-memory provider used by unit tests needs the tracked fallback.
+        if (context.Database.IsRelational())
+        {
+            return await query.ExecuteDeleteAsync(cancellationToken);
+        }
+
+        var oldLogs = await query.ToListAsync(cancellationToken);
         context.EmailLogs.RemoveRange(oldLogs);
         await context.SaveChangesAsync(cancellationToken);
         return oldLogs.Count;
@@ -110,10 +116,14 @@ public static class ActivityLogRetention
     public static async Task<int> DeleteOlderThanAsync(DatabaseContext context, int retentionDays, CancellationToken cancellationToken = default)
     {
         var cutoff = DateTime.UtcNow.AddDays(-retentionDays);
-        var oldLogs = await context.ActivityLogs
-            .Where(log => log.Timestamp < cutoff)
-            .ToListAsync(cancellationToken);
+        var query = context.ActivityLogs.Where(log => log.Timestamp < cutoff);
 
+        if (context.Database.IsRelational())
+        {
+            return await query.ExecuteDeleteAsync(cancellationToken);
+        }
+
+        var oldLogs = await query.ToListAsync(cancellationToken);
         context.ActivityLogs.RemoveRange(oldLogs);
         await context.SaveChangesAsync(cancellationToken);
         return oldLogs.Count;

@@ -32,6 +32,20 @@ builder.Host.UseSerilog((context, configuration) =>
     {
         configuration.WriteTo.Console(new JsonFormatter());
     }
+
+    // Optional error tracking. Leaving SENTRY_DSN empty disables it.
+    var sentryDsn = context.Configuration["Sentry:Dsn"]
+        ?? Environment.GetEnvironmentVariable("SENTRY_DSN");
+    if (!string.IsNullOrWhiteSpace(sentryDsn))
+    {
+        configuration.WriteTo.Sentry(options =>
+        {
+            options.Dsn = sentryDsn;
+            options.Environment = context.HostingEnvironment.EnvironmentName;
+            options.MinimumBreadcrumbLevel = Serilog.Events.LogEventLevel.Information;
+            options.MinimumEventLevel = Serilog.Events.LogEventLevel.Error;
+        });
+    }
 });
 
 // Add services to the container.
@@ -65,12 +79,25 @@ if (string.IsNullOrWhiteSpace(databaseApiServiceKey))
         "DatabaseAPI service key is not configured. Set the DatabaseApiServiceKey configuration value or the DATABASE_API_SERVICE_KEY environment variable.");
 }
 
+// AI intake-form digitisation runs in a separate Python service.
+var aiServiceUrl = builder.Configuration["AiServiceUrl"]
+    ?? Environment.GetEnvironmentVariable("AI_SERVICE_URL")
+    ?? "http://ai-service:8000";
+builder.Services.AddHttpClient("AiService", client =>
+{
+    client.BaseAddress = new Uri(aiServiceUrl);
+    client.Timeout = TimeSpan.FromMinutes(3);
+});
+
 builder.Services.AddHttpClient("DatabaseAPI", client =>
 {
     client.BaseAddress = new Uri(databaseApiUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
 .AddHttpMessageHandler<HealthcareAPI.Handlers.AuthenticationHandler>();
+
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ITokenValidityService, TokenValidityService>();
 
 // Activity log client (typed) - same base address as the named DatabaseAPI client
 builder.Services.AddHttpClient<IActivityLogService, ActivityLogService>(client =>
@@ -107,6 +134,62 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        };
+
+        // A JWT is only valid while its acl_version still matches the DB and
+        // the employee remains active. This is what makes password changes,
+        // deactivation, role changes and logout revoke existing tokens.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var principal = context.Principal;
+
+                // Refresh tokens are signed by the same key but must never be
+                // usable as bearer access tokens (missing claim = legacy token).
+                if (principal?.FindFirst("token_type")?.Value == "refresh")
+                {
+                    context.Fail("Refresh token cannot be used as an access token.");
+                    return;
+                }
+
+                var employeeIdValue = principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var versionValue = principal?.FindFirst("acl_version")?.Value;
+
+                if (!int.TryParse(employeeIdValue, out var employeeId) ||
+                    !int.TryParse(versionValue, out var accessControlVersion))
+                {
+                    context.Fail("Token is missing employee/acl_version claims.");
+                    return;
+                }
+
+                var validator = context.HttpContext.RequestServices
+                    .GetRequiredService<ITokenValidityService>();
+                var validity = await validator.ValidateAsync(
+                    employeeId, accessControlVersion, context.HttpContext.RequestAborted);
+
+                if (!validity.Valid)
+                {
+                    context.Fail("Token has been revoked.");
+                    return;
+                }
+
+                if (validity.PasswordExpired)
+                {
+                    // Only the forced password-change flow, /me and logout may
+                    // be used until the password is changed.
+                    var path = (context.Request.Path.Value ?? string.Empty).TrimEnd('/');
+                    var allowed =
+                        path.Equals("/api/employees/me", StringComparison.OrdinalIgnoreCase) ||
+                        path.Equals("/api/auth/change-password", StringComparison.OrdinalIgnoreCase) ||
+                        path.Equals("/api/auth/logout", StringComparison.OrdinalIgnoreCase);
+
+                    if (!allowed)
+                    {
+                        context.Fail("Password change required.");
+                    }
+                }
+            }
         };
     });
 

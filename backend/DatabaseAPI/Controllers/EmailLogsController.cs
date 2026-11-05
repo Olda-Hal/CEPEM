@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DatabaseAPI.Data;
@@ -64,7 +65,7 @@ public class EmailLogsController : ControllerBase
 
         return Ok(new EmailLogListResponse
         {
-            Logs = logs,
+            Logs = logs.Select(MaskLog).ToList(),
             TotalCount = totalCount,
             HasMore = hasMore
         });
@@ -89,7 +90,7 @@ public class EmailLogsController : ControllerBase
 
         var builder = new System.Text.StringBuilder();
         builder.AppendLine("CreatedAt;To;Recipient;Subject;Kind;Status;Slot;Error");
-        foreach (var log in logs)
+        foreach (var log in logs.Select(MaskLog))
         {
             builder.AppendLine(string.Join(';',
                 log.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
@@ -145,6 +146,19 @@ public class EmailLogsController : ControllerBase
         }
 
         return query;
+    }
+
+    /// <summary>
+    /// Masks values on the way out too, so rows written before redaction was
+    /// introduced are not exposed through the admin page or CSV export.
+    /// </summary>
+    private static EmailLog MaskLog(EmailLog log)
+    {
+        log.ToAddress = PiiRedactor.MaskEmail(log.ToAddress) ?? string.Empty;
+        log.RecipientName = PiiRedactor.MaskName(log.RecipientName);
+        log.Subject = PiiRedactor.MaskEmails(log.Subject) ?? string.Empty;
+        log.Error = PiiRedactor.MaskEmails(log.Error);
+        return log;
     }
 
     private static string CsvEscape(string value) =>

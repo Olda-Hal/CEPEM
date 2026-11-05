@@ -44,7 +44,7 @@ namespace DatabaseAPI.Controllers
                 actor.IsCenterAdmin,
                 actor.HospitalIds,
                 actor.AdministeredCountryScopeIds,
-                AssignableRoleNames = actor.HasFullAccess
+                AssignableRoleNames = actor.IsSysAdmin
                     ? (await _employeeManagementService.GetAllRolesAsync()).Select(r => r.Name).ToList()
                     : actor.AssignableRoleNames
             });
