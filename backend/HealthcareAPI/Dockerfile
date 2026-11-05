@@ -16,7 +16,7 @@ WORKDIR /app/HealthcareAPI
 RUN dotnet publish -c Release -o /app/out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 # Install curl for the compose healthcheck (the runtime image ships without it)
