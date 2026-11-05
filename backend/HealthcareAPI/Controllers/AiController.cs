@@ -60,7 +60,17 @@ public class AiController : ControllerBase
             var client = _httpClientFactory.CreateClient("AiService");
             var response = await client.PostAsync("/api/intake/extract", content, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            return StatusCode((int)response.StatusCode, body);
+
+            // Pass the AI JSON through unchanged. StatusCode(..., string) would
+            // select the text/plain formatter, and the SPA would then receive a
+            // string instead of the extraction object (always "not an intake
+            // form"). ContentResult keeps the upstream status and media type.
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = body,
+                ContentType = "application/json"
+            };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

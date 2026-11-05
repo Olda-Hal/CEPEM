@@ -1012,6 +1012,31 @@ export interface VisitDetail {
 }
 
 /** Result of the paper intake-form digitisation (AI service). */
+/** One detected field box on a rendered intake-form page (normalized 0–1). */
+export interface IntakeDigitisationRegion {
+  field: string;
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Raw OCR text read from the box. */
+  text: string;
+  confidence: number | null;
+  /** Accepted/parsed value, or "marked"/"empty" for checkbox cells. */
+  value: string | number | boolean | null;
+  warning: boolean;
+}
+
+/** Rendered page image returned for the side-by-side detection preview. */
+export interface IntakeDigitisationPreviewPage {
+  page: number;
+  width: number;
+  height: number;
+  /** Base64 JPEG (no data: prefix). */
+  image: string;
+}
+
 export interface IntakeDigitisationResult {
   isIntakeForm: boolean;
   confidence: number;
@@ -1019,4 +1044,8 @@ export interface IntakeDigitisationResult {
   fields: Record<string, string | number | boolean | null>;
   warnings: string[];
   text?: string;
+  pageCount?: number;
+  pageTexts?: string[];
+  previewPages?: IntakeDigitisationPreviewPage[];
+  regions?: IntakeDigitisationRegion[];
 }

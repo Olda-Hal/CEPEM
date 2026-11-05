@@ -12,6 +12,7 @@ review warning and the digitizer always confirms the values in the SPA.
 
 from __future__ import annotations
 
+import base64
 import io
 import os
 import re
@@ -31,6 +32,10 @@ OCR_LANG = os.getenv("TESSERACT_LANG", "ces+eng")
 TITLE_KEYWORDS = (
     "vstupni formular",
     "vstupní formulář",
+    "vstupni formular klienta",
+    "vstupní formulář klienta",
+    "formular klienta",
+    "formulář klienta",
     "prijmeni",
     "příjmení",
     "datum narozeni",
@@ -39,6 +44,15 @@ TITLE_KEYWORDS = (
     "zdravotní pojišťovna",
     "smluvni podminky",
     "smluvní podmínky",
+)
+
+# Strong title markers: their presence alone identifies the CEPEM paper form
+# even when OCR mangles the rest of the header.
+TITLE_MARKERS = (
+    "vstupni formular",
+    "vstupní formulář",
+    "formular klienta",
+    "formulář klienta",
 )
 
 # Field boxes as fractions of the page (x0, y0, x1, y1). Calibrated on the
@@ -96,6 +110,10 @@ class ExtractionResult:
     fields: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     text: str = ""
+    page_count: int = 0
+    page_texts: list[str] = field(default_factory=list)
+    preview_pages: list[dict[str, Any]] = field(default_factory=list)
+    regions: list[dict[str, Any]] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -105,6 +123,10 @@ class ExtractionResult:
             "fields": self.fields,
             "warnings": self.warnings,
             "text": self.text,
+            "pageCount": self.page_count,
+            "pageTexts": self.page_texts,
+            "previewPages": self.preview_pages,
+            "regions": self.regions,
         }
 
 
@@ -144,6 +166,21 @@ def _to_png(rgb: np.ndarray) -> bytes:
     buffer = io.BytesIO()
     Image.fromarray(rgb).save(buffer, format="PNG", optimize=True)
     return buffer.getvalue()
+
+
+def _to_preview_jpeg(rgb: np.ndarray, max_width: int = 1400) -> tuple[str, int, int]:
+    """Base64 JPEG preview of a rendered page, downscaled for the browser."""
+    image = Image.fromarray(rgb)
+    if image.width > max_width:
+        ratio = max_width / image.width
+        image = image.resize(
+            (max_width, max(1, round(image.height * ratio))),
+            Image.Resampling.LANCZOS,
+        )
+    buffer = io.BytesIO()
+    image.convert("RGB").save(buffer, format="JPEG", quality=78, optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return encoded, image.width, image.height
 
 
 def _crop(gray: np.ndarray, region: tuple[float, float, float, float]) -> np.ndarray:
@@ -214,11 +251,19 @@ def _parse_date(value: str) -> str | None:
 
 def _detect_is_intake(text: str, page_count: int) -> tuple[bool, float]:
     normalized = _normalize(text)
-    hits = sum(1 for keyword in TITLE_KEYWORDS if _normalize(keyword) in normalized)
+    # Several keywords exist with and without Czech diacritics; dedupe the
+    # normalized forms so one printed label is never counted twice.
+    keywords = {_normalize(keyword) for keyword in TITLE_KEYWORDS}
+    hits = sum(1 for keyword in keywords if keyword in normalized)
+    strong_title = any(_normalize(marker) in normalized for marker in TITLE_MARKERS)
     if page_count == 2:
         hits += 1
-    confidence = min(1.0, hits / 7.0)
-    return hits >= 4, confidence
+
+    confidence = min(1.0, hits / 6.0)
+    # A printed title is decisive; otherwise require three independent labels.
+    # This tolerates poor OCR on older/darker scans without accepting ordinary
+    # letters that merely mention a name and a birth date.
+    return strong_title or hits >= 3, confidence
 
 
 def _dark_ratio(image: np.ndarray) -> float:
@@ -241,96 +286,121 @@ def _extract_checkbox_grid(
     columns: tuple[tuple[float, float], ...],
     rows: tuple[tuple[float, float], ...],
     keys: tuple[tuple[str, ...], ...],
+    regions: list[dict[str, Any]] | None = None,
+    page: int = 0,
 ) -> dict[str, bool]:
     result: dict[str, bool] = {}
     for row_index, row_keys in enumerate(keys):
         y0, y1 = rows[row_index]
         for column_index, key in enumerate(row_keys):
             x0, x1 = columns[column_index]
-            result[key] = _marked(gray, (x0, y0, x1, y1))
+            marked = _marked(gray, (x0, y0, x1, y1))
+            result[key] = marked
+            if regions is not None:
+                regions.append(
+                    {
+                        "field": key,
+                        "page": page,
+                        "x": round(x0, 4),
+                        "y": round(y0, 4),
+                        "width": round(x1 - x0, 4),
+                        "height": round(y1 - y0, 4),
+                        "text": "",
+                        "confidence": None,
+                        "value": "marked" if marked else "empty",
+                        "warning": True,
+                    }
+                )
     return result
 
 
-def _parse_page1(gray: np.ndarray, fields: dict[str, Any], warnings: list[str]) -> None:
+def _parse_field_value(key: str, raw: str) -> tuple[Any, bool]:
+    """Return (accepted value, warning) for one page-1 field."""
+    if key == "dateOfBirth":
+        parsed = _parse_date(raw)
+        return parsed, parsed is None
+
+    if key == "email":
+        match = EMAIL_RE.search(raw.replace(" ", ""))
+        return (match.group(0).lower() if match else None), match is None
+
+    if key == "phone":
+        match = PHONE_RE.search(raw)
+        return (re.sub(r"[^\d+]", "", match.group(0)) if match else None), match is None
+
+    if key == "postalCode":
+        match = re.search(r"\b(\d{3}\s?\d{2})\b", raw)
+        return (match.group(1).replace(" ", "") if match else None), match is None
+
+    if key == "insuranceCompany":
+        match = INSURANCE_RE.search(raw)
+        return (match.group(1) if match else None), match is None
+
+    if key == "weight":
+        match = re.search(r"\d{1,3}", raw)
+        return match.group(0) if match else None, False
+
+    if key == "height":
+        match = re.search(r"\d{2,3}", raw)
+        return match.group(0) if match else None, False
+
+    if key in {"firstName", "lastName"}:
+        cleaned = re.sub(r"[^\w\- ]", "", raw, flags=re.UNICODE).strip()
+        if len(cleaned) >= 2 and any(char.isalpha() for char in cleaned):
+            return cleaned, False
+        return None, True
+
+    if key == "address":
+        if len(raw) >= 4 and any(char.isalpha() for char in raw):
+            return raw, False
+        return None, True
+
+    return raw, False
+
+
+def _parse_page1(
+    gray: np.ndarray,
+    fields: dict[str, Any],
+    warnings: list[str],
+    regions: list[dict[str, Any]],
+) -> None:
     for key, region in PAGE1_FIELDS.items():
         raw, ocr_confidence = _ocr_with_confidence(_crop(gray, region))
         raw = _clean_value(raw)
+
         if not raw or ocr_confidence < 45:
+            value, warning = None, True
+        else:
+            value, warning = _parse_field_value(key, raw)
+
+        if value is not None:
+            fields[key] = value
+        if warning:
             warnings.append(key)
-            continue
 
-        if key == "dateOfBirth":
-            parsed = _parse_date(raw)
-            if parsed:
-                fields["dateOfBirth"] = parsed
-            else:
-                warnings.append("dateOfBirth")
-            continue
-
-        if key == "email":
-            match = EMAIL_RE.search(raw.replace(" ", ""))
-            if match:
-                fields["email"] = match.group(0).lower()
-            else:
-                warnings.append("email")
-            continue
-
-        if key == "phone":
-            match = PHONE_RE.search(raw)
-            if match:
-                fields["phone"] = re.sub(r"[^\d+]", "", match.group(0))
-            else:
-                warnings.append("phone")
-            continue
-
-        if key == "postalCode":
-            match = re.search(r"\b(\d{3}\s?\d{2})\b", raw)
-            if match:
-                fields["postalCode"] = match.group(1).replace(" ", "")
-            else:
-                warnings.append("postalCode")
-            continue
-
-        if key == "insuranceCompany":
-            match = INSURANCE_RE.search(raw)
-            if match:
-                fields["insuranceCompany"] = match.group(1)
-            else:
-                warnings.append("insuranceCompany")
-            continue
-
-        if key == "weight":
-            match = re.search(r"\d{1,3}", raw)
-            if match:
-                fields["weight"] = match.group(0)
-            continue
-
-        if key == "height":
-            match = re.search(r"\d{2,3}", raw)
-            if match:
-                fields["height"] = match.group(0)
-            continue
-
-        if key in {"firstName", "lastName"}:
-            cleaned = re.sub(r"[^\w\- ]", "", raw, flags=re.UNICODE).strip()
-            if len(cleaned) >= 2 and any(char.isalpha() for char in cleaned):
-                fields[key] = cleaned
-            else:
-                warnings.append(key)
-            continue
-
-        if key == "address":
-            if len(raw) >= 4 and any(char.isalpha() for char in raw):
-                fields["address"] = raw
-            else:
-                warnings.append("address")
-            continue
-
-        fields[key] = raw
+        x0, y0, x1, y1 = region
+        regions.append(
+            {
+                "field": key,
+                "page": 0,
+                "x": round(x0, 4),
+                "y": round(y0, 4),
+                "width": round(x1 - x0, 4),
+                "height": round(y1 - y0, 4),
+                "text": raw,
+                "confidence": round(ocr_confidence, 1),
+                "value": value,
+                "warning": warning,
+            }
+        )
 
     # Tick-box detection is intentionally conservative: a printed table
     # border otherwise reads as a mark. The optional vision model extracts
     # these; locally the digitizer confirms the checkboxes manually.
+    _extract_checkbox_grid(gray, MED_COLUMNS, MED_ROWS, MED_GRID_KEYS, regions, page=0)
+    _extract_checkbox_grid(
+        gray, LIFESTYLE_COLUMNS, LIFESTYLE_ROWS, LIFESTYLE_GRID_KEYS, regions, page=0
+    )
     warnings.append("checkboxes_review")
 
 
@@ -352,6 +422,21 @@ def extract_intake_form(pdf_bytes: bytes) -> ExtractionResult:
     document.close()
 
     first_page_text = _ocr_page(pages[0].gray)
+
+    # Every page is returned to the browser so the digitizer can compare the
+    # original scan with what OCR/vision detected. The preview is an image
+    # (not a PDF viewer overlay), so nothing covers the underlying scan.
+    page_texts = [first_page_text]
+    for page in pages[1:]:
+        page_texts.append(_ocr_page(page.gray))
+
+    preview_pages: list[dict[str, Any]] = []
+    for index, page in enumerate(pages):
+        encoded, width, height = _to_preview_jpeg(page.rgb)
+        preview_pages.append(
+            {"page": index, "width": width, "height": height, "image": encoded}
+        )
+
     if len(text_layer.strip()) > 40:
         detection_text = text_layer
     else:
@@ -365,10 +450,14 @@ def extract_intake_form(pdf_bytes: bytes) -> ExtractionResult:
             confidence=confidence,
             warnings=["not_intake_form"],
             text=detection_text[:12000],
+            page_count=len(pages),
+            page_texts=[text[:20000] for text in page_texts],
+            preview_pages=preview_pages,
         )
 
     fields: dict[str, Any] = {}
-    _parse_page1(pages[0].gray, fields, warnings)
+    regions: list[dict[str, Any]] = []
+    _parse_page1(pages[0].gray, fields, warnings, regions)
     if len(pages) > 1:
         _parse_page2(pages[1].gray, fields, warnings)
 
@@ -388,6 +477,10 @@ def extract_intake_form(pdf_bytes: bytes) -> ExtractionResult:
         fields=fields,
         warnings=sorted(set(warnings)),
         text=first_page_text[:12000],
+        page_count=len(pages),
+        page_texts=[text[:20000] for text in page_texts],
+        preview_pages=preview_pages,
+        regions=regions,
     )
 
 

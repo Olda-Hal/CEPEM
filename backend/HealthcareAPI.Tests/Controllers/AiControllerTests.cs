@@ -70,9 +70,10 @@ public class AiControllerTests
 
         var result = await controller.ExtractIntake(PdfFile(), CancellationToken.None);
 
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(200, objectResult.StatusCode);
-        Assert.Contains("isIntakeForm", objectResult.Value?.ToString());
+        var contentResult = Assert.IsType<ContentResult>(result);
+        Assert.Equal(200, contentResult.StatusCode);
+        Assert.Equal("application/json", contentResult.ContentType);
+        Assert.Contains("isIntakeForm", contentResult.Content);
     }
 
     [Fact]
@@ -94,7 +95,8 @@ public class AiControllerTests
 
         var result = await controller.ExtractIntake(PdfFile(), CancellationToken.None);
 
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(503, objectResult.StatusCode);
+        var contentResult = Assert.IsType<ContentResult>(result);
+        Assert.Equal(503, contentResult.StatusCode);
+        Assert.Equal("application/json", contentResult.ContentType);
     }
 }

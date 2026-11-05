@@ -16,6 +16,12 @@
   font-size: 0.9rem;
 }
 
+.digitise-intake-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 @media (width <= 700px) {
   .digitise-intake {
     align-items: flex-start;
