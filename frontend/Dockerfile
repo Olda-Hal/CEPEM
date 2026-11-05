@@ -27,7 +27,7 @@ ARG BUILD_NUMBER=dev
 RUN echo "$BUILD_NUMBER" > dist/build_number.txt
 
 # Production stage
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 
 # Copy build files to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
