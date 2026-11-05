@@ -22,7 +22,7 @@ FROM build AS publish
 RUN dotnet publish "DatabaseAPI.csproj" -c Release -o /app/publish
 
 # Use the official .NET runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 # Install wait-for-it plus the document text/OCR toolchain (PDF text layer,
