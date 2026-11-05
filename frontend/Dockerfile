@@ -1,5 +1,5 @@
 # Multi-stage build for React frontend
-FROM node:22.12-alpine AS build
+FROM node:26.13-alpine AS build
 
 WORKDIR /app
 
