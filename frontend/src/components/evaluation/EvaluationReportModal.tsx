@@ -11,7 +11,15 @@ interface ReviewMarker extends SliceMarker {
   slice: number;
 }
 
-const REVIEW_COLORS = ['#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed'];
+// Review markers are themed through CSS variables so they stay readable in
+// both light and dark mode.
+const REVIEW_COLORS = [
+  'var(--color-chart-4)',
+  'var(--color-chart-1)',
+  'var(--color-chart-2)',
+  'var(--color-chart-3)',
+  'var(--color-chart-5)'
+];
 
 const parseMarkers = (json?: string | null): ReviewMarker[] => {
   if (!json) return [];
@@ -81,7 +89,8 @@ export const EvaluationReportModal: React.FC<EvaluationReportModalProps> = ({
     let counter = 0;
     const result: Array<ReviewMarker & { color: string; number: number }> = [];
     reviews.forEach((review, index) => {
-      const color = REVIEW_COLORS[index % REVIEW_COLORS.length] ?? REVIEW_COLORS[0] ?? '#dc2626';
+      const color =
+        REVIEW_COLORS[index % REVIEW_COLORS.length] ?? REVIEW_COLORS[0] ?? 'var(--color-chart-4)';
       for (const marker of markersByReview.get(review.id) ?? []) {
         counter += 1;
         result.push({ ...marker, color, number: counter });
@@ -104,7 +113,7 @@ export const EvaluationReportModal: React.FC<EvaluationReportModalProps> = ({
   };
 
   const reviewColor = (index: number) =>
-    REVIEW_COLORS[index % REVIEW_COLORS.length] ?? REVIEW_COLORS[0] ?? '#dc2626';
+    REVIEW_COLORS[index % REVIEW_COLORS.length] ?? REVIEW_COLORS[0] ?? 'var(--color-chart-4)';
 
   const formatDate = (value: string) => new Date(value).toLocaleString();
 

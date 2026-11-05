@@ -141,6 +141,10 @@ jobs:
         working-directory: frontend
         run: npm run lint:css
 
+      - name: No hardcoded colours (theme tokens only)
+        working-directory: frontend
+        run: npm run check:colors
+
   containers:
     name: Container build
     runs-on: ubuntu-latest

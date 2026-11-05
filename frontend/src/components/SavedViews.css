@@ -5,9 +5,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
 }
 
 .saved-views-select {
@@ -15,21 +15,21 @@
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
-  color: var(--color-text-secondary, #4a5568);
+  color: var(--color-text-secondary);
 }
 
 .saved-views-select select {
   min-width: 180px;
   padding: 6px 10px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #1a202c);
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
 .saved-views-error {
-  color: #c53030;
+  color: var(--color-error);
   font-size: 0.82rem;
 }
 
@@ -48,7 +48,7 @@
 .saved-views-form input[type='text'],
 .saved-views-form input:not([type]) {
   padding: 8px 10px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font: inherit;
 }
@@ -61,6 +61,6 @@
 
 .saved-views-hint {
   margin: 0;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.82rem;
 }

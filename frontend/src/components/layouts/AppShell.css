@@ -4,8 +4,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--color-background-page, var(--color-background, #f6f8fb));
-  color: var(--color-text, #1f2937);
+  background: var(--color-background-page, var(--color-background));
+  color: var(--color-text);
   font-family: var(--font-body);
 }
 
@@ -13,9 +13,9 @@
   position: sticky;
   top: 0;
   z-index: var(--z-header, 40);
-  background: var(--color-surface, #fff);
-  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 8%));
-  box-shadow: 0 1px 6px rgb(15 23 42 / 6%);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 6px var(--color-shadow-light);
 }
 
 .shell-header-inner {
@@ -33,7 +33,7 @@
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: var(--color-primary, #2563eb);
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 
@@ -44,8 +44,8 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: var(--color-primary, #2563eb);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
@@ -56,7 +56,7 @@
   font-size: var(--text-lg, 1.125rem);
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 }
 
 .shell-header-nav {
@@ -64,7 +64,7 @@
   max-width: 1440px;
   margin: 0 auto;
   padding: 4px var(--space-lg, 24px) 6px;
-  border-top: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border-top: 1px solid var(--color-border);
 }
 
 .shell-nav {
@@ -89,7 +89,7 @@
   border-radius: 999px;
   font-size: var(--text-sm, 0.875rem);
   font-weight: 500;
-  color: var(--color-text-secondary, #5b6472);
+  color: var(--color-text-secondary);
   text-decoration: none;
   white-space: nowrap;
   transition:
@@ -98,13 +98,13 @@
 }
 
 .shell-nav-link:hover {
-  background: var(--color-primary-tint, rgb(37 99 235 / 8%));
-  color: var(--color-primary, #2563eb);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
 }
 
 .shell-nav-link.active {
-  background: var(--color-primary, #2563eb);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 .shell-header-right {
@@ -121,9 +121,9 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
-  background: var(--color-surface, #fff);
-  color: var(--color-text-secondary, #5b6472);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font-size: 18px;
   cursor: pointer;
   text-decoration: none;
@@ -134,8 +134,8 @@
 }
 
 .shell-icon-button:hover {
-  background: var(--color-primary-tint, rgb(37 99 235 / 8%));
-  color: var(--color-primary, #2563eb);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
   transform: rotate(20deg);
 }
 
@@ -162,12 +162,12 @@
 .shell-account-name {
   font-size: var(--text-sm, 0.875rem);
   font-weight: 600;
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 }
 
 .shell-account-meta {
   font-size: var(--text-xs, 0.75rem);
-  color: var(--color-text-secondary, #5b6472);
+  color: var(--color-text-secondary);
 }
 
 .shell-content {
@@ -183,15 +183,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px var(--space-lg, 24px);
-  border-top: 1px solid var(--color-border, rgb(0 0 0 / 8%));
-  background: var(--color-surface, #fff);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
   font-size: var(--text-xs, 0.75rem);
-  color: var(--color-text-secondary, #5b6472);
+  color: var(--color-text-secondary);
 }
 
 .shell-footer-version {
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted, #8a94a6);
+  color: var(--color-text-muted);
 }
 
 @media (width <= 900px) {
@@ -231,10 +231,10 @@
   min-width: 190px;
   padding: 6px;
   margin-top: 4px;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, rgb(0 0 0 / 10%));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md, 12px);
-  box-shadow: var(--shadow-raised, 0 10px 28px rgb(0 0 0 / 12%));
+  box-shadow: var(--shadow-raised, 0 10px 28px var(--color-shadow-medium));
   display: none;
   flex-direction: column;
   gap: 2px;
@@ -261,7 +261,7 @@
   border-radius: 8px;
   font-size: var(--text-sm, 0.875rem);
   font-weight: 500;
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
   text-decoration: none;
   white-space: nowrap;
   transition:
@@ -270,8 +270,8 @@
 }
 
 .shell-dropdown-link:hover {
-  background: var(--color-primary-tint, rgb(37 99 235 / 8%));
-  color: var(--color-primary, #2563eb);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
 }
 
 /* SysAdmin preview ("náhled jako zaměstnanec") banner */
@@ -282,15 +282,15 @@
   gap: var(--space-md, 16px);
   flex-wrap: wrap;
   padding: 8px var(--space-lg, 24px);
-  background: var(--color-warning-light, #fffbeb);
-  border-bottom: 1px solid var(--color-warning, #d69e2e);
-  color: var(--color-text-primary, #2d3748);
+  background: var(--color-warning-light);
+  border-bottom: 1px solid var(--color-warning);
+  color: var(--color-text-primary);
   font-size: var(--text-sm, 0.875rem);
   text-align: center;
 }
 
 .shell-impersonation-text strong {
-  color: var(--color-warning, #b7791f);
+  color: var(--color-warning);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.78rem;
@@ -298,10 +298,10 @@
 
 .shell-impersonation-exit {
   padding: 6px 14px;
-  border: 1px solid var(--color-warning, #d69e2e);
+  border: 1px solid var(--color-warning);
   border-radius: var(--radius-sm, 8px);
-  background: var(--color-background, #fff);
-  color: var(--color-text-primary, #2d3748);
+  background: var(--color-background);
+  color: var(--color-text-primary);
   font-size: var(--text-sm, 0.875rem);
   font-weight: 600;
   cursor: pointer;
@@ -311,8 +311,8 @@
 }
 
 .shell-impersonation-exit:hover {
-  background: var(--color-warning, #d69e2e);
-  color: #fff;
+  background: var(--color-warning);
+  color: var(--color-on-primary);
 }
 
 .shell-mobile-toggle {
@@ -321,7 +321,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: transparent;
   font-size: 20px;
@@ -347,9 +347,9 @@
     max-height: calc(100vh - 60px);
     overflow-y: auto;
     padding: 8px 0 12px;
-    background: var(--color-surface, #fff);
-    border-top: 1px solid var(--color-border, rgb(0 0 0 / 8%));
-    box-shadow: 0 12px 24px rgb(15 23 42 / 12%);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 12px 24px var(--color-shadow-medium);
   }
 
   .shell-header-nav.open .shell-nav {
@@ -376,7 +376,7 @@
     padding: 0 0 8px 20px;
     border: 0;
     box-shadow: none;
-    background: var(--color-background-secondary, #f7f8fa);
+    background: var(--color-background-secondary);
   }
 
   .shell-header-nav.open .shell-dropdown-link {

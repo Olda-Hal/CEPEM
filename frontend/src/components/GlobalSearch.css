@@ -3,10 +3,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: var(--color-surface, #fff);
-  color: var(--color-text-secondary, #4a5568);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font: inherit;
   font-size: 0.875rem;
   cursor: pointer;
@@ -19,14 +19,14 @@
 }
 
 .shell-search-trigger:hover {
-  border-color: var(--color-primary, #667eea);
-  color: var(--color-text, #1a202c);
+  border-color: var(--color-primary);
+  color: var(--color-text);
 }
 
 .shell-search-trigger kbd {
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--color-background-secondary, #f1f3f7);
+  background: var(--color-background-secondary);
   font-size: 0.7rem;
 }
 
@@ -40,7 +40,7 @@
   justify-content: center;
   align-items: flex-start;
   padding: 12vh 16px 16px;
-  background: rgb(15 23 42 / 45%);
+  background: var(--color-shadow-heavy);
   backdrop-filter: blur(2px);
 }
 
@@ -51,8 +51,8 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 14px;
-  background: var(--color-surface, #fff);
-  box-shadow: 0 24px 60px rgb(15 23 42 / 30%);
+  background: var(--color-surface);
+  box-shadow: 0 24px 60px var(--color-shadow-heavy);
 }
 
 .global-search-input-row {
@@ -60,12 +60,12 @@
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border-bottom: 1px solid var(--color-border);
 }
 
 .global-search-icon {
   font-size: 1.4rem;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
 }
 
 .global-search-input-row input {
@@ -75,15 +75,15 @@
   font: inherit;
   font-size: 1.05rem;
   background: transparent;
-  color: var(--color-text, #1a202c);
+  color: var(--color-text);
 }
 
 .global-search-close {
-  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 3px 8px;
   background: transparent;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
   cursor: pointer;
 }
@@ -97,16 +97,16 @@
 .global-search-state {
   padding: 28px 16px;
   text-align: center;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
 }
 
 .global-search-state.error {
-  color: #c53030;
+  color: var(--color-error);
 }
 
 .global-search-group h3 {
   margin: 10px 10px 4px;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -135,17 +135,17 @@
 
 .global-search-item.active,
 .global-search-item:hover {
-  background: var(--color-background-secondary, #f1f3f7);
+  background: var(--color-background-secondary);
 }
 
 .global-search-item-label {
-  color: var(--color-text, #1a202c);
+  color: var(--color-text);
   font-weight: 600;
 }
 
 .global-search-item-meta {
   overflow: hidden;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.82rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -155,8 +155,8 @@
   display: flex;
   gap: 16px;
   padding: 8px 16px;
-  border-top: 1px solid var(--color-border, rgb(0 0 0 / 8%));
-  color: var(--color-text-secondary, #718096);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   font-size: 0.72rem;
 }
 

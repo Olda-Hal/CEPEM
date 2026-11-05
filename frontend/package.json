@@ -32,7 +32,8 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --check \"src/**/*.{ts,tsx,css}\"",
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "lint:css": "stylelint \"src/**/*.css\""
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "check:colors": "node scripts/check-colors.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

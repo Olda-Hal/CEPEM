@@ -22,11 +22,11 @@
 }
 
 .evaluation-review-card {
-  border: 1px solid var(--color-border, #d1d5db);
-  border-left: 4px solid #dc2626;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-error);
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
 }
 
 .evaluation-review-card header {

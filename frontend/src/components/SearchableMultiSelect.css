@@ -7,7 +7,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: var(--color-text-primary, #2d3748);
+  color: var(--color-text-primary);
 }
 
 .selected-items {
@@ -22,20 +22,20 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.6rem;
-  background-color: var(--color-primary-light, #e3f2fd);
-  border: 1px solid var(--color-primary, #667eea);
+  background-color: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
   border-radius: 4px;
   font-size: 0.9rem;
 }
 
 .selected-item span {
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
 }
 
 .remove-selected {
   background: none;
   border: none;
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
   cursor: pointer;
   font-size: 1.2rem;
   line-height: 1;
@@ -49,7 +49,7 @@
 }
 
 .remove-selected:hover {
-  color: var(--color-error, #e53e3e);
+  color: var(--color-error);
 }
 
 .search-container {
@@ -61,17 +61,17 @@
   width: 100%;
   padding: 0.6rem;
   padding-right: 2.5rem;
-  border: 1px solid var(--color-border, #e2e8f0);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 1rem;
-  background-color: var(--color-background, #fff);
-  color: var(--color-text-primary, #2d3748);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   transition: border-color 0.2s;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--color-primary, #667eea);
+  border-color: var(--color-primary);
 }
 
 .clear-search {
@@ -81,7 +81,7 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 1.5rem;
   line-height: 1;
@@ -95,7 +95,7 @@
 }
 
 .clear-search:hover {
-  color: var(--color-text-primary, #2d3748);
+  color: var(--color-text-primary);
 }
 
 .dropdown-menu {
@@ -105,10 +105,10 @@
   right: 0;
   max-height: 300px;
   overflow-y: auto;
-  background-color: var(--color-background, #fff);
-  border: 1px solid var(--color-border, #e2e8f0);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  box-shadow: 0 4px 6px var(--color-shadow-heavy, rgb(0 0 0 / 15%));
+  box-shadow: 0 4px 6px var(--color-shadow-heavy);
   z-index: 1000;
   margin-top: 0.25rem;
 }
@@ -124,7 +124,7 @@
   padding: 0.75rem;
   cursor: pointer;
   transition: background-color 0.2s;
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .dropdown-item:last-child {
@@ -132,7 +132,7 @@
 }
 
 .dropdown-item:hover {
-  background-color: var(--color-background-secondary, #f7fafc);
+  background-color: var(--color-background-secondary);
 }
 
 .dropdown-item input[type='checkbox'] {
@@ -144,36 +144,36 @@
 
 .dropdown-item span {
   flex: 1;
-  color: var(--color-text-primary, #2d3748);
+  color: var(--color-text-primary);
 }
 
 .dropdown-empty {
   padding: 0.75rem;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
 .add-new-button {
   width: 100%;
   padding: 0.75rem;
-  background-color: var(--color-primary, #667eea);
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
   transition: background-color 0.2s;
   text-align: left;
-  border-top: 1px solid var(--color-border, #e2e8f0);
+  border-top: 1px solid var(--color-border);
 }
 
 .add-new-button:hover {
-  background-color: var(--color-primary-hover, #764ba2);
+  background-color: var(--color-primary-hover);
 }
 
 .form-help-text {
   margin-top: 0;
   margin-bottom: 0.75rem;
   font-size: 0.9rem;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
 }

@@ -2,7 +2,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 50%);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,13 +173,13 @@
 }
 
 .error-message {
-  background-color: #fee;
-  color: #c33;
+  background-color: var(--color-error-light);
+  color: var(--color-error);
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 0;
   font-size: 0.9rem;
-  border-left: 4px solid #c33;
+  border-left: 4px solid var(--color-error);
 }
 
 .modal-footer {
@@ -204,7 +204,7 @@
 
 .btn-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .btn-primary:hover:not(:disabled) {

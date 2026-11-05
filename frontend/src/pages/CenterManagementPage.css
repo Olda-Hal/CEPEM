@@ -13,9 +13,9 @@
 
 .hero-panel,
 .panel {
-  background: rgb(255 255 255 / 90%);
-  border: 1px solid rgb(14 41 47 / 8%);
-  box-shadow: 0 18px 44px rgb(15 36 41 / 8%);
+  background: var(--color-surface-translucent);
+  border: 1px solid var(--color-shadow-light);
+  box-shadow: 0 18px 44px var(--color-shadow-light);
   border-radius: 24px;
 }
 
@@ -39,13 +39,13 @@
 .hero-panel h2,
 .panel h3 {
   margin: 0;
-  color: #10292f;
+  color: var(--color-text-strong);
 }
 
 .hero-panel p,
 .subtle-text {
   margin: 10px 0 0;
-  color: #4a5f64;
+  color: var(--color-text-secondary);
   line-height: 1.55;
 }
 
@@ -74,7 +74,7 @@
 .checkbox-row {
   display: grid;
   gap: 6px;
-  color: #243f45;
+  color: var(--color-text-strong);
 }
 
 .form-grid span {
@@ -85,12 +85,12 @@
 .form-grid select,
 .hero-controls select {
   width: 100%;
-  border: 1px solid rgb(16 41 47 / 16%);
+  border: 1px solid var(--color-shadow-medium);
   border-radius: 12px;
-  background: rgb(255 255 255 / 96%);
+  background: var(--color-surface-translucent-strong);
   padding: 11px 12px;
   font: inherit;
-  color: #10292f;
+  color: var(--color-text-strong);
 }
 
 .form-grid input:focus,
@@ -117,7 +117,7 @@
 
 .primary-button {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .secondary-button {
@@ -164,8 +164,8 @@
   gap: 3px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgb(14 106 113 / 5%);
-  color: #204046;
+  background: var(--color-primary-light);
+  color: var(--color-text-strong);
 }
 
 .assignment-list {
@@ -181,8 +181,8 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgb(14 106 113 / 14%);
-  background: rgb(255 255 255 / 90%);
+  border: 1px solid var(--color-primary-light);
+  background: var(--color-surface-translucent);
 }
 
 .assignment-item div {
@@ -191,7 +191,7 @@
 }
 
 .assignment-item span {
-  color: #4c6368;
+  color: var(--color-text-secondary);
 }
 
 .types-grid {
@@ -207,7 +207,7 @@
   gap: 8px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgb(14 106 113 / 5%);
+  background: var(--color-primary-light);
 }
 
 .checkbox-row input {

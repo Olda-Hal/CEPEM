@@ -1,5 +1,5 @@
 .status-logged-only {
-  color: #b7791f;
+  color: var(--color-warning);
   font-weight: 600;
 }
 
@@ -8,7 +8,7 @@
 }
 
 .email-log-address {
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
   font-size: 0.85em;
 }
 
@@ -16,7 +16,7 @@
   display: flex;
   gap: 4px;
   margin-bottom: 18px;
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .communication-log-tabs button {
@@ -25,13 +25,13 @@
   padding: 10px 16px;
   margin-bottom: -1px;
   border-bottom: 2px solid transparent;
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 .communication-log-tabs button.active {
-  color: var(--primary-color, #2563eb);
-  border-bottom-color: var(--primary-color, #2563eb);
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
 }

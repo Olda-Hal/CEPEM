@@ -13,7 +13,7 @@
 
 .permissions-modal th,
 .permissions-modal td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   padding: 6px;
 }
 

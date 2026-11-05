@@ -2,7 +2,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 50%);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,7 +148,7 @@
   top: 2px;
   width: 6px;
   height: 10px;
-  border: solid white;
+  border: solid var(--color-on-primary);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -195,7 +195,7 @@
 
 .save-button {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
   border: none;
 }
 

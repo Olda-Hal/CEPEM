@@ -166,7 +166,7 @@
 
 .btn-primary {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .btn-primary:hover {
@@ -184,7 +184,7 @@
 
 .btn-danger {
   background-color: var(--color-error);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .btn-danger:hover {
@@ -202,7 +202,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgb(0 0 0 / 50%);
+  background-color: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

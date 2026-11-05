@@ -15,9 +15,9 @@
   gap: 8px;
   padding: 20px;
   border-radius: 10px;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, rgb(0 0 0 / 12%));
-  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px var(--color-shadow-light);
 }
 
 .service-card h3 {
@@ -34,16 +34,16 @@
 }
 
 .health-badge.healthy {
-  background: #dff5e3;
-  color: #1c6b31;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .health-badge.unreachable {
-  background: #fbe2e2;
-  color: #a32a2a;
+  background: var(--color-error-light);
+  color: var(--color-error);
 }
 
 .health-badge.loading {
-  background: rgb(128 128 128 / 15%);
-  color: var(--color-text-secondary, #666);
+  background: var(--color-secondary);
+  color: var(--color-text-secondary);
 }

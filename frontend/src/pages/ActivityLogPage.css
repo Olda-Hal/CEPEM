@@ -17,49 +17,49 @@
 .activity-log-filters input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
 }
 
 .activity-log-meta {
   font-size: 13px;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
   margin-bottom: 12px;
 }
 
 .activity-log-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
+  box-shadow: 0 1px 4px var(--color-shadow-light);
   font-size: 13px;
 }
 
 .activity-log-table th {
   text-align: left;
   padding: 10px 12px;
-  background: var(--color-surface-alt, #f5f6f8);
-  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .activity-log-table td {
   padding: 8px 12px;
-  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 5%));
+  border-bottom: 1px solid var(--color-border);
   vertical-align: top;
 }
 
 .log-row-error td {
-  background: rgb(214 69 69 / 5%);
+  background: var(--color-error-light);
 }
 
 .log-time {
   white-space: nowrap;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
 }
 
 .log-user {
@@ -82,11 +82,11 @@
 }
 
 .status-ok {
-  color: #2e9e5b;
+  color: var(--color-success);
 }
 
 .status-error {
-  color: #d64545;
+  color: var(--color-error);
 }
 
 .activity-log-pagination {
@@ -99,13 +99,13 @@
 
 .pagination-info {
   font-size: 14px;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
 }
 
 .no-data {
   text-align: center;
   padding: 40px;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
 }
 
 @media (width <= 800px) {
@@ -117,9 +117,9 @@
 .activity-log-filters select {
   padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 25%));
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #222);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .log-row-clickable {
@@ -127,7 +127,7 @@
 }
 
 .log-row-clickable:focus-visible {
-  outline: 2px solid var(--color-primary, #3b82f6);
+  outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
 
@@ -140,7 +140,7 @@
 
 .activity-log-detail dt {
   font-weight: 600;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
 }
 
 .activity-log-detail dd {

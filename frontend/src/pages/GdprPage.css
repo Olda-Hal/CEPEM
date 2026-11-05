@@ -7,10 +7,10 @@
 .gdpr-card {
   margin-bottom: 20px;
   padding: 18px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 8%));
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: var(--color-surface, #fff);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 5%);
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px var(--color-shadow-light);
 }
 
 .gdpr-card h2 {
@@ -34,7 +34,7 @@
 }
 
 .gdpr-uid {
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -46,7 +46,7 @@
 .gdpr-search input {
   flex: 1;
   padding: 9px 12px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font: inherit;
 }
@@ -65,14 +65,14 @@
   padding: 9px 12px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: var(--color-background-secondary, #f7f8fa);
+  background: var(--color-background-secondary);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .gdpr-search-results button:hover {
-  border-color: var(--color-primary, #667eea);
+  border-color: var(--color-primary);
 }
 
 .gdpr-map-grid {
@@ -87,18 +87,18 @@
   gap: 4px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: var(--color-background-secondary, #f7f8fa);
+  background: var(--color-background-secondary);
   font-size: 0.82rem;
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
 }
 
 .gdpr-map-stat strong {
-  color: var(--color-text, #1a202c);
+  color: var(--color-text);
   font-size: 1.3rem;
 }
 
 .gdpr-muted {
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -118,13 +118,13 @@
 .gdpr-table th,
 .gdpr-table td {
   padding: 8px 10px;
-  border-bottom: 1px solid var(--color-border, rgb(0 0 0 / 6%));
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: top;
 }
 
 .gdpr-table th {
-  color: var(--color-text-secondary, #718096);
+  color: var(--color-text-secondary);
   font-weight: 600;
 }
 
@@ -157,10 +157,10 @@
 .gdpr-form select,
 .gdpr-form textarea {
   padding: 8px 10px;
-  border: 1px solid var(--color-border, rgb(0 0 0 / 15%));
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #1a202c);
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
@@ -180,10 +180,10 @@
 .gdpr-warning {
   margin: 0;
   padding: 12px;
-  border: 1px solid #e8a13a;
+  border: 1px solid var(--color-warning);
   border-radius: 8px;
-  background: #fff4e5;
-  color: #8a5300;
+  background: var(--color-surface) 4e5;
+  color: var(--color-warning);
   font-size: 0.88rem;
 }
 
@@ -194,20 +194,20 @@
 }
 
 .gdpr-page .alert-error {
-  border: 1px solid #d64545;
-  background: #fdecec;
-  color: #a32a2a;
+  border: 1px solid var(--color-error);
+  background: var(--color-error-light);
+  color: var(--color-error);
 }
 
 .gdpr-page .alert-success {
-  border: 1px solid #2e9e5b;
-  background: #e8f7ee;
-  color: #1c6b31;
+  border: 1px solid var(--color-success);
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .gdpr-page .submit-button.danger {
-  background: #c53030;
-  color: #fff;
+  background: var(--color-error);
+  color: var(--color-on-primary);
 }
 
 @media (width <= 700px) {

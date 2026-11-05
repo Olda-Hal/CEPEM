@@ -16,15 +16,15 @@
 }
 
 .login-language-switcher .language-select {
-  background: rgb(255 255 255 / 90%);
-  border: 1px solid rgb(255 255 255 / 30%);
+  background: var(--color-surface-translucent);
+  border: 1px solid var(--color-border-light);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .login-language-switcher .language-select:hover {
-  background: white;
-  border-color: rgb(255 255 255 / 50%);
+  background: var(--color-surface);
+  border-color: var(--color-border-light);
 }
 
 .login-card {
@@ -114,7 +114,7 @@
 .login-button {
   width: 100%;
   background: var(--color-accent);
-  color: white;
+  color: var(--color-on-primary);
   border: none;
   padding: 14px 20px;
   border-radius: 8px;

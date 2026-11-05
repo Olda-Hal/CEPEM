@@ -1,7 +1,7 @@
 .document-upload-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgb(0 0 0 / 70%);
+  background-color: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,7 +17,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgb(0 0 0 / 40%);
+  box-shadow: 0 20px 60px var(--color-shadow-heavy);
   border: 1px solid var(--color-border-light);
   overflow: hidden;
 }
@@ -56,7 +56,7 @@
 }
 
 .document-upload-modal .close-button:hover svg {
-  fill: white;
+  fill: var(--color-on-primary);
 }
 
 .document-upload-modal .close-button svg {
@@ -75,7 +75,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  background-color: rgb(244 67 54 / 10%);
+  background-color: var(--color-error-light);
   color: var(--color-error);
   border-radius: 8px;
   margin-bottom: 20px;
@@ -210,7 +210,7 @@
 
 .button-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
   box-shadow: var(--color-shadow-light);
 }
 

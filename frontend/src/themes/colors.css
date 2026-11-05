@@ -44,6 +44,70 @@
   --color-shadow-light: rgb(0 0 0 / 5%);
   --color-shadow-medium: rgb(0 0 0 / 10%);
   --color-shadow-heavy: rgb(0 0 0 / 15%);
+
+  /* Surfaces & overlays */
+  --color-surface: var(--color-background);
+  --color-surface-alt: var(--color-background-secondary);
+  --color-surface-muted: var(--color-background-tertiary);
+  --color-surface-hover: var(--color-secondary);
+  --color-background-hover: var(--color-secondary);
+  --color-surface-translucent: rgb(255 255 255 / 90%);
+  --color-surface-translucent-soft: rgb(255 255 255 / 65%);
+  --color-surface-translucent-strong: rgb(255 255 255 / 96%);
+  --color-overlay: rgb(0 0 0 / 55%);
+  --color-overlay-strong: rgb(0 0 0 / 80%);
+
+  /* Text aliases */
+  --color-text: var(--color-text-primary);
+  --color-text-strong: #10292f;
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-light);
+  --color-muted: var(--color-text-secondary);
+  --color-on-primary: #fff;
+  --color-text-on-primary: var(--color-on-primary);
+
+  /* Accent aliases */
+  --color-primary-strong: var(--color-primary-hover);
+  --color-primary-tint: var(--color-primary-light);
+  --color-focus: var(--color-border-focus);
+
+  /* Legacy variable names used by older stylesheets */
+  --color-bg: var(--color-background);
+  --color-error-dark: var(--color-error);
+  --color-success-hover: var(--color-success);
+  --border-radius: 8px;
+  --background-color: var(--color-background);
+  --surface-color: var(--color-background);
+  --bg-primary: var(--color-background);
+  --bg-secondary: var(--color-background-secondary);
+  --text-color: var(--color-text-primary);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-secondary);
+  --text-muted-color: var(--color-text-secondary);
+  --muted-color: var(--color-text-secondary);
+  --border-color: var(--color-border);
+  --primary-color: var(--color-primary);
+  --success-color: var(--color-success);
+  --error-color: var(--color-error);
+  --success-hover: var(--color-success);
+  --error-dark: var(--color-error);
+  --input-bg: var(--color-background);
+  --shadow: var(--color-shadow-medium);
+
+  /* Data visualisation (charts, review markers); functional colours, not UI */
+  --color-chart-1: var(--color-primary);
+  --color-chart-2: var(--color-success);
+  --color-chart-3: var(--color-warning);
+  --color-chart-4: var(--color-error);
+  --color-chart-5: #7c3aed;
+
+  /* Device/imaging chrome that stays dark in both themes */
+  --color-camera-background: #000;
+  --color-media-background: #000;
+  --color-camera-frame: #0f0;
+  --color-tdb-canvas: #0b0a0a;
+  --color-signature-ink: #1f2937;
 }
 
 :root[data-theme='dark'] {
@@ -77,6 +141,66 @@
   --color-shadow-light: rgb(0 0 0 / 30%);
   --color-shadow-medium: rgb(0 0 0 / 40%);
   --color-shadow-heavy: rgb(0 0 0 / 50%);
+
+  /* Surfaces & overlays */
+  --color-surface: var(--color-background);
+  --color-surface-alt: var(--color-background-secondary);
+  --color-surface-muted: var(--color-background-tertiary);
+  --color-surface-hover: var(--color-secondary);
+  --color-background-hover: var(--color-secondary);
+  --color-surface-translucent: rgb(26 32 44 / 92%);
+  --color-surface-translucent-soft: rgb(26 32 44 / 70%);
+  --color-surface-translucent-strong: rgb(26 32 44 / 96%);
+  --color-overlay: rgb(0 0 0 / 55%);
+  --color-overlay-strong: rgb(0 0 0 / 80%);
+
+  /* Text aliases */
+  --color-text: var(--color-text-primary);
+  --color-text-strong: #f7fafc;
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-light);
+  --color-muted: var(--color-text-secondary);
+  --color-on-primary: #fff;
+  --color-text-on-primary: var(--color-on-primary);
+
+  /* Accent aliases */
+  --color-primary-strong: var(--color-primary-hover);
+  --color-primary-tint: var(--color-primary-light);
+  --color-focus: var(--color-border-focus);
+
+  /* Legacy variable names used by older stylesheets */
+  --background-color: var(--color-background);
+  --surface-color: var(--color-background);
+  --bg-primary: var(--color-background);
+  --bg-secondary: var(--color-background-secondary);
+  --text-color: var(--color-text-primary);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-secondary);
+  --text-muted-color: var(--color-text-secondary);
+  --muted-color: var(--color-text-secondary);
+  --border-color: var(--color-border);
+  --primary-color: var(--color-primary);
+  --success-color: var(--color-success);
+  --error-color: var(--color-error);
+  --success-hover: var(--color-success);
+  --error-dark: var(--color-error);
+  --input-bg: var(--color-background);
+  --shadow: var(--color-shadow-medium);
+
+  /* Data visualisation (charts, review markers) */
+  --color-chart-1: var(--color-primary);
+  --color-chart-2: var(--color-success);
+  --color-chart-3: var(--color-warning);
+  --color-chart-4: var(--color-error);
+  --color-chart-5: #a78bfa;
+
+  /* Device/imaging chrome that stays dark in both themes */
+  --color-camera-background: #000;
+  --color-media-background: #000;
+  --color-camera-frame: #0f0;
+  --color-tdb-canvas: #0b0a0a;
+  --color-signature-ink: #1f2937;
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -1,6 +1,6 @@
 .edit-patient-page {
   min-height: 100vh;
-  background: var(--bg-primary, #f7f8fa);
+  background: var(--bg-primary);
 }
 
 .edit-patient-container {
@@ -13,14 +13,14 @@
   display: flex;
   gap: 20px;
   margin-bottom: 16px;
-  color: var(--text-secondary, #5f6c7b);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .patient-overview-card {
-  background: var(--bg-secondary, #fff);
+  background: var(--bg-secondary);
   border-radius: 12px;
-  box-shadow: 0 6px 30px rgb(0 0 0 / 8%);
+  box-shadow: 0 6px 30px var(--color-shadow-light);
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -35,7 +35,7 @@
 
 .patient-overview-subtitle {
   margin-top: 4px;
-  color: var(--text-secondary, #5f6c7b);
+  color: var(--text-secondary);
 }
 
 .patient-overview-grid {
@@ -45,10 +45,10 @@
 }
 
 .overview-panel {
-  border: 1px solid var(--border-color, #d1d5db);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 16px;
-  background: var(--bg-primary, #f7f8fa);
+  background: var(--bg-primary);
 }
 
 .overview-panel.full-width {
@@ -65,7 +65,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 6px 0;
-  border-bottom: 1px solid rgb(0 0 0 / 6%);
+  border-bottom: 1px solid var(--color-shadow-light);
 }
 
 .overview-row:last-child {
@@ -73,7 +73,7 @@
 }
 
 .overview-row span {
-  color: var(--text-secondary, #5f6c7b);
+  color: var(--text-secondary);
 }
 
 .overview-row strong {
@@ -98,7 +98,7 @@
 }
 
 .patient-comment-pre {
-  background: rgb(255 255 255 / 65%);
+  background: var(--color-surface-translucent-soft);
   border-radius: 8px;
   padding: 12px;
 }
@@ -107,8 +107,8 @@
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  background: rgb(255 255 255 / 75%);
-  border: 1px solid rgb(0 0 0 / 8%);
+  background: var(--color-surface-translucent);
+  border: 1px solid var(--color-shadow-light);
   border-radius: 8px;
   padding: 12px;
   max-height: 420px;
@@ -124,8 +124,8 @@
 
 .timeline-item,
 .simple-list-item {
-  background: rgb(255 255 255 / 65%);
-  border: 1px solid rgb(0 0 0 / 8%);
+  background: var(--color-surface-translucent-soft);
+  border: 1px solid var(--color-shadow-light);
   border-radius: 10px;
   padding: 12px;
 }
@@ -162,9 +162,9 @@
 }
 
 .edit-patient-form {
-  background: var(--bg-secondary, #fff);
+  background: var(--bg-secondary);
   border-radius: 12px;
-  box-shadow: 0 6px 30px rgb(0 0 0 / 8%);
+  box-shadow: 0 6px 30px var(--color-shadow-light);
   padding: 20px;
 }
 
@@ -180,18 +180,18 @@
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
-  color: var(--text-primary, #111827);
+  color: var(--text-primary);
 }
 
 .edit-grid input,
 .edit-grid select,
 .comment-field textarea {
-  border: 1px solid var(--border-color, #d1d5db);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;
-  background: var(--input-bg, #fff);
-  color: var(--text-primary, #111827);
+  background: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .edit-grid input:focus,
@@ -199,7 +199,7 @@
 .comment-field textarea:focus {
   outline: none;
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgb(15 118 110 / 12%);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .alive-toggle {
@@ -229,12 +229,12 @@
 
 .edit-actions button.primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .edit-actions button.secondary {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .edit-actions button:disabled {
@@ -246,7 +246,7 @@
   max-width: 900px;
   margin: 30px auto;
   padding: 16px;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 10px;
 }
 
@@ -258,13 +258,13 @@
 
 .edit-patient-alert.error,
 .edit-patient-state.error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-error-light) 2e2;
+  color: var(--color-error);
 }
 
 .edit-patient-alert.success {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 @media (width <= 900px) {

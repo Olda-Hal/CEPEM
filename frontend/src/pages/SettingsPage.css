@@ -16,8 +16,8 @@
   gap: 14px;
   padding: 18px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border, rgb(0 0 0 / 10%));
-  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   box-shadow: var(--shadow-card);
   text-align: left;
   cursor: pointer;
@@ -52,7 +52,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--color-primary-tint, rgb(37 99 235 / 12%));
+  background: var(--color-primary-tint);
   font-size: 22px;
 }
 

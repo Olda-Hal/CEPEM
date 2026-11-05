@@ -176,7 +176,12 @@ const SignaturePad: React.FC<{
       context.lineWidth = 2;
       context.lineCap = 'round';
       context.lineJoin = 'round';
-      context.strokeStyle = '#1f2937';
+      // Signature ink is a theme token (paper stays light in both themes).
+      context.strokeStyle =
+        window
+          .getComputedStyle(document.documentElement)
+          .getPropertyValue('--color-signature-ink')
+          .trim() || 'currentColor';
 
       strokes.forEach((stroke) => drawStroke(context, stroke));
     },

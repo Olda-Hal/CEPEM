@@ -30,12 +30,12 @@
 }
 
 .intake-notice {
-  background: var(--color-info-light, #e8f1fb);
-  color: var(--color-info, #1f5aa8);
+  background: var(--color-info-light);
+  color: var(--color-info);
   padding: 0.75rem 1rem;
   border-radius: 4px;
   margin-bottom: 1rem;
-  border: 1px solid var(--color-info, #1f5aa8);
+  border: 1px solid var(--color-info);
 }
 
 .patient-form {
@@ -95,7 +95,7 @@
   top: 5px;
   right: 5px;
   background: var(--color-error);
-  color: white;
+  color: var(--color-on-primary);
   border: none;
   border-radius: 50%;
   width: 32px;
@@ -130,7 +130,7 @@
 .camera-btn {
   padding: 0.75rem 1.5rem;
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
   border: none;
   border-radius: 4px;
   font-size: 1rem;
@@ -288,7 +288,7 @@ textarea {
 
 .btn-submit {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .btn-submit:hover:not(:disabled) {
@@ -304,7 +304,7 @@ textarea {
 .camera-modal {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 80%);
+  background: var(--color-overlay-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,7 +317,7 @@ textarea {
   border-radius: 8px;
   max-width: 640px;
   width: 90%;
-  box-shadow: 0 4px 20px rgb(0 0 0 / 30%);
+  box-shadow: 0 4px 20px var(--color-shadow-heavy);
 }
 
 .camera-header {
@@ -350,7 +350,7 @@ textarea {
 .camera-video {
   width: 100%;
   max-height: 480px;
-  background: #000;
+  background: var(--color-media-background);
   border-radius: 4px;
   margin-bottom: 15px;
 }
@@ -393,10 +393,10 @@ textarea {
   cursor: pointer;
   font-size: 14px;
   background: var(--color-success);
-  color: white;
+  color: var(--color-on-primary);
   transition: background 0.2s;
 }
 
 .btn-capture:hover {
-  background: var(--color-success-hover, #218838);
+  background: var(--color-success-hover);
 }

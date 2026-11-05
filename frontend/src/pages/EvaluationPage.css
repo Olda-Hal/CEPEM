@@ -3,7 +3,7 @@
 }
 
 .evaluation-subtitle {
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
   margin-bottom: 1rem;
 }
 
@@ -23,8 +23,8 @@
   flex-direction: column;
   width: 100%;
   text-align: left;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #d1d5db);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
   margin-bottom: 0.5rem;
@@ -32,8 +32,8 @@
 }
 
 .evaluation-card.active {
-  border-color: var(--color-primary, #2563eb);
-  box-shadow: 0 0 0 1px var(--color-primary, #2563eb);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .evaluation-card.done {
@@ -69,14 +69,14 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--color-error, #dc2626);
-  color: #fff;
+  background: var(--color-error);
+  color: var(--color-on-primary);
   font-size: 12px;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #fff;
+  border: 2px solid var(--color-on-primary);
 }
 
 .evaluation-markers {
@@ -114,7 +114,7 @@
 }
 
 .muted {
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
 }
 
 .muted.small {
@@ -136,9 +136,9 @@
   align-items: center;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: var(--color-primary-light, #e3f2fd);
-  border: 1px solid var(--color-primary, #667eea);
-  color: var(--color-primary, #4c5fd5);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -160,8 +160,8 @@
 .evaluation-empty {
   padding: 2rem;
   text-align: center;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #d1d5db);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 
@@ -178,8 +178,8 @@
 }
 
 .tdb-slice-card {
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #d1d5db);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0.75rem;
 }
@@ -193,7 +193,7 @@
 
 .tdb-slice-depth {
   margin-left: 0.5rem;
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
   font-weight: 500;
 }
 
@@ -202,7 +202,7 @@
   cursor: crosshair;
   border-radius: 8px;
   overflow: hidden;
-  background: #0b0a0a;
+  background: var(--color-tdb-canvas);
 }
 
 .tdb-slice-canvas.readonly {
@@ -221,7 +221,7 @@
   margin-top: 0.6rem;
   padding: 2px;
   overflow: hidden;
-  background: var(--color-background-secondary, #f7fafc);
+  background: var(--color-background-secondary);
   border-radius: 4px;
 }
 
@@ -232,13 +232,13 @@
 }
 
 .tdb-hist-grid {
-  stroke: var(--color-border, #cbd5e0);
+  stroke: var(--color-border);
   stroke-width: 0.35;
   vector-effect: non-scaling-stroke;
 }
 
 .tdb-histogram-bar {
-  fill: var(--color-primary, #667eea);
+  fill: var(--color-primary);
   opacity: 0.9;
 }
 
@@ -265,15 +265,15 @@
 }
 
 .tdb-outcome.ok {
-  background: var(--color-success-light, #f0fff4);
-  color: var(--color-success, #2f855a);
-  border: 1px solid var(--color-success, #38a169);
+  background: var(--color-success-light);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 
 .tdb-outcome.findings {
-  background: var(--color-warning-light, #fffbeb);
-  color: var(--color-warning, #b7791f);
-  border: 1px solid var(--color-warning, #d69e2e);
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
 }
 
 .tdb-outcome-badge {
@@ -287,13 +287,13 @@
 }
 
 .tdb-outcome-badge.ok {
-  background: var(--color-success-light, #f0fff4);
-  color: var(--color-success, #2f855a);
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .tdb-outcome-badge.findings {
-  background: var(--color-warning-light, #fffbeb);
-  color: var(--color-warning, #b7791f);
+  background: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 @media (width <= 900px) {

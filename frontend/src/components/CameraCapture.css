@@ -1,7 +1,7 @@
 .camera-capture-modal {
   position: fixed;
   inset: 0;
-  background-color: rgb(0 0 0 / 90%);
+  background-color: var(--color-overlay-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,7 +18,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgb(0 0 0 / 30%);
+  box-shadow: 0 4px 6px var(--color-shadow-heavy);
 }
 
 .camera-header {
@@ -38,10 +38,10 @@
 .camera-error {
   padding: 15px;
   margin: 15px;
-  background-color: #fee;
-  border: 1px solid #fcc;
+  background-color: var(--color-error-light);
+  border: 1px solid var(--color-error-light);
   border-radius: 4px;
-  color: #c00;
+  color: var(--color-error);
 }
 
 .camera-viewport {
@@ -49,15 +49,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #000;
+  background-color: var(--color-media-background);
   position: relative;
   min-height: 400px;
 }
 
 .crop-frame {
   position: absolute;
-  border: 3px solid #0f0;
-  box-shadow: 0 0 0 9999px rgb(0 0 0 / 50%);
+  border: 3px solid var(--color-camera-frame);
+  box-shadow: 0 0 0 9999px var(--color-shadow-heavy);
   pointer-events: none;
   z-index: 10;
 }
@@ -69,7 +69,7 @@
   left: -3px;
   right: -3px;
   height: 1px;
-  background: #0f0;
+  background: var(--color-camera-frame);
   opacity: 0.5;
 }
 
@@ -80,7 +80,7 @@
   top: -3px;
   bottom: -3px;
   width: 1px;
-  background: #0f0;
+  background: var(--color-camera-frame);
   opacity: 0.5;
 }
 

@@ -13,7 +13,7 @@
 
 .sms-log-header p {
   margin: 0;
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -24,22 +24,22 @@
 }
 
 .sms-log-muted {
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
   font-size: 0.85rem;
   overflow-wrap: anywhere;
 }
 
 .sms-log-table .status-ok {
-  color: #15803d;
+  color: var(--color-success);
   font-weight: 600;
 }
 
 .sms-log-table .status-error {
-  color: #b91c1c;
+  color: var(--color-error);
   font-weight: 600;
 }
 
 .sms-log-table .status-logged-only {
-  color: #a16207;
+  color: var(--color-warning);
   font-weight: 600;
 }

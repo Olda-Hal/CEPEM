@@ -20,7 +20,7 @@
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.85rem;
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
 }
 
 .measurements-filter select {
@@ -29,14 +29,14 @@
 
 .measurements-count {
   margin-left: auto;
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
   font-size: 0.9rem;
 }
 
 .measurements-table-wrapper {
   overflow-x: auto;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #d1d5db);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
 }
 
@@ -51,15 +51,15 @@
   padding: 0.65rem 0.8rem;
   text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .measurements-table th {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--color-muted, #6b7280);
-  background: var(--color-surface-alt, #f9fafb);
+  color: var(--color-muted);
+  background: var(--color-surface-alt);
 }
 
 .measurements-row {
@@ -68,7 +68,7 @@
 
 .measurements-row:hover,
 .measurements-row:focus {
-  background: var(--color-surface-alt, #f3f4f6);
+  background: var(--color-surface-alt);
   outline: none;
 }
 
@@ -78,7 +78,7 @@
 
 .measurements-patient-uid {
   display: block;
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
   font-size: 0.8rem;
 }
 
@@ -101,24 +101,24 @@
 }
 
 .measurements-status.evaluated {
-  background: var(--color-success-light, #dcfce7);
-  color: var(--color-success, #15803d);
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .measurements-status.partial {
-  background: var(--color-warning-light, #fef3c7);
-  color: var(--color-warning, #b45309);
+  background: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 .measurements-status.pending {
-  background: var(--color-error-light, #fee2e2);
-  color: var(--color-error, #b91c1c);
+  background: var(--color-error-light);
+  color: var(--color-error);
 }
 
 .measurements-manual {
   display: block;
   margin-top: 0.25rem;
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
   font-size: 0.75rem;
 }
 
@@ -128,7 +128,7 @@
 }
 
 .measurements-empty {
-  color: var(--color-muted, #6b7280);
+  color: var(--color-muted);
 }
 
 @media (width <= 720px) {
