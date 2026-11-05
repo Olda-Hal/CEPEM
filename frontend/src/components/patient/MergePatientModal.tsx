@@ -129,6 +129,12 @@ export const MergePatientModal: React.FC<MergePatientModalProps> = ({
 
   const formatDate = (value: string) => new Date(value).toLocaleDateString(i18n.language);
 
+  // BaseModal has no open flag; without this guard the merge dialog renders
+  // on every patient page and cannot be dismissed.
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <BaseModal
       title={t('patients.merge.title')}

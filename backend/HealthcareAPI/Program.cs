@@ -174,7 +174,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     return;
                 }
 
-                if (validity.PasswordExpired)
+                // A preview ("náhled jako zaměstnanec") is a read-only SysAdmin
+                // tool, not a real sign-in. An expired target password must not
+                // revoke the preview token on the first API call — otherwise
+                // the preview closes as soon as a page loads any data.
+                var isImpersonation = principal?.FindFirst("impersonator_id") != null;
+
+                if (validity.PasswordExpired && !isImpersonation)
                 {
                     // Only the forced password-change flow, /me and logout may
                     // be used until the password is changed.
