@@ -306,3 +306,4 @@ sudo ufw enable
 - Keep SSL certificates renewed.
 - Enable fail2ban for SSH protection.
 - Consider MFA/SSO for staff accounts and full-disk encryption for the database/backup volumes.
+- Audit/e-mail logs are bounded: routine successful reads are kept 30 days, security-relevant rows 365 days, and the tables are hard-capped (500k audit / 200k e-mail rows). Tune with the `ACTIVITY_LOG_*` variables in `.env`.

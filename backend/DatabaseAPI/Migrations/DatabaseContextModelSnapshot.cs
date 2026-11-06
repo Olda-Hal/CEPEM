@@ -39,7 +39,7 @@ namespace DatabaseAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Method")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Service")
                         .IsRequired()
@@ -52,6 +52,10 @@ namespace DatabaseAPI.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("Method", "StatusCode", "Timestamp");
 
                     b.ToTable("ActivityLogs");
                 });

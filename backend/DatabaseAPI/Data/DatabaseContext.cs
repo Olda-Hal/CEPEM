@@ -598,6 +598,15 @@ public class DatabaseContext : DbContext
         modelBuilder.Entity<IntakeFormLink>()
             .HasIndex(l => l.VisitId);
 
+        // Audit log: retention deletes by timestamp, the admin list filters by
+        // time/method/status. Without the timestamp index every cleanup was a
+        // full table scan.
+        modelBuilder.Entity<ActivityLog>()
+            .HasIndex(log => log.Timestamp);
+
+        modelBuilder.Entity<ActivityLog>()
+            .HasIndex(log => new { log.Method, log.StatusCode, log.Timestamp });
+
         // Admin e-mail log: newest-first listing plus recipient/kind filters.
         modelBuilder.Entity<EmailLog>()
             .HasIndex(log => log.CreatedAtUtc);

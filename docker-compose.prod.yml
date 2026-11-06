@@ -115,6 +115,14 @@ services:
       - DocumentRetention__Enabled=${DOCUMENT_RETENTION_ENABLED:-true}
       - DocumentRetention__RetentionDays=${DOCUMENT_RETENTION_RETENTION_DAYS:-30}
       - DocumentRetention__CleanupIntervalHours=${DOCUMENT_RETENTION_CLEANUP_INTERVAL_HOURS:-24}
+      - ActivityLogRetention__Enabled=${ACTIVITY_LOG_RETENTION_ENABLED:-true}
+      - ActivityLogRetention__RoutineRetentionDays=${ACTIVITY_LOG_ROUTINE_RETENTION_DAYS:-30}
+      - ActivityLogRetention__ImportantRetentionDays=${ACTIVITY_LOG_IMPORTANT_RETENTION_DAYS:-365}
+      - ActivityLogRetention__MaxRows=${ACTIVITY_LOG_MAX_ROWS:-500000}
+      - ActivityLogRetention__EmailLogRetentionDays=${ACTIVITY_LOG_EMAIL_RETENTION_DAYS:-365}
+      - ActivityLogRetention__MaxEmailLogRows=${ACTIVITY_LOG_MAX_EMAIL_ROWS:-200000}
+      - ActivityLogRetention__BatchSize=${ACTIVITY_LOG_BATCH_SIZE:-5000}
+      - ActivityLogRetention__CleanupIntervalHours=${ACTIVITY_LOG_CLEANUP_INTERVAL_HOURS:-6}
       - ClamAv__Enabled=${CLAMAV_ENABLED:-true}
       - ClamAv__Host=${CLAMAV_HOST:-clamav}
       - ClamAv__Port=${CLAMAV_PORT:-3310}
