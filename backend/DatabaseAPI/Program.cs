@@ -171,7 +171,18 @@ if (app.Environment.IsDevelopment())
 
 // Correlation ID first: the auth handler and request logging both see it.
 app.UseMiddleware<DatabaseAPI.Middleware.CorrelationIdMiddleware>();
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    // Intake-link tokens are bearer secrets; keep them out of request logs.
+    options.MessageTemplate =
+        "HTTP {RequestMethod} {RedactedPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set(
+            "RedactedPath",
+            Cepem.Shared.PiiRedactor.RedactPath(httpContext.Request.Path.Value));
+    };
+});
 
 app.UseMiddleware<DatabaseAPI.Middleware.GlobalExceptionMiddleware>();
 app.UseMiddleware<DatabaseAPI.Middleware.ServiceAuthMiddleware>();

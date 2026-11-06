@@ -28,12 +28,11 @@ public static class PatientScope
         }
 
         var hospitalIds = actor.HospitalIds;
-        var fallbackCountryCodes = CountryCodes(actor);
+        // Legacy records without a home center are not assigned to any center,
+        // so a Center Admin must not see them; Country/Full admins still can.
         return query.Where(patient =>
-            (patient.HomeHospitalId != null && hospitalIds.Contains(patient.HomeHospitalId.Value)) ||
-            (patient.HomeHospitalId == null &&
-             patient.CountryCode != null &&
-             fallbackCountryCodes.Contains(patient.CountryCode)));
+            patient.HomeHospitalId != null &&
+            hospitalIds.Contains(patient.HomeHospitalId.Value));
     }
 
     public static IQueryable<Visit> ApplyToVisits(IQueryable<Visit> query, ActorScope actor)
@@ -54,13 +53,9 @@ public static class PatientScope
         }
 
         var hospitalIds = actor.HospitalIds;
-        var fallbackCountryCodes = CountryCodes(actor);
         return query.Where(visit =>
-            (visit.Patient.HomeHospitalId != null &&
-             hospitalIds.Contains(visit.Patient.HomeHospitalId.Value)) ||
-            (visit.Patient.HomeHospitalId == null &&
-             visit.Patient.CountryCode != null &&
-             fallbackCountryCodes.Contains(visit.Patient.CountryCode)));
+            visit.Patient.HomeHospitalId != null &&
+            hospitalIds.Contains(visit.Patient.HomeHospitalId.Value));
     }
 
     /// <summary>True when the patient is inside the actor's administrative scope.</summary>
@@ -77,13 +72,8 @@ public static class PatientScope
                    CountryCodes(actor).Contains(patient.CountryCode);
         }
 
-        if (patient.HomeHospitalId != null)
-        {
-            return actor.HospitalIds.Contains(patient.HomeHospitalId.Value);
-        }
-
-        return patient.CountryCode != null &&
-               CountryCodes(actor).Contains(patient.CountryCode);
+        return patient.HomeHospitalId != null &&
+               actor.HospitalIds.Contains(patient.HomeHospitalId.Value);
     }
 
     private static List<string> CountryCodes(ActorScope actor) =>

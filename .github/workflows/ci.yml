@@ -44,7 +44,13 @@ jobs:
         run: dotnet test backend/HealthcareAPI.Tests/HealthcareAPI.Tests.csproj --no-build --logger "trx" --results-directory ./test-results
 
       - name: Scan NuGet packages for known vulnerabilities
-        run: dotnet list CEPEM.sln package --vulnerable --include-transitive
+        run: |
+          output="$(dotnet list CEPEM.sln package --vulnerable --include-transitive)"
+          echo "$output"
+          if grep -qi "has the following vulnerable packages" <<<"$output"; then
+            echo "Vulnerable NuGet packages detected."
+            exit 1
+          fi
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

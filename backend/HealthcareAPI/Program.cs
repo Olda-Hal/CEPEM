@@ -311,9 +311,15 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<HealthcareAPI.Middleware.CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging(options =>
 {
+    // Never write intake-link tokens (or other bearer paths) to logs.
+    options.MessageTemplate =
+        "HTTP {RequestMethod} {RedactedPath} responded {StatusCode} in {Elapsed:0.0000} ms";
     options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
     {
         diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set(
+            "RedactedPath",
+            PiiRedactor.RedactPath(httpContext.Request.Path.Value));
     };
 });
 
