@@ -22,6 +22,9 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+        // YARP's forwarder logs the full target URI at Information level,
+        // which would expose intake-link bearer tokens in the log.
+        .MinimumLevel.Override("Yarp.ReverseProxy.Forwarder.HttpForwarder", Serilog.Events.LogEventLevel.Warning)
         .Enrich.FromLogContext()
         .Enrich.WithProperty("Service", "HealthcareAPI");
     if (context.HostingEnvironment.IsDevelopment())
