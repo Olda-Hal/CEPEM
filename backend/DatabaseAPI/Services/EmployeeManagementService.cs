@@ -71,9 +71,25 @@ namespace DatabaseAPI.Services
         private async Task<HashSet<int>?> GetManagementVisibleIdsAsync(CancellationToken cancellationToken)
         {
             var actor = await _employeeScopeService.GetActorScopeAsync(cancellationToken);
-            if (actor.HasFullAccess)
+            if (actor.IsSysAdmin)
             {
                 return null; // no filtering
+            }
+            if (actor.HasFullAccess)
+            {
+                // The operator "Admin" role must not be able to edit,
+                // deactivate or reset the accounts that can manage roles.
+                var allIds = await _context.Employees
+                    .Select(employee => employee.Id)
+                    .ToListAsync(cancellationToken);
+                var sysAdminIds = await _context.Employees
+                    .Where(employee => employee.Person.UserRoles.Any(userRole =>
+                        userRole.Role.NameTranslation != null &&
+                        userRole.Role.NameTranslation.EN == "SysAdmin"))
+                    .Select(employee => employee.Id)
+                    .ToListAsync(cancellationToken);
+
+                return allIds.Except(sysAdminIds).ToHashSet();
             }
             if (!actor.IsScopedAdmin)
             {

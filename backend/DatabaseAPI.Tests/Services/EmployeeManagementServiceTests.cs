@@ -165,4 +165,48 @@ public class EmployeeManagementServiceTests : IDisposable
 
         Assert.Null(await CreateService().ResetPasswordAsync(target.Id));
     }
+
+    [Fact]
+    public async Task AdminOperator_CannotManageSysAdminAccounts()
+    {
+        var translation = new Translation { EN = "SysAdmin", CS = "SysAdmin" };
+        _context.Translations.Add(translation);
+        var role = new Role { NameTranslation = translation };
+        _context.Roles.Add(role);
+        var sysAdminPerson = new Person
+        {
+            FirstName = "System",
+            LastName = "Admin",
+            UID = "SYS",
+            Gender = "M",
+            CountryCode = "CZ",
+            Active = true
+        };
+        _context.Persons.Add(sysAdminPerson);
+        _context.UserRoles.Add(new UserRole { UserId = sysAdminPerson.Id, RoleId = role.Id });
+        var sysAdmin = new Employee
+        {
+            Person = sysAdminPerson,
+            PasswordHash = "x",
+            Salt = "x"
+        };
+        _context.Employees.Add(sysAdmin);
+        _context.SaveChanges();
+
+        var operatorEmployee = SeedEmployee("OPERATOR", active: true);
+        _scopeMock
+            .Setup(s => s.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(
+                1,
+                new[] { "Admin" },
+                Array.Empty<int>(),
+                Array.Empty<int>()));
+
+        var service = CreateService();
+        var employees = await service.GetAllEmployeesAsync();
+
+        Assert.DoesNotContain(employees, employee => employee.EmployeeId == sysAdmin.Id);
+        Assert.Contains(employees, employee => employee.EmployeeId == operatorEmployee.Id);
+        Assert.False(await service.IsEmployeeVisibleForManagementAsync(sysAdmin.Id));
+    }
 }
