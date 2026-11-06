@@ -43,6 +43,10 @@ public class EventsControllerTests : IDisposable
         _linkService = new IntakeFormLinkService(_context);
         SeedGdprTemplate();
 
+        var scopeMock = new Mock<IEmployeeScopeService>();
+        scopeMock.Setup(service => service.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(1, new List<string> { "Admin" }, new List<int>(), new List<int>()));
+
         _controller = new EventsController(
             _context,
             actorCountryMock.Object,
@@ -50,6 +54,7 @@ public class EventsControllerTests : IDisposable
             new EventService(_context),
             new EventOptionsService(_context),
             _linkService,
+            scopeMock.Object,
             _visitServiceMock.Object,
             new PatientMasterDataService(_context),
             new PatientService(_context, uidMock.Object, actorCountryMock.Object),

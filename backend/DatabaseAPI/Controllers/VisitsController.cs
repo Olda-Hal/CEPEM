@@ -16,6 +16,7 @@ public class VisitsController : ControllerBase
 {
     private readonly IVisitService _visitService;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IEmployeeScopeService _employeeScopeService;
     private readonly IIntakeFormLinkService _intakeFormLinkService;
     private readonly DatabaseContext _context;
     private readonly ILogger<VisitsController> _logger;
@@ -24,6 +25,7 @@ public class VisitsController : ControllerBase
     public VisitsController(
         IVisitService visitService,
         IActorCountryContextService actorCountryContextService,
+        IEmployeeScopeService employeeScopeService,
         IIntakeFormLinkService intakeFormLinkService,
         DatabaseContext context,
         ILogger<VisitsController> logger,
@@ -31,6 +33,7 @@ public class VisitsController : ControllerBase
     {
         _visitService = visitService;
         _actorCountryContextService = actorCountryContextService;
+        _employeeScopeService = employeeScopeService;
         _intakeFormLinkService = intakeFormLinkService;
         _context = context;
         _logger = logger;
@@ -131,8 +134,13 @@ public class VisitsController : ControllerBase
         });
     }
 
-    private Task<bool> PatientIsVisibleAsync(int patientId) =>
-        _context.Patients.AnyAsync(p => p.Id == patientId && !p.IsDeleted);
+    private async Task<bool> PatientIsVisibleAsync(int patientId)
+    {
+        var actorScope = await _employeeScopeService.GetActorScopeAsync();
+        return await DatabaseAPI.Utils.PatientScope
+            .Apply(_context.Patients, actorScope)
+            .AnyAsync(p => p.Id == patientId && !p.IsDeleted);
+    }
 
     /// <summary>Upload a file and attach it to the visit (multipart).</summary>
     [HttpPost("{visitId}/documents")]

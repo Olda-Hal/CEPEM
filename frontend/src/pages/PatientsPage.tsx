@@ -18,8 +18,10 @@ export const PatientsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const canSeeDeleted =
+  const isClinicAdmin =
     isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
+  const canSeeDeleted = isClinicAdmin;
+  const canExport = isClinicAdmin;
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -183,9 +185,11 @@ export const PatientsPage: React.FC = () => {
       <div className="page-heading">
         <h1 className="page-title">{t('patients.title')}</h1>
         <div className="page-heading-actions">
-          <button className="btn btn-secondary" type="button" onClick={() => void handleExport()}>
-            {t('patients.export')}
-          </button>
+          {canExport && (
+            <button className="btn btn-secondary" type="button" onClick={() => void handleExport()}>
+              {t('patients.export')}
+            </button>
+          )}
           <button className="btn btn-primary" onClick={() => navigate('/patients/add')}>
             + {t('patients.addPatient')}
           </button>

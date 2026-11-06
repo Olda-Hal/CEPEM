@@ -20,25 +20,27 @@ public class IntakeChangesController : ControllerBase
     private readonly DatabaseContext _context;
     private readonly PatientMasterDataService _patientMasterDataService;
     private readonly IActorCountryContextService _actorCountryContextService;
+    private readonly IEmployeeScopeService _employeeScopeService;
     private readonly ILogger<IntakeChangesController> _logger;
 
     public IntakeChangesController(
         DatabaseContext context,
         PatientMasterDataService patientMasterDataService,
         IActorCountryContextService actorCountryContextService,
+        IEmployeeScopeService employeeScopeService,
         ILogger<IntakeChangesController> logger)
     {
         _context = context;
         _patientMasterDataService = patientMasterDataService;
         _actorCountryContextService = actorCountryContextService;
+        _employeeScopeService = employeeScopeService;
         _logger = logger;
     }
 
     [HttpGet("pending")]
     public async Task<ActionResult<List<IntakeChangeRequestDto>>> GetPending(int patientId)
     {
-        var exists = await _context.Patients.AnyAsync(patient => patient.Id == patientId);
-        if (!exists)
+        if (!await PatientIsVisibleAsync(patientId))
         {
             return NotFound("Patient not found");
         }
@@ -56,6 +58,11 @@ public class IntakeChangesController : ControllerBase
     [HttpPost("{changeId:int}/approve")]
     public async Task<ActionResult<IntakeChangeRequestDto>> Approve(int patientId, int changeId)
     {
+        if (!await PatientIsVisibleAsync(patientId))
+        {
+            return NotFound("Patient not found");
+        }
+
         var change = await _context.IntakeChangeRequests
             .FirstOrDefaultAsync(entry => entry.Id == changeId && entry.PatientId == patientId);
         if (change == null)
@@ -130,6 +137,11 @@ public class IntakeChangesController : ControllerBase
     [HttpPost("{changeId:int}/reject")]
     public async Task<ActionResult<IntakeChangeRequestDto>> Reject(int patientId, int changeId)
     {
+        if (!await PatientIsVisibleAsync(patientId))
+        {
+            return NotFound("Patient not found");
+        }
+
         var change = await _context.IntakeChangeRequests
             .FirstOrDefaultAsync(entry => entry.Id == changeId && entry.PatientId == patientId);
         if (change == null)
@@ -188,5 +200,13 @@ public class IntakeChangesController : ControllerBase
             ReviewedAtUtc = change.ReviewedAtUtc,
             ReviewedByEmployeeId = change.ReviewedByEmployeeId
         };
+    }
+
+    private async Task<bool> PatientIsVisibleAsync(int patientId)
+    {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        return await DatabaseAPI.Utils.PatientScope
+            .Apply(_context.Patients, actor)
+            .AnyAsync(patient => patient.Id == patientId && !patient.IsDeleted);
     }
 }

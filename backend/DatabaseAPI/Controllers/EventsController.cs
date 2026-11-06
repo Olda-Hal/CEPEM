@@ -19,6 +19,7 @@ public class EventsController : ControllerBase
     private readonly IEventService _eventService;
     private readonly IEventOptionsService _eventOptionsService;
     private readonly IIntakeFormLinkService _intakeFormLinkService;
+    private readonly IEmployeeScopeService _employeeScopeService;
     private readonly IVisitService _visitService;
     private readonly ILogger<EventsController> _logger;
     private readonly PatientMasterDataService _patientMasterDataService;
@@ -31,6 +32,7 @@ public class EventsController : ControllerBase
         IEventService eventService,
         IEventOptionsService eventOptionsService,
         IIntakeFormLinkService intakeFormLinkService,
+        IEmployeeScopeService employeeScopeService,
         IVisitService visitService,
         PatientMasterDataService patientMasterDataService,
         IPatientService patientService,
@@ -42,6 +44,7 @@ public class EventsController : ControllerBase
         _eventService = eventService;
         _eventOptionsService = eventOptionsService;
         _intakeFormLinkService = intakeFormLinkService;
+        _employeeScopeService = employeeScopeService;
         _visitService = visitService;
         _patientMasterDataService = patientMasterDataService;
         _patientService = patientService;
@@ -61,6 +64,11 @@ public class EventsController : ControllerBase
 
         try
         {
+            if (!await CanAccessPatientAsync(request.PatientId))
+            {
+                return NotFound("Patient not found");
+            }
+
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             var (eventId, examinationIds) = await _eventService.CreateEventRecordAsync(request, request.EventGroupId, actorCountryCode);
             await transaction.CommitAsync();
@@ -86,6 +94,11 @@ public class EventsController : ControllerBase
 
         try
         {
+            if (!await CanAccessPatientAsync(request.PatientId))
+            {
+                return NotFound("Patient not found");
+            }
+
             var actorCountryCode = await _actorCountryContextService.GetActorCountryCodeAsync();
             var eventGroupId = Guid.NewGuid();
             var eventIds = new List<int>();
@@ -158,9 +171,16 @@ public class EventsController : ControllerBase
     }
 
     [HttpPost("intake-form")]
-    public Task<ActionResult<IntakeFormEventDto>> CreateIntakeFormEvent(
-        [FromBody] CreateIntakeFormEventRequest request) =>
-        CreateIntakeFormEventCore(request, requireMasterDataApproval: false);
+    public async Task<ActionResult<IntakeFormEventDto>> CreateIntakeFormEvent(
+        [FromBody] CreateIntakeFormEventRequest request)
+    {
+        if (!await CanAccessPatientAsync(request.PatientId))
+        {
+            return NotFound("Patient not found");
+        }
+
+        return await CreateIntakeFormEventCore(request, requireMasterDataApproval: false);
+    }
 
     /// <summary>
     /// Atomically creates the patient and its intake submission. Used by the
@@ -601,6 +621,14 @@ public class EventsController : ControllerBase
         {
             await transaction.DisposeAsync();
         }
+    }
+
+    private async Task<bool> CanAccessPatientAsync(int patientId)
+    {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        return await DatabaseAPI.Utils.PatientScope
+            .Apply(_context.Patients, actor)
+            .AnyAsync(p => p.Id == patientId && !p.IsDeleted);
     }
 
     private static string MapLanguage(string? countryCode)

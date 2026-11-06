@@ -119,19 +119,28 @@ public class EvaluationsController : ControllerBase
         IQueryable<EvaluationCase> query,
         ActorScope actor)
     {
-        if (!actor.IsCountryAdmin || actor.HasFullAccess)
+        if (!actor.IsScopedAdmin)
         {
             return query;
         }
 
-        var countryCodes = actor.AdministeredCountryScopeIds
-            .Select(DatabaseAPI.Utils.CountryScopeMapper.ToCountryCode)
-            .Where(code => !string.IsNullOrWhiteSpace(code))
-            .Select(code => code!)
-            .ToList();
+        if (actor.IsCountryAdmin)
+        {
+            var countryCodes = actor.AdministeredCountryScopeIds
+                .Select(DatabaseAPI.Utils.CountryScopeMapper.ToCountryCode)
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .Select(code => code!)
+                .ToList();
 
+            return query.Where(c => c.Patient == null ||
+                (c.Patient.CountryCode != null && countryCodes.Contains(c.Patient.CountryCode)));
+        }
+
+        // Center Admin: only measurements of patients whose home center they
+        // administer. Unlinked (anonymised) legacy cases stay visible.
         return query.Where(c => c.Patient == null ||
-            (c.Patient.CountryCode != null && countryCodes.Contains(c.Patient.CountryCode)));
+            (c.Patient.HomeHospitalId != null &&
+             actor.HospitalIds.Contains(c.Patient.HomeHospitalId.Value)));
     }
 
     [HttpGet("cases/{id}")]
@@ -297,13 +306,19 @@ public class EvaluationsController : ControllerBase
     private async Task<bool> CanAccessCaseAsync(EvaluationCase evaluationCase)
     {
         var actor = await _employeeScopeService.GetActorScopeAsync();
-        if (!actor.IsCountryAdmin || actor.HasFullAccess || evaluationCase.Patient == null)
+        if (!actor.IsScopedAdmin || evaluationCase.Patient == null)
         {
             return true;
         }
 
-        return actor.AdministeredCountryScopeIds.Contains(
-            DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(evaluationCase.Patient.CountryCode));
+        if (actor.IsCountryAdmin)
+        {
+            return actor.AdministeredCountryScopeIds.Contains(
+                DatabaseAPI.Utils.CountryScopeMapper.ToScopeId(evaluationCase.Patient.CountryCode));
+        }
+
+        return evaluationCase.Patient.HomeHospitalId != null &&
+               actor.HospitalIds.Contains(evaluationCase.Patient.HomeHospitalId.Value);
     }
 
     private static EvaluationCaseDto ToDto(EvaluationCase c, bool includeSlices, bool includeReviews)

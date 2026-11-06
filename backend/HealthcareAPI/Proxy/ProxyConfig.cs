@@ -33,6 +33,8 @@ public static class ProxyConfig
     private static IEnumerable<RouteConfig> BuildRoutes()
     {
         // Patients
+        // Bulk CSV export is an administrator-level data-export action.
+        yield return Route("patients-export", "/api/patients/export", "GET", "patients.export");
         yield return Route("patients-get", "/api/patients/{**rest}", "GET", "patients.read");
         yield return Route("patients-post", "/api/patients", "POST", "patients.write");
         yield return Route("patients-post-photo", "/api/patients/{id}/photo", "POST", "patients.photo.write");

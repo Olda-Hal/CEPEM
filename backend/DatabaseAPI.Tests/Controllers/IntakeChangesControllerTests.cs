@@ -28,10 +28,15 @@ public class IntakeChangesControllerTests : IDisposable
         _context = new DatabaseContext(options);
         _actor.Setup(service => service.GetActorEmployeeId()).Returns(5);
 
+        var scope = new Mock<IEmployeeScopeService>();
+        scope.Setup(service => service.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(5, new List<string> { "Admin" }, new List<int>(), new List<int>()));
+
         _controller = new IntakeChangesController(
             _context,
             new PatientMasterDataService(_context),
             _actor.Object,
+            scope.Object,
             NullLogger<IntakeChangesController>.Instance);
     }
 

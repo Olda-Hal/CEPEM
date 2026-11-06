@@ -79,8 +79,9 @@ public class SearchController : ControllerBase
 
     private async Task<List<SearchPatientDto>> SearchPatientsAsync(string term, int limit)
     {
-        return await _context.Patients
-            .AsNoTracking()
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        return await DatabaseAPI.Utils.PatientScope
+            .Apply(_context.Patients.AsNoTracking(), actor)
             .Where(patient => !patient.IsDeleted)
             .Where(patient =>
                 patient.Person.FirstName.Contains(term) ||
@@ -114,8 +115,9 @@ public class SearchController : ControllerBase
 
     private async Task<List<SearchVisitDto>> SearchVisitsAsync(string term, int limit)
     {
-        var rows = await _context.Visits
-            .AsNoTracking()
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        var rows = await DatabaseAPI.Utils.PatientScope
+            .ApplyToVisits(_context.Visits.AsNoTracking(), actor)
             .Where(visit => !visit.Patient.IsDeleted)
             .Where(visit =>
                 (visit.Note != null && visit.Note.Contains(term)) ||
@@ -145,9 +147,14 @@ public class SearchController : ControllerBase
 
     private async Task<List<SearchDocumentDto>> SearchDocumentsAsync(string term, int limit)
     {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        var visiblePatientIds = DatabaseAPI.Utils.PatientScope
+            .Apply(_context.Patients, actor)
+            .Select(patient => patient.Id);
         var rows = await _context.PatientDocuments
             .AsNoTracking()
             .Where(document => !document.IsDeleted && !document.Patient.IsDeleted)
+            .Where(document => visiblePatientIds.Contains(document.PatientId))
             .Where(document =>
                 document.OriginalFileName.Contains(term) ||
                 document.FileName.Contains(term) ||
@@ -197,10 +204,17 @@ public class SearchController : ControllerBase
 
     private async Task<List<SearchEvaluationDto>> SearchEvaluationsAsync(string term, int limit)
     {
+        var actor = await _employeeScopeService.GetActorScopeAsync();
+        var visiblePatientIds = DatabaseAPI.Utils.PatientScope
+            .Apply(_context.Patients, actor)
+            .Select(patient => patient.Id);
+
         var rows = await _context.EvaluationCases
             .AsNoTracking()
             .Include(evaluation => evaluation.Patient)
             .Include(evaluation => evaluation.Reviews)
+            .Where(evaluation => evaluation.PatientId == null ||
+                visiblePatientIds.Contains(evaluation.PatientId.Value))
             .Where(evaluation =>
                 evaluation.Title.Contains(term) ||
                 (evaluation.SourceSide != null && evaluation.SourceSide.Contains(term)) ||
@@ -208,16 +222,6 @@ public class SearchController : ControllerBase
             .OrderByDescending(evaluation => evaluation.CreatedAtUtc)
             .Take(limit * 4)
             .ToListAsync();
-
-        var actor = await _employeeScopeService.GetActorScopeAsync();
-        if (actor.IsCountryAdmin && !actor.HasFullAccess)
-        {
-            rows = rows
-                .Where(evaluation => evaluation.Patient == null ||
-                    actor.AdministeredCountryScopeIds.Contains(
-                        CountryScopeMapper.ToScopeId(evaluation.Patient.CountryCode)))
-                .ToList();
-        }
 
         return rows
             .Take(limit)

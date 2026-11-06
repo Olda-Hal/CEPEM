@@ -722,7 +722,14 @@ public class ExaminationDocumentsTests : IDisposable
 
         var encryption = new DocumentEncryptionService(config, Microsoft.Extensions.Logging.Abstractions.NullLogger<DocumentEncryptionService>.Instance);
         _service = new ExaminationDocumentService(_context, encryption, config, Microsoft.Extensions.Logging.Abstractions.NullLogger<ExaminationDocumentService>.Instance);
-        _controller = new ExaminationDocumentsController(_service, Microsoft.Extensions.Logging.Abstractions.NullLogger<ExaminationDocumentsController>.Instance);
+        var scope = new Mock<IEmployeeScopeService>();
+        scope.Setup(service => service.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(1, new List<string> { "Admin" }, new List<int>(), new List<int>()));
+        _controller = new ExaminationDocumentsController(
+            _service,
+            _context,
+            scope.Object,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<ExaminationDocumentsController>.Instance);
     }
 
     public void Dispose()
@@ -755,21 +762,23 @@ public class ExaminationDocumentsTests : IDisposable
     }
 
     [Fact]
-    public async Task Upload_ForMissingExamination_ReturnsBadRequest()
+    public async Task Upload_ForMissingExamination_ReturnsNotFound()
     {
         var pdf = MinimalPdf();
         var file = new FormFile(new MemoryStream(pdf), 0, pdf.Length, "file", "a.pdf");
 
         var result = await _controller.Upload(99999, file);
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("not found", badRequest.Value?.ToString());
+        var notFound = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Contains("not found", notFound.Value?.ToString());
     }
 
     [Fact]
     public async Task Upload_WithEmptyFile_ReturnsBadRequest()
     {
-        var result = await _controller.Upload(1, null);
+        var examination = SeedExamination();
+
+        var result = await _controller.Upload(examination.Id, null);
 
         Assert.IsType<BadRequestObjectResult>(result);
     }

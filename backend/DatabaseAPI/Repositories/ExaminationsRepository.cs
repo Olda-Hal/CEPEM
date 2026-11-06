@@ -36,6 +36,12 @@ public class ExaminationsRepository : IExaminationsRepository
             .Include(ex => ex.Documents)
             .AsQueryable();
 
+        if (filters.VisiblePatientIds != null)
+        {
+            var visiblePatientIds = filters.VisiblePatientIds;
+            query = query.Where(ex => visiblePatientIds.Contains(ex.Event.PatientId));
+        }
+
         if (filters.From.HasValue)
         {
             query = query.Where(ex => ex.Event.HappenedAt >= filters.From.Value);

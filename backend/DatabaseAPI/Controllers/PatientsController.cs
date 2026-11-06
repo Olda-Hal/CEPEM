@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
@@ -56,6 +57,10 @@ namespace DatabaseAPI.Controllers
             [FromQuery] int sourcePatientId,
             [FromQuery] int targetPatientId)
         {
+            if (!await IsAdminForMergeAsync())
+            {
+                return StatusCode(403, "Sloučení pacientů může provést pouze administrátor.");
+            }
             if (!await PatientIsVisibleAsync(sourcePatientId) ||
                 !await PatientIsVisibleAsync(targetPatientId))
             {
@@ -72,6 +77,10 @@ namespace DatabaseAPI.Controllers
         public async Task<ActionResult<PatientMergeResultDto>> MergePatients(
             [FromBody] PatientMergeRequest request)
         {
+            if (!await IsAdminForMergeAsync())
+            {
+                return StatusCode(403, "Sloučení pacientů může provést pouze administrátor.");
+            }
             if (!await PatientIsVisibleAsync(request.SourcePatientId) ||
                 !await PatientIsVisibleAsync(request.TargetPatientId))
             {
@@ -99,6 +108,11 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
+                // Bound the page size so a single request cannot dump the
+                // whole patient list or overflow the SQL offset.
+                page = Math.Clamp(page, 0, 100_000);
+                limit = Math.Clamp(limit, 1, 200);
+
                 // Hidden (soft-deleted) patients are visible only to Center Admin and above
                 var actorScope = await _employeeScopeService.GetActorScopeAsync();
                 if (!actorScope.CanSeeDeletedPatients)
@@ -111,6 +125,7 @@ namespace DatabaseAPI.Controllers
                     .Include(p => p.Person)
                     .Where(p => includeDeleted || !p.IsDeleted)
                     .AsQueryable();
+                query = PatientScope.Apply(query, actorScope);
 
                 // Apply search filter
                 if (!string.IsNullOrEmpty(search))
@@ -246,6 +261,8 @@ namespace DatabaseAPI.Controllers
                 .Include(p => p.HomeHospital)
                 .Where(p => includeDeleted || !p.IsDeleted);
 
+            query = PatientScope.Apply(query, actorScope);
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim().ToLower();
@@ -326,10 +343,7 @@ namespace DatabaseAPI.Controllers
                 $"patients-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
         }
 
-        private static string CsvEscape(string value) =>
-            value.Contains(';') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
-                ? $"\"{value.Replace("\"", "\"\"")}\""
-                : value;
+        private static string CsvEscape(string value) => CsvSanitizer.Cell(value);
 
         [HttpPost]
         public async Task<ActionResult<PatientDto>> CreatePatient([FromBody] CreatePatientRequest request)
@@ -388,6 +402,10 @@ namespace DatabaseAPI.Controllers
                 }
 
                 var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!PatientScope.CanAccess(patient, actorScope))
+                {
+                    return NotFound("Patient not found");
+                }
                 if (!CanDeletePatient(actorScope, patient.CreatedByEmployeeId, patient.CreatedByEmployee?.CreatedByEmployeeId))
                 {
                     return StatusCode(403, "Pacienta může skrýt pouze ten, kdo jej založil, nebo jeho nadřízený.");
@@ -428,6 +446,10 @@ namespace DatabaseAPI.Controllers
                 // Restore follows the same rule as hide: creator, their direct
                 // supervisor or a full-access admin.
                 var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                if (!PatientScope.CanAccess(patient, actorScope))
+                {
+                    return NotFound("Patient not found");
+                }
                 if (!CanDeletePatient(actorScope, patient.CreatedByEmployeeId, patient.CreatedByEmployee?.CreatedByEmployeeId))
                 {
                     return StatusCode(403, "Pacienta může obnovit pouze ten, kdo jej založil, nebo jeho nadřízený.");
@@ -452,8 +474,8 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var patient = await _context.Patients
-                .AsNoTracking()
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                var patient = await PatientScope.Apply(_context.Patients.AsNoTracking(), actorScope)
                     .Include(p => p.Person)
                         .ThenInclude(per => per.ContactToObjects)
                             .ThenInclude(cto => cto.Contact)
@@ -485,7 +507,8 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var patient = await _context.Patients
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                var patient = await PatientScope.Apply(_context.Patients, actorScope)
                     .Include(p => p.Person)
                         .ThenInclude(per => per.ContactToObjects)
                             .ThenInclude(cto => cto.Contact)
@@ -620,7 +643,8 @@ namespace DatabaseAPI.Controllers
         {
             try
             {
-                var patient = await _context.Patients
+                var actorScope = await _employeeScopeService.GetActorScopeAsync();
+                var patient = await PatientScope.Apply(_context.Patients, actorScope)
                     .Include(p => p.Person)
                         .ThenInclude(per => per.Comment)
                     .Include(p => p.Person)
@@ -1334,8 +1358,22 @@ namespace DatabaseAPI.Controllers
                 scan.Error ?? "Antivirus scan is unavailable; the file was not stored.");
         }
 
-        private Task<bool> PatientIsVisibleAsync(int id) =>
-            _context.Patients.AnyAsync(p => p.Id == id && !p.IsDeleted);
+        private async Task<bool> PatientIsVisibleAsync(int id)
+        {
+            var actorScope = await _employeeScopeService.GetActorScopeAsync();
+            return await PatientScope.Apply(_context.Patients, actorScope)
+                .AnyAsync(p => p.Id == id && !p.IsDeleted);
+        }
+
+        /// <summary>
+        /// Merging is destructive (records are re-pointed and the duplicate is
+        /// removed), so it is reserved for administrative roles.
+        /// </summary>
+        private async Task<bool> IsAdminForMergeAsync()
+        {
+            var actor = await _employeeScopeService.GetActorScopeAsync();
+            return actor.HasFullAccess || actor.IsCountryAdmin || actor.IsCenterAdmin;
+        }
 
         private static bool CanDeletePatient(ActorScope actor, int? creatorId, int? creatorSupervisorId)
             => actor.EmployeeId != null && (

@@ -375,6 +375,7 @@ namespace DatabaseAPI.Services
             ("patients.photo.write", "Upload patient photos"),
             ("patients.documents.read", "View and download patient documents"),
             ("patients.documents.write", "Upload and delete patient documents"),
+            ("patients.export", "Export the patient list as CSV"),
             ("events.read", "View event options (types, symptoms, drugs, ...)"),
             ("events.write", "Record patient events"),
             ("examinations.read", "View examinations"),
@@ -683,6 +684,7 @@ namespace DatabaseAPI.Services
                 // except for cross-center administration.
                 "patients.read", "patients.write", "patients.photo.write",
                 "patients.documents.read", "patients.documents.write",
+                "patients.export",
                 "events.read", "events.write",
                 "hospitals.read", "hospitals.write",
                 "examinationrooms.read", "examinationrooms.write",
@@ -695,6 +697,7 @@ namespace DatabaseAPI.Services
                 "employees.read", "employees.create", "employees.manage",
                 "patients.read", "patients.write", "patients.photo.write",
                 "patients.documents.read", "patients.documents.write",
+                "patients.export",
                 "events.read", "events.write",
                 "hospitals.read", "hospitals.write",
                 "examinationtypes.read", "examinationtypes.write",

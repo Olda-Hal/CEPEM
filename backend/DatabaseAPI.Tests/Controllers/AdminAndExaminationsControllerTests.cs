@@ -1,7 +1,9 @@
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Controllers;
+using DatabaseAPI.Data;
 using DatabaseAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -158,7 +160,19 @@ public class ExaminationsControllerTests
 
     public ExaminationsControllerTests()
     {
-        _controller = new ExaminationsController(_service.Object, NullLogger<ExaminationsController>.Instance);
+        var options = new DbContextOptionsBuilder<DatabaseContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        var context = new DatabaseContext(options);
+        var scope = new Mock<IEmployeeScopeService>();
+        scope.Setup(service => service.GetActorScopeAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ActorScope(1, new List<string> { "Admin" }, new List<int>(), new List<int>()));
+
+        _controller = new ExaminationsController(
+            _service.Object,
+            context,
+            scope.Object,
+            NullLogger<ExaminationsController>.Instance);
     }
 
     [Fact]

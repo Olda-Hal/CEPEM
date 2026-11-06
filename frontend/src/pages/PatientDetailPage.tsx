@@ -8,6 +8,8 @@ import QuickPreviewSettingsModal from '../components/QuickPreviewSettingsModal';
 import './PatientDetailPage.css';
 
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
+import { hasRole, isAdmin } from '../utils/roles';
 import PatientVisitsSection from '../components/patient/PatientVisitsSection';
 import CameraCaptureModal from '../components/patient/CameraCaptureModal';
 import MergePatientModal from '../components/patient/MergePatientModal';
@@ -17,6 +19,9 @@ export const PatientDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const { user } = useAuth();
+  const canMergePatients =
+    isAdmin(user) || hasRole(user, 'Center Admin') || hasRole(user, 'Country Admin');
   const [patient, setPatient] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,9 +230,11 @@ export const PatientDetailPage: React.FC = () => {
           >
             {t('patients.editPatient')}
           </button>
-          <button onClick={() => setShowMergeModal(true)} className="btn btn-secondary">
-            {t('patients.merge.button')}
-          </button>
+          {canMergePatients && (
+            <button onClick={() => setShowMergeModal(true)} className="btn btn-secondary">
+              {t('patients.merge.button')}
+            </button>
+          )}
           <button onClick={handleBackToPatients} className="btn btn-secondary">
             {t('patients.backToPatients')}
           </button>

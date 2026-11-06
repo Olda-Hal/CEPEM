@@ -12,6 +12,9 @@ public class ExaminationSearchFilters
     public DateTime? To { get; set; }
     public int Page { get; set; } = 0;
     public int Limit { get; set; } = 50;
+
+    /// <summary>Set server-side from the actor scope; never trusted from the client.</summary>
+    public List<int>? VisiblePatientIds { get; set; }
 }
 
 public class ExaminationSearchResponse
