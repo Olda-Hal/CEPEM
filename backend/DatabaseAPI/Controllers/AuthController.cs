@@ -88,11 +88,11 @@ namespace DatabaseAPI.Controllers
                     await _authService.UpdateLastLoginAsync(result.EmployeeInfo!.EmployeeId);
                     return Ok(result.EmployeeInfo);
 
+                // Do not reveal whether the account exists, is deactivated or
+                // is temporarily locked: all non-success states answer with the
+                // same generic message. The lockout still applies server-side.
                 case AuthenticationResult.AccountDeactivated:
-                    return Unauthorized("Váš účet byl deaktivován. Kontaktujte administrátora.");
-
                 case AuthenticationResult.AccountLocked:
-                    return Unauthorized(new { message = result.Message });
                 case AuthenticationResult.UserNotFound:
                 case AuthenticationResult.InvalidCredentials:
                 default:

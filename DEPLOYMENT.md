@@ -297,9 +297,12 @@ sudo ufw enable
 
 ## Security Notes
 
-- Never commit `.env` file with production credentials
-- Use strong passwords (minimum 32 characters)
-- Regularly update Docker images
-- Monitor logs for suspicious activity
-- Keep SSL certificates renewed
-- Enable fail2ban for SSH protection
+- Never commit `.env` file with production credentials; keep it readable only by the deploy user (`chmod 600 .env`).
+- Use strong passwords (minimum 32 characters) and generate secrets with `openssl rand -hex 32`.
+- Do **not** connect the API to MySQL as `root`; the example uses the scoped `cepem_user` account.
+- Enable backup encryption (`BACKUP_ENCRYPTION_PASSPHRASE` or `BACKUP_GPG_RECIPIENT`) — the dump contains patient data.
+- Regularly update Docker images and run `dotnet list package --vulnerable`, `npm audit` and `pip-audit` (CI does this on every push).
+- Monitor logs for suspicious activity; intake/reset tokens are redacted from nginx and application logs.
+- Keep SSL certificates renewed.
+- Enable fail2ban for SSH protection.
+- Consider MFA/SSO for staff accounts and full-disk encryption for the database/backup volumes.
