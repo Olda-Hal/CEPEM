@@ -57,4 +57,11 @@ public class PiiRedactorTests
     {
         Assert.Equal(expected, PiiRedactor.RedactPath(input));
     }
+
+    [Fact]
+    public void MaskPhoneNumber_KeepsOnlyTheLastThreeDigits()
+    {
+        Assert.Equal("***456", PiiRedactor.MaskPhoneNumber("+420 777 123 456"));
+        Assert.Equal("***", PiiRedactor.MaskPhoneNumber("12"));
+    }
 }

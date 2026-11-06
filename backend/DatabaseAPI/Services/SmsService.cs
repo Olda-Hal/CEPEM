@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Cepem.Shared;
 using DatabaseAPI.Data;
 using DatabaseAPI.DatabaseModels;
 
@@ -82,7 +83,11 @@ public class SmsService : ISmsService
         }
         if (!useHttp || string.IsNullOrWhiteSpace(_options.Endpoint))
         {
-            _logger.LogWarning("SMS ({TemplateCode}) to {Number}: {Text}", templateCode, toNumber, text);
+            // Never write the recipient's number or the message body to logs.
+            _logger.LogWarning(
+                "SMS ({TemplateCode}) to {Number} was not sent: log-only provider",
+                templateCode,
+                PiiRedactor.MaskPhoneNumber(toNumber));
             await WriteLogAsync(toNumber, templateCode, EmailLogStatuses.LoggedOnly, "SMS provider is log-only", context, cancellationToken);
             return;
         }
@@ -150,7 +155,8 @@ public class SmsService : ISmsService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not write SMS log for {Number}", toNumber);
+            _logger.LogError(ex, "Could not write SMS log for {Number}",
+                PiiRedactor.MaskPhoneNumber(toNumber));
         }
     }
 

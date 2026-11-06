@@ -79,6 +79,25 @@ public static partial class PiiRedactor
         };
     }
 
+    /// <summary>+420777123456 → +420***456; keeps enough for support lookup.</summary>
+    public static string? MaskPhoneNumber(string? number)
+    {
+        if (string.IsNullOrWhiteSpace(number))
+        {
+            return number;
+        }
+
+        var trimmed = number.Trim();
+        var digits = new string(trimmed.Where(char.IsDigit).ToArray());
+        if (digits.Length <= 3)
+        {
+            return Mask;
+        }
+
+        var visible = digits[^3..];
+        return $"{Mask}{visible}";
+    }
+
     /// <summary>Redacts any IPv4 address embedded in free text (e.g. "Request from 10.0.0.1").</summary>
     public static string? RedactIpAddresses(string? text)
     {
