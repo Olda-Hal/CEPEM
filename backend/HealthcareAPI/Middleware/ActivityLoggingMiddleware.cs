@@ -83,8 +83,13 @@ namespace HealthcareAPI.Middleware
             finally
             {
                 log.StatusCode = context.Response.StatusCode;
+                // Never export a full client IP as a Prometheus label; the
+                // masked network prefix keeps the traffic panel useful without
+                // publishing patient-adjacent network data.
                 RequestsByClient
-                    .WithLabels(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    .WithLabels(
+                        PiiRedactor.MaskIpAddress(context.Connection.RemoteIpAddress?.ToString())
+                            ?? "unknown",
                         context.Request.Method,
                         $"{context.Response.StatusCode / 100}xx")
                     .Inc();

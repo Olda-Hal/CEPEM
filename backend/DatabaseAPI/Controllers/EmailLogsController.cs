@@ -161,8 +161,5 @@ public class EmailLogsController : ControllerBase
         return log;
     }
 
-    private static string CsvEscape(string value) =>
-        value.Contains(';') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
-            ? $"\"{value.Replace("\"", "\"\"")}\""
-            : value;
+    private static string CsvEscape(string value) => CsvSanitizer.Cell(value);
 }

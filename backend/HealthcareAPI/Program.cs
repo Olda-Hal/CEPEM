@@ -117,6 +117,17 @@ if (string.IsNullOrWhiteSpace(secretKey))
     throw new InvalidOperationException(
         "JWT secret key is not configured. Set the JWT__SecretKey configuration value or the JWT_SECRET_KEY environment variable.");
 }
+if (System.Text.Encoding.UTF8.GetByteCount(secretKey) < 32)
+{
+    // 256-bit signing key: a short secret makes offline brute force realistic.
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException(
+            "JWT secret key is too short for production. Use at least 32 bytes (e.g. `openssl rand -hex 32`).");
+    }
+
+    Console.WriteLine("[JWT] WARNING: signing key is shorter than 32 bytes; acceptable for local development only.");
+}
 var issuer = jwtSettings["Issuer"]
     ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
 var audience = jwtSettings["Audience"]

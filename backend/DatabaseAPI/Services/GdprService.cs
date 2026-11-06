@@ -615,7 +615,9 @@ public class GdprService : IGdprService
 
     private static string SafeFileName(string value)
     {
-        var name = Path.GetFileName(value);
+        // Path.GetFileName only strips '/' on Linux; backslashes are valid
+        // separators on Windows extractors, so neutralise them too.
+        var name = Path.GetFileName(value.Replace('\\', '/'));
         return string.IsNullOrWhiteSpace(name) ? "file" : name;
     }
 }

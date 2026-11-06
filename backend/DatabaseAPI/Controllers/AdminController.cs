@@ -1,3 +1,4 @@
+using Cepem.Shared;
 using Microsoft.AspNetCore.Mvc;
 using DatabaseAPI.APIModels;
 using DatabaseAPI.Services;
@@ -101,12 +102,7 @@ namespace DatabaseAPI.Controllers
             return Ok(new { message = "Resetový odkaz byl odeslán na e-mail zaměstnance." });
         }
 
-        private static string CsvEscape(string value)
-        {
-            return value.Contains(';') || value.Contains('"') || value.Contains('\n')
-                ? $"\"{value.Replace("\"", "\"\"")}\""
-                : value;
-        }
+        private static string CsvEscape(string value) => CsvSanitizer.Cell(value);
 
         [HttpGet("employees/{employeeId}")]
         public async Task<ActionResult<EmployeeListItem>> GetEmployee(int employeeId)

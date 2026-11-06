@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Compile Include="..\Shared\ForwardedHeadersSetup.cs" Link="Infrastructure\ForwardedHeadersSetup.cs" />
+    <Compile Include="..\Shared\CsvSanitizer.cs" Link="Infrastructure\CsvSanitizer.cs" />
     <Compile Include="..\Shared\PiiRedactor.cs" Link="Infrastructure\PiiRedactor.cs" />
     <Compile Include="..\Shared\PasswordPolicy.cs" Link="Infrastructure\PasswordPolicy.cs" />
   </ItemGroup>
@@ -17,7 +18,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageReference Include="MySqlConnector" Version="2.5.0" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

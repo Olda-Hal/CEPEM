@@ -162,12 +162,7 @@ public class ActivityLogsController : ControllerBase
         return log;
     }
 
-    private static string CsvEscape(string value)
-    {
-        return value.Contains(';') || value.Contains('"') || value.Contains('\n')
-            ? $"\"{value.Replace("\"", "\"\"")}\""
-            : value;
-    }
+    private static string CsvEscape(string value) => CsvSanitizer.Cell(value);
 
     [HttpPost]
     public async Task<ActionResult> LogActivity([FromBody] ActivityLog activityLog)
