@@ -176,6 +176,25 @@ namespace HealthcareAPI.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Database dependency health for the SysAdmin dashboard. Proxying it
+        /// here keeps the raw /db-health endpoint off the public frontend.
+        /// </summary>
+        [RequireRole("SysAdmin")]
+        [HttpGet("health/database")]
+        public async Task<IActionResult> GetDatabaseHealth()
+        {
+            var client = _httpClientFactory.CreateClient("DatabaseAPI");
+            var response = await client.GetAsync("/api/health");
+            var body = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = body,
+                ContentType = "application/json"
+            };
+        }
+
         [RequirePermission("employees.read")]
         [HttpGet("employees/scope")]
         [PermissionDisplayName("View Own Admin Scope")]

@@ -14,7 +14,7 @@ interface ServiceStatus {
 
 const PROBED_SERVICES: Array<{ name: string; url: string }> = [
   { name: 'HealthcareAPI', url: '/health' },
-  { name: 'DatabaseAPI', url: '/db-health' }
+  { name: 'DatabaseAPI', url: '/api/admin/health/database' }
 ];
 
 /**
