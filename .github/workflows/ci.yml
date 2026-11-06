@@ -75,6 +75,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/AIService/requirements.txt
 
+      - name: Audit Python dependencies
+        working-directory: backend/AIService
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
       - name: Run tests
         working-directory: backend/AIService
         run: pytest -q

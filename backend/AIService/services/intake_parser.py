@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import cv2
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF (the legacy "fitz" alias is deprecated)
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -146,6 +146,9 @@ def _render_pages(pdf_bytes: bytes) -> list[PageImage]:
     zoom = RENDER_DPI / 72.0
     matrix = fitz.Matrix(zoom, zoom)
     for page in document:
+        # Reject pathological page sizes before allocating a large pixmap.
+        if page.rect.width * page.rect.height > 20_000_000:
+            raise ValueError("PDF page is too large to process safely")
         pixmap = page.get_pixmap(matrix=matrix, alpha=False)
         rgb = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(
             pixmap.height, pixmap.width, pixmap.n
